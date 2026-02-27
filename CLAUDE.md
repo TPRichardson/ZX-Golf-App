@@ -1,4 +1,4 @@
-# ZX Caddie — CLAUDE.md (v.a5)
+# ZX Golf App — CLAUDE.md (v.a5)
 
 > This file is the persistent context for all Claude Code sessions. It is loaded
 > automatically at the start of every session. Maintain it per TD-08 §4.2.
@@ -7,7 +7,7 @@
 
 ## Project Identity
 
-- **Application:** ZX Caddie — Golf practice performance tracking and scoring
+- **Application:** ZX Golf App — Golf practice performance tracking and scoring
 - **Platform:** Android (Flutter). iOS deployment deferred to post-V1.
 - **Backend:** Supabase (Postgres, Auth, Edge Functions, RLS)
 - **Local Database:** Drift (SQLite) with code-generated typed Dart classes
@@ -91,7 +91,7 @@ When documents conflict, higher precedence wins:
 lib/
 ├── core/
 │   ├── constants.dart              # App-wide constants (kMaxWindowOccupancy, etc.)
-│   ├── error_types.dart            # ZxCaddieException hierarchy (TD-03 §7, TD-07 §2)
+│   ├── error_types.dart            # ZxGolfAppException hierarchy (TD-03 §7, TD-07 §2)
 │   ├── theme/
 │   │   ├── tokens.dart             # Colour, typography, spacing, shape tokens (S15)
 │   │   └── zx_theme.dart           # ThemeData wrapper
@@ -199,10 +199,10 @@ Do not comment obvious code. Target ~1 spec/TD reference per public repository/s
 
 > [PLACEHOLDER — populated after Phase 1 establishes the error hierarchy from TD-07 §2]
 
-Base class: `ZxCaddieException`
+Base class: `ZxGolfAppException`
 Subclasses: `ValidationException`, `StateTransitionException`, `ScoringException`, `SyncException`, `DatabaseException`, `AuthenticationException`
 
-Propagation: Repository → throws `ZxCaddieException` → Provider catches + exposes via `AsyncValue.error` → UI renders per TD-07 §10.
+Propagation: Repository → throws `ZxGolfAppException` → Provider catches + exposes via `AsyncValue.error` → UI renders per TD-07 §10.
 
 ---
 
