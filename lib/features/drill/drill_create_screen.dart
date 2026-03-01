@@ -145,33 +145,40 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
               ),
         ),
         const SizedBox(height: SpacingTokens.md),
-        for (final area in SkillArea.values)
-          Padding(
-            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-            child: ZxCard(
-              onTap: () => setState(() => _skillArea = area),
-              showBorder: _skillArea == area,
-              child: Row(
-                children: [
-                  Icon(
-                    _skillArea == area
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    color: _skillArea == area
-                        ? ColorTokens.primaryDefault
-                        : ColorTokens.textTertiary,
-                  ),
-                  const SizedBox(width: SpacingTokens.sm),
-                  Text(
-                    area.dbValue,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: ColorTokens.textPrimary,
+        Expanded(
+          child: ListView(
+            children: [
+              for (final area in SkillArea.values)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+                  child: ZxCard(
+                    onTap: () => setState(() => _skillArea = area),
+                    showBorder: _skillArea == area,
+                    child: Row(
+                      children: [
+                        Icon(
+                          _skillArea == area
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: _skillArea == area
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.textTertiary,
                         ),
+                        const SizedBox(width: SpacingTokens.sm),
+                        Text(
+                          area.dbValue,
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: ColorTokens.textPrimary,
+                                  ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }
@@ -202,40 +209,52 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
                   ),
             ),
             const SizedBox(height: SpacingTokens.md),
-            for (final sub in _availableSubskills)
-              Padding(
-                padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-                child: ZxCard(
-                  onTap: () {
-                    setState(() {
-                      if (_selectedSubskills.contains(sub.subskillId)) {
-                        _selectedSubskills.remove(sub.subskillId);
-                      } else {
-                        _selectedSubskills.add(sub.subskillId);
-                      }
-                    });
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        _selectedSubskills.contains(sub.subskillId)
-                            ? Icons.check_box
-                            : Icons.check_box_outline_blank,
-                        color: _selectedSubskills.contains(sub.subskillId)
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.textTertiary,
-                      ),
-                      const SizedBox(width: SpacingTokens.sm),
-                      Text(
-                        sub.name,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: ColorTokens.textPrimary,
+            Expanded(
+              child: ListView(
+                children: [
+                  for (final sub in _availableSubskills)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: SpacingTokens.sm),
+                      child: ZxCard(
+                        onTap: () {
+                          setState(() {
+                            if (_selectedSubskills
+                                .contains(sub.subskillId)) {
+                              _selectedSubskills.remove(sub.subskillId);
+                            } else {
+                              _selectedSubskills.add(sub.subskillId);
+                            }
+                          });
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              _selectedSubskills.contains(sub.subskillId)
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color: _selectedSubskills
+                                      .contains(sub.subskillId)
+                                  ? ColorTokens.primaryDefault
+                                  : ColorTokens.textTertiary,
                             ),
+                            const SizedBox(width: SpacingTokens.sm),
+                            Text(
+                              sub.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    color: ColorTokens.textPrimary,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
               ),
+            ),
           ],
         );
       },
@@ -313,48 +332,58 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
               ),
         ),
         const SizedBox(height: SpacingTokens.md),
-        for (final schema in relevantSchemas)
-          Padding(
-            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-            child: ZxCard(
-              onTap: () =>
-                  setState(() => _metricSchemaId = schema.metricSchemaId),
-              child: Row(
-                children: [
-                  Icon(
-                    _metricSchemaId == schema.metricSchemaId
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    color: _metricSchemaId == schema.metricSchemaId
-                        ? ColorTokens.primaryDefault
-                        : ColorTokens.textTertiary,
-                  ),
-                  const SizedBox(width: SpacingTokens.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(
+          child: ListView(
+            children: [
+              for (final schema in relevantSchemas)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+                  child: ZxCard(
+                    onTap: () =>
+                        setState(() => _metricSchemaId = schema.metricSchemaId),
+                    child: Row(
                       children: [
-                        Text(
-                          schema.name,
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: ColorTokens.textPrimary,
-                                  ),
+                        Icon(
+                          _metricSchemaId == schema.metricSchemaId
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: _metricSchemaId == schema.metricSchemaId
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.textTertiary,
                         ),
-                        Text(
-                          '${schema.inputMode.dbValue} - ${schema.scoringAdapterBinding}',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: ColorTokens.textSecondary,
-                                  ),
+                        const SizedBox(width: SpacingTokens.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                schema.name,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: ColorTokens.textPrimary,
+                                    ),
+                              ),
+                              Text(
+                                '${schema.inputMode.dbValue} - ${schema.scoringAdapterBinding}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: ColorTokens.textSecondary,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }
