@@ -79,11 +79,11 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 1 — Data Foundation & Design System**
+> **Phase 2A — Pure Scoring Library**
 >
-> Drift schema (27 tables), seed data, design tokens, theme, base components,
-> error hierarchy, repository layer, Riverpod scaffolding, shell app with 3-tab nav.
-> `flutter analyze` clean. Next: Phase 2A — Pure Scoring.
+> Pure scoring functions (instance, session, window, subskill, skill-area, overall),
+> integrity evaluator. All functions are stateless, testable, no DB dependency.
+> Comprehensive test coverage per TD-05.
 
 ---
 
