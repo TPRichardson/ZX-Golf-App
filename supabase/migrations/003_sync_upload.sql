@@ -233,7 +233,7 @@ BEGIN
         "IsDeleted", "CreatedAt"
       ) VALUES (
         (v_row->>'InstanceID')::UUID, (v_row->>'SetID')::UUID,
-        v_row->>'SelectedClub',
+        (v_row->>'SelectedClub')::UUID,
         COALESCE(v_row->'RawMetrics', '{}'::JSONB),
         (v_row->>'Timestamp')::TIMESTAMPTZ,
         (v_row->>'ResolvedTargetDistance')::DECIMAL,
