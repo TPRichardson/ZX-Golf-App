@@ -10,6 +10,9 @@ const kPressureWeight = 0.65;
 // Spec: S01 §1.2 — Maximum possible score value.
 const kMaxScore = 5.0;
 
+// Spec: S01 §1.4 — Score at scratch benchmark.
+const kScratchScore = 3.5;
+
 // Spec: S02 §2.3 — Total allocation across all subskills.
 const kTotalAllocation = 1000;
 

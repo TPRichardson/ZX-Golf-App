@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(where pandoc:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(flutter test:*)",
+      "Bash(flutter analyze:*)"
+    ]
+  }
+}
