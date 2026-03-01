@@ -10,7 +10,8 @@
       "Bash(flutter analyze:*)",
       "Bash(wc:*)",
       "Bash(flutter pub:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(dart test:*)"
     ]
   }
 }
