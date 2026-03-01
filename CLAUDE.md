@@ -79,11 +79,11 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 2A — Pure Scoring Library**
+> **Phase 2B — Reflow Orchestration**
 >
-> Pure scoring functions (instance, session, window, subskill, skill-area, overall),
-> integrity evaluator. All functions are stateless, testable, no DB dependency.
-> Comprehensive test coverage per TD-05.
+> Reflow engine, scoring lock management, event log integration,
+> materialised score cache writes. Builds on Phase 2A pure scoring
+> and Phase 2.5 server foundation.
 
 ---
 
@@ -108,8 +108,10 @@ lib/
 │   │   ├── integrity_evaluator.dart
 │   │   └── reflow_engine.dart      # [Phase 2B] Reflow orchestration
 │   ├── sync/                       # [Phase 2.5] Sync engine
-│   │   ├── sync_engine.dart
+│   │   ├── sync_types.dart
 │   │   ├── sync_write_gate.dart
+│   │   ├── auth_service.dart
+│   │   ├── sync_engine.dart
 │   │   └── merge_algorithm.dart    # [Phase 7B]
 │   ├── instrumentation/            # [Phase 2B] Logging, diagnostics, profiling
 │   └── services/                   # [Phase 4] TimerService, shared services
@@ -131,6 +133,25 @@ lib/
 │   │   ├── event_log_repository.dart
 │   │   └── reference_repository.dart
 │   └── dto/                        # [Phase 2.5] Sync DTO serialisation
+│       ├── sync_dto.dart           # Barrel export
+│       ├── user_dto.dart
+│       ├── drill_dto.dart
+│       ├── practice_block_dto.dart
+│       ├── session_dto.dart
+│       ├── set_dto.dart
+│       ├── instance_dto.dart
+│       ├── practice_entry_dto.dart
+│       ├── user_drill_adoption_dto.dart
+│       ├── user_club_dto.dart
+│       ├── club_performance_profile_dto.dart
+│       ├── user_skill_area_club_mapping_dto.dart
+│       ├── routine_dto.dart
+│       ├── schedule_dto.dart
+│       ├── calendar_day_dto.dart
+│       ├── routine_instance_dto.dart
+│       ├── schedule_instance_dto.dart
+│       ├── event_log_dto.dart
+│       └── user_device_dto.dart
 ├── features/
 │   ├── shell/
 │   │   ├── shell_screen.dart       # Bottom nav (Plan/Track/Review)
@@ -150,15 +171,21 @@ lib/
 
 test/
 ├── core/scoring/                   # [Phase 2A/2B] Scoring + reflow tests
+├── core/sync/                      # [Phase 2.5] Sync engine + gate tests
+├── data/dto/                       # [Phase 2.5] DTO round-trip tests (18 files)
 ├── data/repositories/              # Repository tests
 ├── features/                       # Feature-level tests
 ├── fixtures/                       # Shared test data builders
+│   ├── scoring_fixtures.dart
+│   └── dto_fixtures.dart
 └── integration/                    # Cross-module integration tests
 
 supabase/
 └── migrations/
-    ├── 001_create_schema.sql       # [Phase 2.5]
-    └── 002_seed_reference_data.sql # [Phase 2.5]
+    ├── 001_create_schema.sql
+    ├── 002_seed_reference_data.sql
+    ├── 003_sync_upload.sql
+    └── 004_sync_download.sql
 ```
 
 Update this tree when a phase adds new directories.
@@ -245,6 +272,8 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | Date       | Phase   | Status    | Notes                                                                 |
 |------------|---------|-----------|-----------------------------------------------------------------------|
 | 2026-02-27 | Phase 1 | Complete  | 27 Drift tables, 21 enums, seed data, 8 repos, design system, shell app. `flutter analyze` clean. |
+| 2026-03-01 | Phase 2A | Complete | 9 pure scoring functions, 8 test files, 91 tests. `flutter analyze` clean, 100% pass rate. No Drift imports in scoring library. |
+| 2026-03-01 | Phase 2.5 | Complete | 18 DTO files + barrel, 4 sync core files, 4 SQL migrations, Supabase init, providers. 77 new tests (168 total). `flutter analyze` clean, 100% pass rate. |
 
 ---
 

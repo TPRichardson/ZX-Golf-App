@@ -25,3 +25,22 @@ const kSyncWriteGateHardTimeout = Duration(seconds: 60);
 // Phase 1 stub — hardcoded dev user ID for local development.
 // TD-06 §4.3 — Authentication stub.
 const kDevUserId = '00000000-0000-4000-8000-000000000000';
+
+// TD-03 §5.2 — Sync schema version. Server rejects mismatches.
+const kSyncSchemaVersion = '1';
+
+// TD-07 §6.1 — Exponential backoff retry delays for sync RPCs.
+const kSyncRetryDelays = [
+  Duration(seconds: 1),
+  Duration(seconds: 2),
+  Duration(seconds: 4),
+];
+
+// TD-07 §6.1 — Jitter added to retry delays (±250ms).
+const kSyncRetryJitter = Duration(milliseconds: 250);
+
+// TD-07 §6.2 — Max consecutive sync failures before escalation.
+const kSyncMaxConsecutiveFailures = 5;
+
+// TD-07 §6.2 — Failures before escalation notification.
+const kSyncEscalationThreshold = 3;
