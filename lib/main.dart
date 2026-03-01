@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/zx_theme.dart';
-import 'features/auth/auth_gate.dart';
+import 'features/shell/shell_screen.dart';
 
 // TD-07 §3.3 — Top-level error handlers.
 void main() {
@@ -46,7 +46,7 @@ class ZxGolfApp extends StatelessWidget {
       title: 'ZX Golf',
       debugShowCheckedModeBanner: false,
       theme: ZxTheme.dark(),
-      home: const AuthGate(),
+      home: const ShellScreen(),
     );
   }
 }
