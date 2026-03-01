@@ -27,13 +27,17 @@ void validateAnchors(Anchors anchors) {
 }
 
 /// TD-06 §5.1.2 — Parses a scoring adapter binding string to enum.
+/// Accepts both camelCase (JSON) and PascalCase (DB seed) formats.
 ScoringAdapterType parseScoringAdapterBinding(String binding) {
   switch (binding) {
     case 'hitRateInterpolation':
+    case 'HitRateInterpolation':
       return ScoringAdapterType.hitRateInterpolation;
     case 'linearInterpolation':
+    case 'LinearInterpolation':
       return ScoringAdapterType.linearInterpolation;
     case 'none':
+    case 'None':
       return ScoringAdapterType.none;
     default:
       throw ValidationException(

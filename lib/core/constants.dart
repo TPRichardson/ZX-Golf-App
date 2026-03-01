@@ -44,3 +44,25 @@ const kSyncMaxConsecutiveFailures = 5;
 
 // TD-07 §6.2 — Failures before escalation notification.
 const kSyncEscalationThreshold = 3;
+
+// ---------------------------------------------------------------------------
+// Phase 2B — Reflow & Lock constants
+// ---------------------------------------------------------------------------
+
+// TD-04 §3.2 Step 1 — UserScoringLock expiry duration.
+const kUserScoringLockExpiry = Duration(seconds: 30);
+
+// TD-04 §3.2 Step 1 — Maximum retry attempts for lock acquisition.
+const kLockMaxRetries = 3;
+
+// TD-04 §3.2 Step 1 — Delay between lock acquisition retries.
+const kLockRetryDelay = Duration(milliseconds: 500);
+
+// TD-03 §4.5 — RebuildGuard timeout before auto-release.
+const kRebuildGuardTimeout = Duration(seconds: 30);
+
+// TD-06 §7.1.2 — Scoped reflow p95 performance target.
+const kScopedReflowTarget = Duration(milliseconds: 150);
+
+// TD-06 §7.1.2 — Full rebuild p95 performance target.
+const kFullRebuildTarget = Duration(seconds: 1);

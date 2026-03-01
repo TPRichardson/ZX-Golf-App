@@ -79,7 +79,7 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 2B — Reflow Orchestration**
+> **Phase 2B — Reflow & Lock Layer**
 >
 > Reflow engine, scoring lock management, event log integration,
 > materialised score cache writes. Builds on Phase 2A pure scoring
@@ -98,7 +98,7 @@ lib/
 │   │   ├── tokens.dart             # Colour, typography, spacing, shape tokens (S15)
 │   │   └── zx_theme.dart           # ThemeData wrapper
 │   ├── widgets/                    # Shared base components (buttons, cards, inputs)
-│   ├── scoring/                    # [Phase 2A] Pure scoring functions
+│   ├── scoring/                    # [Phase 2A/2B] Pure scoring + reflow orchestration
 │   │   ├── instance_scorer.dart
 │   │   ├── session_scorer.dart
 │   │   ├── window_composer.dart
@@ -106,7 +106,12 @@ lib/
 │   │   ├── skill_area_scorer.dart
 │   │   ├── overall_scorer.dart
 │   │   ├── integrity_evaluator.dart
-│   │   └── reflow_engine.dart      # [Phase 2B] Reflow orchestration
+│   │   ├── scoring_helpers.dart
+│   │   ├── scoring_types.dart
+│   │   ├── reflow_types.dart        # [Phase 2B] ReflowTrigger, ReflowResult
+│   │   ├── reflow_engine.dart       # [Phase 2B] 10-step orchestrator
+│   │   ├── rebuild_guard.dart       # [Phase 2B] In-memory mutex
+│   │   └── scope_resolver.dart      # [Phase 2B] Trigger scope determination
 │   ├── sync/                       # [Phase 2.5] Sync engine
 │   │   ├── sync_types.dart
 │   │   ├── sync_write_gate.dart
@@ -114,6 +119,7 @@ lib/
 │   │   ├── sync_engine.dart
 │   │   └── merge_algorithm.dart    # [Phase 7B]
 │   ├── instrumentation/            # [Phase 2B] Logging, diagnostics, profiling
+│   │   └── reflow_diagnostics.dart  # ReflowDiagnostic, ReflowInstrumentation
 │   └── services/                   # [Phase 4] TimerService, shared services
 ├── data/
 │   ├── enums.dart                  # 21 enum types with TEXT serialisation
@@ -127,7 +133,7 @@ lib/
 │   │   ├── user_repository.dart
 │   │   ├── drill_repository.dart
 │   │   ├── practice_repository.dart
-│   │   ├── scoring_repository.dart # Phase 2A stub
+│   │   ├── scoring_repository.dart # [Phase 2B] Full implementation
 │   │   ├── club_repository.dart
 │   │   ├── planning_repository.dart
 │   │   ├── event_log_repository.dart
@@ -273,7 +279,8 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 |------------|---------|-----------|-----------------------------------------------------------------------|
 | 2026-02-27 | Phase 1 | Complete  | 27 Drift tables, 21 enums, seed data, 8 repos, design system, shell app. `flutter analyze` clean. |
 | 2026-03-01 | Phase 2A | Complete | 9 pure scoring functions, 8 test files, 91 tests. `flutter analyze` clean, 100% pass rate. No Drift imports in scoring library. |
-| 2026-03-01 | Phase 2.5 | Complete | 18 DTO files + barrel, 4 sync core files, 4 SQL migrations, Supabase init, providers. 77 new tests (168 total). `flutter analyze` clean, 100% pass rate. |
+| 2026-03-01 | Phase 2.5 | Complete | 18 DTO files + barrel, 4 sync core files, 4 SQL migrations, Supabase init, providers. 77 unit tests + 6 server acceptance tests (all 6 TD-06 §6.4 criteria passing). `flutter analyze` clean. |
+| 2026-03-01 | Phase 2B | Complete | ReflowEngine (10-step orchestrator + bulk rebuild), RebuildGuard, ScopeResolver, ScoringRepository full impl, ReflowInstrumentation, 8 Riverpod providers, profiling harness. 253 tests passing. Scoped reflow p95=99ms (<150ms target), full rebuild p95=198ms (<1s target). `flutter analyze` clean. |
 
 ---
 
