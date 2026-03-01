@@ -3,6 +3,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -17,6 +18,8 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
+
+String _formatMB(int bytes) => '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
 // Phase 2B — Profiling benchmark harness.
 // Run separately: flutter test --tags profiling
@@ -139,14 +142,18 @@ void main() {
       );
 
       const userId = 'perf-user-scoped';
+      final baselineRss = ProcessInfo.currentRss;
       print('\n--- Seeding 500 sessions / 5K instances ---');
+      print('Baseline RSS: ${_formatMB(baselineRss)}');
       final seedWatch = Stopwatch()..start();
       await seedLargeDataset(db, userId,
           sessionCount: 500, instancesPerSession: 10);
       print('Seeding took: ${seedWatch.elapsed.inMilliseconds}ms');
+      print('Post-seed RSS: ${_formatMB(ProcessInfo.currentRss)}');
 
       // Run 20 consecutive scoped reflows targeting a single subskill.
       final durations = <Duration>[];
+      var peakRss = ProcessInfo.currentRss;
       for (var i = 0; i < 20; i++) {
         final sw = Stopwatch()..start();
         await engine.executeReflow(ReflowTrigger(
@@ -156,6 +163,8 @@ void main() {
         ));
         sw.stop();
         durations.add(sw.elapsed);
+        final rss = ProcessInfo.currentRss;
+        if (rss > peakRss) peakRss = rss;
       }
 
       final sorted = _sortedDurations(durations);
@@ -168,6 +177,9 @@ void main() {
       print('p95: ${p95.inMilliseconds}ms');
       print('p99: ${p99.inMilliseconds}ms');
       print('Target: ${kScopedReflowTarget.inMilliseconds}ms');
+      print('Peak RSS (during benchmark): ${_formatMB(peakRss)}');
+      print('RSS delta from baseline: ${_formatMB(peakRss - baselineRss)}');
+      print('Max RSS (process lifetime): ${_formatMB(ProcessInfo.maxRss)}');
 
       expect(p95.inMilliseconds, lessThan(kScopedReflowTarget.inMilliseconds),
           reason:
@@ -197,20 +209,26 @@ void main() {
       );
 
       const userId = 'perf-user-full';
+      final baselineRss = ProcessInfo.currentRss;
       print('\n--- Seeding 5K sessions / 50K instances ---');
+      print('Baseline RSS: ${_formatMB(baselineRss)}');
       final seedWatch = Stopwatch()..start();
       await seedLargeDataset(db, userId,
           sessionCount: 5000, instancesPerSession: 10);
       print('Seeding took: ${seedWatch.elapsed.inMilliseconds}ms');
+      print('Post-seed RSS: ${_formatMB(ProcessInfo.currentRss)}');
 
       // Run 20 consecutive full rebuilds.
       final durations = <Duration>[];
+      var peakRss = ProcessInfo.currentRss;
       for (var i = 0; i < 20; i++) {
         instrumentation.clear();
         final sw = Stopwatch()..start();
         await engine.executeFullRebuild(userId);
         sw.stop();
         durations.add(sw.elapsed);
+        final rss = ProcessInfo.currentRss;
+        if (rss > peakRss) peakRss = rss;
       }
 
       final sorted = _sortedDurations(durations);
@@ -223,6 +241,9 @@ void main() {
       print('p95: ${p95.inMilliseconds}ms');
       print('p99: ${p99.inMilliseconds}ms');
       print('Target: ${kFullRebuildTarget.inMilliseconds}ms');
+      print('Peak RSS (during benchmark): ${_formatMB(peakRss)}');
+      print('RSS delta from baseline: ${_formatMB(peakRss - baselineRss)}');
+      print('Max RSS (process lifetime): ${_formatMB(ProcessInfo.maxRss)}');
 
       expect(p95.inMilliseconds, lessThan(kFullRebuildTarget.inMilliseconds),
           reason:

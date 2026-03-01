@@ -8,6 +8,7 @@ import 'package:zx_golf_app/data/repositories/planning_repository.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/reference_repository.dart';
 import 'database_providers.dart';
+import 'scoring_providers.dart';
 
 // TD-03 §3.1 — One provider per repository, injecting the database.
 
@@ -15,8 +16,13 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepository(ref.watch(databaseProvider));
 });
 
+// Phase 3 — DrillRepository with EventLogRepository and ReflowEngine DI.
 final drillRepositoryProvider = Provider<DrillRepository>((ref) {
-  return DrillRepository(ref.watch(databaseProvider));
+  return DrillRepository(
+    ref.watch(databaseProvider),
+    ref.watch(eventLogRepositoryProvider),
+    ref.watch(reflowEngineProvider),
+  );
 });
 
 final practiceRepositoryProvider = Provider<PracticeRepository>((ref) {

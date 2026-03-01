@@ -79,11 +79,11 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 2B — Reflow & Lock Layer**
+> **Phase 4 — Live Practice Workflow**
 >
-> Reflow engine, scoring lock management, event log integration,
-> materialised score cache writes. Builds on Phase 2A pure scoring
-> and Phase 2.5 server foundation.
+> Session execution: start practice block, execute drill sessions,
+> record attempts, complete sets, close sessions with scoring.
+> Builds on Phase 3 drill/bag configuration.
 
 ---
 
@@ -163,7 +163,20 @@ lib/
 │   │   ├── shell_screen.dart       # Bottom nav (Plan/Track/Review)
 │   │   └── tabs/                   # Tab screens
 │   ├── drill/                      # [Phase 3] Drill browsing, creation, editing
+│   │   ├── practice_pool_screen.dart   # Main drill hub (Track tab)
+│   │   ├── drill_library_screen.dart   # System Drill catalogue (28 drills)
+│   │   ├── drill_detail_screen.dart    # View/edit drill properties + anchors
+│   │   ├── drill_create_screen.dart    # Multi-step custom drill creation
+│   │   └── widgets/
+│   │       ├── drill_card.dart         # Drill list item with skill area badge
+│   │       ├── anchor_editor.dart      # Min/Scratch/Pro field group
+│   │       └── skill_area_picker.dart  # Horizontal chip filter
 │   ├── bag/                        # [Phase 3] Golf bag configuration
+│   │   ├── bag_screen.dart             # Club list grouped by category
+│   │   ├── club_detail_screen.dart     # Edit club properties + performance
+│   │   ├── skill_area_mapping_screen.dart # Club-to-SkillArea mappings
+│   │   └── widgets/
+│   │       └── club_card.dart          # Club list item
 │   ├── practice/                   # [Phase 4] Live practice workflow
 │   ├── planning/                   # [Phase 5] Routines, Schedules, Calendar
 │   ├── review/                     # [Phase 6] SkillScore dashboard, analysis
@@ -172,7 +185,9 @@ lib/
 │   ├── database_providers.dart
 │   ├── repository_providers.dart
 │   ├── scoring_providers.dart
-│   └── sync_providers.dart         # [Phase 2.5]
+│   ├── sync_providers.dart         # [Phase 2.5]
+│   ├── drill_providers.dart        # [Phase 3] System drills, adopted drills, practice pool
+│   └── bag_providers.dart          # [Phase 3] User bag, club mappings
 └── main.dart
 
 test/
@@ -180,6 +195,8 @@ test/
 ├── core/sync/                      # [Phase 2.5] Sync engine + gate tests
 ├── data/dto/                       # [Phase 2.5] DTO round-trip tests (18 files)
 ├── data/repositories/              # Repository tests
+│   ├── drill_repository_test.dart  # [Phase 3] 33 tests: state machines, immutability, anchors
+│   └── club_repository_test.dart   # [Phase 3] 23 tests: state machines, mappings, profiles
 ├── features/                       # Feature-level tests
 ├── fixtures/                       # Shared test data builders
 │   ├── scoring_fixtures.dart
@@ -281,6 +298,7 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-01 | Phase 2A | Complete | 9 pure scoring functions, 8 test files, 91 tests. `flutter analyze` clean, 100% pass rate. No Drift imports in scoring library. |
 | 2026-03-01 | Phase 2.5 | Complete | 18 DTO files + barrel, 4 sync core files, 4 SQL migrations, Supabase init, providers. 77 unit tests + 6 server acceptance tests (all 6 TD-06 §6.4 criteria passing). `flutter analyze` clean. |
 | 2026-03-01 | Phase 2B | Complete | ReflowEngine (10-step orchestrator + bulk rebuild), RebuildGuard, ScopeResolver, ScoringRepository full impl, ReflowInstrumentation, 8 Riverpod providers, profiling harness. 253 tests passing. Scoped reflow p95=99ms (<150ms target), full rebuild p95=198ms (<1s target). `flutter analyze` clean. |
+| 2026-03-01 | Phase 3 | Complete | DrillRepository (11 business methods, state machines, immutability, anchor governance, reflow triggers), ClubRepository (9 methods, S09 §9.2.3 default/mandatory mappings), 56 repo tests (33 drill + 23 club), drill providers + bag providers, 7 drill screens/widgets (practice pool, library, detail, create, drill card, anchor editor, skill area picker), 4 bag screens/widgets (bag, club detail, skill area mapping, club card), shell integration. 317 total tests passing. `flutter analyze` clean. |
 
 ---
 

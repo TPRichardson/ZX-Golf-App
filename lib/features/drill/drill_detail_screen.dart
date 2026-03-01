@@ -1,0 +1,326 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/core/widgets/zx_button.dart';
+import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/providers/repository_providers.dart';
+
+import 'widgets/anchor_editor.dart';
+
+// Phase 3 — Drill detail screen. View/edit drill properties and anchors.
+// S04 §4.2, TD-04 §2.4 — Immutable fields read-only, anchors editable on custom drills.
+
+class DrillDetailScreen extends ConsumerStatefulWidget {
+  final String drillId;
+  final bool isCustom;
+
+  const DrillDetailScreen({
+    super.key,
+    required this.drillId,
+    required this.isCustom,
+  });
+
+  @override
+  ConsumerState<DrillDetailScreen> createState() => _DrillDetailScreenState();
+}
+
+class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
+  static const _userId = 'local-user';
+  Drill? _drill;
+  bool _isLoading = true;
+  final Map<String, ({double min, double scratch, double pro})> _editedAnchors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrill();
+  }
+
+  Future<void> _loadDrill() async {
+    final drill =
+        await ref.read(drillRepositoryProvider).getById(widget.drillId);
+    if (mounted) {
+      setState(() {
+        _drill = drill;
+        _isLoading = false;
+        if (drill != null) {
+          _parseExistingAnchors(drill.anchors);
+        }
+      });
+    }
+  }
+
+  void _parseExistingAnchors(String anchorsJson) {
+    if (anchorsJson == '{}' || anchorsJson.isEmpty) return;
+    final map = jsonDecode(anchorsJson) as Map<String, dynamic>;
+    for (final entry in map.entries) {
+      final a = entry.value as Map<String, dynamic>;
+      _editedAnchors[entry.key] = (
+        min: (a['Min'] as num).toDouble(),
+        scratch: (a['Scratch'] as num).toDouble(),
+        pro: (a['Pro'] as num).toDouble(),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: const ZxAppBar(title: 'Drill'),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_drill == null) {
+      return Scaffold(
+        appBar: const ZxAppBar(title: 'Drill'),
+        body: const Center(child: Text('Drill not found')),
+      );
+    }
+
+    final drill = _drill!;
+    final isScored = drill.drillType != DrillType.techniqueBlock;
+    final canEditAnchors =
+        widget.isCustom && drill.status == DrillStatus.active && isScored;
+
+    return Scaffold(
+      appBar: ZxAppBar(
+        title: drill.name,
+        actions: [
+          if (widget.isCustom)
+            PopupMenuButton<String>(
+              onSelected: _handleAction,
+              itemBuilder: (_) => [
+                if (drill.status == DrillStatus.active)
+                  const PopupMenuItem(
+                    value: 'retire',
+                    child: Text('Retire Drill'),
+                  ),
+                if (drill.status == DrillStatus.retired)
+                  const PopupMenuItem(
+                    value: 'reactivate',
+                    child: Text('Reactivate Drill'),
+                  ),
+                const PopupMenuItem(
+                  value: 'duplicate',
+                  child: Text('Duplicate'),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete'),
+                ),
+              ],
+            ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(SpacingTokens.md),
+        children: [
+          // Status badge.
+          _DetailRow(label: 'Status', value: drill.status.dbValue),
+          _DetailRow(label: 'Skill Area', value: drill.skillArea.dbValue),
+          _DetailRow(label: 'Drill Type', value: _drillTypeLabel(drill.drillType)),
+          _DetailRow(label: 'Input Mode', value: drill.inputMode.dbValue),
+          _DetailRow(label: 'Origin', value: drill.origin.dbValue),
+          if (drill.requiredAttemptsPerSet != null)
+            _DetailRow(
+              label: 'Attempts/Set',
+              value: '${drill.requiredAttemptsPerSet}',
+            ),
+          _DetailRow(
+            label: 'Set Count',
+            value: '${drill.requiredSetCount}',
+          ),
+          if (drill.clubSelectionMode != null)
+            _DetailRow(
+              label: 'Club Selection',
+              value: drill.clubSelectionMode!.dbValue,
+            ),
+          if (drill.targetDistanceMode != null)
+            _DetailRow(
+              label: 'Target Distance',
+              value: drill.targetDistanceMode!.dbValue,
+            ),
+
+          // Anchors section.
+          if (isScored) ...[
+            const SizedBox(height: SpacingTokens.lg),
+            Text(
+              'Anchors',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: ColorTokens.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: SpacingTokens.sm),
+            for (final entry in _editedAnchors.entries) ...[
+              AnchorEditor(
+                subskillId: entry.key,
+                subskillLabel: _formatSubskillId(entry.key),
+                minValue: entry.value.min,
+                scratchValue: entry.value.scratch,
+                proValue: entry.value.pro,
+                enabled: canEditAnchors,
+                onChanged: canEditAnchors
+                    ? (values) {
+                        setState(() {
+                          _editedAnchors[entry.key] = values;
+                        });
+                      }
+                    : null,
+              ),
+              const SizedBox(height: SpacingTokens.md),
+            ],
+            if (canEditAnchors) ...[
+              const SizedBox(height: SpacingTokens.sm),
+              ZxButton(
+                label: 'Save Anchors',
+                onPressed: _saveAnchors,
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleAction(String action) async {
+    final drillRepo = ref.read(drillRepositoryProvider);
+    final drill = _drill!;
+
+    switch (action) {
+      case 'retire':
+        await drillRepo.retireDrill(_userId, drill.drillId);
+        await _loadDrill();
+      case 'reactivate':
+        await drillRepo.reactivateDrill(_userId, drill.drillId);
+        await _loadDrill();
+      case 'duplicate':
+        await drillRepo.duplicateDrill(_userId, drill.drillId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Drill duplicated')),
+          );
+        }
+      case 'delete':
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Drill'),
+            content: const Text(
+              'This will permanently delete this drill and all associated data. This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: ColorTokens.errorDestructive),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) {
+          await drillRepo.deleteDrill(_userId, drill.drillId);
+          if (mounted) Navigator.pop(context);
+        }
+    }
+  }
+
+  Future<void> _saveAnchors() async {
+    final anchorsMap = <String, Map<String, double>>{};
+    for (final entry in _editedAnchors.entries) {
+      anchorsMap[entry.key] = {
+        'Min': entry.value.min,
+        'Scratch': entry.value.scratch,
+        'Pro': entry.value.pro,
+      };
+    }
+
+    try {
+      await ref.read(drillRepositoryProvider).updateDrill(
+            _userId,
+            widget.drillId,
+            DrillsCompanion(
+              anchors: drift.Value(jsonEncode(anchorsMap)),
+            ),
+          );
+      await _loadDrill();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Anchors saved')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  String _drillTypeLabel(DrillType type) {
+    return switch (type) {
+      DrillType.techniqueBlock => 'Technique Block',
+      DrillType.transition => 'Transition',
+      DrillType.pressure => 'Pressure',
+    };
+  }
+
+  String _formatSubskillId(String id) {
+    return id
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isNotEmpty
+            ? '${w[0].toUpperCase()}${w.substring(1)}'
+            : '')
+        .join(' ');
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: SpacingTokens.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: ColorTokens.textSecondary,
+                  ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: ColorTokens.textPrimary,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
