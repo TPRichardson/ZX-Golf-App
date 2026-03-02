@@ -79,10 +79,10 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 6 — Review: SkillScore & Analysis**
+> **Phase 7B — Sync Merge Algorithm**
 >
-> SkillScore dashboard, analysis views.
-> Builds on Phase 5 planning layer.
+> LWW merge algorithm, conflict resolution.
+> Builds on Phase 7A sync transport & orchestration.
 
 ---
 
@@ -111,14 +111,17 @@ lib/
 │   │   ├── reflow_engine.dart       # [Phase 2B] 10-step orchestrator
 │   │   ├── rebuild_guard.dart       # [Phase 2B] In-memory mutex
 │   │   └── scope_resolver.dart      # [Phase 2B] Trigger scope determination
-│   ├── sync/                       # [Phase 2.5] Sync engine
+│   ├── sync/                       # [Phase 2.5+7A] Sync engine + orchestration
 │   │   ├── sync_types.dart
 │   │   ├── sync_write_gate.dart
 │   │   ├── auth_service.dart
 │   │   ├── sync_engine.dart
+│   │   ├── connectivity_monitor.dart # [Phase 7A] Connectivity stream wrapper
+│   │   ├── sync_orchestrator.dart    # [Phase 7A] Trigger coordination
 │   │   └── merge_algorithm.dart    # [Phase 7B]
-│   ├── instrumentation/            # [Phase 2B] Logging, diagnostics, profiling
-│   │   └── reflow_diagnostics.dart  # ReflowDiagnostic, ReflowInstrumentation
+│   ├── instrumentation/            # [Phase 2B+7A] Logging, diagnostics, profiling
+│   │   ├── reflow_diagnostics.dart  # ReflowDiagnostic, ReflowInstrumentation
+│   │   └── sync_diagnostics.dart    # [Phase 7A] SyncDiagnostic, SyncInstrumentation
 │   └── services/                   # [Phase 4] TimerService, shared services
 ├── data/
 │   ├── enums.dart                  # 21 enum types with TEXT serialisation
@@ -220,15 +223,35 @@ lib/
 │   │       ├── criterion_editor.dart             # Generation criterion form
 │   │       └── template_day_editor.dart          # DayPlanning per-day editor
 │   ├── review/                     # [Phase 6] SkillScore dashboard, analysis
+│   │   ├── screens/
+│   │   │   ├── review_dashboard_screen.dart  # Overall Score + heatmap + trend + CTA
+│   │   │   ├── analysis_screen.dart          # Filter row + chart toggle + charts
+│   │   │   ├── window_detail_screen.dart     # Ordered entries for single window
+│   │   │   ├── subskill_detail_screen.dart   # Transition + Pressure windows
+│   │   │   ├── weakness_ranking_screen.dart  # Ranked subskills by WeaknessIndex
+│   │   │   ├── session_history_screen.dart   # All sessions for a drill
+│   │   │   ├── session_detail_screen.dart    # Single session breakdown
+│   │   │   └── plan_adherence_screen.dart    # Weekly/monthly adherence rollups
+│   │   └── widgets/
+│   │       ├── overall_score_display.dart     # 0–1000 score with tabular numerals
+│   │       ├── skill_area_heatmap.dart        # 7 tiles, grey-to-green opacity
+│   │       ├── skill_area_tile.dart           # Single heatmap tile
+│   │       ├── subskill_breakdown.dart        # Expanded subskill rows
+│   │       ├── trend_snapshot.dart            # Compact sparkline + last value
+│   │       ├── plan_adherence_badge.dart      # Headline % on Dashboard
+│   │       ├── performance_chart.dart         # Line chart (0–5 score trends)
+│   │       ├── volume_chart.dart              # Stacked bar chart (session counts)
+│   │       └── analysis_filters.dart          # Scope, DrillType, Resolution filters
 │   └── settings/                   # [Phase 8] Settings screens
 ├── providers/                      # Riverpod providers by domain
 │   ├── database_providers.dart
 │   ├── repository_providers.dart
 │   ├── scoring_providers.dart
-│   ├── sync_providers.dart         # [Phase 2.5]
+│   ├── sync_providers.dart         # [Phase 2.5+7A] Sync engine, orchestrator, connectivity, instrumentation
 │   ├── drill_providers.dart        # [Phase 3] System drills, adopted drills, practice pool
 │   ├── bag_providers.dart          # [Phase 3] User bag, club mappings
-│   └── planning_providers.dart     # [Phase 5] Routines, schedules, calendar, PlanningActions
+│   ├── planning_providers.dart     # [Phase 5] Routines, schedules, calendar, PlanningActions
+│   └── review_providers.dart      # [Phase 6] Heatmap, window detail, weakness, sessions, adherence
 └── main.dart
 
 test/
@@ -342,6 +365,8 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-01 | Phase 3 | Complete | DrillRepository (11 business methods, state machines, immutability, anchor governance, reflow triggers), ClubRepository (9 methods, S09 §9.2.3 default/mandatory mappings), 56 repo tests (33 drill + 23 club), drill providers + bag providers, 7 drill screens/widgets (practice pool, library, detail, create, drill card, anchor editor, skill area picker), 4 bag screens/widgets (bag, club detail, skill area mapping, club card), shell integration. 317 total tests passing. `flutter analyze` clean. |
 | 2026-03-01 | Phase 4 | Complete | TimerService (2h/4h with suspend/resume), PracticeRepository (18 business methods, TD-04 state machine guards), practice providers + PracticeActions coordination, SessionExecutionController (structured/unstructured/technique completion, real-time scoring), 7 execution screens (grid cell, continuous measurement, raw data entry, binary hit/miss, technique block, practice queue, post-session summary), 4 widgets (execution header, club selector, score flash, practice entry card), practice router, session close pipeline integration (<200ms), post-close editing with reflow. 388 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 5 | Complete | PlanningRepository (slot management, routine/schedule lifecycle, cascade deletions), Slot model + planning types, CompletionMatcher (session→slot matching with overflow), RoutineApplicator, ScheduleApplicator (List/DayPlanning modes), WeaknessDetectionEngine (WeaknessIndex ranking, 4 selection modes), planning providers + PlanningActions coordination, Calendar UI (3-day/2-week toggle, day detail, slot tiles, adherence badge), Routine UI (list/create/detail/apply), Schedule UI (list/create/detail/apply, template day editor), criterion editor, drill deletion cascade to routines/schedules. 102 planning tests, 490 total tests passing. `flutter analyze` clean. |
+| 2026-03-02 | Phase 6 | Complete | Review providers (heatmap opacity, window detail parser, weakness ranking, sessions, plan adherence), Dashboard (Overall Score, Skill Area heatmap with accordion, subskill breakdown, trend snapshot, plan adherence badge), Window Detail (parsed entries, roll-off boundary, saturation header), Subskill Detail (Transition + Pressure windows), Weakness Ranking (ranked subskills with WI, allocation, saturation), Analysis tab (filter row with Scope/DrillType/Resolution/DateRange, Performance line chart with rolling overlay via fl\_chart, Volume stacked bar by SkillArea), Session History (variance tracking with SD RAG thresholds, confidence levels), Session Detail, Plan Adherence (weekly/monthly rollups, SkillArea breakdown), Review tab dual-tab shell (Dashboard \| Analysis). 41 review tests, 531 total tests passing. `flutter analyze` clean. |
+| 2026-03-02 | Phase 7A | Complete | ConnectivityMonitor (stream-based with injectable test stream), SyncOrchestrator (periodic 5min timer, connectivity-restored trigger, post-session trigger, 500ms debounce, auth guard, feature flag guard), SyncEngine enhancements (payload batching with 2MB limit and parent-before-child ordering, SyncDiagnostics injection, consecutive failure counter with auto-disable at 5, feature flag toggle, setOffline), SyncMetadataKeys constants, SyncInstrumentation (follows ReflowInstrumentation pattern), post-session sync trigger in PracticeActions, shell lifecycle wiring, 6 new Riverpod providers. 58 new tests, 589 total tests passing. `flutter analyze` clean. |
 
 ---
 

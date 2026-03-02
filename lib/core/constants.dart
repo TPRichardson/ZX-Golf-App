@@ -83,3 +83,16 @@ const kPracticeBlockAutoEndTimeout = Duration(hours: 4);
 
 // S08 §8.13.1 — Default slot capacity for new calendar days.
 const kDefaultSlotCapacity = 5;
+
+// ---------------------------------------------------------------------------
+// Phase 7A — Sync Transport & Orchestration constants
+// ---------------------------------------------------------------------------
+
+// TD-03 §5.1 — Periodic sync interval.
+const kSyncPeriodicInterval = Duration(minutes: 5);
+
+// TD-07 §6.1.1 — Debounce window for rapid triggers.
+const kSyncDebounceWindow = Duration(milliseconds: 500);
+
+// TD-03 §5.2 — Maximum upload payload size in bytes (2MB).
+const kSyncMaxPayloadBytes = 2 * 1024 * 1024;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
 import 'tabs/review_tab.dart';
@@ -22,6 +23,22 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     TrackTab(),
     ReviewTab(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Phase 7A — Start sync orchestrator on app launch.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(syncOrchestratorProvider).start();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Phase 7A — Stop sync orchestrator on shell dispose.
+    ref.read(syncOrchestratorProvider).stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

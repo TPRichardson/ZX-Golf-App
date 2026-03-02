@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
 import 'package:zx_golf_app/core/services/timer_service.dart';
+import 'package:zx_golf_app/core/sync/sync_orchestrator.dart';
+import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
@@ -13,6 +15,7 @@ import 'package:zx_golf_app/features/planning/completion_matching.dart';
 
 import 'planning_providers.dart';
 import 'repository_providers.dart';
+import 'sync_providers.dart';
 
 /// S13 §13.5.3 — Singleton TimerService.
 final timerServiceProvider = Provider<TimerService>((ref) {
@@ -51,8 +54,14 @@ class PracticeActions {
   final PracticeRepository _repo;
   final TimerService _timerService;
   final CompletionMatcher _completionMatcher;
+  final SyncOrchestrator? _syncOrchestrator;
 
-  PracticeActions(this._repo, this._timerService, this._completionMatcher);
+  PracticeActions(
+    this._repo,
+    this._timerService,
+    this._completionMatcher, [
+    this._syncOrchestrator,
+  ]);
 
   /// S13 §13.2 — Start a new practice block with optional initial drills.
   Future<PracticeBlock> startPracticeBlock(
@@ -118,8 +127,16 @@ class PracticeActions {
       _timerService.cancelSessionTimer(sessionId);
 
       // S08 §8.3.2 — Completion matching: auto-match to CalendarDay slots.
-      await _completionMatcher.executeCompletionMatching(
-        result.sessionId, result.drillId, userId, DateTime.now());
+      // Non-critical: session scoring is complete; don't block endSession on matching failure.
+      try {
+        await _completionMatcher.executeCompletionMatching(
+          result.sessionId, result.drillId, userId, DateTime.now());
+      } catch (_) {
+        // Completion matching is best-effort; session result is already saved.
+      }
+
+      // Phase 7A — Post-session sync trigger (TD-03 §5.1).
+      _syncOrchestrator?.requestSync(SyncTrigger.postSession);
 
       return result;
     } finally {
@@ -132,6 +149,37 @@ class PracticeActions {
     await _repo.endPracticeBlock(pbId, userId);
     _timerService.cancelBlockTimer(pbId);
     _timerService.cancelAll();
+
+    // Phase 7A — Post-block sync trigger (TD-03 §5.1).
+    _syncOrchestrator?.requestSync(SyncTrigger.postSession);
+  }
+
+  /// Discard an entire practice block: cancel timers, discard any active
+  /// session, then end (which hard-deletes pending entries and soft-deletes
+  /// the block when no completed sessions remain).
+  Future<void> discardPracticeBlock(String pbId, String userId) async {
+    _timerService.cancelAll();
+
+    // Discard active session if one exists.
+    final activeSession = await _repo.getActiveSessionInBlock(pbId);
+    if (activeSession != null) {
+      final entry =
+          await _repo.getPracticeEntryBySessionId(activeSession.sessionId);
+      if (entry != null) {
+        await _repo.discardSession(entry.practiceEntryId);
+      }
+    }
+
+    // Remove completed sessions (soft-delete + reflow).
+    final entries = await _repo.getPracticeEntriesByBlock(pbId);
+    for (final entry in entries) {
+      if (entry.entryType == PracticeEntryType.completedSession) {
+        await _repo.removeCompletedEntry(entry.practiceEntryId, userId);
+      }
+    }
+
+    // End the block (soft-deletes since no completed sessions remain).
+    await _repo.endPracticeBlock(pbId, userId);
   }
 
   /// Discard a session and cancel its timer.
@@ -195,12 +243,14 @@ class PracticeActions {
   }
 }
 
-/// Phase 4+5 — Provider for PracticeActions coordinator.
+/// Phase 4+5+7A — Provider for PracticeActions coordinator.
 /// Injects CompletionMatcher for S08 §8.3.2 slot matching.
+/// Injects SyncOrchestrator for TD-03 §5.1 post-session sync trigger.
 final practiceActionsProvider = Provider<PracticeActions>((ref) {
   return PracticeActions(
     ref.watch(practiceRepositoryProvider),
     ref.watch(timerServiceProvider),
     ref.watch(completionMatcherProvider),
+    ref.watch(syncOrchestratorProvider),
   );
 });

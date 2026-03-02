@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/error_types.dart';
+import 'package:zx_golf_app/core/instrumentation/sync_diagnostics.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/dto/sync_dto.dart';
 import 'sync_types.dart';
@@ -13,6 +15,7 @@ import 'sync_write_gate.dart';
 
 // TD-03 §5.1 — Sync engine. Orchestrates upload/download cycles.
 // Phase 2.5: basic upload/download with stub merge (insert-only).
+// Phase 7A: batching, diagnostics, failure tracking, feature flag.
 // Full LWW merge deferred to Phase 7B.
 
 class SyncEngine {
@@ -21,6 +24,7 @@ class SyncEngine {
   // Phase 7B — gate checked before repository writes during sync merge.
   // ignore: unused_field
   final SyncWriteGate _gate;
+  final SyncInstrumentation? _diagnostics;
 
   final _statusController = StreamController<SyncStatus>.broadcast();
   SyncStatus _currentStatus = SyncStatus.idle;
@@ -32,7 +36,21 @@ class SyncEngine {
   Completer<SyncResult>? _activeSyncCompleter;
   bool _pendingSync = false;
 
-  SyncEngine(this._supabase, this._db, this._gate);
+  // TD-07 §6.2 — Consecutive failure counter.
+  int _consecutiveFailures = 0;
+  bool _failuresLoaded = false;
+
+  // TD-03 §5.1 — Feature flag: enable/disable sync.
+  bool _syncEnabled = true;
+  bool _syncEnabledLoaded = false;
+
+  /// TD-07 §6.2 — Current consecutive failure count.
+  int get consecutiveFailures => _consecutiveFailures;
+
+  /// TD-03 §5.1 — Whether sync is enabled.
+  bool get syncEnabled => _syncEnabled;
+
+  SyncEngine(this._supabase, this._db, this._gate, [this._diagnostics]);
 
   /// TD-03 §5.1 — Stream of sync status changes.
   Stream<SyncStatus> getSyncStatus() => _statusController.stream;
@@ -40,7 +58,7 @@ class SyncEngine {
   /// TD-03 §5.1 — Read last sync timestamp from SyncMetadata.
   Future<DateTime?> getLastSyncTimestamp() async {
     final row = await (_db.select(_db.syncMetadataEntries)
-          ..where((t) => t.key.equals('lastSyncTimestamp')))
+          ..where((t) => t.key.equals(SyncMetadataKeys.lastSyncTimestamp)))
         .getSingleOrNull();
     if (row == null) return null;
     return DateTime.parse(row.value);
@@ -51,8 +69,49 @@ class SyncEngine {
     return triggerSync(reason: SyncTrigger.forceFullSync);
   }
 
+  /// TD-07 §6.2 — Set sync enabled/disabled and persist.
+  Future<void> setSyncEnabled(bool enabled) async {
+    _syncEnabled = enabled;
+    _syncEnabledLoaded = true;
+    await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
+          SyncMetadataEntriesCompanion.insert(
+            key: SyncMetadataKeys.syncEnabled,
+            value: enabled.toString(),
+          ),
+        );
+  }
+
+  /// TD-07 §6.2 — Reset failure counter to 0, re-enable sync, persist.
+  Future<void> resetFailureCounter() async {
+    _consecutiveFailures = 0;
+    _syncEnabled = true;
+    await _persistConsecutiveFailures();
+    await setSyncEnabled(true);
+  }
+
+  /// S17 §17.4 — Set offline/online status.
+  void setOffline(bool offline) {
+    if (offline) {
+      _setStatus(SyncStatus.offline);
+    } else if (_currentStatus == SyncStatus.offline) {
+      _setStatus(SyncStatus.idle);
+    }
+  }
+
   /// TD-03 §5.1 — Trigger a sync cycle with coalescing mutex.
   Future<SyncResult> triggerSync({required SyncTrigger reason}) async {
+    // TD-07 §6.2 — Load persisted state on first use.
+    await _ensureStateLoaded();
+
+    // TD-03 §5.1 — Short-circuit if sync disabled.
+    if (!_syncEnabled) {
+      return SyncResult.failure(
+        errorCode: SyncException.networkUnavailable,
+        errorMessage:
+            'Sync disabled after $kSyncMaxConsecutiveFailures consecutive failures',
+      );
+    }
+
     // TD-07 §6.1.1 — If a sync is active, coalesce into pending.
     if (_activeSyncCompleter != null) {
       _pendingSync = true;
@@ -85,7 +144,12 @@ class SyncEngine {
   }
 
   Future<SyncResult> _executeSyncCycle(SyncTrigger reason) async {
+    final cycleStart = DateTime.now();
     _setStatus(SyncStatus.inProgress);
+    _diagnostics?.emit('sync_cycle_start', Duration.zero, {
+      'trigger': reason.name,
+      'consecutiveFailures': _consecutiveFailures,
+    });
 
     try {
       final lastSync = reason == SyncTrigger.forceFullSync
@@ -96,27 +160,45 @@ class SyncEngine {
       final payload = await _buildUploadPayload(lastSync);
       final deviceId = await _getOrCreateDeviceId();
 
-      // Step 2: Upload with retry
-      final uploadResponse = await _callWithRetry(
-        () => _supabase.rpc('sync_upload', params: {
-          'schema_version': kSyncSchemaVersion,
-          'device_id': deviceId,
-          'changes': payload,
-        }),
-      );
+      // Step 2: Batch and upload with retry
+      final batches = batchPayload(payload);
+      final uploadStart = DateTime.now();
+      int totalUploaded = 0;
+      dynamic lastUploadResponse;
 
-      if (uploadResponse is Map && uploadResponse['success'] != true) {
-        final errorCode = uploadResponse['error_code'] as String?;
-        if (errorCode == 'SCHEMA_VERSION_MISMATCH') {
-          _setStatus(SyncStatus.failed);
-          throw SyncException(
-            code: SyncException.schemaMismatch,
-            message: 'Server requires different schema version',
-          );
+      for (final batch in batches) {
+        lastUploadResponse = await _callWithRetry(
+          () => _supabase.rpc('sync_upload', params: {
+            'schema_version': kSyncSchemaVersion,
+            'device_id': deviceId,
+            'changes': batch,
+          }),
+        );
+
+        if (lastUploadResponse is Map &&
+            lastUploadResponse['success'] != true) {
+          final errorCode = lastUploadResponse['error_code'] as String?;
+          if (errorCode == 'SCHEMA_VERSION_MISMATCH') {
+            _setStatus(SyncStatus.failed);
+            throw SyncException(
+              code: SyncException.schemaMismatch,
+              message: 'Server requires different schema version',
+            );
+          }
         }
+
+        totalUploaded += batch.values
+            .fold<int>(0, (sum, list) => sum + list.length);
       }
 
+      final uploadDuration = DateTime.now().difference(uploadStart);
+      _diagnostics?.emit('sync_upload_complete', uploadDuration, {
+        'uploadedCount': totalUploaded,
+        'batchCount': batches.length,
+      });
+
       // Step 3: Download with retry
+      final downloadStart = DateTime.now();
       final downloadResponse = await _callWithRetry(
         () => _supabase.rpc('sync_download', params: {
           'schema_version': kSyncSchemaVersion,
@@ -131,41 +213,236 @@ class SyncEngine {
             await _applyDownloadedChanges(downloadResponse['changes'] as Map);
       }
 
+      final downloadDuration = DateTime.now().difference(downloadStart);
+      _diagnostics?.emit('sync_download_complete', downloadDuration, {
+        'downloadedCount': downloadedCount,
+      });
+
       // Step 5: Update last sync timestamp
-      final serverTimestamp = uploadResponse is Map
+      final serverTimestamp = lastUploadResponse is Map
           ? DateTime.parse(
-              uploadResponse['server_timestamp'] as String? ??
+              lastUploadResponse['server_timestamp'] as String? ??
                   DateTime.now().toUtc().toIso8601String())
           : DateTime.now().toUtc();
 
       await _updateLastSyncTimestamp(serverTimestamp);
 
+      // TD-07 §6.2 — Reset failure counter on success.
+      _consecutiveFailures = 0;
+      await _persistConsecutiveFailures();
+
       _setStatus(SyncStatus.idle);
 
-      final rejectedRows = uploadResponse is Map
-          ? (uploadResponse['rejected_rows'] as List?)
+      final rejectedRows = lastUploadResponse is Map
+          ? (lastUploadResponse['rejected_rows'] as List?)
                   ?.cast<Map<String, dynamic>>() ??
               []
           : <Map<String, dynamic>>[];
 
+      final totalDuration = DateTime.now().difference(cycleStart);
+      final payloadBytes = _estimatePayloadBytes(payload);
+      _diagnostics?.emitCycleSummary(
+        trigger: reason,
+        totalDuration: totalDuration,
+        success: true,
+        uploadedCount: totalUploaded,
+        downloadedCount: downloadedCount,
+        payloadBytes: payloadBytes,
+        batchCount: batches.length,
+        consecutiveFailures: 0,
+      );
+
       return SyncResult.success(
         serverTimestamp: serverTimestamp,
-        uploadedCount: payload.values
-            .fold<int>(0, (sum, list) => sum + (list as List).length),
+        uploadedCount: totalUploaded,
         downloadedCount: downloadedCount,
         rejectedRows: rejectedRows,
       );
     } on SyncException {
+      await _incrementFailureCounter();
       _setStatus(SyncStatus.failed);
+
+      final totalDuration = DateTime.now().difference(cycleStart);
+      _diagnostics?.emitCycleSummary(
+        trigger: reason,
+        totalDuration: totalDuration,
+        success: false,
+        consecutiveFailures: _consecutiveFailures,
+        errorCode: 'SyncException',
+      );
+
       rethrow;
     } catch (e) {
+      await _incrementFailureCounter();
       _setStatus(SyncStatus.failed);
+
+      final totalDuration = DateTime.now().difference(cycleStart);
+      _diagnostics?.emitCycleSummary(
+        trigger: reason,
+        totalDuration: totalDuration,
+        success: false,
+        consecutiveFailures: _consecutiveFailures,
+        errorCode: SyncException.uploadFailed,
+      );
+
       throw SyncException(
         code: SyncException.uploadFailed,
         message: 'Sync cycle failed: $e',
       );
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // TD-03 §5.2 — Payload batching
+  // ---------------------------------------------------------------------------
+
+  /// TD-03 §5.2 — Table upload ordering: parent tables before child tables.
+  static const tableUploadOrder = [
+    'User',
+    'Drill',
+    'PracticeBlock',
+    'Session',
+    'Set',
+    'Instance',
+    'PracticeEntry',
+    'UserDrillAdoption',
+    'UserClub',
+    'ClubPerformanceProfile',
+    'UserSkillAreaClubMapping',
+    'Routine',
+    'Schedule',
+    'CalendarDay',
+    'RoutineInstance',
+    'ScheduleInstance',
+    'EventLog',
+    'UserDevice',
+  ];
+
+  /// TD-03 §5.2 — Split payload into batches respecting 2MB limit.
+  /// Parent tables come before child tables. Never splits mid-table.
+  @visibleForTesting
+  List<Map<String, List<Map<String, dynamic>>>> batchPayload(
+    Map<String, List<Map<String, dynamic>>> payload,
+  ) => staticBatchPayload(payload);
+
+  /// Static version for direct testing without SyncEngine instance.
+  @visibleForTesting
+  static List<Map<String, List<Map<String, dynamic>>>> staticBatchPayload(
+    Map<String, List<Map<String, dynamic>>> payload,
+  ) {
+    if (payload.isEmpty) return [payload];
+
+    final totalBytes = _estimatePayloadBytes(payload);
+    if (totalBytes <= kSyncMaxPayloadBytes) return [payload];
+
+    // Sort tables by upload order.
+    final orderedKeys = payload.keys.toList()
+      ..sort((a, b) {
+        final indexA = tableUploadOrder.indexOf(a);
+        final indexB = tableUploadOrder.indexOf(b);
+        return (indexA == -1 ? 999 : indexA)
+            .compareTo(indexB == -1 ? 999 : indexB);
+      });
+
+    final batches = <Map<String, List<Map<String, dynamic>>>>[];
+    var currentBatch = <String, List<Map<String, dynamic>>>{};
+    var currentSize = 0;
+
+    for (final table in orderedKeys) {
+      final rows = payload[table]!;
+      final tableSize = _estimateTableBytes(table, rows);
+
+      if (currentBatch.isNotEmpty &&
+          currentSize + tableSize > kSyncMaxPayloadBytes) {
+        batches.add(currentBatch);
+        currentBatch = {};
+        currentSize = 0;
+      }
+
+      currentBatch[table] = rows;
+      currentSize += tableSize;
+    }
+
+    if (currentBatch.isNotEmpty) {
+      batches.add(currentBatch);
+    }
+
+    return batches.isEmpty ? [{}] : batches;
+  }
+
+  /// Estimate payload size in bytes (UTF-8 approximation via jsonEncode).
+  static int _estimatePayloadBytes(
+      Map<String, List<Map<String, dynamic>>> payload) {
+    if (payload.isEmpty) return 2; // '{}'
+    return jsonEncode(payload).length;
+  }
+
+  /// Estimate size of a single table's data.
+  static int _estimateTableBytes(
+      String table, List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return table.length + 4; // '"Table":[]'
+    return jsonEncode({table: rows}).length;
+  }
+
+  // ---------------------------------------------------------------------------
+  // TD-07 §6.2 — Consecutive failure tracking
+  // ---------------------------------------------------------------------------
+
+  /// Lazy-load persisted state from SyncMetadata.
+  Future<void> _ensureStateLoaded() async {
+    if (!_failuresLoaded) {
+      final row = await (_db.select(_db.syncMetadataEntries)
+            ..where(
+                (t) => t.key.equals(SyncMetadataKeys.consecutiveFailures)))
+          .getSingleOrNull();
+      if (row != null) {
+        _consecutiveFailures = int.tryParse(row.value) ?? 0;
+      }
+      _failuresLoaded = true;
+    }
+    if (!_syncEnabledLoaded) {
+      final row = await (_db.select(_db.syncMetadataEntries)
+            ..where((t) => t.key.equals(SyncMetadataKeys.syncEnabled)))
+          .getSingleOrNull();
+      if (row != null) {
+        _syncEnabled = row.value == 'true';
+      }
+      _syncEnabledLoaded = true;
+    }
+  }
+
+  /// Increment failure counter and auto-disable at threshold.
+  Future<void> _incrementFailureCounter() async {
+    _consecutiveFailures++;
+    await _persistConsecutiveFailures();
+
+    // TD-07 §6.2 — Auto-disable sync after kSyncMaxConsecutiveFailures.
+    if (_consecutiveFailures >= kSyncMaxConsecutiveFailures) {
+      _syncEnabled = false;
+      await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
+            SyncMetadataEntriesCompanion.insert(
+              key: SyncMetadataKeys.syncEnabled,
+              value: 'false',
+            ),
+          );
+      debugPrint(
+          '[SyncEngine] Auto-disabled: $_consecutiveFailures consecutive failures');
+    }
+  }
+
+  /// Persist failure count to SyncMetadata.
+  Future<void> _persistConsecutiveFailures() async {
+    await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
+          SyncMetadataEntriesCompanion.insert(
+            key: SyncMetadataKeys.consecutiveFailures,
+            value: _consecutiveFailures.toString(),
+          ),
+        );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Payload building (unchanged from Phase 2.5)
+  // ---------------------------------------------------------------------------
 
   /// Build the upload payload: query each synced table for changes since lastSync.
   Future<Map<String, List<Map<String, dynamic>>>> _buildUploadPayload(
@@ -451,14 +728,14 @@ class SyncEngine {
   /// Read or create a device ID in SyncMetadata.
   Future<String> _getOrCreateDeviceId() async {
     final row = await (_db.select(_db.syncMetadataEntries)
-          ..where((t) => t.key.equals('deviceId')))
+          ..where((t) => t.key.equals(SyncMetadataKeys.deviceId)))
         .getSingleOrNull();
     if (row != null) return row.value;
 
     final deviceId = const Uuid().v4();
     await _db.into(_db.syncMetadataEntries).insert(
           SyncMetadataEntriesCompanion.insert(
-            key: 'deviceId',
+            key: SyncMetadataKeys.deviceId,
             value: deviceId,
           ),
         );
@@ -469,7 +746,7 @@ class SyncEngine {
   Future<void> _updateLastSyncTimestamp(DateTime timestamp) async {
     await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
           SyncMetadataEntriesCompanion.insert(
-            key: 'lastSyncTimestamp',
+            key: SyncMetadataKeys.lastSyncTimestamp,
             value: timestamp.toUtc().toIso8601String(),
           ),
         );

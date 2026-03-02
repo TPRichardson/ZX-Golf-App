@@ -17,6 +17,14 @@ enum SyncTrigger {
   forceFullSync,
 }
 
+/// TD-03 §5.1 — Sync feature flag keys stored in SyncMetadata.
+class SyncMetadataKeys {
+  static const deviceId = 'deviceId';
+  static const lastSyncTimestamp = 'lastSyncTimestamp';
+  static const consecutiveFailures = 'consecutiveFailures';
+  static const syncEnabled = 'syncEnabled';
+}
+
 /// TD-03 §5.1 — Result of a sync cycle.
 class SyncResult {
   final bool success;
