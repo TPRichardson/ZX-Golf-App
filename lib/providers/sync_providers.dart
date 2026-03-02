@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zx_golf_app/core/instrumentation/sync_diagnostics.dart';
 import 'package:zx_golf_app/core/sync/auth_service.dart';
 import 'package:zx_golf_app/core/sync/connectivity_monitor.dart';
+import 'package:zx_golf_app/core/sync/storage_monitor.dart';
 import 'package:zx_golf_app/core/sync/sync_engine.dart';
 import 'package:zx_golf_app/core/sync/sync_orchestrator.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
@@ -70,8 +71,51 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
   return ref.watch(authServiceProvider).watchAuthState();
 });
 
-/// Phase 7A — Whether sync is enabled (reactive).
-final syncEnabledProvider = StateProvider<bool>((ref) => true);
+/// Phase 7C — Whether sync is enabled (reads from engine). TD-07 §6.2.
+final syncEnabledProvider = Provider<bool>((ref) {
+  ref.watch(syncStatusProvider); // Recompute on status change.
+  return ref.read(syncEngineProvider).syncEnabled;
+});
 
-/// Phase 7A — Consecutive failure count (reactive).
-final syncFailureCountProvider = StateProvider<int>((ref) => 0);
+/// Phase 7C — Consecutive failure count (reads from engine). TD-07 §6.2.
+final syncFailureCountProvider = Provider<int>((ref) {
+  ref.watch(syncStatusProvider); // Recompute on status change.
+  return ref.read(syncEngineProvider).consecutiveFailures;
+});
+
+/// Phase 7C — Consecutive merge timeout count. TD-07 §6.2.
+final consecutiveMergeTimeoutsProvider = Provider<int>((ref) {
+  ref.watch(syncStatusProvider);
+  return ref.read(syncEngineProvider).consecutiveMergeTimeouts;
+});
+
+/// Phase 7C — Connectivity status stream.
+final connectivityStatusProvider = StreamProvider<bool>((ref) {
+  return ref.watch(connectivityMonitorProvider).onConnectivityChanged;
+});
+
+/// Phase 7C — Last sync timestamp from engine.
+final lastSyncTimestampProvider = FutureProvider<DateTime?>((ref) {
+  return ref.watch(syncEngineProvider).getLastSyncTimestamp();
+});
+
+/// Phase 7C — Schema mismatch detection flag. TD-07 §6.4.
+final schemaMismatchDetectedProvider = Provider<bool>((ref) {
+  ref.watch(syncStatusProvider);
+  return ref.read(syncEngineProvider).schemaMismatchDetected;
+});
+
+/// Phase 7C — Dual active session detection stream.
+final dualActiveSessionProvider = StreamProvider<String>((ref) {
+  return ref.watch(syncEngineProvider).onDualActiveSessionDetected;
+});
+
+/// Phase 7C — StorageMonitor singleton.
+final storageMonitorProvider = Provider<StorageMonitor>((ref) {
+  return StorageMonitor();
+});
+
+/// Phase 7C — Whether device storage is low.
+final isStorageLowProvider = FutureProvider<bool>((ref) {
+  return ref.watch(storageMonitorProvider).isStorageLow();
+});

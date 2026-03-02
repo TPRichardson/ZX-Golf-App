@@ -46,11 +46,37 @@ class SyncEngine {
   bool _syncEnabled = true;
   bool _syncEnabledLoaded = false;
 
+  // Phase 7C — Merge timeout counter (transient, not persisted). TD-07 §6.2.
+  int _consecutiveMergeTimeouts = 0;
+
+  // Phase 7C — Schema mismatch persistent flag. TD-07 §6.4.
+  bool _schemaMismatchDetected = false;
+  bool _schemaMismatchLoaded = false;
+
+  // Phase 7C — Last error code from most recent failure.
+  String? _lastErrorCode;
+
+  // Phase 7C — Dual active session detection stream.
+  final _dualActiveSessionController = StreamController<String>.broadcast();
+
   /// TD-07 §6.2 — Current consecutive failure count.
   int get consecutiveFailures => _consecutiveFailures;
 
   /// TD-03 §5.1 — Whether sync is enabled.
   bool get syncEnabled => _syncEnabled;
+
+  /// Phase 7C — Current consecutive merge timeout count. TD-07 §6.2.
+  int get consecutiveMergeTimeouts => _consecutiveMergeTimeouts;
+
+  /// Phase 7C — Whether a schema mismatch has been detected. TD-07 §6.4.
+  bool get schemaMismatchDetected => _schemaMismatchDetected;
+
+  /// Phase 7C — Last error code from most recent failure, null if last cycle succeeded.
+  String? get lastErrorCode => _lastErrorCode;
+
+  /// Phase 7C — Stream emitting conflicting practiceBlockId when dual active sessions detected.
+  Stream<String> get onDualActiveSessionDetected =>
+      _dualActiveSessionController.stream;
 
   SyncEngine(this._supabase, this._db, this._gate,
       [this._diagnostics, this._reflowEngine]);
@@ -232,7 +258,14 @@ class SyncEngine {
 
       // TD-07 §6.2 — Reset failure counter on success.
       _consecutiveFailures = 0;
+      _consecutiveMergeTimeouts = 0;
+      _lastErrorCode = null;
       await _persistConsecutiveFailures();
+
+      // Phase 7C — Clear schema mismatch on successful sync. TD-07 §6.4.
+      if (_schemaMismatchDetected) {
+        await _setSchemaMismatchDetected(false);
+      }
 
       _setStatus(SyncStatus.idle);
 
@@ -261,8 +294,19 @@ class SyncEngine {
         downloadedCount: downloadedCount,
         rejectedRows: rejectedRows,
       );
-    } on SyncException {
-      await _incrementFailureCounter();
+    } on SyncException catch (e) {
+      // Phase 7C — Route exception by code per TD-07 §6.2/§6.4.
+      if (e.code == SyncException.schemaMismatch) {
+        // TD-07 §6.4 — Schema mismatch: do NOT increment failure counter.
+        await _setSchemaMismatchDetected(true);
+      } else if (e.code == SyncException.mergeTimeout) {
+        // TD-07 §6.2 — Timeout: increment timeout counter, not failure counter.
+        _consecutiveMergeTimeouts++;
+      } else {
+        await _incrementFailureCounter();
+        _consecutiveMergeTimeouts = 0; // Reset timeout counter on non-timeout failure.
+      }
+      _lastErrorCode = e.code;
       _setStatus(SyncStatus.failed);
 
       final totalDuration = DateTime.now().difference(cycleStart);
@@ -271,7 +315,7 @@ class SyncEngine {
         totalDuration: totalDuration,
         success: false,
         consecutiveFailures: _consecutiveFailures,
-        errorCode: 'SyncException',
+        errorCode: e.code,
       );
 
       rethrow;
@@ -412,6 +456,17 @@ class SyncEngine {
       }
       _syncEnabledLoaded = true;
     }
+    // Phase 7C — Load schema mismatch flag. TD-07 §6.4.
+    if (!_schemaMismatchLoaded) {
+      final row = await (_db.select(_db.syncMetadataEntries)
+            ..where(
+                (t) => t.key.equals(SyncMetadataKeys.schemaMismatchDetected)))
+          .getSingleOrNull();
+      if (row != null) {
+        _schemaMismatchDetected = row.value == 'true';
+      }
+      _schemaMismatchLoaded = true;
+    }
   }
 
   /// Increment failure counter and auto-disable at threshold.
@@ -431,6 +486,18 @@ class SyncEngine {
       debugPrint(
           '[SyncEngine] Auto-disabled: $_consecutiveFailures consecutive failures');
     }
+  }
+
+  /// Phase 7C — Persist schema mismatch flag to SyncMetadata. TD-07 §6.4.
+  Future<void> _setSchemaMismatchDetected(bool detected) async {
+    _schemaMismatchDetected = detected;
+    _schemaMismatchLoaded = true;
+    await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
+          SyncMetadataEntriesCompanion.insert(
+            key: SyncMetadataKeys.schemaMismatchDetected,
+            value: detected.toString(),
+          ),
+        );
   }
 
   /// Persist failure count to SyncMetadata.
@@ -696,6 +763,17 @@ class SyncEngine {
         for (final userId in affectedUserIds) {
           await _reflowEngine.executeFullRebuildInternal(userId);
         }
+      }
+
+      // Phase 7C — Dual active session detection.
+      // Local enforcement prevents this device from having 2 open blocks.
+      // Multiple open blocks = remote device has an active session.
+      final openBlocks = await (_db.select(_db.practiceBlocks)
+            ..where(
+                (t) => t.endTimestamp.isNull() & t.isDeleted.equals(false)))
+          .get();
+      if (openBlocks.length > 1) {
+        _dualActiveSessionController.add(openBlocks.last.practiceBlockId);
       }
 
       final mergeDuration = DateTime.now().difference(mergeStart);
@@ -1000,5 +1078,6 @@ class SyncEngine {
   /// Clean up resources.
   void dispose() {
     _statusController.close();
+    _dualActiveSessionController.close();
   }
 }

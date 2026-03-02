@@ -9,6 +9,7 @@ import 'package:zx_golf_app/features/review/widgets/overall_score_display.dart';
 import 'package:zx_golf_app/features/review/widgets/plan_adherence_badge.dart';
 import 'package:zx_golf_app/features/review/widgets/skill_area_heatmap.dart';
 import 'package:zx_golf_app/features/review/widgets/trend_snapshot.dart';
+import 'package:zx_golf_app/providers/review_providers.dart';
 import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 // S12 §12.6.1 — Dashboard screen: Overall Score + Heatmap + Trend + CTA.
@@ -46,11 +47,17 @@ class _ReviewDashboardScreenState
   }
 
   Widget _buildDashboard(double overallScore) {
+    // TD-07 §13.5 — Dim scores when rebuild is needed.
+    final isStale = ref.watch(rebuildNeededProvider).valueOrNull ?? false;
+
     return ListView(
       padding: const EdgeInsets.all(SpacingTokens.md),
       children: [
-        // 1. Overall Score.
-        OverallScoreDisplay(score: overallScore),
+        // 1. Overall Score — dimmed if materialised data is stale.
+        Opacity(
+          opacity: isStale ? 0.5 : 1.0,
+          child: OverallScoreDisplay(score: overallScore),
+        ),
         const SizedBox(height: SpacingTokens.md),
 
         // 2. Plan Adherence badge.

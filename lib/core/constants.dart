@@ -96,3 +96,13 @@ const kSyncDebounceWindow = Duration(milliseconds: 500);
 
 // TD-03 §5.2 — Maximum upload payload size in bytes (2MB).
 const kSyncMaxPayloadBytes = 2 * 1024 * 1024;
+
+// ---------------------------------------------------------------------------
+// Phase 7C — Conflict UI & Offline Hardening constants
+// ---------------------------------------------------------------------------
+
+// TD-07 §6.2 — Merge timeout threshold for separate banner.
+const kSyncMergeTimeoutThreshold = 3;
+
+// Phase 7C — Low storage warning threshold (100MB).
+const kLowStorageThresholdBytes = 100 * 1024 * 1024;

@@ -1439,4 +1439,39 @@ class PracticeRepository {
     final List<dynamic> list = jsonDecode(json) as List<dynamic>;
     return list.map((e) => e as String).toSet();
   }
+
+  // ---------------------------------------------------------------------------
+  // Integrity flag suppression — S11 §11.6
+  // ---------------------------------------------------------------------------
+
+  /// S11 §11.6 — Suppress integrity flag: user reviewed and confirmed data.
+  Future<void> suppressIntegrityFlag(String sessionId, String userId) async {
+    await _gate.awaitGateRelease();
+    try {
+      await _db.transaction(() async {
+        await (_db.update(_db.sessions)
+              ..where((t) => t.sessionId.equals(sessionId)))
+            .write(SessionsCompanion(
+          integritySuppressed: const Value(true),
+          updatedAt: Value(DateTime.now()),
+        ));
+      });
+      // S11 §11.6 — Log integrity flag clearance event.
+      await _eventLogRepo.create(EventLogsCompanion.insert(
+        eventLogId: _uuid.v4(),
+        userId: userId,
+        eventTypeId: 'IntegrityFlagCleared',
+        affectedEntityIds: Value(jsonEncode([sessionId])),
+        metadata: const Value('{"action":"user_suppressed"}'),
+      ));
+    } on ZxGolfAppException {
+      rethrow;
+    } on Exception catch (e) {
+      throw SystemException(
+        code: SystemException.referentialIntegrity,
+        message: 'Failed to suppress integrity flag',
+        context: {'sessionId': sessionId, 'error': e.toString()},
+      );
+    }
+  }
 }

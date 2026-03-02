@@ -23,6 +23,9 @@ class SyncMetadataKeys {
   static const lastSyncTimestamp = 'lastSyncTimestamp';
   static const consecutiveFailures = 'consecutiveFailures';
   static const syncEnabled = 'syncEnabled';
+  static const schemaMismatchDetected = 'schemaMismatchDetected';
+  // TD-07 §13.6 — Set 'true' before materialised state modification, cleared after.
+  static const rebuildNeeded = 'rebuildNeeded';
 }
 
 /// TD-03 §5.1 — Result of a sync cycle.

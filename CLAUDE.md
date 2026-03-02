@@ -79,10 +79,10 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 8 — Settings & Configuration**
+> **Complete (V1)**
 >
-> User settings, preferences, app configuration.
-> Builds on Phase 7B sync merge algorithm.
+> All 8 phases implemented. Settings, startup integrity checks, achievement banners,
+> migration infrastructure, audit & polish. Ready for production testing.
 
 ---
 
@@ -97,6 +97,9 @@ lib/
 │   │   ├── tokens.dart             # Colour, typography, spacing, shape tokens (S15)
 │   │   └── zx_theme.dart           # ThemeData wrapper
 │   ├── widgets/                    # Shared base components (buttons, cards, inputs)
+│   │   ├── confirmation_dialog.dart # [Phase 8] Soft/strong confirmation dialogs (S10 §10.5)
+│   │   └── achievement_banner.dart  # [Phase 8] Achievement banner (S15 §15.8.4)
+│   ├── startup_checks.dart          # [Phase 8] 4 startup integrity checks (TD-07 §13.6)
 │   ├── scoring/                    # [Phase 2A/2B] Pure scoring + reflow orchestration
 │   │   ├── instance_scorer.dart
 │   │   ├── session_scorer.dart
@@ -118,19 +121,22 @@ lib/
 │   │   ├── sync_engine.dart
 │   │   ├── connectivity_monitor.dart # [Phase 7A] Connectivity stream wrapper
 │   │   ├── sync_orchestrator.dart    # [Phase 7A] Trigger coordination
-│   │   └── merge_algorithm.dart    # [Phase 7B]
+│   │   ├── merge_algorithm.dart    # [Phase 7B]
+│   │   └── storage_monitor.dart    # [Phase 7C] Storage check stub
 │   ├── instrumentation/            # [Phase 2B+7A] Logging, diagnostics, profiling
 │   │   ├── reflow_diagnostics.dart  # ReflowDiagnostic, ReflowInstrumentation
 │   │   └── sync_diagnostics.dart    # [Phase 7A] SyncDiagnostic, SyncInstrumentation
 │   └── services/                   # [Phase 4] TimerService, shared services
 ├── data/
-│   ├── enums.dart                  # 21 enum types with TEXT serialisation
+│   ├── enums.dart                  # 23 enum types with TEXT serialisation
 │   ├── converters.dart             # Drift TypeConverters for enum↔TEXT
 │   ├── database.dart               # Drift database class (27 tables)
 │   ├── database.g.dart             # Drift generated code
 │   ├── seed_data.dart              # Reference data seeding (onCreate)
 │   ├── tables/                     # Drift table definitions (one per entity)
 │   ├── daos/                       # Drift DAOs
+│   ├── models/                     # [Phase 8] Pure Dart data models
+│   │   └── user_preferences.dart    # UserPreferences JSON model (S10)
 │   ├── repositories/               # Repository implementations
 │   │   ├── user_repository.dart
 │   │   ├── drill_repository.dart
@@ -163,7 +169,11 @@ lib/
 ├── features/
 │   ├── shell/
 │   │   ├── shell_screen.dart       # Bottom nav (Plan/Track/Review)
-│   │   └── tabs/                   # Tab screens
+│   │   ├── tabs/                   # Tab screens
+│   │   └── widgets/                # [Phase 7C] Shell-level widgets
+│   │       ├── sync_banner_state.dart         # Pure banner priority resolution
+│   │       ├── sync_status_banner.dart        # Composite banner widget
+│   │       └── dual_active_session_dialog.dart # Cross-device conflict dialog
 │   ├── drill/                      # [Phase 3] Drill browsing, creation, editing
 │   │   ├── practice_pool_screen.dart   # Main drill hub (Track tab)
 │   │   ├── drill_library_screen.dart   # System Drill catalogue (28 drills)
@@ -243,6 +253,9 @@ lib/
 │   │       ├── volume_chart.dart              # Stacked bar chart (session counts)
 │   │       └── analysis_filters.dart          # Scope, DrillType, Resolution filters
 │   └── settings/                   # [Phase 8] Settings screens
+│       ├── settings_screen.dart        # Settings hub (S10)
+│       ├── execution_defaults_screen.dart  # Per-SkillArea club selection defaults
+│       └── calendar_defaults_screen.dart   # 7-day slot capacity pattern
 ├── providers/                      # Riverpod providers by domain
 │   ├── database_providers.dart
 │   ├── repository_providers.dart
@@ -251,7 +264,8 @@ lib/
 │   ├── drill_providers.dart        # [Phase 3] System drills, adopted drills, practice pool
 │   ├── bag_providers.dart          # [Phase 3] User bag, club mappings
 │   ├── planning_providers.dart     # [Phase 5] Routines, schedules, calendar, PlanningActions
-│   └── review_providers.dart      # [Phase 6] Heatmap, window detail, weakness, sessions, adherence
+│   ├── review_providers.dart      # [Phase 6] Heatmap, window detail, weakness, sessions, adherence
+│   └── settings_providers.dart    # [Phase 8] User preferences, currentUser
 └── main.dart
 
 test/
@@ -368,6 +382,8 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-02 | Phase 6 | Complete | Review providers (heatmap opacity, window detail parser, weakness ranking, sessions, plan adherence), Dashboard (Overall Score, Skill Area heatmap with accordion, subskill breakdown, trend snapshot, plan adherence badge), Window Detail (parsed entries, roll-off boundary, saturation header), Subskill Detail (Transition + Pressure windows), Weakness Ranking (ranked subskills with WI, allocation, saturation), Analysis tab (filter row with Scope/DrillType/Resolution/DateRange, Performance line chart with rolling overlay via fl\_chart, Volume stacked bar by SkillArea), Session History (variance tracking with SD RAG thresholds, confidence levels), Session Detail, Plan Adherence (weekly/monthly rollups, SkillArea breakdown), Review tab dual-tab shell (Dashboard \| Analysis). 41 review tests, 531 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 7A | Complete | ConnectivityMonitor (stream-based with injectable test stream), SyncOrchestrator (periodic 5min timer, connectivity-restored trigger, post-session trigger, 500ms debounce, auth guard, feature flag guard), SyncEngine enhancements (payload batching with 2MB limit and parent-before-child ordering, SyncDiagnostics injection, consecutive failure counter with auto-disable at 5, feature flag toggle, setOffline), SyncMetadataKeys constants, SyncInstrumentation (follows ReflowInstrumentation pattern), post-session sync trigger in PracticeActions, shell lifecycle wiring, 6 new Riverpod providers. 58 new tests, 589 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 7B | Complete | MergeAlgorithm (row-level LWW + delete-always-wins + CalendarDay slot-level merge), Slot.updatedAt for per-slot timestamps, executeFullRebuildInternal (gate-free rebuild for merge pipeline), SyncWriteGate enforcement on 6 repositories (User, Drill, Practice, Club, Planning, EventLog — ScoringRepository exempt), SyncEngine merge pipeline with post-merge full rebuild, provider wiring (SyncWriteGate into repos, ReflowEngine into SyncEngine). 79 new tests (30 merge algorithm + 5 reflow internal + 15 gate repo + 24 merge integration + 10 convergence — note: 5 convergence tests are pure algorithm tests not counted as DB tests), 668 total tests passing. `flutter analyze` clean. |
+| 2026-03-02 | Phase 7C | Complete | SyncEngine hardening (merge timeout counter, schema mismatch persistent flag, dual active session detection, lastErrorCode, exception handler routing by code), StorageMonitor (injectable stub), SyncBannerState (pure priority resolution with 9 banner types), SyncStatusBanner (composite widget with accent stripes, progress indicator, schema mismatch dialog), DualActiveSessionDialog (cross-device conflict), ShellScreen wiring (banner + dual session listener), replaced 2 orphaned StateProviders + 7 new providers (consecutiveMergeTimeouts, connectivityStatus, lastSyncTimestamp, schemaMismatchDetected, dualActiveSession, storageMonitor, isStorageLow). 52 new tests (20 banner state + 15 engine hardening + 5 storage monitor + 12 provider wiring), 720 total tests passing. `flutter analyze` clean. |
+| 2026-03-02 | Phase 8 | Complete | UserPreferences model (JSON serialization, 2 new enums), Settings hub + 2 sub-screens (execution defaults, calendar defaults), confirmation dialogs (soft/strong), IntegritySuppressed toggle UI + bug fix (session_history_screen), StartupChecks (4 checks: rebuildNeeded, lock expiry, allocation invariant, FK check), migration infrastructure (onUpgrade handler), achievement banners (S15 §15.8.4), rebuildNeeded staleness indicator (dimmed opacity), settings providers, AppBar gear icon in shell. 55 new tests (11 user_preferences + 5 confirmation_dialog + 5 achievement_banner + 8 startup_checks + 10 integrity_suppression + 5 migration + 12 settings), 775 total tests passing. `flutter analyze` clean. |
 
 ---
 
@@ -377,3 +393,7 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 |----------------|-----------|-----------|------|
 | TD-06 §4.4 "28 Drift tables" | 27 Drift tables (26 from DDL + SyncMetadata). SystemMaintenanceLock and MigrationLog excluded. | TD-02 §8 specifies these are server-only. TD-02 governs per source-of-truth hierarchy. | 2026-02-27 |
 | TD-02 §3.5 `Sets` table | Generated data class renamed to `PracticeSet` via `@DataClassName('PracticeSet')`. | Drift generates singular `Set` from `Sets`, clashing with `dart:core.Set`. | 2026-02-27 |
+| Phase 7C StorageMonitor | `StorageMonitor._defaultCheck()` returns `false` (stub). No real disk space detection. | `dart:io` doesn't expose free space without FFI/native plugin. Infrastructure wired for Phase 8 activation. | 2026-03-02 |
+| S10 §10.10 Notifications | Reminder toggle + time picker persist preferences but do not schedule system notifications. | `flutter_local_notifications` deferred to post-V1 to avoid native dependency complexity. | 2026-03-02 |
+| S10 §10.5 Account Deletion | Local cascade deletion only. Server-side Supabase data not deleted. | Server-side cascade requires Supabase Edge Function (deferred to post-V1). | 2026-03-02 |
+| S10 §10.11 Data Export | Data export (JSON) stubbed — settings screen shows placeholder. | `share_plus` dependency deferred to post-V1. | 2026-03-02 |

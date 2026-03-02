@@ -46,8 +46,7 @@ EventTypeRefsCompanion _eventType(String id, String name, String desc) =>
     );
 
 // 002_seed_reference_data.sql §2 — 19 SubskillRef rows (allocations sum to 1000).
-Future<void> _seedSubskillRefs(AppDatabase db) async {
-  final rows = <SubskillRefsCompanion>[
+List<SubskillRefsCompanion> _subskillRefRows() => <SubskillRefsCompanion>[
     // Irons (280)
     _subskill('irons_distance_control', SkillArea.irons, 'Distance Control', 110),
     _subskill('irons_direction_control', SkillArea.irons, 'Direction Control', 110),
@@ -75,8 +74,19 @@ Future<void> _seedSubskillRefs(AppDatabase db) async {
     _subskill('bunkers_distance_control', SkillArea.bunkers, 'Distance Control', 15),
     _subskill('bunkers_direction_control', SkillArea.bunkers, 'Direction Control', 15),
   ];
+
+Future<void> _seedSubskillRefs(AppDatabase db) async {
   await db.batch((batch) {
-    batch.insertAll(db.subskillRefs, rows);
+    batch.insertAll(db.subskillRefs, _subskillRefRows());
+  });
+}
+
+/// TD-07 §13.6 8c — Re-seed SubskillRef allocations idempotently.
+/// Safe to call when rows already exist (uses insertOrReplace).
+Future<void> reseedSubskillRefs(AppDatabase db) async {
+  await db.batch((batch) {
+    batch.insertAll(db.subskillRefs, _subskillRefRows(),
+        mode: InsertMode.insertOrReplace);
   });
 }
 

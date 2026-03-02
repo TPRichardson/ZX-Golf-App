@@ -325,3 +325,29 @@ enum ScheduleStatus {
       values.firstWhere((e) => e.dbValue == value,
           orElse: () => throw ArgumentError('Invalid ScheduleStatus: $value'));
 }
+
+/// S10 §10.6 — Distance measurement unit preference.
+enum DistanceUnit {
+  yards('Yards'),
+  metres('Metres');
+
+  const DistanceUnit(this.dbValue);
+  final String dbValue;
+
+  static DistanceUnit fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid DistanceUnit: $value'));
+}
+
+/// S10 §10.6 — Small length measurement unit preference.
+enum SmallLengthUnit {
+  inches('Inches'),
+  centimetres('Centimetres');
+
+  const SmallLengthUnit(this.dbValue);
+  final String dbValue;
+
+  static SmallLengthUnit fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid SmallLengthUnit: $value'));
+}

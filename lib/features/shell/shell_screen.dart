@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
 import 'tabs/review_tab.dart';
+import 'widgets/dual_active_session_dialog.dart';
+import 'widgets/sync_status_banner.dart';
 
 // TD-06 §4.3 — Shell app with bottom navigation: Plan, Track, Review.
 
@@ -42,8 +45,40 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Phase 7C — Listen for dual active session conflicts.
+    ref.listen<AsyncValue<String>>(dualActiveSessionProvider, (_, next) {
+      next.whenData((blockId) {
+        if (context.mounted) {
+          showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) =>
+                DualActiveSessionDialog(conflictingBlockId: blockId),
+          );
+        }
+      });
+    });
+
     return Scaffold(
-      body: _tabs[_currentIndex],
+      appBar: AppBar(
+        title: const Text('ZX Golf'),
+        backgroundColor: ColorTokens.surfacePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: ColorTokens.textSecondary),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const SyncStatusBanner(),
+          Expanded(child: _tabs[_currentIndex]),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

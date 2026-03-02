@@ -13,6 +13,7 @@ import '../../data/repositories/scoring_repository.dart';
 import '../constants.dart';
 import '../error_types.dart';
 import '../instrumentation/reflow_diagnostics.dart';
+import '../sync/sync_types.dart';
 import '../sync/sync_write_gate.dart';
 import 'integrity_evaluator.dart';
 import 'overall_scorer.dart';
@@ -94,10 +95,16 @@ class ReflowEngine {
     }
 
     try {
+      // TD-07 §13.6 — Mark rebuildNeeded before materialised state modification.
+      await _setRebuildNeeded(true);
+
       // Steps 3-9: Execute inside transaction.
       final result = await _db.transaction(() async {
         return _executeReflowSteps(trigger, stopwatch);
       });
+
+      // TD-07 §13.6 — Clear rebuildNeeded after successful commit.
+      await _setRebuildNeeded(false);
 
       // Step 9b: Emit EventLog: ReflowComplete.
       await _emitReflowCompleteEvent(trigger);
@@ -577,9 +584,15 @@ class ReflowEngine {
     }
 
     try {
+      // TD-07 §13.6 — Mark rebuildNeeded before materialised state modification.
+      await _setRebuildNeeded(true);
+
       final result = await _db.transaction(() async {
         return _executeFullRebuildBulk(userId, allRefs, stopwatch);
       });
+
+      // TD-07 §13.6 — Clear rebuildNeeded after successful commit.
+      await _setRebuildNeeded(false);
 
       // Write event log directly to DB, bypassing EventLogRepository's
       // awaitGateRelease() — the gate may already be held by the caller
@@ -1162,5 +1175,20 @@ class ReflowEngine {
         'subskillCount': trigger.affectedSubskillIds.length,
       })),
     ));
+  }
+
+  // ---------------------------------------------------------------------------
+  // TD-07 §13.6 — RebuildNeeded flag management
+  // ---------------------------------------------------------------------------
+
+  /// TD-07 §13.6 — Set or clear the rebuildNeeded flag in SyncMetadata.
+  /// Written directly to DB to avoid gate contention during rebuild.
+  Future<void> _setRebuildNeeded(bool needed) async {
+    await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
+      SyncMetadataEntriesCompanion.insert(
+        key: SyncMetadataKeys.rebuildNeeded,
+        value: needed ? 'true' : 'false',
+      ),
+    );
   }
 }

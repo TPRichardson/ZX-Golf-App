@@ -87,6 +87,18 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await seedReferenceData(this);
         },
+        // TD-06 §18 — Migration framework.
+        // Column additions are safe. Column type changes require explicit transforms.
+        // Materialised tables can be truncated and rebuilt.
+        // Raw execution data is sacred — never delete/truncate.
+        onUpgrade: (Migrator m, int from, int to) async {
+          for (var version = from; version < to; version++) {
+            switch (version) {
+              // Future migrations go here:
+              // case 1: await _migrateV1ToV2(m); break;
+            }
+          }
+        },
       );
 }
 

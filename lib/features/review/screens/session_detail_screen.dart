@@ -76,7 +76,8 @@ class SessionDetailScreen extends ConsumerWidget {
                     _InfoRow(
                         label: 'Drill Type',
                         value: detail.drillType),
-                    if (detail.integritySuppressed)
+                    // S11 §11.6 — Integrity flag display and suppression toggle.
+                    if (detail.integrityFlag && !detail.integritySuppressed)
                       Padding(
                         padding: const EdgeInsets.only(
                             top: SpacingTokens.sm),
@@ -89,13 +90,43 @@ class SessionDetailScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: SpacingTokens.xs),
                             Text(
-                              'Integrity suppressed',
+                              'Integrity flag active',
                               style: TextStyle(
                                 fontSize: TypographyTokens.bodySize,
                                 color: ColorTokens.warningIntegrity,
                               ),
                             ),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () async {
+                                await ref
+                                    .read(practiceRepositoryProvider)
+                                    .suppressIntegrityFlag(
+                                        sessionId, userId);
+                                ref.invalidate(
+                                    _sessionDetailProvider(sessionId));
+                              },
+                              child: Text(
+                                'Clear Flag',
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.bodySize,
+                                  color: ColorTokens.primaryDefault,
+                                ),
+                              ),
+                            ),
                           ],
+                        ),
+                      ),
+                    if (detail.integrityFlag && detail.integritySuppressed)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            top: SpacingTokens.sm),
+                        child: Text(
+                          'Integrity flag cleared by user',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.microSize,
+                            color: ColorTokens.textTertiary,
+                          ),
                         ),
                       ),
                   ],
@@ -170,6 +201,7 @@ class _SessionDetail {
   final DateTime? completionTimestamp;
   final String skillArea;
   final String drillType;
+  final bool integrityFlag;
   final bool integritySuppressed;
 
   const _SessionDetail({
@@ -178,6 +210,7 @@ class _SessionDetail {
     this.completionTimestamp,
     required this.skillArea,
     required this.drillType,
+    required this.integrityFlag,
     required this.integritySuppressed,
   });
 }
@@ -212,6 +245,7 @@ final _sessionDetailProvider =
     completionTimestamp: session.completionTimestamp,
     skillArea: drill?.skillArea.dbValue ?? 'Unknown',
     drillType: drill?.drillType.dbValue ?? 'Unknown',
+    integrityFlag: session.integrityFlag,
     integritySuppressed: session.integritySuppressed,
   );
 });

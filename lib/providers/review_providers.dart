@@ -7,15 +7,31 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/scoring/scoring_types.dart';
+import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/planning/weakness_detection.dart';
 
+import 'database_providers.dart';
 import 'repository_providers.dart';
 import 'scoring_providers.dart';
 import 'planning_providers.dart';
+
+// ---------------------------------------------------------------------------
+// TD-07 §13.5 — RebuildNeeded staleness indicator
+// ---------------------------------------------------------------------------
+
+/// TD-07 §13.5 — Whether materialised scoring data is stale.
+/// When true, score displays render at dimmed opacity.
+final rebuildNeededProvider = FutureProvider<bool>((ref) async {
+  final db = ref.watch(databaseProvider);
+  final row = await (db.select(db.syncMetadataEntries)
+        ..where((t) => t.key.equals(SyncMetadataKeys.rebuildNeeded)))
+      .getSingleOrNull();
+  return row != null && row.value == 'true';
+});
 
 // ---------------------------------------------------------------------------
 // Window entry JSON parsing — used by window detail views

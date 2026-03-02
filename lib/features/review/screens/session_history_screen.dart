@@ -121,7 +121,8 @@ class SessionHistoryScreen extends ConsumerWidget {
                                           ColorTokens.textPrimary,
                                     ),
                                   ),
-                                  if (s.session.integritySuppressed)
+                                  // S11 §11.6 — Show warning when integrityFlag is set and NOT suppressed.
+                                  if (s.session.integrityFlag && !s.session.integritySuppressed)
                                     Padding(
                                       padding: const EdgeInsets.only(
                                           top: SpacingTokens.xs),
