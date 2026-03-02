@@ -65,6 +65,7 @@ class SyncOrchestrator {
   /// TD-07 §6.1.1 — Debounces within 500ms window.
   void requestSync(SyncTrigger reason) {
     if (!_started) return;
+    debugPrint('[SyncOrchestrator] Sync requested: ${reason.name}');
     _debouncedTrigger(reason);
   }
 
@@ -82,6 +83,7 @@ class SyncOrchestrator {
 
     // TD-03 §5.1 — Feature flag guard.
     if (!_engine.syncEnabled) {
+      debugPrint('[SyncOrchestrator] Skipped (sync_disabled) trigger=${reason.name}');
       _diagnostics.emit('sync_skipped', Duration.zero, {
         'reason': 'sync_disabled',
         'trigger': reason.name,
@@ -91,6 +93,7 @@ class SyncOrchestrator {
 
     // Auth guard: only sync when authenticated.
     if (!_authService.isAuthenticated) {
+      debugPrint('[SyncOrchestrator] Skipped (not_authenticated) trigger=${reason.name}');
       _diagnostics.emit('sync_skipped', Duration.zero, {
         'reason': 'not_authenticated',
         'trigger': reason.name,
@@ -100,6 +103,7 @@ class SyncOrchestrator {
 
     // Connectivity guard.
     if (!_isOnline) {
+      debugPrint('[SyncOrchestrator] Skipped (offline) trigger=${reason.name}');
       _diagnostics.emit('sync_skipped', Duration.zero, {
         'reason': 'offline',
         'trigger': reason.name,

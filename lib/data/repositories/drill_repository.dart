@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
+import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
@@ -29,11 +30,12 @@ class DrillRepository {
   final EventLogRepository _eventLogRepo;
   final ReflowEngine _reflowEngine;
   final PlanningRepository? _planningRepo;
+  final SyncWriteGate _gate;
 
   static const _uuid = Uuid();
 
   DrillRepository(this._db, this._eventLogRepo, this._reflowEngine,
-      [this._planningRepo]);
+      this._gate, [this._planningRepo]);
 
   // ---------------------------------------------------------------------------
   // Drill business methods — TD-03 §3.3.2
@@ -129,6 +131,7 @@ class DrillRepository {
   // TD-03 §3.3.2 — Create a user custom drill.
   // Spec: S04 §4.2 — Validates subskill mapping, metric schema, anchors, structure.
   Future<Drill> createCustomDrill(String userId, DrillsCompanion data) async {
+    await _gate.awaitGateRelease();
     // Validate subskill mapping references valid SubskillRef IDs for selected SkillArea.
     final skillArea = data.skillArea.value;
     final subskillMapping = data.subskillMapping.present
@@ -223,6 +226,7 @@ class DrillRepository {
     String drillId,
     DrillsCompanion data,
   ) async {
+    await _gate.awaitGateRelease();
     final existing = await _getActiveDrill(drillId);
 
     // Guard: must be user-owned custom drill.
@@ -316,6 +320,7 @@ class DrillRepository {
 
   // TD-03 §3.3.2 / TD-04 §2.4.1 — Retire drill: Active→Retired.
   Future<Drill> retireDrill(String userId, String drillId) async {
+    await _gate.awaitGateRelease();
     final existing = await _getActiveDrill(drillId);
     _guardOwnership(existing, userId);
 
@@ -347,6 +352,7 @@ class DrillRepository {
 
   // TD-03 §3.3.2 / TD-04 §2.4.1 — Reactivate drill: Retired→Active.
   Future<Drill> reactivateDrill(String userId, String drillId) async {
+    await _gate.awaitGateRelease();
     final existing = await _getActiveDrill(drillId);
     _guardOwnership(existing, userId);
 
@@ -365,6 +371,7 @@ class DrillRepository {
   // TD-03 §3.3.2 / TD-04 §2.4.1 — Delete drill: Active|Retired→Deleted (soft).
   // Custom only. Cascades soft-delete to adoptions. Triggers full reflow.
   Future<void> deleteDrill(String userId, String drillId) async {
+    await _gate.awaitGateRelease();
     final existing = await _getActiveDrill(drillId);
 
     if (existing.origin == DrillOrigin.system) {
@@ -431,6 +438,7 @@ class DrillRepository {
 
   // TD-03 §3.3.2 / TD-04 §2.5.1 — Adopt a system drill. Idempotent.
   Future<UserDrillAdoption> adoptDrill(String userId, String drillId) async {
+    await _gate.awaitGateRelease();
     final drill = await _getActiveDrill(drillId);
 
     // Check for existing adoption.
@@ -494,6 +502,7 @@ class DrillRepository {
     String userId,
     String drillId,
   ) async {
+    await _gate.awaitGateRelease();
     final existing = await _getAdoption(userId, drillId);
 
     if (existing.status != AdoptionStatus.active) {
@@ -520,6 +529,7 @@ class DrillRepository {
 
   // TD-03 §3.3.2 — Soft-delete adoption + trigger full reflow.
   Future<void> deleteAdoption(String userId, String drillId) async {
+    await _gate.awaitGateRelease();
     final existing = await _getAdoption(userId, drillId);
 
     await _db.transaction(() async {
@@ -549,6 +559,7 @@ class DrillRepository {
 
   // TD-03 §3.3.2 — Duplicate drill: copy structural fields, new ID, Origin=UserCustom.
   Future<Drill> duplicateDrill(String userId, String sourceDrillId) async {
+    await _gate.awaitGateRelease();
     final source = await _getActiveDrill(sourceDrillId);
     final newDrillId = _uuid.v4();
 

@@ -128,9 +128,9 @@ void main() {
     test('p95 < kScopedReflowTarget', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       final scoringRepo = ScoringRepository(db);
-      final eventLogRepo = EventLogRepository(db);
       final rebuildGuard = RebuildGuard();
       final syncWriteGate = SyncWriteGate();
+      final eventLogRepo = EventLogRepository(db, syncWriteGate);
       final instrumentation = ReflowInstrumentation();
       final engine = ReflowEngine(
         scoringRepository: scoringRepo,
@@ -195,9 +195,9 @@ void main() {
     test('p95 < kFullRebuildTarget', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       final scoringRepo = ScoringRepository(db);
-      final eventLogRepo = EventLogRepository(db);
       final rebuildGuard = RebuildGuard();
       final syncWriteGate = SyncWriteGate();
+      final eventLogRepo = EventLogRepository(db, syncWriteGate);
       final instrumentation = ReflowInstrumentation();
       final engine = ReflowEngine(
         scoringRepository: scoringRepo,

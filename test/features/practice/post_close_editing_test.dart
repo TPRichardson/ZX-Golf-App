@@ -27,7 +27,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    final eventLogRepo = EventLogRepository(db);
+    final eventLogRepo = EventLogRepository(db, SyncWriteGate());
     final scoringRepo = ScoringRepository(db);
     instrumentation = ReflowInstrumentation();
     final reflowEngine = ReflowEngine(
@@ -38,7 +38,7 @@ void main() {
       database: db,
       instrumentation: instrumentation,
     );
-    repo = PracticeRepository(db, reflowEngine, eventLogRepo);
+    repo = PracticeRepository(db, reflowEngine, eventLogRepo, SyncWriteGate());
 
     // Seed raw data drill: 1 set × 3 attempts.
     rawDrillId = 'drill-edit-raw';

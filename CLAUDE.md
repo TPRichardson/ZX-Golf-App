@@ -79,10 +79,10 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 7B — Sync Merge Algorithm**
+> **Phase 8 — Settings & Configuration**
 >
-> LWW merge algorithm, conflict resolution.
-> Builds on Phase 7A sync transport & orchestration.
+> User settings, preferences, app configuration.
+> Builds on Phase 7B sync merge algorithm.
 
 ---
 
@@ -367,6 +367,7 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-02 | Phase 5 | Complete | PlanningRepository (slot management, routine/schedule lifecycle, cascade deletions), Slot model + planning types, CompletionMatcher (session→slot matching with overflow), RoutineApplicator, ScheduleApplicator (List/DayPlanning modes), WeaknessDetectionEngine (WeaknessIndex ranking, 4 selection modes), planning providers + PlanningActions coordination, Calendar UI (3-day/2-week toggle, day detail, slot tiles, adherence badge), Routine UI (list/create/detail/apply), Schedule UI (list/create/detail/apply, template day editor), criterion editor, drill deletion cascade to routines/schedules. 102 planning tests, 490 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 6 | Complete | Review providers (heatmap opacity, window detail parser, weakness ranking, sessions, plan adherence), Dashboard (Overall Score, Skill Area heatmap with accordion, subskill breakdown, trend snapshot, plan adherence badge), Window Detail (parsed entries, roll-off boundary, saturation header), Subskill Detail (Transition + Pressure windows), Weakness Ranking (ranked subskills with WI, allocation, saturation), Analysis tab (filter row with Scope/DrillType/Resolution/DateRange, Performance line chart with rolling overlay via fl\_chart, Volume stacked bar by SkillArea), Session History (variance tracking with SD RAG thresholds, confidence levels), Session Detail, Plan Adherence (weekly/monthly rollups, SkillArea breakdown), Review tab dual-tab shell (Dashboard \| Analysis). 41 review tests, 531 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 7A | Complete | ConnectivityMonitor (stream-based with injectable test stream), SyncOrchestrator (periodic 5min timer, connectivity-restored trigger, post-session trigger, 500ms debounce, auth guard, feature flag guard), SyncEngine enhancements (payload batching with 2MB limit and parent-before-child ordering, SyncDiagnostics injection, consecutive failure counter with auto-disable at 5, feature flag toggle, setOffline), SyncMetadataKeys constants, SyncInstrumentation (follows ReflowInstrumentation pattern), post-session sync trigger in PracticeActions, shell lifecycle wiring, 6 new Riverpod providers. 58 new tests, 589 total tests passing. `flutter analyze` clean. |
+| 2026-03-02 | Phase 7B | Complete | MergeAlgorithm (row-level LWW + delete-always-wins + CalendarDay slot-level merge), Slot.updatedAt for per-slot timestamps, executeFullRebuildInternal (gate-free rebuild for merge pipeline), SyncWriteGate enforcement on 6 repositories (User, Drill, Practice, Club, Planning, EventLog — ScoringRepository exempt), SyncEngine merge pipeline with post-merge full rebuild, provider wiring (SyncWriteGate into repos, ReflowEngine into SyncEngine). 79 new tests (30 merge algorithm + 5 reflow internal + 15 gate repo + 24 merge integration + 10 convergence — note: 5 convergence tests are pure algorithm tests not counted as DB tests), 668 total tests passing. `flutter analyze` clean. |
 
 ---
 

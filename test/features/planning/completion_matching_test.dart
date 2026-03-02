@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
 import 'package:zx_golf_app/features/planning/completion_matching.dart';
@@ -17,7 +18,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    repo = PlanningRepository(db);
+    repo = PlanningRepository(db, SyncWriteGate());
     matcher = CompletionMatcher(repo);
   });
 

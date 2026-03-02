@@ -530,50 +530,8 @@ class ReflowEngine {
     _syncWriteGate.acquireExclusive();
 
     try {
-      // Get all subskill refs for full scope.
-      final allRefs = await _scoringRepo.getAllSubskillRefs();
-      final allSubskillIds = allRefs.map((r) => r.subskillId).toSet();
-
-      // Truncate all materialised tables.
-      await _scoringRepo.truncateAllMaterialisedForUser(userId);
-
-      // Execute the reflow steps (lock acquired inside).
-      var lockAcquired = false;
-      for (var attempt = 0; attempt <= kLockMaxRetries; attempt++) {
-        lockAcquired = await _scoringRepo.acquireLock(userId);
-        if (lockAcquired) break;
-        if (attempt < kLockMaxRetries) {
-          await Future.delayed(kLockRetryDelay);
-        }
-      }
-      if (!lockAcquired) {
-        throw ReflowException(
-          code: ReflowException.lockTimeout,
-          message: 'Failed to acquire scoring lock for full rebuild',
-          context: {'userId': userId},
-        );
-      }
-
-      try {
-        final result = await _db.transaction(() async {
-          return _executeFullRebuildBulk(userId, allRefs, stopwatch);
-        });
-
-        await _emitReflowCompleteEvent(ReflowTrigger(
-          type: ReflowTriggerType.fullRebuild,
-          userId: userId,
-          affectedSubskillIds: allSubskillIds,
-        ));
-
-        stopwatch.stop();
-        _instrumentation.emit('fullRebuild.complete', stopwatch.elapsed, {
-          'subskillsRebuilt': result.subskillsRebuilt,
-        });
-
-        return result;
-      } finally {
-        await _scoringRepo.releaseLock(userId);
-      }
+      final result = await executeFullRebuildInternal(userId);
+      return result;
     } finally {
       // Release SyncWriteGate + RebuildGuard.
       _syncWriteGate.release();
@@ -585,6 +543,61 @@ class ReflowEngine {
         // In production this would be awaited; for correctness we await here.
         await executeReflow(coalesced);
       }
+    }
+  }
+
+  /// TD-04 §3.3 — Full rebuild internals without gate acquisition.
+  /// Called by merge pipeline when gate is already held by SyncEngine.
+  /// Phase 7B: extracted from executeFullRebuild to avoid deadlock.
+  Future<ReflowResult> executeFullRebuildInternal(String userId) async {
+    final stopwatch = Stopwatch()..start();
+
+    // Get all subskill refs for full scope.
+    final allRefs = await _scoringRepo.getAllSubskillRefs();
+    final allSubskillIds = allRefs.map((r) => r.subskillId).toSet();
+
+    // Truncate all materialised tables.
+    await _scoringRepo.truncateAllMaterialisedForUser(userId);
+
+    // Execute the reflow steps (lock acquired inside).
+    var lockAcquired = false;
+    for (var attempt = 0; attempt <= kLockMaxRetries; attempt++) {
+      lockAcquired = await _scoringRepo.acquireLock(userId);
+      if (lockAcquired) break;
+      if (attempt < kLockMaxRetries) {
+        await Future.delayed(kLockRetryDelay);
+      }
+    }
+    if (!lockAcquired) {
+      throw ReflowException(
+        code: ReflowException.lockTimeout,
+        message: 'Failed to acquire scoring lock for full rebuild',
+        context: {'userId': userId},
+      );
+    }
+
+    try {
+      final result = await _db.transaction(() async {
+        return _executeFullRebuildBulk(userId, allRefs, stopwatch);
+      });
+
+      // Write event log directly to DB, bypassing EventLogRepository's
+      // awaitGateRelease() — the gate may already be held by the caller
+      // (e.g. executeFullRebuild or merge pipeline).
+      await _emitReflowCompleteEventDirect(ReflowTrigger(
+        type: ReflowTriggerType.fullRebuild,
+        userId: userId,
+        affectedSubskillIds: allSubskillIds,
+      ));
+
+      stopwatch.stop();
+      _instrumentation.emit('fullRebuild.complete', stopwatch.elapsed, {
+        'subskillsRebuilt': result.subskillsRebuilt,
+      });
+
+      return result;
+    } finally {
+      await _scoringRepo.releaseLock(userId);
     }
   }
 
@@ -1122,6 +1135,23 @@ class ReflowEngine {
 
   Future<void> _emitReflowCompleteEvent(ReflowTrigger trigger) async {
     await _eventLogRepo.create(EventLogsCompanion.insert(
+      eventLogId: _uuid.v4(),
+      userId: trigger.userId,
+      eventTypeId: 'ReflowComplete',
+      affectedSubskills:
+          Value(jsonEncode(trigger.affectedSubskillIds.toList())),
+      metadata: Value(jsonEncode({
+        'triggerType': trigger.type.name,
+        'subskillCount': trigger.affectedSubskillIds.length,
+      })),
+    ));
+  }
+
+  /// Direct DB write for event log — bypasses EventLogRepository's
+  /// awaitGateRelease(). Used by executeFullRebuildInternal where the
+  /// SyncWriteGate may already be held by the caller.
+  Future<void> _emitReflowCompleteEventDirect(ReflowTrigger trigger) async {
+    await _db.into(_db.eventLogs).insert(EventLogsCompanion.insert(
       eventLogId: _uuid.v4(),
       userId: trigger.userId,
       eventTypeId: 'ReflowComplete',

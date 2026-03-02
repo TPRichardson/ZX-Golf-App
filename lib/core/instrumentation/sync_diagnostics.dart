@@ -83,6 +83,22 @@ class SyncInstrumentation {
     });
   }
 
+  /// Phase 7B — Record a merge cycle summary.
+  void emitMergeSummary({
+    required Duration totalDuration,
+    required int mergedCount,
+    required int tablesAffected,
+    required int affectedUsers,
+    required bool rebuildTriggered,
+  }) {
+    emit('sync_merge_complete', totalDuration, {
+      'mergedCount': mergedCount,
+      'tablesAffected': tablesAffected,
+      'affectedUsers': affectedUsers,
+      'rebuildTriggered': rebuildTriggered,
+    });
+  }
+
   /// Clear all collected diagnostics.
   void clear() => _diagnostics.clear();
 }

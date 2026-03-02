@@ -26,10 +26,10 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    eventLogRepo = EventLogRepository(db);
+    final syncWriteGate = SyncWriteGate();
+    eventLogRepo = EventLogRepository(db, syncWriteGate);
     final scoringRepo = ScoringRepository(db);
     final rebuildGuard = RebuildGuard();
-    final syncWriteGate = SyncWriteGate();
     reflowEngine = ReflowEngine(
       scoringRepository: scoringRepo,
       eventLogRepository: eventLogRepo,
@@ -38,7 +38,7 @@ void main() {
       database: db,
       instrumentation: ReflowInstrumentation(),
     );
-    repo = DrillRepository(db, eventLogRepo, reflowEngine);
+    repo = DrillRepository(db, eventLogRepo, reflowEngine, syncWriteGate);
   });
 
   tearDown(() async {

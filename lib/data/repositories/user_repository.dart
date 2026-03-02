@@ -1,15 +1,18 @@
 import 'package:zx_golf_app/core/error_types.dart';
+import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 
 // TD-03 §3.1 — User identity & settings repository.
 // TD-03 §3.2 — Standard CRUD pattern with constructor-injected AppDatabase.
 class UserRepository {
   final AppDatabase _db;
+  final SyncWriteGate _gate;
 
-  UserRepository(this._db);
+  UserRepository(this._db, this._gate);
 
   // TD-03 §3.2 — Create user record.
   Future<User> create(UsersCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.users).insertReturning(data);
@@ -39,6 +42,7 @@ class UserRepository {
   // TD-03 §3.2 — Update user fields. Returns updated entity.
   // Spec: S03 §3.2 — SyncWriteGate compatible: writes through transaction.
   Future<User> update(String id, UsersCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.users)

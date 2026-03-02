@@ -29,9 +29,9 @@ void main() {
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     scoringRepo = ScoringRepository(db);
-    eventLogRepo = EventLogRepository(db);
     rebuildGuard = RebuildGuard();
     syncWriteGate = SyncWriteGate();
+    eventLogRepo = EventLogRepository(db, syncWriteGate);
     instrumentation = ReflowInstrumentation();
     engine = ReflowEngine(
       scoringRepository: scoringRepo,

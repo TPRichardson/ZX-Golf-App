@@ -8,6 +8,7 @@ import 'package:zx_golf_app/core/sync/sync_orchestrator.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'database_providers.dart';
+import 'scoring_providers.dart';
 
 // TD-03 §5.1 — Sync Riverpod providers.
 
@@ -29,12 +30,14 @@ final syncInstrumentationProvider = Provider<SyncInstrumentation>((ref) {
 });
 
 /// TD-03 §5.1 — Sync engine instance.
+/// Phase 7B — ReflowEngine injected for post-merge full rebuild.
 final syncEngineProvider = Provider<SyncEngine>((ref) {
   final engine = SyncEngine(
     ref.watch(supabaseClientProvider),
     ref.watch(databaseProvider),
     ref.watch(syncWriteGateProvider),
     ref.watch(syncInstrumentationProvider),
+    ref.watch(reflowEngineProvider),
   );
   ref.onDispose(() => engine.dispose());
   return engine;

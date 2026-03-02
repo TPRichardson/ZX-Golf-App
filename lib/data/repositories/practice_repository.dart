@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
+import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
@@ -45,10 +46,11 @@ class PracticeRepository {
   final AppDatabase _db;
   final ReflowEngine _reflowEngine;
   final EventLogRepository _eventLogRepo;
+  final SyncWriteGate _gate;
 
   static const _uuid = Uuid();
 
-  PracticeRepository(this._db, this._reflowEngine, this._eventLogRepo);
+  PracticeRepository(this._db, this._reflowEngine, this._eventLogRepo, this._gate);
 
   // ---------------------------------------------------------------------------
   // PracticeBlock CRUD (retained from Phase 1)
@@ -57,6 +59,7 @@ class PracticeRepository {
   // TD-03 §3.2 — Create practice block.
   Future<PracticeBlock> createPracticeBlockRaw(
       PracticeBlocksCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.practiceBlocks).insertReturning(data);
@@ -99,6 +102,7 @@ class PracticeRepository {
   // Spec: TD-03 §2.1.1 — SyncWriteGate compatible: writes through transaction.
   Future<PracticeBlock> updatePracticeBlock(
       String id, PracticeBlocksCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.practiceBlocks)
@@ -126,6 +130,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Soft delete practice block.
   Future<void> softDeletePracticeBlock(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.update(_db.practiceBlocks)
@@ -156,6 +161,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Create session.
   Future<Session> createSession(SessionsCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.sessions).insertReturning(data);
@@ -196,6 +202,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Update session fields.
   Future<Session> updateSession(String id, SessionsCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.sessions)
@@ -223,6 +230,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Soft delete session.
   Future<void> softDeleteSession(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.update(_db.sessions)
@@ -249,6 +257,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Hard delete (discard) session. Permanent removal.
   Future<void> hardDeleteSession(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.delete(_db.sessions)
@@ -280,6 +289,7 @@ class PracticeRepository {
 
   // TD-02 §3.5 — Create set.
   Future<PracticeSet> createSetReturning(SetsCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.sets).insertReturning(data);
@@ -297,6 +307,7 @@ class PracticeRepository {
 
   // TD-02 §3.5 — Create set (void return, Phase 1 compat).
   Future<void> createSet(SetsCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         await _db.into(_db.sets).insert(data);
@@ -331,6 +342,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Soft delete set.
   Future<void> softDeleteSet(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.update(_db.sets)
@@ -361,6 +373,7 @@ class PracticeRepository {
 
   // TD-02 §3.6 — Create instance.
   Future<Instance> createInstance(InstancesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.instances).insertReturning(data);
@@ -396,6 +409,7 @@ class PracticeRepository {
   // TD-03 §3.2 — Update instance fields.
   Future<Instance> updateInstanceRaw(
       String id, InstancesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.instances)
@@ -423,6 +437,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Soft delete instance.
   Future<void> softDeleteInstance(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.update(_db.instances)
@@ -449,6 +464,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Hard delete instance. Permanent removal.
   Future<void> hardDeleteInstance(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.delete(_db.instances)
@@ -480,6 +496,7 @@ class PracticeRepository {
   // TD-02 §3.7 — Create practice entry.
   Future<PracticeEntry> createPracticeEntry(
       PracticeEntriesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.practiceEntries).insertReturning(data);
@@ -513,6 +530,7 @@ class PracticeRepository {
   // TD-03 §3.2 — Update practice entry fields.
   Future<PracticeEntry> updatePracticeEntry(
       String id, PracticeEntriesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.practiceEntries)
@@ -540,6 +558,7 @@ class PracticeRepository {
 
   // TD-03 §3.2 — Hard delete practice entry. Permanent removal.
   Future<void> hardDeletePracticeEntry(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.delete(_db.practiceEntries)
@@ -578,6 +597,7 @@ class PracticeRepository {
     String userId, {
     List<String>? initialDrillIds,
   }) async {
+    await _gate.awaitGateRelease();
     // Guard: no active practice block for user.
     final existing = await _findActivePracticeBlock(userId);
     if (existing != null) {
@@ -671,6 +691,7 @@ class PracticeRepository {
     String drillId, {
     int? position,
   }) async {
+    await _gate.awaitGateRelease();
     final entries = await (_db.select(_db.practiceEntries)
           ..where((t) => t.practiceBlockId.equals(pbId))
           ..orderBy([(t) => OrderingTerm.asc(t.positionIndex)]))
@@ -711,6 +732,7 @@ class PracticeRepository {
   /// TD-03 §3.3.3 #5 — Remove a pending drill entry.
   /// Guard: must be PendingDrill.
   Future<void> removePendingEntry(String entryId) async {
+    await _gate.awaitGateRelease();
     final entry = await _requireEntry(entryId);
     if (entry.entryType != PracticeEntryType.pendingDrill) {
       throw ValidationException(
@@ -735,6 +757,7 @@ class PracticeRepository {
   /// Soft-delete session + reflow + EventLog + hard-delete entry.
   /// Blocked if an ActiveSession exists in the block.
   Future<void> removeCompletedEntry(String entryId, String userId) async {
+    await _gate.awaitGateRelease();
     final entry = await _requireEntry(entryId);
     if (entry.entryType != PracticeEntryType.completedSession) {
       throw ValidationException(
@@ -791,6 +814,7 @@ class PracticeRepository {
   /// ActiveSession position is locked (cannot be moved).
   Future<void> reorderQueue(
       String pbId, List<String> orderedEntryIds) async {
+    await _gate.awaitGateRelease();
     // Verify all entry IDs belong to the practice block.
     final entries = await (_db.select(_db.practiceEntries)
           ..where((t) => t.practiceBlockId.equals(pbId)))
@@ -837,6 +861,7 @@ class PracticeRepository {
 
   /// TD-03 §3.3.3 #8 — Duplicate an entry (creates PendingDrill after source).
   Future<PracticeEntry> duplicateEntry(String entryId) async {
+    await _gate.awaitGateRelease();
     final source = await _requireEntry(entryId);
     return addDrillToQueue(
       source.practiceBlockId,
@@ -852,6 +877,7 @@ class PracticeRepository {
   /// TD-03 §3.3.3 #9 — Start a session for a practice entry.
   /// Guard: no other ActiveSession in block, drill not deleted, entry is PendingDrill.
   Future<Session> startSession(String entryId, String userId) async {
+    await _gate.awaitGateRelease();
     final entry = await _requireEntry(entryId);
 
     // Guard: must be PendingDrill.
@@ -926,6 +952,7 @@ class PracticeRepository {
   /// TD-03 §3.3.3 #10 — Discard an active session.
   /// Hard-delete Session/Sets/Instances, reset entry to PendingDrill.
   Future<void> discardSession(String entryId) async {
+    await _gate.awaitGateRelease();
     final entry = await _requireEntry(entryId);
     if (entry.entryType != PracticeEntryType.activeSession) {
       throw ValidationException(
@@ -995,6 +1022,7 @@ class PracticeRepository {
     InstancesCompanion data,
     String sessionId,
   ) async {
+    await _gate.awaitGateRelease();
     // Verify session is Active.
     final session = await getSessionById(sessionId);
     if (session == null || session.status != SessionStatus.active) {
@@ -1028,6 +1056,7 @@ class PracticeRepository {
 
   /// TD-03 §3.3.3 #13 — Create the next set with incremented index.
   Future<PracticeSet> advanceSet(String sessionId) async {
+    await _gate.awaitGateRelease();
     final session = await getSessionById(sessionId);
     if (session == null || session.status != SessionStatus.active) {
       throw ValidationException(
@@ -1063,6 +1092,7 @@ class PracticeRepository {
     String sessionId,
     String userId,
   ) async {
+    await _gate.awaitGateRelease();
     final session = await getSessionById(sessionId);
     if (session == null) {
       throw ValidationException(
@@ -1111,6 +1141,7 @@ class PracticeRepository {
   /// Guard: no ActiveSession. Hard-delete pending entries.
   /// Discard if 0 completed sessions, else close normally.
   Future<void> endPracticeBlock(String pbId, String userId) async {
+    await _gate.awaitGateRelease();
     final pb = await getPracticeBlockById(pbId);
     if (pb == null) {
       throw ValidationException(
@@ -1194,6 +1225,7 @@ class PracticeRepository {
     InstancesCompanion data,
     String userId,
   ) async {
+    await _gate.awaitGateRelease();
     final instance = await getInstanceById(instanceId);
     if (instance == null) {
       throw ValidationException(
@@ -1242,6 +1274,7 @@ class PracticeRepository {
   /// TD-03 §3.3.3 #18 — Soft-delete an instance.
   /// Post-close deletion on Closed Session triggers reflow.
   Future<void> deleteInstance(String instanceId, String userId) async {
+    await _gate.awaitGateRelease();
     final instance = await getInstanceById(instanceId);
     if (instance == null) {
       throw ValidationException(

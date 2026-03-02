@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/error_types.dart';
+import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
@@ -16,10 +17,11 @@ import 'package:zx_golf_app/features/planning/models/slot.dart';
 // slot management, routine/schedule lifecycle, cascade deletions.
 class PlanningRepository {
   final AppDatabase _db;
+  final SyncWriteGate _gate;
 
   static const _uuid = Uuid();
 
-  PlanningRepository(this._db);
+  PlanningRepository(this._db, this._gate);
 
   // ===========================================================================
   // Slot Helpers — S08 §8.13.2
@@ -51,6 +53,7 @@ class PlanningRepository {
 
   // S08 §8.13.1 — Get or create CalendarDay with default slot capacity.
   Future<CalendarDay> getOrCreateCalendarDay(String userId, DateTime date) async {
+    await _gate.awaitGateRelease();
     final dateOnly = DateTime(date.year, date.month, date.day);
     final existing = await getCalendarDayByDate(userId, dateOnly);
     if (existing != null) return existing;
@@ -70,6 +73,7 @@ class PlanningRepository {
   // S08 §8.13.2 — Update all slots for a CalendarDay.
   Future<CalendarDay> updateSlots(
       String calendarDayId, List<Slot> slots) async {
+    await _gate.awaitGateRelease();
     return updateCalendarDay(calendarDayId, CalendarDaysCompanion(
       slots: Value(serializeSlots(slots)),
       updatedAt: Value(DateTime.now()),
@@ -84,6 +88,7 @@ class PlanningRepository {
     int slotIndex,
     String drillId,
   ) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final day = await getOrCreateCalendarDay(userId, date);
@@ -106,11 +111,13 @@ class PlanningRepository {
         }
 
         // TD-04 §2.6 — Manual assignment: set drill, break any ownership.
+        // Phase 7B — Set updatedAt for per-slot LWW merge.
         slots[slotIndex] = Slot(
           drillId: drillId,
           ownerType: SlotOwnerType.manual,
           completionState: CompletionState.incomplete,
           planned: true,
+          updatedAt: DateTime.now(),
         );
 
         return await updateCalendarDay(day.calendarDayId, CalendarDaysCompanion(
@@ -135,6 +142,7 @@ class PlanningRepository {
     DateTime date,
     int slotIndex,
   ) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final day = await getCalendarDayByDate(userId, date);
@@ -157,7 +165,8 @@ class PlanningRepository {
         }
 
         // TD-04 §2.6 — Clear: reset to empty, break ownership.
-        slots[slotIndex] = const Slot();
+        // Phase 7B — Set updatedAt for per-slot LWW merge.
+        slots[slotIndex] = Slot(updatedAt: DateTime.now());
 
         return await updateCalendarDay(day.calendarDayId, CalendarDaysCompanion(
           slots: Value(serializeSlots(slots)),
@@ -182,6 +191,7 @@ class PlanningRepository {
     DateTime date,
     int newCapacity,
   ) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final day = await getOrCreateCalendarDay(userId, date);
@@ -238,6 +248,7 @@ class PlanningRepository {
     int slotIndex,
     String sessionId,
   ) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final day = await getCalendarDayById(calendarDayId);
@@ -270,9 +281,11 @@ class PlanningRepository {
           );
         }
 
+        // Phase 7B — Set updatedAt for per-slot LWW merge.
         slots[slotIndex] = slots[slotIndex].copyWith(
           completionState: CompletionState.completedLinked,
           completingSessionId: () => sessionId,
+          updatedAt: () => DateTime.now(),
         );
 
         return await updateCalendarDay(calendarDayId, CalendarDaysCompanion(
@@ -297,6 +310,7 @@ class PlanningRepository {
     String calendarDayId,
     int slotIndex,
   ) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final day = await getCalendarDayById(calendarDayId);
@@ -329,8 +343,10 @@ class PlanningRepository {
           );
         }
 
+        // Phase 7B — Set updatedAt for per-slot LWW merge.
         slots[slotIndex] = slots[slotIndex].copyWith(
           completionState: CompletionState.completedManual,
+          updatedAt: () => DateTime.now(),
         );
 
         return await updateCalendarDay(calendarDayId, CalendarDaysCompanion(
@@ -355,6 +371,7 @@ class PlanningRepository {
     String calendarDayId,
     int slotIndex,
   ) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final day = await getCalendarDayById(calendarDayId);
@@ -389,9 +406,11 @@ class PlanningRepository {
           );
         }
 
+        // Phase 7B — Set updatedAt for per-slot LWW merge.
         slots[slotIndex] = slots[slotIndex].copyWith(
           completionState: CompletionState.incomplete,
           completingSessionId: () => null,
+          updatedAt: () => DateTime.now(),
         );
 
         return await updateCalendarDay(calendarDayId, CalendarDaysCompanion(
@@ -421,6 +440,7 @@ class PlanningRepository {
     String name,
     List<RoutineEntry> entries,
   ) async {
+    await _gate.awaitGateRelease();
     if (entries.isEmpty) {
       throw ValidationException(
         code: ValidationException.stateTransition,
@@ -444,6 +464,7 @@ class PlanningRepository {
     String routineId,
     List<RoutineEntry> entries,
   ) async {
+    await _gate.awaitGateRelease();
     final routine = await getRoutineById(routineId);
     if (routine == null) {
       throw ValidationException(
@@ -477,6 +498,7 @@ class PlanningRepository {
 
   // TD-04 §2.8 — Retire routine: Active → Retired.
   Future<Routine> retireRoutine(String routineId) async {
+    await _gate.awaitGateRelease();
     final routine = await getRoutineById(routineId);
     if (routine == null) {
       throw ValidationException(
@@ -502,6 +524,7 @@ class PlanningRepository {
 
   // TD-04 §2.8 — Reactivate routine: Retired → Active.
   Future<Routine> reactivateRoutine(String routineId) async {
+    await _gate.awaitGateRelease();
     final routine = await getRoutineById(routineId);
     if (routine == null) {
       throw ValidationException(
@@ -527,6 +550,7 @@ class PlanningRepository {
 
   // TD-04 §2.8 — Delete routine: Active/Retired → Deleted (soft delete).
   Future<void> deleteRoutine(String routineId) async {
+    await _gate.awaitGateRelease();
     final routine = await getRoutineById(routineId);
     if (routine == null) {
       throw ValidationException(
@@ -555,6 +579,7 @@ class PlanningRepository {
   // S08 §8.1.2 — Remove fixed entries referencing a specific drill from all active routines.
   // Auto-deletes routines that become empty.
   Future<void> removeRoutineEntriesForDrill(String drillId) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         // Get all non-deleted routines.
@@ -628,6 +653,7 @@ class PlanningRepository {
     ScheduleAppMode appMode,
     String entriesJson,
   ) async {
+    await _gate.awaitGateRelease();
     // Validate entries are non-empty JSON array.
     final parsed = jsonDecode(entriesJson) as List<dynamic>;
     if (parsed.isEmpty) {
@@ -654,6 +680,7 @@ class PlanningRepository {
     String scheduleId,
     String entriesJson,
   ) async {
+    await _gate.awaitGateRelease();
     final schedule = await getScheduleById(scheduleId);
     if (schedule == null) {
       throw ValidationException(
@@ -688,6 +715,7 @@ class PlanningRepository {
 
   // TD-04 §2.9 — Retire schedule: Active → Retired.
   Future<Schedule> retireSchedule(String scheduleId) async {
+    await _gate.awaitGateRelease();
     final schedule = await getScheduleById(scheduleId);
     if (schedule == null) {
       throw ValidationException(
@@ -713,6 +741,7 @@ class PlanningRepository {
 
   // TD-04 §2.9 — Reactivate schedule: Retired → Active.
   Future<Schedule> reactivateSchedule(String scheduleId) async {
+    await _gate.awaitGateRelease();
     final schedule = await getScheduleById(scheduleId);
     if (schedule == null) {
       throw ValidationException(
@@ -738,6 +767,7 @@ class PlanningRepository {
 
   // TD-04 §2.9 — Delete schedule: Active/Retired → Deleted (soft delete).
   Future<void> deleteSchedule(String scheduleId) async {
+    await _gate.awaitGateRelease();
     final schedule = await getScheduleById(scheduleId);
     if (schedule == null) {
       throw ValidationException(
@@ -766,6 +796,7 @@ class PlanningRepository {
   // S08 §8.1.3 — Remove entries referencing a specific drill from all active schedules.
   // Auto-deletes schedules that become empty.
   Future<void> removeScheduleEntriesForDrill(String drillId) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final schedules = await (_db.select(_db.schedules)
@@ -809,6 +840,7 @@ class PlanningRepository {
   // S08 §8.1.3 — Remove entries referencing a specific routine from schedules.
   // Auto-deletes schedules that become empty.
   Future<void> removeScheduleEntriesForRoutine(String routineId) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final schedules = await (_db.select(_db.schedules)
@@ -870,6 +902,7 @@ class PlanningRepository {
 
   // Spec: S08 §8.1.2 — Create routine definition.
   Future<Routine> createRoutine(RoutinesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.routines).insertReturning(data);
@@ -904,6 +937,7 @@ class PlanningRepository {
   // TD-03 §3.2 — Update routine fields.
   // Spec: TD-03 §2.1.1 — SyncWriteGate compatible: writes through transaction.
   Future<Routine> updateRoutine(String id, RoutinesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.routines)
@@ -931,6 +965,7 @@ class PlanningRepository {
 
   // TD-03 §3.2 — Soft delete routine.
   Future<void> softDeleteRoutine(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.update(_db.routines)
@@ -962,6 +997,7 @@ class PlanningRepository {
   // Spec: S08 §8.2.4 — Create routine instance applied to a calendar day.
   Future<RoutineInstance> createRoutineInstance(
       RoutineInstancesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.routineInstances).insertReturning(data);
@@ -994,6 +1030,7 @@ class PlanningRepository {
   // TD-03 §3.2 — Update routine instance fields.
   Future<RoutineInstance> updateRoutineInstance(
       String id, RoutineInstancesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.routineInstances)
@@ -1021,6 +1058,7 @@ class PlanningRepository {
 
   // TD-03 §3.2 — Hard delete routine instance.
   Future<void> hardDeleteRoutineInstance(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.delete(_db.routineInstances)
@@ -1051,6 +1089,7 @@ class PlanningRepository {
 
   // Spec: S08 §8.1.3 — Create schedule definition.
   Future<Schedule> createSchedule(SchedulesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.schedules).insertReturning(data);
@@ -1084,6 +1123,7 @@ class PlanningRepository {
 
   // TD-03 §3.2 — Update schedule fields.
   Future<Schedule> updateSchedule(String id, SchedulesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.schedules)
@@ -1111,6 +1151,7 @@ class PlanningRepository {
 
   // TD-03 §3.2 — Soft delete schedule.
   Future<void> softDeleteSchedule(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.update(_db.schedules)
@@ -1142,6 +1183,7 @@ class PlanningRepository {
   // Spec: S08 §8.2.5 — Create schedule instance applied to a date range.
   Future<ScheduleInstance> createScheduleInstance(
       ScheduleInstancesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.scheduleInstances).insertReturning(data);
@@ -1174,6 +1216,7 @@ class PlanningRepository {
   // TD-03 §3.2 — Update schedule instance fields.
   Future<ScheduleInstance> updateScheduleInstance(
       String id, ScheduleInstancesCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.scheduleInstances)
@@ -1201,6 +1244,7 @@ class PlanningRepository {
 
   // TD-03 §3.2 — Hard delete schedule instance.
   Future<void> hardDeleteScheduleInstance(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.delete(_db.scheduleInstances)
@@ -1231,6 +1275,7 @@ class PlanningRepository {
 
   // Spec: S08 §8.13.1 — Create calendar day slot container.
   Future<CalendarDay> createCalendarDay(CalendarDaysCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         return await _db.into(_db.calendarDays).insertReturning(data);
@@ -1292,6 +1337,7 @@ class PlanningRepository {
   // TD-03 §3.2 — Update calendar day fields.
   Future<CalendarDay> updateCalendarDay(
       String id, CalendarDaysCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.calendarDays)
@@ -1319,6 +1365,7 @@ class PlanningRepository {
 
   // TD-03 §3.2 — Hard delete calendar day.
   Future<void> hardDeleteCalendarDay(String id) async {
+    await _gate.awaitGateRelease();
     try {
       await _db.transaction(() async {
         final count = await (_db.delete(_db.calendarDays)

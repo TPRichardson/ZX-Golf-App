@@ -31,10 +31,10 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    eventLogRepo = EventLogRepository(db);
+    final syncWriteGate = SyncWriteGate();
+    eventLogRepo = EventLogRepository(db, syncWriteGate);
     final scoringRepo = ScoringRepository(db);
     final rebuildGuard = RebuildGuard();
-    final syncWriteGate = SyncWriteGate();
     reflowEngine = ReflowEngine(
       scoringRepository: scoringRepo,
       eventLogRepository: eventLogRepo,
@@ -43,7 +43,7 @@ void main() {
       database: db,
       instrumentation: ReflowInstrumentation(),
     );
-    repo = PracticeRepository(db, reflowEngine, eventLogRepo);
+    repo = PracticeRepository(db, reflowEngine, eventLogRepo, syncWriteGate);
 
     // Seed test drills using the raw drills table (bypassing DrillRepository
     // which would require its own dependencies).

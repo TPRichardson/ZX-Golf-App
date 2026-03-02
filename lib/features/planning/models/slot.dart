@@ -10,6 +10,8 @@ class Slot {
   final CompletionState completionState;
   final String? completingSessionId;
   final bool planned;
+  // Phase 7B — Per-slot timestamp for LWW merge of CalendarDay slots.
+  final DateTime? updatedAt;
 
   const Slot({
     this.drillId,
@@ -18,6 +20,7 @@ class Slot {
     this.completionState = CompletionState.incomplete,
     this.completingSessionId,
     this.planned = true,
+    this.updatedAt,
   });
 
   /// S08 §8.13.2 — Empty slot (no drill assigned).
@@ -38,6 +41,7 @@ class Slot {
     CompletionState? completionState,
     String? Function()? completingSessionId,
     bool? planned,
+    DateTime? Function()? updatedAt,
   }) {
     return Slot(
       drillId: drillId != null ? drillId() : this.drillId,
@@ -48,6 +52,7 @@ class Slot {
           ? completingSessionId()
           : this.completingSessionId,
       planned: planned ?? this.planned,
+      updatedAt: updatedAt != null ? updatedAt() : this.updatedAt,
     );
   }
 
@@ -58,6 +63,7 @@ class Slot {
         'completionState': completionState.dbValue,
         'completingSessionId': completingSessionId,
         'planned': planned,
+        'updatedAt': updatedAt?.toIso8601String(),
       };
 
   factory Slot.fromJson(Map<String, dynamic> json) => Slot(
@@ -71,6 +77,9 @@ class Slot {
             : CompletionState.incomplete,
         completingSessionId: json['completingSessionId'] as String?,
         planned: json['planned'] as bool? ?? true,
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'] as String)
+            : null,
       );
 
   @override
@@ -82,15 +91,17 @@ class Slot {
           ownerId == other.ownerId &&
           completionState == other.completionState &&
           completingSessionId == other.completingSessionId &&
-          planned == other.planned;
+          planned == other.planned &&
+          updatedAt == other.updatedAt;
 
   @override
   int get hashCode => Object.hash(
-      drillId, ownerType, ownerId, completionState, completingSessionId, planned);
+      drillId, ownerType, ownerId, completionState, completingSessionId,
+      planned, updatedAt);
 
   @override
   String toString() =>
       'Slot(drillId: $drillId, ownerType: $ownerType, ownerId: $ownerId, '
       'completionState: $completionState, completingSessionId: $completingSessionId, '
-      'planned: $planned)';
+      'planned: $planned, updatedAt: $updatedAt)';
 }

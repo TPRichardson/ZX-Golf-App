@@ -22,8 +22,9 @@ class TrackTab extends ConsumerWidget {
       children: [
         const PracticePoolScreen(),
         // S13 §13.1 — Start/Resume Practice FAB + Discard button overlay.
+        // Offset above the PracticePoolScreen's create-drill FAB.
         Positioned(
-          bottom: SpacingTokens.lg,
+          bottom: SpacingTokens.lg + 64,
           right: SpacingTokens.lg,
           child: _PracticeControls(userId: _userId),
         ),

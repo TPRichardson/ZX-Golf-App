@@ -8,23 +8,25 @@ import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/instrumentation/sync_diagnostics.dart';
+import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/dto/sync_dto.dart';
+import 'merge_algorithm.dart';
 import 'sync_types.dart';
 import 'sync_write_gate.dart';
 
 // TD-03 §5.1 — Sync engine. Orchestrates upload/download cycles.
 // Phase 2.5: basic upload/download with stub merge (insert-only).
 // Phase 7A: batching, diagnostics, failure tracking, feature flag.
-// Full LWW merge deferred to Phase 7B.
+// Phase 7B: LWW merge, gate enforcement, post-merge rebuild.
 
 class SyncEngine {
   final SupabaseClient _supabase;
   final AppDatabase _db;
-  // Phase 7B — gate checked before repository writes during sync merge.
-  // ignore: unused_field
   final SyncWriteGate _gate;
   final SyncInstrumentation? _diagnostics;
+  // Phase 7B — ReflowEngine for post-merge full rebuild.
+  final ReflowEngine? _reflowEngine;
 
   final _statusController = StreamController<SyncStatus>.broadcast();
   SyncStatus _currentStatus = SyncStatus.idle;
@@ -50,7 +52,8 @@ class SyncEngine {
   /// TD-03 §5.1 — Whether sync is enabled.
   bool get syncEnabled => _syncEnabled;
 
-  SyncEngine(this._supabase, this._db, this._gate, [this._diagnostics]);
+  SyncEngine(this._supabase, this._db, this._gate,
+      [this._diagnostics, this._reflowEngine]);
 
   /// TD-03 §5.1 — Stream of sync status changes.
   Stream<SyncStatus> getSyncStatus() => _statusController.stream;
@@ -206,7 +209,7 @@ class SyncEngine {
         }),
       );
 
-      // Step 4: Stub merge — insert-only (Phase 7B: full LWW)
+      // Step 4: LWW merge (Phase 7B).
       int downloadedCount = 0;
       if (downloadResponse is Map && downloadResponse['changes'] != null) {
         downloadedCount =
@@ -638,68 +641,305 @@ class SyncEngine {
     return payload;
   }
 
-  /// Phase 2.5 stub merge: insertOrIgnore for downloaded rows.
-  /// Phase 7B: full LWW merge.
+  /// TD-03 §5 — Phase 7B: LWW merge with gate enforcement and post-merge rebuild.
   Future<int> _applyDownloadedChanges(Map changes) async {
-    var count = 0;
+    final mergeStart = DateTime.now();
 
-    Future<void> insertTable<T extends Table, D>(
-      TableInfo<T, D> table,
-      List? rows,
-      Insertable<D> Function(Map<String, dynamic>) fromDto,
-    ) async {
-      if (rows == null || rows.isEmpty) return;
-      for (final row in rows) {
-        await _db.into(table).insertOnConflictUpdate(
-              fromDto(Map<String, dynamic>.from(row as Map)),
-            );
-        count++;
-      }
+    // 1. Acquire SyncWriteGate.
+    final gateAcquired = _gate.acquireExclusive();
+    if (!gateAcquired) {
+      throw SyncException(
+        code: SyncException.gateTimeout,
+        message: 'SyncWriteGate already held during merge',
+      );
     }
 
-    // Phase 2.5 stub — insert each table from download response.
-    await insertTable(_db.users, changes['User'] as List?,
-        userFromSyncDto);
-    await insertTable(_db.drills, changes['Drill'] as List?,
-        drillFromSyncDto);
-    await insertTable(_db.practiceBlocks,
-        changes['PracticeBlock'] as List?, practiceBlockFromSyncDto);
-    await insertTable(_db.sessions, changes['Session'] as List?,
-        sessionFromSyncDto);
-    await insertTable(
-        _db.sets, changes['Set'] as List?, practiceSetFromSyncDto);
-    await insertTable(_db.instances, changes['Instance'] as List?,
-        instanceFromSyncDto);
-    await insertTable(_db.practiceEntries,
-        changes['PracticeEntry'] as List?, practiceEntryFromSyncDto);
-    await insertTable(_db.userDrillAdoptions,
-        changes['UserDrillAdoption'] as List?, userDrillAdoptionFromSyncDto);
-    await insertTable(_db.userClubs, changes['UserClub'] as List?,
-        userClubFromSyncDto);
-    await insertTable(
-        _db.clubPerformanceProfiles,
-        changes['ClubPerformanceProfile'] as List?,
-        clubPerformanceProfileFromSyncDto);
-    await insertTable(
-        _db.userSkillAreaClubMappings,
-        changes['UserSkillAreaClubMapping'] as List?,
-        userSkillAreaClubMappingFromSyncDto);
-    await insertTable(_db.routines, changes['Routine'] as List?,
-        routineFromSyncDto);
-    await insertTable(_db.schedules, changes['Schedule'] as List?,
-        scheduleFromSyncDto);
-    await insertTable(_db.calendarDays,
-        changes['CalendarDay'] as List?, calendarDayFromSyncDto);
-    await insertTable(_db.routineInstances,
-        changes['RoutineInstance'] as List?, routineInstanceFromSyncDto);
-    await insertTable(_db.scheduleInstances,
-        changes['ScheduleInstance'] as List?, scheduleInstanceFromSyncDto);
-    await insertTable(_db.eventLogs, changes['EventLog'] as List?,
-        eventLogFromSyncDto);
-    await insertTable(_db.userDevices,
-        changes['UserDevice'] as List?, userDeviceFromSyncDto);
+    try {
+      var mergedCount = 0;
+      final affectedUserIds = <String>{};
+      var tablesAffected = 0;
 
-    return count;
+      // 2. For each table in upload order (parent before child):
+      for (final tableName in tableUploadOrder) {
+        final remoteRows = changes[tableName] as List?;
+        if (remoteRows == null || remoteRows.isEmpty) continue;
+        tablesAffected++;
+
+        for (final remoteRow in remoteRows) {
+          final remote = Map<String, dynamic>.from(remoteRow as Map);
+
+          if (MergeAlgorithm.appendOnlyTables.contains(tableName)) {
+            // EventLog: insert if not exists.
+            await _insertIfMissing(tableName, remote);
+          } else {
+            // Fetch local row by PK, apply merge.
+            final local = await _fetchLocalRow(tableName, remote);
+            final merged = local == null
+                ? remote
+                : MergeAlgorithm.slotMergeTables.contains(tableName)
+                    ? MergeAlgorithm.mergeCalendarDay(local, remote)
+                    : MergeAlgorithm.mergeRow(local, remote);
+            await _upsertMergedRow(tableName, merged);
+          }
+          mergedCount++;
+
+          // Track affected users for post-merge rebuild.
+          final userId = remote['userId'] as String?;
+          if (userId != null) affectedUserIds.add(userId);
+        }
+      }
+
+      // 3. Post-merge pipeline: full rebuild for each affected user.
+      final rebuildTriggered = affectedUserIds.isNotEmpty &&
+          _reflowEngine != null;
+      if (rebuildTriggered) {
+        for (final userId in affectedUserIds) {
+          await _reflowEngine.executeFullRebuildInternal(userId);
+        }
+      }
+
+      final mergeDuration = DateTime.now().difference(mergeStart);
+      _diagnostics?.emitMergeSummary(
+        totalDuration: mergeDuration,
+        mergedCount: mergedCount,
+        tablesAffected: tablesAffected,
+        affectedUsers: affectedUserIds.length,
+        rebuildTriggered: rebuildTriggered,
+      );
+
+      return mergedCount;
+    } finally {
+      _gate.release();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 7B — Merge helper methods
+  // ---------------------------------------------------------------------------
+
+  /// Primary key column name(s) for each table.
+  static const _tablePrimaryKeys = <String, String>{
+    'User': 'userId',
+    'Drill': 'drillId',
+    'PracticeBlock': 'practiceBlockId',
+    'Session': 'sessionId',
+    'Set': 'setId',
+    'Instance': 'instanceId',
+    'PracticeEntry': 'practiceEntryId',
+    'UserDrillAdoption': 'userDrillAdoptionId',
+    'UserClub': 'clubId',
+    'ClubPerformanceProfile': 'profileId',
+    'UserSkillAreaClubMapping': 'mappingId',
+    'Routine': 'routineId',
+    'Schedule': 'scheduleId',
+    'CalendarDay': 'calendarDayId',
+    'RoutineInstance': 'routineInstanceId',
+    'ScheduleInstance': 'scheduleInstanceId',
+    'EventLog': 'eventLogId',
+    'UserDevice': 'deviceId',
+  };
+
+  /// DB table names (SQL) mapped from logical names.
+  static const _tableDbNames = <String, String>{
+    'User': 'User',
+    'Drill': 'Drill',
+    'PracticeBlock': 'PracticeBlock',
+    'Session': 'Session',
+    'Set': 'Sets',
+    'Instance': 'Instance',
+    'PracticeEntry': 'PracticeEntry',
+    'UserDrillAdoption': 'UserDrillAdoption',
+    'UserClub': 'UserClub',
+    'ClubPerformanceProfile': 'ClubPerformanceProfile',
+    'UserSkillAreaClubMapping': 'UserSkillAreaClubMapping',
+    'Routine': 'Routine',
+    'Schedule': 'Schedule',
+    'CalendarDay': 'CalendarDay',
+    'RoutineInstance': 'RoutineInstance',
+    'ScheduleInstance': 'ScheduleInstance',
+    'EventLog': 'EventLog',
+    'UserDevice': 'UserDevice',
+  };
+
+  /// DB primary key column names (SQL) mapped from logical names.
+  static const _tableDbPrimaryKeys = <String, String>{
+    'User': 'UserID',
+    'Drill': 'DrillID',
+    'PracticeBlock': 'PracticeBlockID',
+    'Session': 'SessionID',
+    'Set': 'SetID',
+    'Instance': 'InstanceID',
+    'PracticeEntry': 'PracticeEntryID',
+    'UserDrillAdoption': 'UserDrillAdoptionID',
+    'UserClub': 'ClubID',
+    'ClubPerformanceProfile': 'ProfileID',
+    'UserSkillAreaClubMapping': 'MappingID',
+    'Routine': 'RoutineID',
+    'Schedule': 'ScheduleID',
+    'CalendarDay': 'CalendarDayID',
+    'RoutineInstance': 'RoutineInstanceID',
+    'ScheduleInstance': 'ScheduleInstanceID',
+    'EventLog': 'EventLogID',
+    'UserDevice': 'DeviceID',
+  };
+
+  /// Fetch a local row by primary key, returning it as a Map (DTO format)
+  /// or null if not found.
+  Future<Map<String, dynamic>?> _fetchLocalRow(
+    String tableName,
+    Map<String, dynamic> remote,
+  ) async {
+    final pkField = _tablePrimaryKeys[tableName];
+    final dbTable = _tableDbNames[tableName];
+    final dbPk = _tableDbPrimaryKeys[tableName];
+    if (pkField == null || dbTable == null || dbPk == null) return null;
+
+    final pkValue = remote[pkField] as String?;
+    if (pkValue == null) return null;
+
+    final results = await _db.customSelect(
+      'SELECT * FROM "$dbTable" WHERE "$dbPk" = ?',
+      variables: [Variable.withString(pkValue)],
+    ).get();
+
+    if (results.isEmpty) return null;
+
+    // Convert the DB row to DTO format using the existing toSyncDto extensions.
+    return _dbRowToSyncDto(tableName, results.first);
+  }
+
+  /// Convert a Drift QueryRow to sync DTO Map format.
+  Map<String, dynamic>? _dbRowToSyncDto(String tableName, QueryRow row) {
+    // Use the typed table mapping to convert.
+    switch (tableName) {
+      case 'User':
+        return _db.users.map(row.data).toSyncDto();
+      case 'Drill':
+        return _db.drills.map(row.data).toSyncDto();
+      case 'PracticeBlock':
+        return _db.practiceBlocks.map(row.data).toSyncDto();
+      case 'Session':
+        return _db.sessions.map(row.data).toSyncDto();
+      case 'Set':
+        return _db.sets.map(row.data).toSyncDto();
+      case 'Instance':
+        return _db.instances.map(row.data).toSyncDto();
+      case 'PracticeEntry':
+        return _db.practiceEntries.map(row.data).toSyncDto();
+      case 'UserDrillAdoption':
+        return _db.userDrillAdoptions.map(row.data).toSyncDto();
+      case 'UserClub':
+        return _db.userClubs.map(row.data).toSyncDto();
+      case 'ClubPerformanceProfile':
+        return _db.clubPerformanceProfiles.map(row.data).toSyncDto();
+      case 'UserSkillAreaClubMapping':
+        return _db.userSkillAreaClubMappings.map(row.data).toSyncDto();
+      case 'Routine':
+        return _db.routines.map(row.data).toSyncDto();
+      case 'Schedule':
+        return _db.schedules.map(row.data).toSyncDto();
+      case 'CalendarDay':
+        return _db.calendarDays.map(row.data).toSyncDto();
+      case 'RoutineInstance':
+        return _db.routineInstances.map(row.data).toSyncDto();
+      case 'ScheduleInstance':
+        return _db.scheduleInstances.map(row.data).toSyncDto();
+      case 'EventLog':
+        return _db.eventLogs.map(row.data).toSyncDto();
+      case 'UserDevice':
+        return _db.userDevices.map(row.data).toSyncDto();
+      default:
+        return null;
+    }
+  }
+
+  /// Upsert merged row using existing DTO fromSyncDto functions.
+  Future<void> _upsertMergedRow(
+    String tableName,
+    Map<String, dynamic> merged,
+  ) async {
+    switch (tableName) {
+      case 'User':
+        await _db.into(_db.users).insertOnConflictUpdate(
+              userFromSyncDto(merged));
+      case 'Drill':
+        await _db.into(_db.drills).insertOnConflictUpdate(
+              drillFromSyncDto(merged));
+      case 'PracticeBlock':
+        await _db.into(_db.practiceBlocks).insertOnConflictUpdate(
+              practiceBlockFromSyncDto(merged));
+      case 'Session':
+        await _db.into(_db.sessions).insertOnConflictUpdate(
+              sessionFromSyncDto(merged));
+      case 'Set':
+        await _db.into(_db.sets).insertOnConflictUpdate(
+              practiceSetFromSyncDto(merged));
+      case 'Instance':
+        await _db.into(_db.instances).insertOnConflictUpdate(
+              instanceFromSyncDto(merged));
+      case 'PracticeEntry':
+        await _db.into(_db.practiceEntries).insertOnConflictUpdate(
+              practiceEntryFromSyncDto(merged));
+      case 'UserDrillAdoption':
+        await _db.into(_db.userDrillAdoptions).insertOnConflictUpdate(
+              userDrillAdoptionFromSyncDto(merged));
+      case 'UserClub':
+        await _db.into(_db.userClubs).insertOnConflictUpdate(
+              userClubFromSyncDto(merged));
+      case 'ClubPerformanceProfile':
+        await _db.into(_db.clubPerformanceProfiles).insertOnConflictUpdate(
+              clubPerformanceProfileFromSyncDto(merged));
+      case 'UserSkillAreaClubMapping':
+        await _db.into(_db.userSkillAreaClubMappings).insertOnConflictUpdate(
+              userSkillAreaClubMappingFromSyncDto(merged));
+      case 'Routine':
+        await _db.into(_db.routines).insertOnConflictUpdate(
+              routineFromSyncDto(merged));
+      case 'Schedule':
+        await _db.into(_db.schedules).insertOnConflictUpdate(
+              scheduleFromSyncDto(merged));
+      case 'CalendarDay':
+        await _db.into(_db.calendarDays).insertOnConflictUpdate(
+              calendarDayFromSyncDto(merged));
+      case 'RoutineInstance':
+        await _db.into(_db.routineInstances).insertOnConflictUpdate(
+              routineInstanceFromSyncDto(merged));
+      case 'ScheduleInstance':
+        await _db.into(_db.scheduleInstances).insertOnConflictUpdate(
+              scheduleInstanceFromSyncDto(merged));
+      case 'UserDevice':
+        await _db.into(_db.userDevices).insertOnConflictUpdate(
+              userDeviceFromSyncDto(merged));
+    }
+  }
+
+  /// Insert if not exists (for append-only tables like EventLog).
+  Future<void> _insertIfMissing(
+    String tableName,
+    Map<String, dynamic> row,
+  ) async {
+    final pkField = _tablePrimaryKeys[tableName];
+    final dbTable = _tableDbNames[tableName];
+    final dbPk = _tableDbPrimaryKeys[tableName];
+    if (pkField == null || dbTable == null || dbPk == null) return;
+
+    final pkValue = row[pkField] as String?;
+    if (pkValue == null) return;
+
+    // Check existence first to avoid overwriting.
+    final existing = await _db.customSelect(
+      'SELECT 1 FROM "$dbTable" WHERE "$dbPk" = ? LIMIT 1',
+      variables: [Variable.withString(pkValue)],
+    ).get();
+
+    if (existing.isEmpty) {
+      // Insert the row using the appropriate fromSyncDto.
+      switch (tableName) {
+        case 'EventLog':
+          await _db.into(_db.eventLogs).insert(
+                eventLogFromSyncDto(row));
+      }
+    }
   }
 
   /// TD-07 §6.1 — Exponential backoff retry with jitter.

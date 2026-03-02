@@ -25,7 +25,7 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
-    final eventLogRepo = EventLogRepository(db);
+    final eventLogRepo = EventLogRepository(db, SyncWriteGate());
     final scoringRepo = ScoringRepository(db);
     final reflowEngine = ReflowEngine(
       scoringRepository: scoringRepo,
@@ -35,7 +35,7 @@ void main() {
       database: db,
       instrumentation: ReflowInstrumentation(),
     );
-    repo = PracticeRepository(db, reflowEngine, eventLogRepo);
+    repo = PracticeRepository(db, reflowEngine, eventLogRepo, SyncWriteGate());
 
     // Seed a structured drill: 1 set × 3 attempts.
     drillId = 'drill-sm';

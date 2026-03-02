@@ -61,6 +61,7 @@ class SyncException extends ZxGolfAppException {
   static const schemaMismatch = 'SYNC_SCHEMA_MISMATCH';
   static const payloadTooLarge = 'SYNC_PAYLOAD_TOO_LARGE';
   static const networkUnavailable = 'SYNC_NETWORK_UNAVAILABLE';
+  static const gateTimeout = 'SYNC_GATE_TIMEOUT';
 }
 
 // TD-07 §2.2 — Infrastructure failures (SYSTEM_* prefix).

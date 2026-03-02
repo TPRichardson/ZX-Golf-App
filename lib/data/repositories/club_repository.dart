@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
+import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 
@@ -11,10 +12,11 @@ import 'package:zx_golf_app/data/enums.dart';
 
 class ClubRepository {
   final AppDatabase _db;
+  final SyncWriteGate _gate;
 
   static const _uuid = Uuid();
 
-  ClubRepository(this._db);
+  ClubRepository(this._db, this._gate);
 
   // ---------------------------------------------------------------------------
   // S09 §9.2.3 — Default mapping configuration
@@ -80,6 +82,7 @@ class ClubRepository {
   // TD-03 §3.3.5 — Add club to user's bag.
   // S09 §9.2.3 — Creates default skill area mappings.
   Future<UserClub> addClub(String userId, UserClubsCompanion data) async {
+    await _gate.awaitGateRelease();
     final clubId = _uuid.v4();
     final clubType = data.clubType.value;
 
@@ -112,6 +115,7 @@ class ClubRepository {
 
   // TD-03 §3.3.5 — Update club fields. Make, Model, Loft only.
   Future<UserClub> updateClub(String clubId, UserClubsCompanion data) async {
+    await _gate.awaitGateRelease();
     try {
       return await _db.transaction(() async {
         final rows = await (_db.update(_db.userClubs)
@@ -141,6 +145,7 @@ class ClubRepository {
 
   // TD-03 §3.3.5 / TD-04 §2.10.1 — Retire club: Active→Retired.
   Future<UserClub> retireClub(String userId, String clubId) async {
+    await _gate.awaitGateRelease();
     final existing = await _getClub(clubId);
 
     if (existing.userId != userId) {
@@ -165,6 +170,7 @@ class ClubRepository {
 
   // TD-03 §3.3.5 / TD-04 §2.10.1 — Reactivate club: Retired→Active.
   Future<UserClub> reactivateClub(String userId, String clubId) async {
+    await _gate.awaitGateRelease();
     final existing = await _getClub(clubId);
 
     if (existing.userId != userId) {
@@ -197,6 +203,7 @@ class ClubRepository {
     String clubId,
     ClubPerformanceProfilesCompanion data,
   ) async {
+    await _gate.awaitGateRelease();
     final profileId = _uuid.v4();
     final companion = data.copyWith(
       profileId: Value(profileId),
@@ -285,6 +292,7 @@ class ClubRepository {
     SkillArea skillArea,
     bool mapped,
   ) async {
+    await _gate.awaitGateRelease();
     // Check mandatory mapping enforcement.
     if (!mapped) {
       final mandatory = _mandatoryMappings[clubType];
