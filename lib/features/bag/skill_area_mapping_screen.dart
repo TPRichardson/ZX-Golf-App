@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -14,7 +15,7 @@ import 'package:zx_golf_app/providers/repository_providers.dart';
 class SkillAreaMappingScreen extends ConsumerWidget {
   const SkillAreaMappingScreen({super.key});
 
-  static const _userId = 'local-user';
+  static const _userId = kDevUserId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

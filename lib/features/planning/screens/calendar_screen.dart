@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -19,8 +20,8 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  // Phase 3 stub — replaced when auth is wired.
-  static const _userId = 'local-user';
+  // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
+  static const _userId = kDevUserId;
 
   bool _showTwoWeeks = false;
 

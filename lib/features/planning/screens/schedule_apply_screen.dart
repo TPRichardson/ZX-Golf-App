@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -117,7 +118,7 @@ class _ScheduleApplyScreenState
       // Full integration would use ScheduleApplicator.previewListMode/previewDayPlanningMode.
       final actions = ref.read(planningActionsProvider);
       await actions.applySchedule(
-        'local-user',
+        kDevUserId,
         widget.scheduleId,
         _startDate!,
         _endDate!,

@@ -112,7 +112,7 @@ void main() {
       expect(slots[1].completingSessionId, 'session-1');
     });
 
-    test('no CalendarDay entity → overflow creates new CalendarDay', () async {
+    test('no CalendarDay entity → creates default day + overflow slot', () async {
       final date = DateTime(2026, 3, 6);
 
       await matcher.executeCompletionMatching(
@@ -120,12 +120,13 @@ void main() {
 
       final day = await repo.getCalendarDayByDate(userId, date);
       expect(day, isNotNull);
-      expect(day!.slotCapacity, 1);
+      // Default 5 empty slots + 1 overflow = 6.
+      expect(day!.slotCapacity, 6);
       final slots = repo.parseSlots(day.slots);
-      expect(slots.length, 1);
-      expect(slots[0].drillId, 'drill-1');
-      expect(slots[0].planned, isFalse);
-      expect(slots[0].completionState, CompletionState.completedLinked);
+      expect(slots.length, 6);
+      expect(slots[5].drillId, 'drill-1');
+      expect(slots[5].planned, isFalse);
+      expect(slots[5].completionState, CompletionState.completedLinked);
     });
 
     test('revertCompletionForSession reverts matched slot', () async {

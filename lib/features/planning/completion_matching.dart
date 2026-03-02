@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
@@ -10,8 +9,6 @@ import 'package:zx_golf_app/features/planning/models/slot.dart';
 
 class CompletionMatcher {
   final PlanningRepository _planningRepo;
-
-  static const _uuid = Uuid();
 
   CompletionMatcher(this._planningRepo);
 
@@ -48,44 +45,26 @@ class CompletionMatcher {
     }
 
     // S08 §8.3.3 — Completion overflow: no matching slot found.
-    // Create new slot, capacity +1, planned=false, CompletedLinked.
-    if (day == null) {
-      // No CalendarDay entity — create one with overflow slot.
-      final overflowSlot = Slot(
-        drillId: drillId,
-        ownerType: SlotOwnerType.manual,
-        completionState: CompletionState.completedLinked,
-        completingSessionId: sessionId,
-        planned: false,
-      );
+    // Ensure CalendarDay exists with default slots, then append overflow.
+    day ??= await _planningRepo.getOrCreateCalendarDay(userId, dateOnly);
 
-      day = await _planningRepo.createCalendarDay(CalendarDaysCompanion(
-        calendarDayId: Value(_uuid.v4()),
-        userId: Value(userId),
-        date: Value(dateOnly),
-        slotCapacity: const Value(1),
-        slots: Value(_planningRepo.serializeSlots([overflowSlot])),
-      ));
-    } else {
-      // CalendarDay exists but no matching slot — add overflow.
-      final slots = _planningRepo.parseSlots(day.slots);
-      slots.add(Slot(
-        drillId: drillId,
-        ownerType: SlotOwnerType.manual,
-        completionState: CompletionState.completedLinked,
-        completingSessionId: sessionId,
-        planned: false,
-      ));
+    final slots = _planningRepo.parseSlots(day.slots);
+    slots.add(Slot(
+      drillId: drillId,
+      ownerType: SlotOwnerType.manual,
+      completionState: CompletionState.completedLinked,
+      completingSessionId: sessionId,
+      planned: false,
+    ));
 
-      await _planningRepo.updateCalendarDay(
-        day.calendarDayId,
-        CalendarDaysCompanion(
-          slotCapacity: Value(slots.length),
-          slots: Value(_planningRepo.serializeSlots(slots)),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
-    }
+    await _planningRepo.updateCalendarDay(
+      day.calendarDayId,
+      CalendarDaysCompanion(
+        slotCapacity: Value(slots.length),
+        slots: Value(_planningRepo.serializeSlots(slots)),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// S08 §8.3.4 — Revert completion match when a session is deleted.

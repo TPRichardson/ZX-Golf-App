@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
@@ -12,29 +13,29 @@ import 'package:zx_golf_app/providers/practice_providers.dart';
 class TrackTab extends ConsumerWidget {
   const TrackTab({super.key});
 
-  // Phase 3 stub — replaced when auth is wired.
-  static const _userId = 'local-user';
+  // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
+  static const _userId = kDevUserId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Stack(
       children: [
         const PracticePoolScreen(),
-        // S13 §13.1 — Start Practice FAB overlay.
+        // S13 §13.1 — Start/Resume Practice FAB + Discard button overlay.
         Positioned(
           bottom: SpacingTokens.lg,
           right: SpacingTokens.lg,
-          child: _StartPracticeButton(userId: _userId),
+          child: _PracticeControls(userId: _userId),
         ),
       ],
     );
   }
 }
 
-class _StartPracticeButton extends ConsumerWidget {
+class _PracticeControls extends ConsumerWidget {
   final String userId;
 
-  const _StartPracticeButton({required this.userId});
+  const _PracticeControls({required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,21 +44,36 @@ class _StartPracticeButton extends ConsumerWidget {
     return activePb.when(
       data: (pb) {
         if (pb != null) {
-          // Active practice block exists — resume.
-          return FloatingActionButton.extended(
-            heroTag: 'resume_practice',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => PracticeQueueScreen(
-                  practiceBlockId: pb.practiceBlockId,
-                  userId: userId,
-                ),
-              ));
-            },
-            backgroundColor: ColorTokens.successDefault,
-            icon: const Icon(Icons.play_arrow, color: Colors.white),
-            label: const Text('Resume Practice',
-                style: TextStyle(color: Colors.white)),
+          // Active practice block exists — show Resume + Discard.
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: SpacingTokens.sm,
+            children: [
+              // Discard button.
+              FloatingActionButton.small(
+                heroTag: 'discard_practice',
+                onPressed: () => _confirmDiscard(context, ref, pb.practiceBlockId),
+                backgroundColor: ColorTokens.errorDestructive,
+                child: const Icon(Icons.delete_outline, color: Colors.white),
+              ),
+              // Resume button.
+              FloatingActionButton.extended(
+                heroTag: 'resume_practice',
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => PracticeQueueScreen(
+                      practiceBlockId: pb.practiceBlockId,
+                      userId: userId,
+                    ),
+                  ));
+                },
+                backgroundColor: ColorTokens.successDefault,
+                icon: const Icon(Icons.play_arrow, color: Colors.white),
+                label: const Text('Resume Practice',
+                    style: TextStyle(color: Colors.white)),
+              ),
+            ],
           );
         }
 
@@ -87,6 +103,40 @@ class _StartPracticeButton extends ConsumerWidget {
           userId: userId,
         ),
       ));
+    }
+  }
+
+  Future<void> _confirmDiscard(
+      BuildContext context, WidgetRef ref, String pbId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Discard Practice?',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: const Text(
+          'This will delete all sessions and data from this practice block. This cannot be undone.',
+          style: TextStyle(color: ColorTokens.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.errorDestructive,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final actions = ref.read(practiceActionsProvider);
+      await actions.discardPracticeBlock(pbId, userId);
     }
   }
 }

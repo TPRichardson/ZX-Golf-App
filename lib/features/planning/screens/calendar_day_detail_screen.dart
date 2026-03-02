@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/repositories/drill_repository.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -27,10 +29,12 @@ class CalendarDayDetailScreen extends ConsumerStatefulWidget {
 
 class _CalendarDayDetailScreenState
     extends ConsumerState<CalendarDayDetailScreen> {
-  static const _userId = 'local-user';
+  // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
+  static const _userId = kDevUserId;
 
   CalendarDay? _day;
   List<Slot> _slots = [];
+  final Map<String, String> _drillNames = {};
 
   @override
   void initState() {
@@ -40,12 +44,32 @@ class _CalendarDayDetailScreenState
 
   Future<void> _loadDay() async {
     final repo = ref.read(planningRepositoryProvider);
+    final drillRepo = ref.read(drillRepositoryProvider);
     final day = await repo.getCalendarDayById(widget.calendarDayId);
     if (day != null && mounted) {
-      setState(() {
-        _day = day;
-        _slots = repo.parseSlots(day.slots);
-      });
+      final slots = repo.parseSlots(day.slots);
+      await _resolveDrillNames(drillRepo, slots);
+      if (mounted) {
+        setState(() {
+          _day = day;
+          _slots = slots;
+        });
+      }
+    }
+  }
+
+  Future<void> _resolveDrillNames(
+      DrillRepository drillRepo, List<Slot> slots) async {
+    final ids = slots
+        .map((s) => s.drillId)
+        .whereType<String>()
+        .where((id) => !_drillNames.containsKey(id))
+        .toSet();
+    for (final id in ids) {
+      final drill = await drillRepo.getById(id);
+      if (drill != null) {
+        _drillNames[id] = drill.name;
+      }
     }
   }
 
@@ -78,9 +102,13 @@ class _CalendarDayDetailScreenState
         itemCount: _slots.length,
         separatorBuilder: (_, _) => const SizedBox(height: SpacingTokens.sm),
         itemBuilder: (context, index) {
+          final slot = _slots[index];
           return SlotTile(
-            slot: _slots[index],
+            slot: slot,
             index: index,
+            drillName: slot.drillId != null
+                ? _drillNames[slot.drillId]
+                : null,
             onTap: () => _onSlotTap(index),
             onLongPress: () => _onSlotLongPress(index),
           );

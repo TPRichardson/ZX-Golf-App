@@ -1289,6 +1289,13 @@ class PracticeRepository {
         .getSingleOrNull();
   }
 
+  /// Get all practice entries for a block.
+  Future<List<PracticeEntry>> getPracticeEntriesByBlock(String pbId) {
+    return (_db.select(_db.practiceEntries)
+          ..where((t) => t.practiceBlockId.equals(pbId)))
+        .get();
+  }
+
   /// Get the active session in a practice block (if any).
   Future<Session?> getActiveSessionInBlock(String pbId) async {
     final entries = await (_db.select(_db.practiceEntries)
