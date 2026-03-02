@@ -79,11 +79,10 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 4 — Live Practice Workflow**
+> **Phase 5 — Practice Planning Layer**
 >
-> Session execution: start practice block, execute drill sessions,
-> record attempts, complete sets, close sessions with scoring.
-> Builds on Phase 3 drill/bag configuration.
+> Routines, Schedules, Calendar day planning.
+> Builds on Phase 4 live practice workflow.
 
 ---
 
@@ -178,6 +177,22 @@ lib/
 │   │   └── widgets/
 │   │       └── club_card.dart          # Club list item
 │   ├── practice/                   # [Phase 4] Live practice workflow
+│   │   ├── practice_router.dart        # InputMode → execution screen routing
+│   │   ├── execution/
+│   │   │   └── session_execution_controller.dart  # Structured/unstructured/technique completion
+│   │   ├── screens/
+│   │   │   ├── practice_queue_screen.dart          # Queue: add/remove/reorder drills
+│   │   │   ├── grid_cell_screen.dart               # 1×3/3×1/3×3 grid tap
+│   │   │   ├── continuous_measurement_screen.dart   # Numeric distance/deviation
+│   │   │   ├── raw_data_entry_screen.dart          # General numeric + real-time score
+│   │   │   ├── binary_hit_miss_screen.dart         # Hit/Miss toggle
+│   │   │   ├── technique_block_screen.dart         # Timer only
+│   │   │   └── post_session_summary_screen.dart    # Score + integrity summary
+│   │   └── widgets/
+│   │       ├── execution_header.dart               # Drill name, set/instance progress
+│   │       ├── club_selector.dart                  # Club dropdown per ClubSelectionMode
+│   │       ├── score_flash.dart                    # 120ms color flash animation
+│   │       └── practice_entry_card.dart            # Queue entry card
 │   ├── planning/                   # [Phase 5] Routines, Schedules, Calendar
 │   ├── review/                     # [Phase 6] SkillScore dashboard, analysis
 │   └── settings/                   # [Phase 8] Settings screens
@@ -299,6 +314,7 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-01 | Phase 2.5 | Complete | 18 DTO files + barrel, 4 sync core files, 4 SQL migrations, Supabase init, providers. 77 unit tests + 6 server acceptance tests (all 6 TD-06 §6.4 criteria passing). `flutter analyze` clean. |
 | 2026-03-01 | Phase 2B | Complete | ReflowEngine (10-step orchestrator + bulk rebuild), RebuildGuard, ScopeResolver, ScoringRepository full impl, ReflowInstrumentation, 8 Riverpod providers, profiling harness. 253 tests passing. Scoped reflow p95=99ms (<150ms target), full rebuild p95=198ms (<1s target). `flutter analyze` clean. |
 | 2026-03-01 | Phase 3 | Complete | DrillRepository (11 business methods, state machines, immutability, anchor governance, reflow triggers), ClubRepository (9 methods, S09 §9.2.3 default/mandatory mappings), 56 repo tests (33 drill + 23 club), drill providers + bag providers, 7 drill screens/widgets (practice pool, library, detail, create, drill card, anchor editor, skill area picker), 4 bag screens/widgets (bag, club detail, skill area mapping, club card), shell integration. 317 total tests passing. `flutter analyze` clean. |
+| 2026-03-01 | Phase 4 | Complete | TimerService (2h/4h with suspend/resume), PracticeRepository (18 business methods, TD-04 state machine guards), practice providers + PracticeActions coordination, SessionExecutionController (structured/unstructured/technique completion, real-time scoring), 7 execution screens (grid cell, continuous measurement, raw data entry, binary hit/miss, technique block, practice queue, post-session summary), 4 widgets (execution header, club selector, score flash, practice entry card), practice router, session close pipeline integration (<200ms), post-close editing with reflow. 388 total tests passing. `flutter analyze` clean. |
 
 ---
 

@@ -14,7 +14,10 @@ import 'widgets/drill_card.dart';
 // S14 §14.1 — System drill catalogue.
 
 class DrillLibraryScreen extends ConsumerWidget {
-  const DrillLibraryScreen({super.key});
+  /// When true, tapping a drill pops with the drillId instead of navigating.
+  final bool pickMode;
+
+  const DrillLibraryScreen({super.key, this.pickMode = false});
 
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = 'local-user';
@@ -64,6 +67,10 @@ class DrillLibraryScreen extends ConsumerWidget {
                       child: DrillCard(
                         drill: drill,
                         onTap: () {
+                          if (pickMode) {
+                            Navigator.of(context).pop(drill.drillId);
+                            return;
+                          }
                           Navigator.of(context).push(MaterialPageRoute(
                             builder: (_) => DrillDetailScreen(
                               drillId: drill.drillId,

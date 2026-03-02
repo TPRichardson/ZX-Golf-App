@@ -18,7 +18,10 @@ import 'widgets/skill_area_picker.dart';
 // S12 §12.3 — Track tab primary view.
 
 class PracticePoolScreen extends ConsumerStatefulWidget {
-  const PracticePoolScreen({super.key});
+  /// When true, tapping a drill pops with the drillId instead of navigating.
+  final bool pickMode;
+
+  const PracticePoolScreen({super.key, this.pickMode = false});
 
   @override
   ConsumerState<PracticePoolScreen> createState() =>
@@ -36,27 +39,29 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
 
     return Scaffold(
       appBar: ZxAppBar(
-        title: 'Practice Pool',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.golf_course),
-            tooltip: 'Golf Bag',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const BagScreen(),
-              ));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.library_books),
-            tooltip: 'System Library',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const DrillLibraryScreen(),
-              ));
-            },
-          ),
-        ],
+        title: widget.pickMode ? 'Select Drill' : 'Practice Pool',
+        actions: widget.pickMode
+            ? null
+            : [
+                IconButton(
+                  icon: const Icon(Icons.golf_course),
+                  tooltip: 'Golf Bag',
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const BagScreen(),
+                    ));
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.library_books),
+                  tooltip: 'System Library',
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const DrillLibraryScreen(),
+                    ));
+                  },
+                ),
+              ],
       ),
       body: Column(
         children: [
@@ -122,7 +127,13 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
                     final dwa = filtered[index];
                     return DrillCard(
                       drill: dwa.drill,
-                      onTap: () => _openDrillDetail(dwa),
+                      onTap: () {
+                        if (widget.pickMode) {
+                          Navigator.of(context).pop(dwa.drill.drillId);
+                          return;
+                        }
+                        _openDrillDetail(dwa);
+                      },
                     );
                   },
                 );
@@ -143,15 +154,17 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const DrillCreateScreen(),
-          ));
-        },
-        backgroundColor: ColorTokens.primaryDefault,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: widget.pickMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const DrillCreateScreen(),
+                ));
+              },
+              backgroundColor: ColorTokens.primaryDefault,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
     );
   }
 

@@ -25,8 +25,13 @@ final drillRepositoryProvider = Provider<DrillRepository>((ref) {
   );
 });
 
+// Phase 4 — PracticeRepository with ReflowEngine and EventLogRepository DI.
 final practiceRepositoryProvider = Provider<PracticeRepository>((ref) {
-  return PracticeRepository(ref.watch(databaseProvider));
+  return PracticeRepository(
+    ref.watch(databaseProvider),
+    ref.watch(reflowEngineProvider),
+    ref.watch(eventLogRepositoryProvider),
+  );
 });
 
 // Phase 2A stub — scoring repository.

@@ -66,3 +66,13 @@ const kScopedReflowTarget = Duration(milliseconds: 150);
 
 // TD-06 §7.1.2 — Full rebuild p95 performance target.
 const kFullRebuildTarget = Duration(seconds: 1);
+
+// ---------------------------------------------------------------------------
+// Phase 4 — Live Practice timer constants
+// ---------------------------------------------------------------------------
+
+// S13 §13.5.3 — Session inactivity timeout (2 hours).
+const kSessionInactivityTimeout = Duration(hours: 2);
+
+// S13 §13.10.2 — PracticeBlock auto-end timeout (4 hours).
+const kPracticeBlockAutoEndTimeout = Duration(hours: 4);

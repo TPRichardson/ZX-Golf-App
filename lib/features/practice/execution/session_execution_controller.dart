@@ -1,0 +1,167 @@
+// Phase 4 — Session Execution Controller.
+// Manages active session flow: structured completion, set advancement,
+// real-time scoring feedback.
+// S13 §13.6–13.9, S04 §4.3.
+
+import 'dart:convert';
+
+import 'package:zx_golf_app/core/scoring/instance_scorer.dart' as scorer;
+import 'package:zx_golf_app/core/scoring/scoring_types.dart';
+import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/repositories/practice_repository.dart';
+
+/// Result of logging an instance with real-time scoring.
+class InstanceResult {
+  final Instance instance;
+  final double? realtimeScore;
+
+  const InstanceResult({required this.instance, this.realtimeScore});
+}
+
+/// S13 §13.6–13.9 — Controls a single active Session execution.
+/// Handles structured/unstructured/technique completion, set advancement,
+/// and real-time scoring.
+class SessionExecutionController {
+  final PracticeRepository _repo;
+  final Session session;
+  final Drill drill;
+
+  /// Current set being filled.
+  PracticeSet? _currentSet;
+
+  /// Instances logged in the current set.
+  int _currentSetInstanceCount = 0;
+
+  /// Number of completed sets.
+  int _completedSetCount = 0;
+
+  SessionExecutionController({
+    required PracticeRepository repository,
+    required this.session,
+    required this.drill,
+  }) : _repo = repository;
+
+  /// Initialise from DB state (call after construction).
+  Future<void> initialize() async {
+    _currentSet = await _repo.getCurrentSet(session.sessionId);
+    _completedSetCount = await _repo.getSetCount(session.sessionId);
+    if (_currentSet != null) {
+      _currentSetInstanceCount =
+          await _repo.getInstanceCount(_currentSet!.setId);
+    }
+    // If multiple sets already exist, the "current" is the latest,
+    // and completed count is total - 1 (current is in-progress).
+    if (_completedSetCount > 0) {
+      _completedSetCount = _completedSetCount - 1;
+    }
+  }
+
+  /// S04 §4.3 — Whether this is a structured drill (has requiredAttemptsPerSet).
+  bool get isStructured =>
+      drill.requiredAttemptsPerSet != null &&
+      drill.drillType != DrillType.techniqueBlock;
+
+  /// Whether this is a technique block.
+  bool get isTechniqueBlock => drill.drillType == DrillType.techniqueBlock;
+
+  /// S13 §13.7 — Required set count for the drill.
+  int get requiredSetCount => drill.requiredSetCount;
+
+  /// S04 §4.3 — Required attempts per set (null for unstructured).
+  int? get requiredAttemptsPerSet => drill.requiredAttemptsPerSet;
+
+  /// Current set ID.
+  String? get currentSetId => _currentSet?.setId;
+
+  /// Current set index (0-based).
+  int get currentSetIndex => _currentSet?.setIndex ?? 0;
+
+  /// Instance count in current set.
+  int get currentSetInstanceCount => _currentSetInstanceCount;
+
+  /// Number of fully completed sets.
+  int get completedSetCount => _completedSetCount;
+
+  /// S13 §13.6 — Log an instance and compute real-time score.
+  /// Returns the instance + optional 0–5 score for display.
+  /// For structured drills: auto-advances set or signals auto-completion.
+  Future<InstanceResult> logInstance(InstancesCompanion data) async {
+    if (_currentSet == null) {
+      throw StateError('No current set available');
+    }
+
+    final instance = await _repo.logInstance(
+      _currentSet!.setId,
+      data,
+      session.sessionId,
+    );
+    _currentSetInstanceCount++;
+
+    // Compute real-time score for display (not materialised).
+    // Spec: S01 §1.4 — Only for LinearInterpolation adapter.
+    final realtimeScore = _computeRealtimeScore(instance);
+
+    return InstanceResult(
+      instance: instance,
+      realtimeScore: realtimeScore,
+    );
+  }
+
+  /// S13 §13.7 — Check if the current set is complete (structured only).
+  bool isCurrentSetComplete() {
+    if (!isStructured) return false;
+    return _currentSetInstanceCount >= (requiredAttemptsPerSet ?? 0);
+  }
+
+  /// S13 §13.8 — Check if the entire session is auto-complete (structured).
+  /// True when all sets are filled and the current set is complete.
+  bool isSessionAutoComplete() {
+    if (!isStructured) return false;
+    if (!isCurrentSetComplete()) return false;
+    // completedSetCount + 1 (current) == requiredSetCount means done.
+    return (_completedSetCount + 1) >= requiredSetCount;
+  }
+
+  /// S13 §13.7 — Advance to the next set.
+  Future<PracticeSet> advanceSet() async {
+    _completedSetCount++;
+    _currentSet = await _repo.advanceSet(session.sessionId);
+    _currentSetInstanceCount = 0;
+    return _currentSet!;
+  }
+
+  /// S01 §1.4 — Compute real-time instance score for display.
+  /// Only applies to LinearInterpolation drills (raw data input).
+  /// Grid/binary drills score at session level (hit-rate), not per-instance.
+  double? _computeRealtimeScore(Instance instance) {
+    if (drill.drillType == DrillType.techniqueBlock) return null;
+    if (drill.inputMode != InputMode.rawDataEntry) return null;
+
+    try {
+      final anchorsJson =
+          jsonDecode(drill.anchors) as Map<String, dynamic>;
+      if (anchorsJson.isEmpty) return null;
+
+      // For raw data drills, extract numeric value from rawMetrics.
+      final metricsMap =
+          jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
+      final value = (metricsMap['value'] as num?)?.toDouble();
+      if (value == null) return null;
+
+      // Use the first subskill's anchors.
+      final firstAnchor =
+          anchorsJson.values.first as Map<String, dynamic>;
+      final min = (firstAnchor['Min'] as num).toDouble();
+      final scratch = (firstAnchor['Scratch'] as num).toDouble();
+      final pro = (firstAnchor['Pro'] as num).toDouble();
+
+      return scorer.scoreInstance(
+        RawInstanceInput(value),
+        Anchors(min: min, scratch: scratch, pro: pro),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+}
