@@ -76,3 +76,10 @@ const kSessionInactivityTimeout = Duration(hours: 2);
 
 // S13 §13.10.2 — PracticeBlock auto-end timeout (4 hours).
 const kPracticeBlockAutoEndTimeout = Duration(hours: 4);
+
+// ---------------------------------------------------------------------------
+// Phase 5 — Planning Layer constants
+// ---------------------------------------------------------------------------
+
+// S08 §8.13.1 — Default slot capacity for new calendar days.
+const kDefaultSlotCapacity = 5;

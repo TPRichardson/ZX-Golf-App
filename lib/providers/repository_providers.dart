@@ -17,11 +17,13 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
 });
 
 // Phase 3 — DrillRepository with EventLogRepository and ReflowEngine DI.
+// Phase 5 — PlanningRepository added for drill deletion cascade.
 final drillRepositoryProvider = Provider<DrillRepository>((ref) {
   return DrillRepository(
     ref.watch(databaseProvider),
     ref.watch(eventLogRepositoryProvider),
     ref.watch(reflowEngineProvider),
+    ref.watch(planningRepositoryProvider),
   );
 });
 

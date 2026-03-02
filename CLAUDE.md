@@ -79,10 +79,10 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Phase 5 — Practice Planning Layer**
+> **Phase 6 — Review: SkillScore & Analysis**
 >
-> Routines, Schedules, Calendar day planning.
-> Builds on Phase 4 live practice workflow.
+> SkillScore dashboard, analysis views.
+> Builds on Phase 5 planning layer.
 
 ---
 
@@ -194,6 +194,31 @@ lib/
 │   │       ├── score_flash.dart                    # 120ms color flash animation
 │   │       └── practice_entry_card.dart            # Queue entry card
 │   ├── planning/                   # [Phase 5] Routines, Schedules, Calendar
+│   │   ├── models/
+│   │   │   ├── slot.dart               # Slot data class with JSON serialization
+│   │   │   └── planning_types.dart     # RoutineEntry, GenerationCriterion, TemplateDay
+│   │   ├── completion_matching.dart    # Session → Slot auto-matching (S08 §8.3.2)
+│   │   ├── routine_application.dart    # Routine → CalendarDay applicator (S08 §8.2.2)
+│   │   ├── schedule_application.dart   # Schedule → date range applicator (S08 §8.2.3)
+│   │   ├── weakness_detection.dart     # WeaknessIndex ranking + drill selection (S08 §8.7)
+│   │   ├── screens/
+│   │   │   ├── calendar_screen.dart              # 3-day rolling + 2-week toggle
+│   │   │   ├── calendar_day_detail_screen.dart   # Slot list with actions
+│   │   │   ├── routine_list_screen.dart          # User's routines
+│   │   │   ├── routine_create_screen.dart        # Name → entries → save
+│   │   │   ├── routine_detail_screen.dart        # View/edit entries + lifecycle
+│   │   │   ├── routine_apply_screen.dart         # Preview + confirm/reroll
+│   │   │   ├── schedule_list_screen.dart         # User's schedules
+│   │   │   ├── schedule_create_screen.dart       # Mode → entries → save
+│   │   │   ├── schedule_detail_screen.dart       # View schedule + lifecycle
+│   │   │   └── schedule_apply_screen.dart        # Date range → apply
+│   │   └── widgets/
+│   │       ├── calendar_day_card.dart            # Day summary card
+│   │       ├── slot_tile.dart                    # Slot with state indicators
+│   │       ├── adherence_badge.dart              # 4-week adherence percentage
+│   │       ├── routine_entry_card.dart           # Fixed or criterion display
+│   │       ├── criterion_editor.dart             # Generation criterion form
+│   │       └── template_day_editor.dart          # DayPlanning per-day editor
 │   ├── review/                     # [Phase 6] SkillScore dashboard, analysis
 │   └── settings/                   # [Phase 8] Settings screens
 ├── providers/                      # Riverpod providers by domain
@@ -202,7 +227,8 @@ lib/
 │   ├── scoring_providers.dart
 │   ├── sync_providers.dart         # [Phase 2.5]
 │   ├── drill_providers.dart        # [Phase 3] System drills, adopted drills, practice pool
-│   └── bag_providers.dart          # [Phase 3] User bag, club mappings
+│   ├── bag_providers.dart          # [Phase 3] User bag, club mappings
+│   └── planning_providers.dart     # [Phase 5] Routines, schedules, calendar, PlanningActions
 └── main.dart
 
 test/
@@ -315,6 +341,7 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-01 | Phase 2B | Complete | ReflowEngine (10-step orchestrator + bulk rebuild), RebuildGuard, ScopeResolver, ScoringRepository full impl, ReflowInstrumentation, 8 Riverpod providers, profiling harness. 253 tests passing. Scoped reflow p95=99ms (<150ms target), full rebuild p95=198ms (<1s target). `flutter analyze` clean. |
 | 2026-03-01 | Phase 3 | Complete | DrillRepository (11 business methods, state machines, immutability, anchor governance, reflow triggers), ClubRepository (9 methods, S09 §9.2.3 default/mandatory mappings), 56 repo tests (33 drill + 23 club), drill providers + bag providers, 7 drill screens/widgets (practice pool, library, detail, create, drill card, anchor editor, skill area picker), 4 bag screens/widgets (bag, club detail, skill area mapping, club card), shell integration. 317 total tests passing. `flutter analyze` clean. |
 | 2026-03-01 | Phase 4 | Complete | TimerService (2h/4h with suspend/resume), PracticeRepository (18 business methods, TD-04 state machine guards), practice providers + PracticeActions coordination, SessionExecutionController (structured/unstructured/technique completion, real-time scoring), 7 execution screens (grid cell, continuous measurement, raw data entry, binary hit/miss, technique block, practice queue, post-session summary), 4 widgets (execution header, club selector, score flash, practice entry card), practice router, session close pipeline integration (<200ms), post-close editing with reflow. 388 total tests passing. `flutter analyze` clean. |
+| 2026-03-02 | Phase 5 | Complete | PlanningRepository (slot management, routine/schedule lifecycle, cascade deletions), Slot model + planning types, CompletionMatcher (session→slot matching with overflow), RoutineApplicator, ScheduleApplicator (List/DayPlanning modes), WeaknessDetectionEngine (WeaknessIndex ranking, 4 selection modes), planning providers + PlanningActions coordination, Calendar UI (3-day/2-week toggle, day detail, slot tiles, adherence badge), Routine UI (list/create/detail/apply), Schedule UI (list/create/detail/apply, template day editor), criterion editor, drill deletion cascade to routines/schedules. 102 planning tests, 490 total tests passing. `flutter analyze` clean. |
 
 ---
 

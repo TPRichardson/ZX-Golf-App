@@ -8,11 +8,13 @@ import 'package:zx_golf_app/core/scoring/reflow_types.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
+import 'package:zx_golf_app/data/repositories/planning_repository.dart';
 
 // TD-03 §3.3.2 — Drill definition repository.
 // Manages: Drill, UserDrillAdoption, MetricSchema (read-only).
 // Phase 3: Full business methods with state machine guards,
 // immutability enforcement, anchor governance, and reflow triggers.
+// Phase 5: Drill deletion cascades to Routines + Schedules.
 
 /// Helper class for drill + adoption join results.
 class DrillWithAdoption {
@@ -26,10 +28,12 @@ class DrillRepository {
   final AppDatabase _db;
   final EventLogRepository _eventLogRepo;
   final ReflowEngine _reflowEngine;
+  final PlanningRepository? _planningRepo;
 
   static const _uuid = Uuid();
 
-  DrillRepository(this._db, this._eventLogRepo, this._reflowEngine);
+  DrillRepository(this._db, this._eventLogRepo, this._reflowEngine,
+      [this._planningRepo]);
 
   // ---------------------------------------------------------------------------
   // Drill business methods — TD-03 §3.3.2
@@ -398,6 +402,13 @@ class DrillRepository {
         updatedAt: Value(DateTime.now()),
       ));
     });
+
+    // S08 §8.1.2 — Cascade: remove drill entries from routines + schedules.
+    // Auto-deletes routines/schedules that become empty.
+    if (_planningRepo != null) {
+      await _planningRepo.removeRoutineEntriesForDrill(drillId);
+      await _planningRepo.removeScheduleEntriesForDrill(drillId);
+    }
 
     // EventLog: drill deleted.
     await _eventLogRepo.create(EventLogsCompanion.insert(

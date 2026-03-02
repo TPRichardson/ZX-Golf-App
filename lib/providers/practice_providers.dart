@@ -9,7 +9,9 @@ import 'package:zx_golf_app/core/services/timer_service.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
+import 'package:zx_golf_app/features/planning/completion_matching.dart';
 
+import 'planning_providers.dart';
 import 'repository_providers.dart';
 
 /// S13 §13.5.3 — Singleton TimerService.
@@ -48,8 +50,9 @@ final currentSetInstancesProvider =
 class PracticeActions {
   final PracticeRepository _repo;
   final TimerService _timerService;
+  final CompletionMatcher _completionMatcher;
 
-  PracticeActions(this._repo, this._timerService);
+  PracticeActions(this._repo, this._timerService, this._completionMatcher);
 
   /// S13 §13.2 — Start a new practice block with optional initial drills.
   Future<PracticeBlock> startPracticeBlock(
@@ -103,6 +106,7 @@ class PracticeActions {
   }
 
   /// S13 §13.9 — End a session and cancel its timer.
+  /// S08 §8.3.2 — After scoring, execute completion matching.
   Future<SessionScoringResult> endSession(
     String sessionId,
     String userId,
@@ -112,6 +116,11 @@ class PracticeActions {
     try {
       final result = await _repo.endSession(sessionId, userId);
       _timerService.cancelSessionTimer(sessionId);
+
+      // S08 §8.3.2 — Completion matching: auto-match to CalendarDay slots.
+      await _completionMatcher.executeCompletionMatching(
+        result.sessionId, result.drillId, userId, DateTime.now());
+
       return result;
     } finally {
       _timerService.resumeAll();
@@ -186,10 +195,12 @@ class PracticeActions {
   }
 }
 
-/// Phase 4 — Provider for PracticeActions coordinator.
+/// Phase 4+5 — Provider for PracticeActions coordinator.
+/// Injects CompletionMatcher for S08 §8.3.2 slot matching.
 final practiceActionsProvider = Provider<PracticeActions>((ref) {
   return PracticeActions(
     ref.watch(practiceRepositoryProvider),
     ref.watch(timerServiceProvider),
+    ref.watch(completionMatcherProvider),
   );
 });
