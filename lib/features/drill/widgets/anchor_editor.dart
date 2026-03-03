@@ -5,7 +5,7 @@ import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
 // S04 §4.5 — Anchor editor widget.
 // Displays Min/Scratch/Pro fields per subskill with inline validation.
 
-class AnchorEditor extends StatelessWidget {
+class AnchorEditor extends StatefulWidget {
   final String subskillId;
   final String subskillLabel;
   final double? minValue;
@@ -26,38 +26,84 @@ class AnchorEditor extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final minCtrl =
-        TextEditingController(text: minValue?.toStringAsFixed(0) ?? '');
-    final scratchCtrl =
-        TextEditingController(text: scratchValue?.toStringAsFixed(0) ?? '');
-    final proCtrl =
-        TextEditingController(text: proValue?.toStringAsFixed(0) ?? '');
+  State<AnchorEditor> createState() => _AnchorEditorState();
+}
 
+class _AnchorEditorState extends State<AnchorEditor> {
+  late final TextEditingController _minCtrl;
+  late final TextEditingController _scratchCtrl;
+  late final TextEditingController _proCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _minCtrl =
+        TextEditingController(text: widget.minValue?.toStringAsFixed(0) ?? '');
+    _scratchCtrl = TextEditingController(
+        text: widget.scratchValue?.toStringAsFixed(0) ?? '');
+    _proCtrl =
+        TextEditingController(text: widget.proValue?.toStringAsFixed(0) ?? '');
+  }
+
+  @override
+  void didUpdateWidget(AnchorEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controller text when external values change, but only if the user
+    // hasn't modified the field (controller text matches old external value).
+    _syncController(_minCtrl, oldWidget.minValue, widget.minValue);
+    _syncController(_scratchCtrl, oldWidget.scratchValue, widget.scratchValue);
+    _syncController(_proCtrl, oldWidget.proValue, widget.proValue);
+  }
+
+  void _syncController(
+      TextEditingController ctrl, double? oldVal, double? newVal) {
+    if (oldVal != newVal) {
+      final oldText = oldVal?.toStringAsFixed(0) ?? '';
+      if (ctrl.text == oldText) {
+        ctrl.text = newVal?.toStringAsFixed(0) ?? '';
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _minCtrl.dispose();
+    _scratchCtrl.dispose();
+    _proCtrl.dispose();
+    super.dispose();
+  }
+
+  void _notifyChange() {
+    final min = double.tryParse(_minCtrl.text);
+    final scratch = double.tryParse(_scratchCtrl.text);
+    final pro = double.tryParse(_proCtrl.text);
+    if (min != null &&
+        scratch != null &&
+        pro != null &&
+        widget.onChanged != null) {
+      widget.onChanged!((min: min, scratch: scratch, pro: pro));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Validation: Min < Scratch < Pro.
     String? validationError;
-    if (minValue != null && scratchValue != null && minValue! >= scratchValue!) {
+    if (widget.minValue != null &&
+        widget.scratchValue != null &&
+        widget.minValue! >= widget.scratchValue!) {
       validationError = 'Min must be less than Scratch';
-    } else if (scratchValue != null &&
-        proValue != null &&
-        scratchValue! >= proValue!) {
+    } else if (widget.scratchValue != null &&
+        widget.proValue != null &&
+        widget.scratchValue! >= widget.proValue!) {
       validationError = 'Scratch must be less than Pro';
-    }
-
-    void notifyChange() {
-      final min = double.tryParse(minCtrl.text);
-      final scratch = double.tryParse(scratchCtrl.text);
-      final pro = double.tryParse(proCtrl.text);
-      if (min != null && scratch != null && pro != null && onChanged != null) {
-        onChanged!((min: min, scratch: scratch, pro: pro));
-      }
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          subskillLabel,
+          widget.subskillLabel,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: ColorTokens.textPrimary,
                 fontWeight: FontWeight.w500,
@@ -69,30 +115,30 @@ class AnchorEditor extends StatelessWidget {
             Expanded(
               child: ZxInputField(
                 label: 'Min',
-                controller: minCtrl,
+                controller: _minCtrl,
                 keyboardType: TextInputType.number,
-                enabled: enabled,
-                onChanged: (_) => notifyChange(),
+                enabled: widget.enabled,
+                onChanged: (_) => _notifyChange(),
               ),
             ),
             const SizedBox(width: SpacingTokens.sm),
             Expanded(
               child: ZxInputField(
                 label: 'Scratch',
-                controller: scratchCtrl,
+                controller: _scratchCtrl,
                 keyboardType: TextInputType.number,
-                enabled: enabled,
-                onChanged: (_) => notifyChange(),
+                enabled: widget.enabled,
+                onChanged: (_) => _notifyChange(),
               ),
             ),
             const SizedBox(width: SpacingTokens.sm),
             Expanded(
               child: ZxInputField(
                 label: 'Pro',
-                controller: proCtrl,
+                controller: _proCtrl,
                 keyboardType: TextInputType.number,
-                enabled: enabled,
-                onChanged: (_) => notifyChange(),
+                enabled: widget.enabled,
+                onChanged: (_) => _notifyChange(),
               ),
             ),
           ],

@@ -80,16 +80,15 @@ class SyncStatusBanner extends ConsumerWidget {
     return AnimatedSize(
       duration: MotionTokens.standard,
       curve: MotionTokens.curve,
-      child: _BannerContent(state: bannerState, ref: ref),
+      child: _BannerContent(state: bannerState),
     );
   }
 }
 
 class _BannerContent extends StatelessWidget {
   final SyncBannerState state;
-  final WidgetRef ref;
 
-  const _BannerContent({required this.state, required this.ref});
+  const _BannerContent({required this.state});
 
   @override
   Widget build(BuildContext context) {

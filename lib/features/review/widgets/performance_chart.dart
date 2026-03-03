@@ -44,14 +44,15 @@ class PerformanceChart extends StatelessWidget {
     // Rolling average overlay.
     final rollingSpots = _computeRolling(buckets);
 
-    return Container(
-      padding: const EdgeInsets.all(SpacingTokens.sm),
-      decoration: BoxDecoration(
-        color: ColorTokens.surfaceRaised,
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-        border: Border.all(color: ColorTokens.surfaceBorder),
-      ),
-      child: LineChart(
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(SpacingTokens.sm),
+        decoration: BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          border: Border.all(color: ColorTokens.surfaceBorder),
+        ),
+        child: LineChart(
         LineChartData(
           minY: 0,
           maxY: kMaxScore,
@@ -118,6 +119,7 @@ class PerformanceChart extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 

@@ -46,12 +46,19 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
   // Anchors (scored only).
   final Map<String, ({double min, double scratch, double pro})> _anchors = {};
 
+  // Controllers for set structure step — must be class-level to survive rebuilds.
+  late final TextEditingController _setCountCtrl;
+  late final TextEditingController _attemptsCtrl;
+
   String? _errorMessage;
   bool _isCreating = false;
 
   @override
   void initState() {
     super.initState();
+    _setCountCtrl = TextEditingController(text: _requiredSetCount.toString());
+    _attemptsCtrl =
+        TextEditingController(text: _requiredAttemptsPerSet?.toString() ?? '');
     _loadSchemas();
   }
 
@@ -64,6 +71,8 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _setCountCtrl.dispose();
+    _attemptsCtrl.dispose();
     super.dispose();
   }
 
@@ -414,8 +423,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
         const SizedBox(height: SpacingTokens.md),
         ZxInputField(
           label: 'Required Set Count',
-          controller:
-              TextEditingController(text: _requiredSetCount.toString()),
+          controller: _setCountCtrl,
           keyboardType: TextInputType.number,
           onChanged: (val) {
             final parsed = int.tryParse(val);
@@ -427,8 +435,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
         const SizedBox(height: SpacingTokens.md),
         ZxInputField(
           label: 'Attempts Per Set',
-          controller: TextEditingController(
-              text: _requiredAttemptsPerSet?.toString() ?? ''),
+          controller: _attemptsCtrl,
           keyboardType: TextInputType.number,
           hintText: 'Leave empty for unlimited',
           onChanged: (val) {

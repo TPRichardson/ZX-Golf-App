@@ -101,3 +101,47 @@
 - `lib/providers/review_providers.dart` — new `sessionScoreMapProvider`, refactored `drillSessionsProvider`
 - `lib/providers/sync_providers.dart` — new `syncBannerInputProvider`
 - `lib/features/shell/widgets/sync_status_banner.dart` — use consolidated provider
+
+---
+
+## Layer 3: Widget Tree
+
+**Status:** Complete — 809 tests pass, analyze clean
+
+### 3.1 TextEditingController Memory Leaks in Build (HIGH — 2 fixed)
+
+| File | Problem | Fix |
+|------|---------|-----|
+| `anchor_editor.dart` | 3 `TextEditingController` instances created in `build()` on every rebuild. Memory leak (never disposed) and user input lost on parent rebuild. | Converted from `StatelessWidget` to `StatefulWidget`. Controllers created in `initState()`, disposed in `dispose()`. Added `didUpdateWidget()` to sync controller text when external values change. |
+| `drill_create_screen.dart` (line ~417) | 2 `TextEditingController` instances created inline in `_buildSetStructureStep()` helper. Same leak/input-loss issues. | Moved to class-level fields (`_setCountCtrl`, `_attemptsCtrl`), initialised in `initState()`, disposed in `dispose()`. |
+
+### 3.2 WidgetRef Stored as Field (MEDIUM — fixed)
+
+| File | Problem | Fix |
+|------|---------|-----|
+| `sync_status_banner.dart` (line 92) | `_BannerContent` stored `WidgetRef` as a field. `WidgetRef` is lifecycle-bound to a specific widget and should not be passed to or stored by other widgets — can cause use-after-dispose errors. | Removed `WidgetRef ref` parameter. The only usage (`_onAction`) was a stub that didn't actually use `ref`, so no callback replacement needed. |
+
+### 3.3 Missing RepaintBoundary on Charts (MEDIUM — 2 fixed)
+
+| File | Problem | Fix |
+|------|---------|-----|
+| `performance_chart.dart` | `LineChart` from fl_chart is a complex custom paint widget. Parent rebuilds cause expensive chart repaint even when data unchanged. | Wrapped chart `Container` in `RepaintBoundary`. |
+| `volume_chart.dart` | `BarChart` from fl_chart — same issue. | Wrapped chart `Container` in `RepaintBoundary`. |
+
+### 3.4 Not Changed (assessed, deferred)
+
+| Item | Severity | Reason |
+|------|----------|--------|
+| Chart bucketing/rolling avg in build | MEDIUM | `_bucketSessions()` and `_computeRolling()` run in build, but charts are only rebuilt when filter state changes. Memoization would require converting to StatefulWidget or adding provider-level caching. Marginal gain for complexity. |
+| AnalysisScreen._filterSessions in build | MEDIUM | Filtering is O(n) on session list, triggered only by filter changes. Moving to provider adds indirection without significant perf gain. |
+| SessionHistory variance + score map in build | MEDIUM | Score map now comes from `sessionScoreMapProvider` (Layer 2 fix). Variance is a simple O(n) computation on a per-drill session list. |
+| WeaknessRanking saturation map in build | MEDIUM | O(windows) iteration, only rebuilds on score changes. Small dataset. |
+| Timer.periodic setState in TechniqueBlock | LOW | Single timer text updating 1/sec — acceptable for single-widget scope. |
+| TrendSnapshot RepaintBoundary | LOW | Sparkline paints in small area, minimal cost. |
+
+**Files changed:**
+- `lib/features/drill/widgets/anchor_editor.dart` — StatelessWidget → StatefulWidget with proper controller lifecycle
+- `lib/features/drill/drill_create_screen.dart` — class-level controllers for set structure step
+- `lib/features/shell/widgets/sync_status_banner.dart` — removed WidgetRef field from _BannerContent
+- `lib/features/review/widgets/performance_chart.dart` — RepaintBoundary around chart
+- `lib/features/review/widgets/volume_chart.dart` — RepaintBoundary around chart

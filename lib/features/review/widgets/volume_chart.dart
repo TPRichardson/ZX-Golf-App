@@ -68,14 +68,15 @@ class VolumeChart extends StatelessWidget {
       ));
     }
 
-    return Container(
-      padding: const EdgeInsets.all(SpacingTokens.sm),
-      decoration: BoxDecoration(
-        color: ColorTokens.surfaceRaised,
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-        border: Border.all(color: ColorTokens.surfaceBorder),
-      ),
-      child: BarChart(
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(SpacingTokens.sm),
+        decoration: BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          border: Border.all(color: ColorTokens.surfaceBorder),
+        ),
+        child: BarChart(
         BarChartData(
           barGroups: barGroups,
           gridData: FlGridData(
@@ -118,6 +119,7 @@ class VolumeChart extends StatelessWidget {
           borderData: FlBorderData(show: false),
         ),
       ),
+    ),
     );
   }
 
