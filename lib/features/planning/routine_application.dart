@@ -73,6 +73,11 @@ class RoutineApplicator {
 
     await _planningRepo.updateSlots(day.calendarDayId, slots);
 
+    // 5F — Update lastAppliedAt for MRU sorting.
+    await _planningRepo.updateRoutine(routineId, RoutinesCompanion(
+      lastAppliedAt: Value(DateTime.now()),
+    ));
+
     return _planningRepo.createRoutineInstance(RoutineInstancesCompanion(
       routineInstanceId: Value(instanceId),
       routineId: Value(routineId),

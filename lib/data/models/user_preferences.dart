@@ -27,6 +27,9 @@ class UserPreferences {
   /// S10 §10.10 — Reminder time in HH:mm format.
   final String? reminderTime;
 
+  /// Week start day: 1 = Monday (ISO 8601), 7 = Sunday.
+  final int weekStartDay;
+
   const UserPreferences({
     this.distanceUnit = DistanceUnit.yards,
     this.smallLengthUnit = SmallLengthUnit.inches,
@@ -35,6 +38,7 @@ class UserPreferences {
     this.defaultSlotCapacityPattern = const [3, 3, 3, 3, 3, 0, 0],
     this.reminderEnabled = false,
     this.reminderTime,
+    this.weekStartDay = 1,
   });
 
   factory UserPreferences.fromJson(String json) {
@@ -56,6 +60,7 @@ class UserPreferences {
             map['defaultSlotCapacityPattern'] as List<dynamic>?),
         reminderEnabled: (map['reminderEnabled'] as bool?) ?? false,
         reminderTime: map['reminderTime'] as String?,
+        weekStartDay: (map['weekStartDay'] as num?)?.toInt() ?? 1,
       );
     } on FormatException {
       return const UserPreferences();
@@ -73,6 +78,7 @@ class UserPreferences {
       'defaultSlotCapacityPattern': defaultSlotCapacityPattern,
       'reminderEnabled': reminderEnabled,
       if (reminderTime != null) 'reminderTime': reminderTime,
+      'weekStartDay': weekStartDay,
     };
     return jsonEncode(map);
   }
@@ -85,6 +91,7 @@ class UserPreferences {
     List<int>? defaultSlotCapacityPattern,
     bool? reminderEnabled,
     String? reminderTime,
+    int? weekStartDay,
   }) {
     return UserPreferences(
       distanceUnit: distanceUnit ?? this.distanceUnit,
@@ -97,6 +104,7 @@ class UserPreferences {
           defaultSlotCapacityPattern ?? this.defaultSlotCapacityPattern,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderTime: reminderTime ?? this.reminderTime,
+      weekStartDay: weekStartDay ?? this.weekStartDay,
     );
   }
 

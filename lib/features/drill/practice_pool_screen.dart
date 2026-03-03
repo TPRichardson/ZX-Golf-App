@@ -14,6 +14,9 @@ import 'drill_library_screen.dart';
 import 'widgets/drill_card.dart';
 import 'widgets/skill_area_picker.dart';
 
+/// 5E — Persistent filter state for Practice Pool (survives navigation).
+final practicePoolFilterProvider = StateProvider<SkillArea?>((ref) => null);
+
 // Phase 3 — Practice Pool: user's active drill collection.
 // Adopted system drills + active custom drills.
 // S12 §12.3 — Track tab primary view.
@@ -32,10 +35,11 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
 class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = kDevUserId;
-  SkillArea? _selectedFilter;
 
   @override
   Widget build(BuildContext context) {
+    // 5E — Read persistent filter from provider.
+    final selectedFilter = ref.watch(practicePoolFilterProvider);
     final poolAsync = ref.watch(practicePoolProvider(_userId));
 
     return Scaffold(
@@ -66,23 +70,24 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
       ),
       body: Column(
         children: [
-          // Skill area filter.
+          // 5E — Skill area filter persisted across navigation.
           Padding(
             padding: const EdgeInsets.all(SpacingTokens.md),
             child: SkillAreaPicker(
-              selected: _selectedFilter,
-              onChanged: (area) => setState(() => _selectedFilter = area),
+              selected: selectedFilter,
+              onChanged: (area) =>
+                  ref.read(practicePoolFilterProvider.notifier).state = area,
             ),
           ),
           // Drill list.
           Expanded(
             child: poolAsync.when(
               data: (drills) {
-                final filtered = _selectedFilter == null
+                final filtered = selectedFilter == null
                     ? drills
                     : drills
                         .where(
-                            (d) => d.drill.skillArea == _selectedFilter)
+                            (d) => d.drill.skillArea == selectedFilter)
                         .toList();
 
                 if (filtered.isEmpty) {

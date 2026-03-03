@@ -676,7 +676,12 @@ class PlanningRepository {
     final query = _db.select(_db.routines)
       ..where((t) => t.userId.equals(userId))
       ..where((t) => t.isDeleted.equals(false))
-      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]);
+      // 5F — MRU sort: lastAppliedAt DESC (never-applied routines sort last),
+      // then updatedAt DESC as fallback.
+      ..orderBy([
+        (t) => OrderingTerm.desc(t.lastAppliedAt),
+        (t) => OrderingTerm.desc(t.updatedAt),
+      ]);
     if (status != null) {
       query.where((t) => t.status.equalsValue(status));
     }

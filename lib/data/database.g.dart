@@ -8317,6 +8317,18 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
     requiredDuringInsert: false,
     clientDefault: () => DateTime.now(),
   );
+  static const VerificationMeta _lastAppliedAtMeta = const VerificationMeta(
+    'lastAppliedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastAppliedAt =
+      GeneratedColumn<DateTime>(
+        'LastAppliedAt',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     routineId,
@@ -8327,6 +8339,7 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
     isDeleted,
     createdAt,
     updatedAt,
+    lastAppliedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8388,6 +8401,15 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
         updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('LastAppliedAt')) {
+      context.handle(
+        _lastAppliedAtMeta,
+        lastAppliedAt.isAcceptableOrUnknown(
+          data['LastAppliedAt']!,
+          _lastAppliedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -8431,6 +8453,10 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}UpdatedAt'],
       )!,
+      lastAppliedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}LastAppliedAt'],
+      ),
     );
   }
 
@@ -8452,6 +8478,7 @@ class Routine extends DataClass implements Insertable<Routine> {
   final bool isDeleted;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? lastAppliedAt;
   const Routine({
     required this.routineId,
     required this.userId,
@@ -8461,6 +8488,7 @@ class Routine extends DataClass implements Insertable<Routine> {
     required this.isDeleted,
     required this.createdAt,
     required this.updatedAt,
+    this.lastAppliedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8477,6 +8505,9 @@ class Routine extends DataClass implements Insertable<Routine> {
     map['IsDeleted'] = Variable<bool>(isDeleted);
     map['CreatedAt'] = Variable<DateTime>(createdAt);
     map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || lastAppliedAt != null) {
+      map['LastAppliedAt'] = Variable<DateTime>(lastAppliedAt);
+    }
     return map;
   }
 
@@ -8490,6 +8521,9 @@ class Routine extends DataClass implements Insertable<Routine> {
       isDeleted: Value(isDeleted),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      lastAppliedAt: lastAppliedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAppliedAt),
     );
   }
 
@@ -8507,6 +8541,7 @@ class Routine extends DataClass implements Insertable<Routine> {
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      lastAppliedAt: serializer.fromJson<DateTime?>(json['lastAppliedAt']),
     );
   }
   @override
@@ -8521,6 +8556,7 @@ class Routine extends DataClass implements Insertable<Routine> {
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'lastAppliedAt': serializer.toJson<DateTime?>(lastAppliedAt),
     };
   }
 
@@ -8533,6 +8569,7 @@ class Routine extends DataClass implements Insertable<Routine> {
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<DateTime?> lastAppliedAt = const Value.absent(),
   }) => Routine(
     routineId: routineId ?? this.routineId,
     userId: userId ?? this.userId,
@@ -8542,6 +8579,9 @@ class Routine extends DataClass implements Insertable<Routine> {
     isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    lastAppliedAt: lastAppliedAt.present
+        ? lastAppliedAt.value
+        : this.lastAppliedAt,
   );
   Routine copyWithCompanion(RoutinesCompanion data) {
     return Routine(
@@ -8553,6 +8593,9 @@ class Routine extends DataClass implements Insertable<Routine> {
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      lastAppliedAt: data.lastAppliedAt.present
+          ? data.lastAppliedAt.value
+          : this.lastAppliedAt,
     );
   }
 
@@ -8566,7 +8609,8 @@ class Routine extends DataClass implements Insertable<Routine> {
           ..write('status: $status, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastAppliedAt: $lastAppliedAt')
           ..write(')'))
         .toString();
   }
@@ -8581,6 +8625,7 @@ class Routine extends DataClass implements Insertable<Routine> {
     isDeleted,
     createdAt,
     updatedAt,
+    lastAppliedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -8593,7 +8638,8 @@ class Routine extends DataClass implements Insertable<Routine> {
           other.status == this.status &&
           other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.lastAppliedAt == this.lastAppliedAt);
 }
 
 class RoutinesCompanion extends UpdateCompanion<Routine> {
@@ -8605,6 +8651,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
   final Value<bool> isDeleted;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<DateTime?> lastAppliedAt;
   final Value<int> rowid;
   const RoutinesCompanion({
     this.routineId = const Value.absent(),
@@ -8615,6 +8662,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.lastAppliedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesCompanion.insert({
@@ -8626,6 +8674,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.lastAppliedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : routineId = Value(routineId),
        userId = Value(userId),
@@ -8639,6 +8688,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     Expression<bool>? isDeleted,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<DateTime>? lastAppliedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8650,6 +8700,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
       if (isDeleted != null) 'IsDeleted': isDeleted,
       if (createdAt != null) 'CreatedAt': createdAt,
       if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (lastAppliedAt != null) 'LastAppliedAt': lastAppliedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8663,6 +8714,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     Value<bool>? isDeleted,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<DateTime?>? lastAppliedAt,
     Value<int>? rowid,
   }) {
     return RoutinesCompanion(
@@ -8674,6 +8726,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
       isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastAppliedAt: lastAppliedAt ?? this.lastAppliedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8707,6 +8760,9 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     if (updatedAt.present) {
       map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
     }
+    if (lastAppliedAt.present) {
+      map['LastAppliedAt'] = Variable<DateTime>(lastAppliedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8724,6 +8780,7 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('lastAppliedAt: $lastAppliedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18184,6 +18241,7 @@ typedef $$RoutinesTableCreateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<DateTime?> lastAppliedAt,
       Value<int> rowid,
     });
 typedef $$RoutinesTableUpdateCompanionBuilder =
@@ -18196,6 +18254,7 @@ typedef $$RoutinesTableUpdateCompanionBuilder =
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<DateTime?> lastAppliedAt,
       Value<int> rowid,
     });
 
@@ -18248,6 +18307,11 @@ class $$RoutinesTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<DateTime> get lastAppliedAt => $composableBuilder(
+    column: $table.lastAppliedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$RoutinesTableOrderingComposer
@@ -18298,6 +18362,11 @@ class $$RoutinesTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get lastAppliedAt => $composableBuilder(
+    column: $table.lastAppliedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RoutinesTableAnnotationComposer
@@ -18332,6 +18401,11 @@ class $$RoutinesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastAppliedAt => $composableBuilder(
+    column: $table.lastAppliedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$RoutinesTableTableManager
@@ -18370,6 +18444,7 @@ class $$RoutinesTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> lastAppliedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesCompanion(
                 routineId: routineId,
@@ -18380,6 +18455,7 @@ class $$RoutinesTableTableManager
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                lastAppliedAt: lastAppliedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18392,6 +18468,7 @@ class $$RoutinesTableTableManager
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> lastAppliedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesCompanion.insert(
                 routineId: routineId,
@@ -18402,6 +18479,7 @@ class $$RoutinesTableTableManager
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                lastAppliedAt: lastAppliedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -79,7 +79,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,6 +97,8 @@ class AppDatabase extends _$AppDatabase {
             switch (version) {
               case 1:
                 await _migrateV1ToV2(m);
+              case 2:
+                await _migrateV2ToV3(m);
             }
           }
         },
@@ -104,6 +106,12 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _migrateV1ToV2(Migrator m) async {
     await _createIndexes();
+  }
+
+  // 5F — Add LastAppliedAt column to Routine table for MRU sorting.
+  Future<void> _migrateV2ToV3(Migrator m) async {
+    await customStatement(
+        'ALTER TABLE Routine ADD COLUMN LastAppliedAt INTEGER');
   }
 
   /// Secondary indexes for FK lookup columns. Drift Dart DSL doesn't support

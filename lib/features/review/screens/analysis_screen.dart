@@ -210,6 +210,15 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         return false;
       }
 
+      // 5D — When "All" drill types selected (null filter) at Overall or
+      // SkillArea scope, exclude Technique Block sessions from chart data.
+      // At Drill scope, include them if the selected drill is techniqueBlock.
+      if (_drillTypeFilter == null &&
+          s.drill.drillType == DrillType.techniqueBlock &&
+          _scope != AnalysisScope.drill) {
+        return false;
+      }
+
       // Scope filters.
       switch (_scope) {
         case AnalysisScope.overall:

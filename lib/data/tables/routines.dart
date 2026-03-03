@@ -21,6 +21,9 @@ class Routines extends Table {
       dateTime().named('CreatedAt').clientDefault(() => DateTime.now())();
   DateTimeColumn get updatedAt =>
       dateTime().named('UpdatedAt').clientDefault(() => DateTime.now())();
+  // 5F — MRU sort: tracks when routine was last applied/instantiated.
+  DateTimeColumn get lastAppliedAt =>
+      dateTime().named('LastAppliedAt').nullable()();
 
   @override
   Set<Column> get primaryKey => {routineId};

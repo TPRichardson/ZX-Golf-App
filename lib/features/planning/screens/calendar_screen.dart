@@ -8,6 +8,7 @@ import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 
 import '../widgets/adherence_badge.dart';
 import '../widgets/calendar_day_card.dart';
@@ -33,27 +34,31 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return DateTime(now.year, now.month, now.day);
   }
 
-  DateTime get _rangeStart {
+  DateTime _rangeStartFor(int weekStartDay) {
     if (_showTwoWeeks) {
-      // Start from Monday of current week.
-      return _today.subtract(Duration(days: _today.weekday - 1));
+      // Start from the configured week start day.
+      final diff = (_today.weekday - weekStartDay + 7) % 7;
+      return _today.subtract(Duration(days: diff));
     }
     return _today.subtract(const Duration(days: 1));
   }
 
-  DateTime get _rangeEnd {
+  DateTime _rangeEndFor(DateTime rangeStart) {
     if (_showTwoWeeks) {
-      return _rangeStart.add(const Duration(days: 13));
+      return rangeStart.add(const Duration(days: 13));
     }
     return _today.add(const Duration(days: 1));
   }
 
   @override
   Widget build(BuildContext context) {
+    final prefs = ref.watch(userPreferencesProvider);
+    final rangeStart = _rangeStartFor(prefs.weekStartDay);
+    final rangeEnd = _rangeEndFor(rangeStart);
     final daysAsync = ref.watch(calendarDaysProvider((
       userId: _userId,
-      start: _rangeStart,
-      end: _rangeEnd,
+      start: rangeStart,
+      end: rangeEnd,
     )));
     final repo = ref.watch(planningRepositoryProvider);
 
@@ -102,7 +107,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Calendar day list.
         Expanded(
           child: daysAsync.when(
-            data: (days) => _buildDayList(days),
+            data: (days) => _buildDayList(days, rangeStart, rangeEnd),
             loading: () => const Center(
               child: CircularProgressIndicator(
                 color: ColorTokens.primaryDefault,
@@ -120,13 +125,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildDayList(List<CalendarDay> days) {
+  Widget _buildDayList(
+      List<CalendarDay> days, DateTime rangeStart, DateTime rangeEnd) {
     final repo = ref.watch(planningRepositoryProvider);
 
     // Build list of dates in range, pairing with CalendarDay if exists.
     final dateRange = <DateTime>[];
-    var current = _rangeStart;
-    while (!current.isAfter(_rangeEnd)) {
+    var current = rangeStart;
+    while (!current.isAfter(rangeEnd)) {
       dateRange.add(current);
       current = current.add(const Duration(days: 1));
     }

@@ -6,6 +6,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
+import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/planning/routine_application.dart';
 
@@ -23,7 +24,19 @@ void main() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     repo = PlanningRepository(db, SyncWriteGate());
     applicator = RoutineApplicator(repo);
+    // 5F — Create a routine row so confirmApplication can update lastAppliedAt.
+    await repo.createRoutineWithEntries(
+      userId,
+      'Test Routine',
+      [const RoutineEntry.fixed('drill-1')],
+    );
   });
+
+  // Helper to get the first routine's ID.
+  Future<String> getRoutineId() async {
+    final routines = await repo.watchRoutines(userId).first;
+    return routines.first.routineId;
+  }
 
   tearDown(() async {
     await db.close();
@@ -33,15 +46,16 @@ void main() {
     test('apply 3-entry routine to day with 5 empty slots → 3 filled',
         () async {
       final date = DateTime(2026, 3, 1);
+      final routineId = await getRoutineId();
 
       final instance = await applicator.confirmApplication(
         userId,
-        'routine-1',
+        routineId,
         date,
         ['drill-1', 'drill-2', 'drill-3'],
       );
 
-      expect(instance.routineId, 'routine-1');
+      expect(instance.routineId, routineId);
       final ownedSlots =
           (jsonDecode(instance.ownedSlots) as List<dynamic>).cast<int>();
       expect(ownedSlots, [0, 1, 2]);
@@ -58,6 +72,7 @@ void main() {
 
     test('apply to day with 2 available slots → only 2 used', () async {
       final date = DateTime(2026, 3, 2);
+      final routineId = await getRoutineId();
       // Pre-fill 3 of 5 slots.
       await repo.assignDrillToSlot(userId, date, 0, 'existing-1');
       await repo.assignDrillToSlot(userId, date, 1, 'existing-2');
@@ -65,7 +80,7 @@ void main() {
 
       final instance = await applicator.confirmApplication(
         userId,
-        'routine-1',
+        routineId,
         date,
         ['drill-a', 'drill-b', 'drill-c'],
       );
@@ -82,9 +97,10 @@ void main() {
 
     test('unapply clears owned slots', () async {
       final date = DateTime(2026, 3, 3);
+      final routineId = await getRoutineId();
       final instance = await applicator.confirmApplication(
         userId,
-        'routine-1',
+        routineId,
         date,
         ['drill-1', 'drill-2'],
       );
@@ -105,9 +121,10 @@ void main() {
 
     test('unapply preserves manually-edited slots', () async {
       final date = DateTime(2026, 3, 4);
+      final routineId = await getRoutineId();
       final instance = await applicator.confirmApplication(
         userId,
-        'routine-1',
+        routineId,
         date,
         ['drill-1', 'drill-2'],
       );
@@ -132,9 +149,10 @@ void main() {
 
     test('slot ownership tracking correct', () async {
       final date = DateTime(2026, 3, 5);
+      final routineId = await getRoutineId();
       final instance = await applicator.confirmApplication(
         userId,
-        'routine-1',
+        routineId,
         date,
         ['drill-1'],
       );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
+import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'execution_defaults_screen.dart';
@@ -84,6 +85,11 @@ class SettingsScreen extends ConsumerWidget {
 
           // --- Calendar Section ---
           _SectionHeader(title: 'Calendar'),
+          _ToggleTile(
+            label: 'Week Starts On',
+            value: prefs.weekStartDay == 7 ? 'Sunday' : 'Monday',
+            onTap: () => _toggleWeekStartDay(ref, prefs),
+          ),
           _NavigationTile(
             label: 'Default Slot Capacity',
             subtitle: '7-day pattern',
@@ -117,6 +123,13 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => _pickReminderTime(context, ref, prefs),
             ),
 
+          // --- Sync Section ---
+          _SectionHeader(title: 'Sync'),
+          _ActionTile(
+            label: 'Sync Now',
+            onTap: () => _triggerManualSync(context, ref),
+          ),
+
           // --- Data Section ---
           _SectionHeader(title: 'Data'),
           _ActionTile(
@@ -146,6 +159,11 @@ class SettingsScreen extends ConsumerWidget {
         ? DistanceUnit.metres
         : DistanceUnit.yards;
     updatePreferences(ref, prefs.copyWith(distanceUnit: next));
+  }
+
+  void _toggleWeekStartDay(WidgetRef ref, UserPreferences prefs) {
+    final next = prefs.weekStartDay == 1 ? 7 : 1;
+    updatePreferences(ref, prefs.copyWith(weekStartDay: next));
   }
 
   void _toggleSmallLengthUnit(WidgetRef ref, UserPreferences prefs) {
@@ -199,6 +217,13 @@ class SettingsScreen extends ConsumerWidget {
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       updatePreferences(ref, prefs.copyWith(reminderTime: timeStr));
     }
+  }
+
+  void _triggerManualSync(BuildContext context, WidgetRef ref) {
+    ref.read(syncOrchestratorProvider).requestSync(SyncTrigger.manual);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sync triggered')),
+    );
   }
 
   Future<void> _exportData(BuildContext context, WidgetRef ref) async {
