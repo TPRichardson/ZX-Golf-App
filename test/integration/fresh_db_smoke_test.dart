@@ -25,8 +25,8 @@ void main() {
   tearDown(() => db.close());
 
   group('Fresh database smoke test', () {
-    test('schema version is 3', () {
-      expect(db.schemaVersion, 3);
+    test('schema version is 4', () {
+      expect(db.schemaVersion, 4);
     });
 
     test('27 tables are created', () async {
@@ -36,17 +36,21 @@ void main() {
       expect(tables.length, 27);
     });
 
-    test('5 indexes are created', () async {
+    test('9 indexes are created', () async {
       final indexes = await db.customSelect(
         "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'",
       ).get();
       final names = indexes.map((r) => r.read<String>('name')).toList()..sort();
       expect(names, [
         'idx_drill_user_id',
+        'idx_drills_active',
         'idx_instance_set_id',
+        'idx_instances_active',
         'idx_practice_block_user_end',
+        'idx_practice_blocks_active',
         'idx_session_drill_id',
         'idx_session_practice_block_id',
+        'idx_sessions_active',
       ]);
     });
 

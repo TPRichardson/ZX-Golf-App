@@ -79,7 +79,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -99,6 +99,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV1ToV2(m);
               case 2:
                 await _migrateV2ToV3(m);
+              case 3:
+                await _migrateV3ToV4(m);
             }
           }
         },
@@ -112,6 +114,11 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _migrateV2ToV3(Migrator m) async {
     await customStatement(
         'ALTER TABLE Routine ADD COLUMN LastAppliedAt INTEGER');
+  }
+
+  // 8A — Partial indexes on IsDeleted=false for high-traffic queries.
+  Future<void> _migrateV3ToV4(Migrator m) async {
+    await _createPartialIndexes();
   }
 
   /// Secondary indexes for FK lookup columns. Drift Dart DSL doesn't support
@@ -132,6 +139,24 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_drill_user_id '
         'ON Drill (UserID)');
+    await _createPartialIndexes();
+  }
+
+  /// 8A — Partial indexes for IsDeleted=false on high-traffic tables.
+  /// UserClub excluded — uses Status column, not IsDeleted.
+  Future<void> _createPartialIndexes() async {
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_drills_active '
+        'ON Drill (UserID, SkillArea) WHERE IsDeleted = 0');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_sessions_active '
+        'ON Session (DrillID, CompletionTimestamp) WHERE IsDeleted = 0');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_instances_active '
+        'ON Instance (SetID) WHERE IsDeleted = 0');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_practice_blocks_active '
+        'ON PracticeBlock (UserID) WHERE IsDeleted = 0');
   }
 }
 
