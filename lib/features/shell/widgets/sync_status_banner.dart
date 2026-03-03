@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'sync_banner_state.dart';
@@ -17,37 +16,24 @@ class SyncStatusBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncStatus = ref.watch(syncStatusProvider);
-    final syncEnabled = ref.watch(syncEnabledProvider);
-    final failureCount = ref.watch(syncFailureCountProvider);
-    final mergeTimeouts = ref.watch(consecutiveMergeTimeoutsProvider);
-    final schemaMismatch = ref.watch(schemaMismatchDetectedProvider);
-    final connectivity = ref.watch(connectivityStatusProvider);
-    final storageLow = ref.watch(isStorageLowProvider);
-    final authState = ref.watch(authStateProvider);
-
-    final isSyncing = syncStatus.whenOrNull(data: (s) => s) ==
-        SyncStatus.inProgress;
-    final isConnected = connectivity.whenOrNull(data: (c) => c) ?? true;
-    final isStorageLow = storageLow.whenOrNull(data: (s) => s) ?? false;
-    final isAuthenticated =
-        authState.whenOrNull(data: (a) => a.session != null) ?? true;
+    // Single consolidated watch instead of 8 separate watches.
+    final bi = ref.watch(syncBannerInputProvider);
 
     final input = SyncBannerInput(
-      syncEnabled: syncEnabled,
-      consecutiveFailures: failureCount,
-      consecutiveMergeTimeouts: mergeTimeouts,
-      schemaMismatchDetected: schemaMismatch,
-      isAuthenticated: isAuthenticated,
-      isConnected: isConnected,
-      isSyncing: isSyncing,
-      isStorageLow: isStorageLow,
+      syncEnabled: bi.syncEnabled,
+      consecutiveFailures: bi.failureCount,
+      consecutiveMergeTimeouts: bi.mergeTimeouts,
+      schemaMismatchDetected: bi.schemaMismatch,
+      isAuthenticated: bi.isAuthenticated,
+      isConnected: bi.isConnected,
+      isSyncing: bi.isSyncing,
+      isStorageLow: bi.isStorageLow,
     );
 
     final bannerState = resolveBannerState(input);
 
     // TD-07 §6.4 — One-time schema mismatch dialog per app session.
-    if (schemaMismatch) {
+    if (bi.schemaMismatch) {
       final dialogShown = ref.read(schemaMismatchDialogShownProvider);
       if (!dialogShown) {
         SchedulerBinding.instance.addPostFrameCallback((_) {

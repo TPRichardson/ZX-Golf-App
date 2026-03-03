@@ -80,6 +80,18 @@ Map<String, double> buildDrillLevelScoreMap(
 }
 
 // ---------------------------------------------------------------------------
+// Session score map — cached drill-level scores from window entries
+// ---------------------------------------------------------------------------
+
+/// Drill-level score map derived from window states. Avoids re-parsing
+/// window entry JSON on every widget rebuild.
+final sessionScoreMapProvider =
+    Provider.family<AsyncValue<Map<String, double>>, String>((ref, userId) {
+  final windowsAsync = ref.watch(windowStatesProvider(userId));
+  return windowsAsync.whenData((windows) => buildDrillLevelScoreMap(windows));
+});
+
+// ---------------------------------------------------------------------------
 // Heatmap provider — S15 §15.3.3 continuous grey-to-green
 // ---------------------------------------------------------------------------
 
@@ -200,15 +212,12 @@ final closedSessionsProvider =
 });
 
 /// Closed sessions filtered by drillId.
-/// Watches windowStatesProvider stream to reactively update after reflow.
-final drillSessionsProvider = FutureProvider.family<List<SessionWithDrill>,
-    ({String userId, String drillId})>((ref, params) async {
-  // Watch a stream provider so this invalidates when scoring data changes.
-  ref.watch(windowStatesProvider(params.userId));
-  final all = await ref
-      .watch(scoringRepositoryProvider)
-      .getAllClosedSessionsForUser(params.userId);
-  return all.where((s) => s.drill.drillId == params.drillId).toList();
+/// Reads from closedSessionsProvider (cached) instead of making a separate DB call.
+final drillSessionsProvider = Provider.family<AsyncValue<List<SessionWithDrill>>,
+    ({String userId, String drillId})>((ref, params) {
+  final allAsync = ref.watch(closedSessionsProvider(params.userId));
+  return allAsync.whenData(
+      (all) => all.where((s) => s.drill.drillId == params.drillId).toList());
 });
 
 /// Lightweight sessions for trend computation.

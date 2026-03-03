@@ -119,3 +119,39 @@ final storageMonitorProvider = Provider<StorageMonitor>((ref) {
 final isStorageLowProvider = FutureProvider<bool>((ref) {
   return ref.watch(storageMonitorProvider).isStorageLow();
 });
+
+/// Consolidated sync banner input — single provider watched by SyncStatusBanner
+/// instead of 8 separate watches, reducing rebuild triggers.
+final syncBannerInputProvider = Provider<
+    ({
+      bool syncEnabled,
+      int failureCount,
+      int mergeTimeouts,
+      bool schemaMismatch,
+      bool isConnected,
+      bool isSyncing,
+      bool isStorageLow,
+      bool isAuthenticated,
+    })>((ref) {
+  final syncStatus = ref.watch(syncStatusProvider);
+  final syncEnabled = ref.watch(syncEnabledProvider);
+  final failureCount = ref.watch(syncFailureCountProvider);
+  final mergeTimeouts = ref.watch(consecutiveMergeTimeoutsProvider);
+  final schemaMismatch = ref.watch(schemaMismatchDetectedProvider);
+  final connectivity = ref.watch(connectivityStatusProvider);
+  final storageLow = ref.watch(isStorageLowProvider);
+  final authState = ref.watch(authStateProvider);
+
+  return (
+    syncEnabled: syncEnabled,
+    failureCount: failureCount,
+    mergeTimeouts: mergeTimeouts,
+    schemaMismatch: schemaMismatch,
+    isConnected: connectivity.whenOrNull(data: (c) => c) ?? true,
+    isSyncing:
+        syncStatus.whenOrNull(data: (s) => s) == SyncStatus.inProgress,
+    isStorageLow: storageLow.whenOrNull(data: (s) => s) ?? false,
+    isAuthenticated:
+        authState.whenOrNull(data: (a) => a.session != null) ?? true,
+  );
+});

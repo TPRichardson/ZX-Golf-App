@@ -14,10 +14,12 @@ class PlanAdherenceBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
-    final fourWeeksAgo = now.subtract(const Duration(days: 28));
+    // Normalise to date-only so the .family parameter is stable across rebuilds
+    // (DateTime.now() microsecond differences would create new provider instances).
+    final today = DateUtils.dateOnly(DateTime.now());
+    final fourWeeksAgo = today.subtract(const Duration(days: 28));
     final adherenceAsync = ref.watch(planAdherenceProvider(
-      (userId: userId, start: fourWeeksAgo, end: now),
+      (userId: userId, start: fourWeeksAgo, end: today),
     ));
 
     return adherenceAsync.when(

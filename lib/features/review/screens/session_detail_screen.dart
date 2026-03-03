@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -21,7 +20,8 @@ class SessionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionFuture = ref.watch(_sessionDetailProvider(sessionId));
+    final sessionFuture = ref.watch(
+        _sessionDetailProvider((userId: userId, sessionId: sessionId)));
 
     return Scaffold(
       appBar: const ZxAppBar(title: 'Session Detail'),
@@ -103,8 +103,8 @@ class SessionDetailScreen extends ConsumerWidget {
                                     .read(practiceRepositoryProvider)
                                     .suppressIntegrityFlag(
                                         sessionId, userId);
-                                ref.invalidate(
-                                    _sessionDetailProvider(sessionId));
+                                ref.invalidate(_sessionDetailProvider(
+                                    (userId: userId, sessionId: sessionId)));
                               },
                               child: Text(
                                 'Clear Flag',
@@ -215,25 +215,24 @@ class _SessionDetail {
   });
 }
 
-final _sessionDetailProvider =
-    FutureProvider.family<_SessionDetail?, String>((ref, sessionId) async {
+final _sessionDetailProvider = FutureProvider.family<_SessionDetail?,
+    ({String userId, String sessionId})>((ref, params) async {
   final scoringRepo = ref.watch(scoringRepositoryProvider);
-  final session = await scoringRepo.getSessionById(sessionId);
+  final session = await scoringRepo.getSessionById(params.sessionId);
   if (session == null) return null;
 
-  final drill = await scoringRepo.getDrillForSession(sessionId);
+  final drill = await scoringRepo.getDrillForSession(params.sessionId);
 
   // Session scores aren't persisted on the Session row; look them up
   // from materialised window entries.
   // Fix 7 — Multi-Output: collect all scores for this session across windows
   // and average them for drill-level display.
-  final userId = kDevUserId;
-  final windows = await scoringRepo.getWindowStatesForUser(userId);
+  final windows = await scoringRepo.getWindowStatesForUser(params.userId);
   final scores = <double>[];
   for (final w in windows) {
     final entries = parseWindowEntries(w.entries);
     for (final e in entries) {
-      if (e.sessionId == sessionId) {
+      if (e.sessionId == params.sessionId) {
         scores.add(e.score);
       }
     }

@@ -9,7 +9,6 @@ import 'package:zx_golf_app/features/review/widgets/analysis_filters.dart';
 import 'package:zx_golf_app/features/review/widgets/performance_chart.dart';
 import 'package:zx_golf_app/features/review/widgets/volume_chart.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
-import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 // S12 §12.6.2 — Analysis tab: filter row + chart toggle + chart surface.
 // Filter-driven scope with Performance | Volume | Both toggle.
@@ -104,17 +103,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                       s.session.completionTimestamp!.isAfter(cutoff))
                   .toList();
 
-              // Build session score map from window entries.
-              final windowsAsync =
-                  ref.watch(windowStatesProvider(kDevUserId));
-              final scoreMap = <String, double>{};
-              final windows = windowsAsync.valueOrNull ?? [];
-              for (final w in windows) {
-                final entries = parseWindowEntries(w.entries);
-                for (final e in entries) {
-                  scoreMap.putIfAbsent(e.sessionId, () => e.score);
-                }
-              }
+              // Use cached score map instead of parsing JSON in build.
+              final scoreMapAsync =
+                  ref.watch(sessionScoreMapProvider(kDevUserId));
+              final scoreMap = scoreMapAsync.valueOrNull ?? {};
 
               if (inRange.isEmpty) {
                 return Center(
