@@ -88,8 +88,10 @@ class PracticeActions {
   }
 
   /// S13 §13.5 — Start a session for a practice entry.
-  Future<Session> startSession(String entryId, String userId) async {
-    final session = await _repo.startSession(entryId, userId);
+  Future<Session> startSession(String entryId, String userId,
+      {String? userDeclaration}) async {
+    final session = await _repo.startSession(entryId, userId,
+        userDeclaration: userDeclaration);
 
     // S13 §13.5.3 — Start 2-hour inactivity timer.
     _timerService.startSessionInactivityTimer(

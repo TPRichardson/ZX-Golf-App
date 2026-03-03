@@ -53,9 +53,20 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
   Future<void> _startSession(PracticeEntryWithDrill entryWithDrill) async {
     final actions = ref.read(practiceActionsProvider);
+
+    // S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
+    String? userDeclaration;
+    if (entryWithDrill.drill.inputMode == InputMode.binaryHitMiss) {
+      userDeclaration = await _promptForDeclaration();
+      if (userDeclaration != null && userDeclaration.trim().isEmpty) {
+        userDeclaration = null;
+      }
+    }
+
     final session = await actions.startSession(
       entryWithDrill.entry.practiceEntryId,
       widget.userId,
+      userDeclaration: userDeclaration,
     );
 
     if (!mounted) return;
@@ -107,6 +118,43 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     final actions = ref.read(practiceActionsProvider);
     await actions.endPracticeBlock(widget.practiceBlockId, widget.userId);
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// S04 §4.3 — Prompt user for their intention (e.g. "Hit fairway", "Draw").
+  Future<String?> _promptForDeclaration() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Session Declaration',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: ColorTokens.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'What are you aiming for? (e.g. "Hit fairway")',
+            hintStyle: TextStyle(color: ColorTokens.textTertiary),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.primaryDefault,
+            ),
+            child: const Text('Start'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
   }
 
   @override

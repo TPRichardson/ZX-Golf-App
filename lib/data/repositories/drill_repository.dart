@@ -776,6 +776,19 @@ class DrillRepository {
         message: 'TargetSizeDepth is immutable after drill creation',
       );
     }
+    // TD-03 §5.3 — ScoringMode and InputMode are immutable post-creation.
+    if (data.scoringMode.present) {
+      throw ValidationException(
+        code: ValidationException.invalidStructure,
+        message: 'ScoringMode is immutable after drill creation',
+      );
+    }
+    if (data.inputMode.present) {
+      throw ValidationException(
+        code: ValidationException.invalidStructure,
+        message: 'InputMode is immutable after drill creation',
+      );
+    }
   }
 
   // S04 §4.5 — Validate anchors: Min < Scratch < Pro for each subskill.

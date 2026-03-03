@@ -29,6 +29,7 @@ void main() {
   late String drillId2;
   late String drillId3;
   late String drillIdUnstructured;
+  late String drillIdBinaryHitMiss;
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -108,6 +109,23 @@ void main() {
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
       requiredSetCount: const Value(1),
+    ));
+
+    // Binary Hit/Miss drill for UserDeclaration tests.
+    drillIdBinaryHitMiss = 'drill-binary-5';
+    await db.into(db.drills).insert(DrillsCompanion.insert(
+      drillId: drillIdBinaryHitMiss,
+      name: 'Binary Hit/Miss Drill',
+      skillArea: SkillArea.putting,
+      drillType: DrillType.transition,
+      inputMode: InputMode.binaryHitMiss,
+      metricSchemaId: 'binary_hit_miss',
+      origin: DrillOrigin.system,
+      subskillMapping: const Value('["putting_direction_control"]'),
+      anchors: const Value(
+          '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
+      requiredSetCount: const Value(1),
+      requiredAttemptsPerSet: const Value(10),
     ));
   });
 
@@ -315,6 +333,24 @@ void main() {
         () => repo.startSession(entryId1, userId),
         throwsA(isA<ValidationException>()),
       );
+    });
+
+    // S04 §4.3 — UserDeclaration persisted on Session when provided.
+    test('startSession with userDeclaration persists declaration on Session',
+        () async {
+      final session = await repo.startSession(entryId1, userId,
+          userDeclaration: 'Hit fairway');
+      expect(session.userDeclaration, 'Hit fairway');
+
+      // Verify persisted in DB.
+      final fetched = await repo.getSessionById(session.sessionId);
+      expect(fetched!.userDeclaration, 'Hit fairway');
+    });
+
+    test('startSession without userDeclaration leaves declaration null',
+        () async {
+      final session = await repo.startSession(entryId1, userId);
+      expect(session.userDeclaration, isNull);
     });
 
     test('discardSession hard-deletes all data, resets entry to PendingDrill',

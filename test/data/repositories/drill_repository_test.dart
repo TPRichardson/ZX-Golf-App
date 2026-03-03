@@ -272,6 +272,37 @@ void main() {
       );
     });
 
+    // TD-03 §5.3 — ScoringMode and InputMode immutable post-creation.
+    test('update ScoringMode throws invalidStructure', () async {
+      expect(
+        () => repo.updateDrill(
+            userId,
+            customDrill.drillId,
+            const DrillsCompanion(
+                scoringMode: Value(ScoringMode.multiOutput))),
+        throwsA(isA<ValidationException>().having(
+          (e) => e.code,
+          'code',
+          ValidationException.invalidStructure,
+        )),
+      );
+    });
+
+    test('update InputMode throws invalidStructure', () async {
+      expect(
+        () => repo.updateDrill(
+            userId,
+            customDrill.drillId,
+            const DrillsCompanion(
+                inputMode: Value(InputMode.binaryHitMiss))),
+        throwsA(isA<ValidationException>().having(
+          (e) => e.code,
+          'code',
+          ValidationException.invalidStructure,
+        )),
+      );
+    });
+
     test('update Name succeeds', () async {
       final updated = await repo.updateDrill(
         userId,

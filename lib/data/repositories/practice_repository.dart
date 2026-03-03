@@ -901,7 +901,8 @@ class PracticeRepository {
 
   /// TD-03 §3.3.3 #9 — Start a session for a practice entry.
   /// Guard: no other ActiveSession in block, drill not deleted, entry is PendingDrill.
-  Future<Session> startSession(String entryId, String userId) async {
+  Future<Session> startSession(String entryId, String userId,
+      {String? userDeclaration}) async {
     await _gate.awaitGateRelease();
     final entry = await _requireEntry(entryId);
 
@@ -942,11 +943,14 @@ class PracticeRepository {
     final sessionId = _uuid.v4();
     final pb = await getPracticeBlockById(entry.practiceBlockId);
 
-    // Create Session.
+    // Create Session. S04 §4.3 — Persist UserDeclaration when provided.
     final session = await createSession(SessionsCompanion.insert(
       sessionId: sessionId,
       drillId: entry.drillId,
       practiceBlockId: pb!.practiceBlockId,
+      userDeclaration: userDeclaration != null
+          ? Value(userDeclaration)
+          : const Value.absent(),
     ));
 
     // Create first Set (index 0).
