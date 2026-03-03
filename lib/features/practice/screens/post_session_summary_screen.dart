@@ -168,6 +168,11 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                       label: 'Status',
                       value: session.status.dbValue,
                     ),
+                    if (session.sessionDuration != null)
+                      _DetailRow(
+                        label: 'Duration',
+                        value: _formatDuration(session.sessionDuration!),
+                      ),
                   ],
                 ),
               ),
@@ -204,6 +209,16 @@ class PostSessionSummaryScreen extends ConsumerWidget {
     if (score >= 3.5) return ColorTokens.successDefault;
     if (score >= 2.0) return ColorTokens.primaryDefault;
     return ColorTokens.warningIntegrity;
+  }
+
+  String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final secs = seconds % 60;
+    if (hours > 0) {
+      return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
+    }
+    return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 }
 

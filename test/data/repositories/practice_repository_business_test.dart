@@ -472,6 +472,102 @@ void main() {
         throwsA(isA<ValidationException>()),
       );
     });
+
+    // Gap 36/38 — Session duration tracking.
+    test('endSession persists sessionDuration from Instance timestamps',
+        () async {
+      final session = await repo.startSession(entryId1, userId);
+      final currentSet = await repo.getCurrentSet(session.sessionId);
+
+      // Log instances with timestamps 5 minutes apart.
+      final baseTime = DateTime(2026, 3, 1, 10, 0, 0);
+      await repo.logInstance(
+        currentSet!.setId,
+        InstancesCompanion.insert(
+          instanceId: 'inst-dur-1',
+          setId: currentSet.setId,
+          selectedClub: 'Putter',
+          rawMetrics: '{"hit": true}',
+          timestamp: Value(baseTime),
+        ),
+        session.sessionId,
+      );
+      await repo.logInstance(
+        currentSet.setId,
+        InstancesCompanion.insert(
+          instanceId: 'inst-dur-2',
+          setId: currentSet.setId,
+          selectedClub: 'Putter',
+          rawMetrics: '{"hit": false}',
+          timestamp: Value(baseTime.add(const Duration(minutes: 5))),
+        ),
+        session.sessionId,
+      );
+
+      await repo.endSession(session.sessionId, userId);
+
+      final closed = await repo.getSessionById(session.sessionId);
+      expect(closed!.sessionDuration, 300); // 5 minutes = 300 seconds
+    });
+
+    test('endSession persists sessionDuration = 0 for single Instance',
+        () async {
+      final session = await repo.startSession(entryId1, userId);
+      final currentSet = await repo.getCurrentSet(session.sessionId);
+
+      await repo.logInstance(
+        currentSet!.setId,
+        InstancesCompanion.insert(
+          instanceId: 'inst-dur-single',
+          setId: currentSet.setId,
+          selectedClub: 'Putter',
+          rawMetrics: '{"hit": true}',
+        ),
+        session.sessionId,
+      );
+
+      await repo.endSession(session.sessionId, userId);
+
+      final closed = await repo.getSessionById(session.sessionId);
+      expect(closed!.sessionDuration, 0);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TechniqueBlock duration — Gap 36/38
+  // ---------------------------------------------------------------------------
+
+  test('endSession persists sessionDuration from rawMetrics for TechniqueBlock',
+      () async {
+    // Create a PracticeBlock with the TechniqueBlock drill (drillId3).
+    final pb = await repo.createPracticeBlock(
+      userId,
+      initialDrillIds: [drillId3],
+    );
+    final entries = await (db.select(db.practiceEntries)
+          ..where((t) => t.practiceBlockId.equals(pb.practiceBlockId)))
+        .get();
+
+    final session =
+        await repo.startSession(entries.first.practiceEntryId, userId);
+    final currentSet = await repo.getCurrentSet(session.sessionId);
+
+    // Log a TechniqueBlock instance with duration in rawMetrics.
+    await repo.logInstance(
+      currentSet!.setId,
+      InstancesCompanion.insert(
+        instanceId: 'inst-tech-dur',
+        setId: currentSet.setId,
+        selectedClub: 'None',
+        rawMetrics: '{"duration": 420}',
+      ),
+      session.sessionId,
+    );
+
+    await repo.endSession(session.sessionId, userId);
+
+    final closed = await repo.getSessionById(session.sessionId);
+    expect(closed!.sessionDuration, 420); // 7 minutes from rawMetrics
   });
 
   // ---------------------------------------------------------------------------

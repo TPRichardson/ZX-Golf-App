@@ -1145,6 +1145,9 @@ class PracticeRepository {
     // Spec: TD-03 §4.4 — Runs outside UserScoringLock.
     final result = await _reflowEngine.closeSession(sessionId, userId);
 
+    // Calculate and persist session duration (Gap 36, Gap 38).
+    await _persistSessionDuration(sessionId);
+
     // Update entry: ActiveSession → CompletedSession.
     final entries = await (_db.select(_db.practiceEntries)
           ..where((t) => t.sessionId.equals(sessionId)))
@@ -1160,6 +1163,68 @@ class PracticeRepository {
     }
 
     return result;
+  }
+
+  /// Calculate session duration from Instance timestamps and persist it.
+  /// Duration = last Instance timestamp - first Instance timestamp (seconds).
+  /// For TechniqueBlock: read from the Instance's rawMetrics JSON.
+  Future<void> _persistSessionDuration(String sessionId) async {
+    // Get drill to check if TechniqueBlock.
+    final session = await getSessionById(sessionId);
+    if (session == null) return;
+    final drill = await (_db.select(_db.drills)
+          ..where((t) => t.drillId.equals(session.drillId)))
+        .getSingleOrNull();
+
+    int? durationSeconds;
+
+    // Fetch set IDs for this session.
+    final setIds = await (_db.select(_db.sets)
+          ..where((t) => t.sessionId.equals(sessionId))
+          ..where((t) => t.isDeleted.equals(false)))
+        .map((s) => s.setId)
+        .get();
+    if (setIds.isEmpty) return;
+
+    final instances = await (_db.select(_db.instances)
+          ..where((t) => t.setId.isIn(setIds))
+          ..where((t) => t.isDeleted.equals(false))
+          ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
+        .get();
+
+    if (drill?.drillType == DrillType.techniqueBlock) {
+      // TechniqueBlock: read duration from rawMetrics of the single Instance.
+      if (instances.isNotEmpty) {
+        try {
+          final metrics =
+              jsonDecode(instances.first.rawMetrics) as Map<String, dynamic>;
+          final rawDuration = metrics['duration'] ?? metrics['durationSeconds'];
+          if (rawDuration is num) {
+            durationSeconds = rawDuration.toInt();
+          }
+        } on FormatException {
+          // Ignore malformed JSON — duration stays null.
+        }
+      }
+    } else {
+      // Standard drill: last Instance timestamp - first Instance timestamp.
+      if (instances.length >= 2) {
+        durationSeconds = instances.last.timestamp
+            .difference(instances.first.timestamp)
+            .inSeconds;
+      } else if (instances.length == 1) {
+        durationSeconds = 0;
+      }
+    }
+
+    if (durationSeconds != null) {
+      await (_db.update(_db.sessions)
+            ..where((t) => t.sessionId.equals(sessionId)))
+          .write(SessionsCompanion(
+        sessionDuration: Value(durationSeconds),
+        updatedAt: Value(DateTime.now()),
+      ));
+    }
   }
 
   // ---------------------------------------------------------------------------

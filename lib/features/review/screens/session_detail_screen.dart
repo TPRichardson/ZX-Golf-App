@@ -76,6 +76,10 @@ class SessionDetailScreen extends ConsumerWidget {
                     _InfoRow(
                         label: 'Drill Type',
                         value: detail.drillType),
+                    if (detail.sessionDuration != null)
+                      _InfoRow(
+                          label: 'Duration',
+                          value: _formatDuration(detail.sessionDuration!)),
                     // S11 §11.6 — Integrity flag display and suppression toggle.
                     if (detail.integrityFlag && !detail.integritySuppressed)
                       Padding(
@@ -146,6 +150,16 @@ class SessionDetailScreen extends ConsumerWidget {
     );
   }
 
+  String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final secs = seconds % 60;
+    if (hours > 0) {
+      return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
+    }
+    return '$minutes:${secs.toString().padLeft(2, '0')}';
+  }
+
   String _formatDate(DateTime? dt) {
     if (dt == null) return 'Unknown';
     final months = [
@@ -203,6 +217,7 @@ class _SessionDetail {
   final String drillType;
   final bool integrityFlag;
   final bool integritySuppressed;
+  final int? sessionDuration;
 
   const _SessionDetail({
     required this.drillName,
@@ -212,6 +227,7 @@ class _SessionDetail {
     required this.drillType,
     required this.integrityFlag,
     required this.integritySuppressed,
+    this.sessionDuration,
   });
 }
 
@@ -248,5 +264,6 @@ final _sessionDetailProvider = FutureProvider.family<_SessionDetail?,
     drillType: drill?.drillType.dbValue ?? 'Unknown',
     integrityFlag: session.integrityFlag,
     integritySuppressed: session.integritySuppressed,
+    sessionDuration: session.sessionDuration,
   );
 });
