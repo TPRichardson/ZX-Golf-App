@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
@@ -133,10 +132,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     // S12 §12.2 — showHomeProvider controls Home vs Tab display.
     final showHome = ref.watch(showHomeProvider);
 
-    // Fix 10 — Hide bottom navigation during live practice.
-    final activePb = ref.watch(activePracticeBlockProvider(kDevUserId));
-    final hasActivePractice = activePb.valueOrNull != null;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('ZX Golf'),
@@ -171,9 +166,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: showHome || hasActivePractice
-          ? null
-          : BottomNavigationBar(
+      // Fix 10 — Practice screens are pushed via Navigator.push (own Scaffold),
+      // so shell bottom nav is already hidden during live practice.
+      bottomNavigationBar: BottomNavigationBar(
               currentIndex: _currentIndex,
               onTap: _goToTab,
               items: const [
