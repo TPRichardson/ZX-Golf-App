@@ -13,6 +13,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
@@ -251,6 +252,45 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
     );
   }
 
+  // Fix 4 — Bulk add hits or misses.
+  Future<void> _bulkAdd(bool isHit) async {
+    if (!_initialized || _ending) return;
+    final count = await showBulkEntryDialog(
+      context,
+      maxCount: _controller.remainingSetCapacity,
+      title: isHit ? 'Bulk Add Hits' : 'Bulk Add Misses',
+    );
+    if (count == null || count <= 0) return;
+
+    final setId = _controller.currentSetId!;
+    final added = await _controller.logBulkInstances(count, (i) {
+      return InstancesCompanion.insert(
+        instanceId: const Uuid().v4(),
+        setId: setId,
+        selectedClub: _selectedClub,
+        rawMetrics: jsonEncode({'hit': isHit}),
+      );
+    });
+
+    if (!mounted) return;
+    setState(() {
+      if (isHit) {
+        _hitCount += added;
+      } else {
+        _missCount += added;
+      }
+    });
+
+    if (_controller.isCurrentSetComplete()) {
+      if (_controller.isSessionAutoComplete()) {
+        await _endSession();
+      } else {
+        await _controller.advanceSet();
+        if (mounted) setState(() {});
+      }
+    }
+  }
+
   Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.all(SpacingTokens.md),
@@ -261,8 +301,19 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          // Fix 4 — Bulk add buttons.
+          TextButton.icon(
+            onPressed: () => _bulkAdd(true),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Bulk Hits'),
+          ),
+          TextButton.icon(
+            onPressed: () => _bulkAdd(false),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Bulk Misses'),
+          ),
+          const Spacer(),
           if (!_controller.isStructured)
             FilledButton(
               onPressed: _endSession,

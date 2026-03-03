@@ -16,6 +16,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
@@ -358,6 +359,39 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
     );
   }
 
+  // Fix 4 — Bulk add hits.
+  Future<void> _bulkAddHits() async {
+    if (!_initialized || _ending) return;
+    final count = await showBulkEntryDialog(
+      context,
+      maxCount: _controller.remainingSetCapacity,
+      title: 'Bulk Add Hits',
+    );
+    if (count == null || count <= 0) return;
+
+    final setId = _controller.currentSetId!;
+    await _controller.logBulkInstances(count, (i) {
+      return InstancesCompanion.insert(
+        instanceId: const Uuid().v4(),
+        setId: setId,
+        selectedClub: _selectedClub,
+        rawMetrics: jsonEncode({'hit': true, 'label': 'Hit'}),
+      );
+    });
+
+    if (!mounted) return;
+    setState(() {});
+
+    if (_controller.isCurrentSetComplete()) {
+      if (_controller.isSessionAutoComplete()) {
+        await _endSession();
+      } else {
+        await _controller.advanceSet();
+        if (mounted) setState(() {});
+      }
+    }
+  }
+
   Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.all(SpacingTokens.md),
@@ -369,15 +403,13 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              'Tap the cell matching your shot result',
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                color: ColorTokens.textSecondary,
-              ),
-            ),
+          // Fix 4 — Bulk add button.
+          TextButton.icon(
+            onPressed: _bulkAddHits,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Bulk Add'),
           ),
+          const Spacer(),
           if (!_controller.isStructured)
             FilledButton(
               onPressed: _endSession,

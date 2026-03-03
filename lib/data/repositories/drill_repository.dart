@@ -138,6 +138,9 @@ class DrillRepository {
         ? _parseSubskillMapping(data.subskillMapping.value)
         : <String>{};
 
+    // S04 §4.2 — Validate subskill count by DrillType.
+    _validateSubskillCount(data.drillType.value, subskillMapping);
+
     if (subskillMapping.isNotEmpty) {
       final validRefs = await (_db.select(_db.subskillRefs)
             ..where((t) => t.skillArea.equalsValue(skillArea)))
@@ -818,6 +821,31 @@ class DrillRepository {
           message:
               'Anchor Scratch ($scratch) must be less than Pro ($pro) for "${entry.key}"',
           context: {'subskill': entry.key, 'scratch': scratch, 'pro': pro},
+        );
+      }
+    }
+  }
+
+  // S04 §4.2 — Validate subskill count per drill type.
+  // TechniqueBlock → 0 subskills. Transition/Pressure → 1 or 2 subskills.
+  void _validateSubskillCount(DrillType drillType, Set<String> subskillMapping) {
+    if (drillType == DrillType.techniqueBlock) {
+      if (subskillMapping.isNotEmpty) {
+        throw ValidationException(
+          code: ValidationException.invalidStructure,
+          message:
+              'TechniqueBlock drills must have 0 subskills, got ${subskillMapping.length}',
+          context: {'drillType': drillType.dbValue, 'count': subskillMapping.length},
+        );
+      }
+    } else {
+      // Transition / Pressure: require exactly 1 or 2 subskills.
+      if (subskillMapping.isEmpty || subskillMapping.length > 2) {
+        throw ValidationException(
+          code: ValidationException.invalidStructure,
+          message:
+              '${drillType.dbValue} drills must have 1 or 2 subskills, got ${subskillMapping.length}',
+          context: {'drillType': drillType.dbValue, 'count': subskillMapping.length},
         );
       }
     }

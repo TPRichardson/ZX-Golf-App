@@ -13,6 +13,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
@@ -299,6 +300,43 @@ class _RawDataEntryScreenState extends ConsumerState<RawDataEntryScreen> {
     );
   }
 
+  // Fix 4 — Bulk add instances with the current input value.
+  Future<void> _bulkAdd() async {
+    final text = _valueController.text.trim();
+    if (text.isEmpty || _ending) return;
+    final value = double.tryParse(text);
+    if (value == null) return;
+
+    final count = await showBulkEntryDialog(
+      context,
+      maxCount: _controller.remainingSetCapacity,
+    );
+    if (count == null || count <= 0) return;
+
+    final setId = _controller.currentSetId!;
+    await _controller.logBulkInstances(count, (i) {
+      return InstancesCompanion.insert(
+        instanceId: const Uuid().v4(),
+        setId: setId,
+        selectedClub: _selectedClub,
+        rawMetrics: jsonEncode({'value': value}),
+      );
+    });
+
+    _valueController.clear();
+    if (!mounted) return;
+    setState(() {});
+
+    if (_controller.isCurrentSetComplete()) {
+      if (_controller.isSessionAutoComplete()) {
+        await _endSession();
+      } else {
+        await _controller.advanceSet();
+        if (mounted) setState(() {});
+      }
+    }
+  }
+
   Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.all(SpacingTokens.md),
@@ -309,8 +347,14 @@ class _RawDataEntryScreenState extends ConsumerState<RawDataEntryScreen> {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          // Fix 4 — Bulk add button.
+          TextButton.icon(
+            onPressed: _bulkAdd,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Bulk Add'),
+          ),
+          const Spacer(),
           if (!_controller.isStructured)
             FilledButton(
               onPressed: _endSession,

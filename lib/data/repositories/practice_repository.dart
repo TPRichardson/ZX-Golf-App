@@ -4,8 +4,11 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
+import 'package:zx_golf_app/core/scoring/integrity_evaluator.dart';
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
+import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
+import 'package:zx_golf_app/core/scoring/scoring_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -593,9 +596,11 @@ class PracticeRepository {
 
   /// TD-03 §3.3.3 #1 — Create a new PracticeBlock.
   /// Guard: no existing active PB for this user.
+  /// [sourceRoutineId]: informational linkage to originating Routine (S08).
   Future<PracticeBlock> createPracticeBlock(
     String userId, {
     List<String>? initialDrillIds,
+    String? sourceRoutineId,
   }) async {
     await _gate.awaitGateRelease();
     // Guard: no active practice block for user.
@@ -612,9 +617,11 @@ class PracticeRepository {
     }
 
     final pbId = _uuid.v4();
+    // S08 — Pass sourceRoutineId for template linkage (informational only).
     final pb = await createPracticeBlockRaw(PracticeBlocksCompanion.insert(
       practiceBlockId: pbId,
       userId: userId,
+      sourceRoutineId: Value(sourceRoutineId),
       drillOrder: Value(jsonEncode(initialDrillIds ?? [])),
     ));
 
@@ -1262,6 +1269,12 @@ class PracticeRepository {
           sessionId: session.sessionId,
         ));
       }
+
+      // Fix 9 — Integrity flag auto-resolution.
+      // After edit, re-evaluate integrity for all instances in the session.
+      if (session.integrityFlag) {
+        await _reevaluateIntegrityFlag(session, userId);
+      }
     }
 
     return updated;
@@ -1273,6 +1286,8 @@ class PracticeRepository {
 
   /// TD-03 §3.3.3 #18 — Soft-delete an instance.
   /// Post-close deletion on Closed Session triggers reflow.
+  /// Fix 5: Structured drills block post-close instance deletion.
+  /// Fix 6: Last instance deletion auto-discards unstructured sessions.
   Future<void> deleteInstance(String instanceId, String userId) async {
     await _gate.awaitGateRelease();
     final instance = await getInstanceById(instanceId);
@@ -1295,7 +1310,106 @@ class PracticeRepository {
     }
     final session = await getSessionById(set.sessionId);
 
+    // Fix 5 — Post-close structured drill: block instance deletion.
+    if (session != null && session.status == SessionStatus.closed) {
+      final drill = await (_db.select(_db.drills)
+            ..where((t) => t.drillId.equals(session.drillId)))
+          .getSingleOrNull();
+      if (drill != null && drill.requiredAttemptsPerSet != null) {
+        throw ValidationException(
+          code: ValidationException.stateTransition,
+          message:
+              'Cannot delete instance from closed structured drill session',
+          context: {
+            'instanceId': instanceId,
+            'sessionId': session.sessionId,
+          },
+        );
+      }
+    }
+
     await softDeleteInstance(instanceId);
+
+    // Post-close deletion triggers reflow.
+    if (session != null && session.status == SessionStatus.closed) {
+      final subskills = await _getSubskillsForSession(session.sessionId);
+
+      // Fix 6 — Last instance deletion auto-discards unstructured session.
+      final remainingInstances = await _countNonDeletedInstancesInSession(
+          session.sessionId);
+      if (remainingInstances == 0) {
+        final drill = await (_db.select(_db.drills)
+              ..where((t) => t.drillId.equals(session.drillId)))
+            .getSingleOrNull();
+        if (drill != null && drill.requiredAttemptsPerSet == null) {
+          // Hard-delete the session (auto-discard).
+          await _db.transaction(() async {
+            // Delete all sets for this session.
+            await (_db.delete(_db.sets)
+                  ..where((t) => t.sessionId.equals(session.sessionId)))
+                .go();
+            // Delete the session.
+            await (_db.delete(_db.sessions)
+                  ..where((t) => t.sessionId.equals(session.sessionId)))
+                .go();
+          });
+          // Trigger reflow after auto-discard.
+          if (subskills.isNotEmpty) {
+            await _reflowEngine.executeReflow(ReflowTrigger(
+              type: ReflowTriggerType.sessionDeletion,
+              userId: userId,
+              affectedSubskillIds: subskills,
+              sessionId: session.sessionId,
+            ));
+          }
+          return;
+        }
+      }
+
+      if (subskills.isNotEmpty) {
+        await _reflowEngine.executeReflow(ReflowTrigger(
+          type: ReflowTriggerType.instanceDeletion,
+          userId: userId,
+          affectedSubskillIds: subskills,
+          sessionId: session.sessionId,
+        ));
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // #19: deleteSet (business) — post-close delete → reflow
+  // ---------------------------------------------------------------------------
+
+  /// Fix 5 — Soft-delete a set. Blocks deletion from closed structured sessions.
+  Future<void> deleteSet(String setId, String userId) async {
+    await _gate.awaitGateRelease();
+    final set = await getSetById(setId);
+    if (set == null) {
+      throw ValidationException(
+        code: ValidationException.requiredField,
+        message: 'Set not found',
+        context: {'setId': setId},
+      );
+    }
+
+    final session = await getSessionById(set.sessionId);
+
+    // Fix 5 — Post-close structured drill: block set deletion.
+    if (session != null && session.status == SessionStatus.closed) {
+      final drill = await (_db.select(_db.drills)
+            ..where((t) => t.drillId.equals(session.drillId)))
+          .getSingleOrNull();
+      if (drill != null && drill.requiredAttemptsPerSet != null) {
+        throw ValidationException(
+          code: ValidationException.stateTransition,
+          message: 'Cannot delete set from closed structured drill session',
+          context: {'setId': setId, 'sessionId': session.sessionId},
+        );
+      }
+    }
+
+    await softDeleteSet(setId);
 
     // Post-close deletion triggers reflow.
     if (session != null && session.status == SessionStatus.closed) {
@@ -1374,6 +1488,23 @@ class PracticeRepository {
   // Private helpers
   // ---------------------------------------------------------------------------
 
+  /// Count all non-deleted instances across all sets of a session.
+  Future<int> _countNonDeletedInstancesInSession(String sessionId) async {
+    final sets = await (_db.select(_db.sets)
+          ..where((t) => t.sessionId.equals(sessionId))
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+    var total = 0;
+    for (final s in sets) {
+      final instances = await (_db.select(_db.instances)
+            ..where((t) => t.setId.equals(s.setId))
+            ..where((t) => t.isDeleted.equals(false)))
+          .get();
+      total += instances.length;
+    }
+    return total;
+  }
+
   Future<PracticeBlock?> _findActivePracticeBlock(String userId) async {
     return (_db.select(_db.practiceBlocks)
           ..where((t) => t.userId.equals(userId))
@@ -1438,6 +1569,89 @@ class PracticeRepository {
     if (json == '[]' || json.isEmpty) return {};
     final List<dynamic> list = jsonDecode(json) as List<dynamic>;
     return list.map((e) => e as String).toSet();
+  }
+
+  // Fix 9 — Re-evaluate integrity flag after instance edit.
+  // If no instance is in breach, auto-clear the flag.
+  Future<void> _reevaluateIntegrityFlag(
+      Session session, String userId) async {
+    final drill = await (_db.select(_db.drills)
+          ..where((t) => t.drillId.equals(session.drillId)))
+        .getSingleOrNull();
+    if (drill == null) return;
+
+    final schema = await (_db.select(_db.metricSchemas)
+          ..where((t) => t.metricSchemaId.equals(drill.metricSchemaId)))
+        .getSingleOrNull();
+    if (schema == null) return;
+
+    final adapterType =
+        parseScoringAdapterBinding(schema.scoringAdapterBinding);
+    // Only linear interpolation drills have integrity checks.
+    if (adapterType != ScoringAdapterType.linearInterpolation) return;
+
+    // Gather all non-deleted instances across all sets of this session.
+    final sets = await (_db.select(_db.sets)
+          ..where((t) => t.sessionId.equals(session.sessionId))
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+
+    bool anyBreach = false;
+    for (final s in sets) {
+      final instances = await (_db.select(_db.instances)
+            ..where((t) => t.setId.equals(s.setId))
+            ..where((t) => t.isDeleted.equals(false)))
+          .get();
+      for (final instance in instances) {
+        final value = _extractNumericValue(instance.rawMetrics);
+        final breach = evaluateIntegrity(IntegrityInput(
+          value: value,
+          hardMinInput: schema.hardMinInput,
+          hardMaxInput: schema.hardMaxInput,
+          adapterType: adapterType,
+        ));
+        if (breach) {
+          anyBreach = true;
+          break;
+        }
+      }
+      if (anyBreach) break;
+    }
+
+    // If no breach remains, auto-clear the integrity flag.
+    if (!anyBreach) {
+      await _db.transaction(() async {
+        await (_db.update(_db.sessions)
+              ..where((t) => t.sessionId.equals(session.sessionId)))
+            .write(SessionsCompanion(
+          integrityFlag: const Value(false),
+          integritySuppressed: const Value(false),
+          updatedAt: Value(DateTime.now()),
+        ));
+      });
+      // Emit IntegrityFlagAutoResolved event.
+      await _eventLogRepo.create(EventLogsCompanion.insert(
+        eventLogId: _uuid.v4(),
+        userId: userId,
+        eventTypeId: 'IntegrityFlagAutoResolved',
+        affectedEntityIds: Value(jsonEncode([session.sessionId])),
+        metadata: const Value('{"action":"auto_resolved"}'),
+      ));
+    }
+  }
+
+  /// Extract numeric value from rawMetrics JSON.
+  double _extractNumericValue(String rawMetrics) {
+    final parsed = jsonDecode(rawMetrics);
+    if (parsed is num) return parsed.toDouble();
+    if (parsed is Map) {
+      for (final key in ['value', 'distance', 'speed', 'carry']) {
+        if (parsed.containsKey(key) && parsed[key] is num) {
+          return (parsed[key] as num).toDouble();
+        }
+      }
+    }
+    return 0.0;
   }
 
   // ---------------------------------------------------------------------------

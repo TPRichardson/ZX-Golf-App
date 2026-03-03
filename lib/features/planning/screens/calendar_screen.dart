@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/features/planning/models/slot.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import '../widgets/adherence_badge.dart';
@@ -94,6 +99,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ],
           ),
         ),
+        // Fix 12 — "Start Today's Practice" button.
+        _StartTodayButton(userId: _userId, today: _today),
         // Calendar day list.
         Expanded(
           child: daysAsync.when(
@@ -183,6 +190,86 @@ const _monthNames = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
+
+/// Fix 12 — "Start Today's Practice" button.
+/// Visible only when today's CalendarDay has ≥1 filled Slot and no active PB.
+class _StartTodayButton extends ConsumerWidget {
+  final String userId;
+  final DateTime today;
+
+  const _StartTodayButton({required this.userId, required this.today});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayDayAsync = ref.watch(todayCalendarDayProvider(userId));
+    final activePb = ref.watch(activePracticeBlockProvider(userId));
+
+    return todayDayAsync.when(
+      data: (day) {
+        final slots = _parseSlotsFromJson(day.slots);
+        final filledDrillIds = slots
+            .where((s) => s.isFilled)
+            .map((s) => s.drillId!)
+            .toList();
+
+        // Hide if no filled slots or active PB exists.
+        if (filledDrillIds.isEmpty) return const SizedBox.shrink();
+        if (activePb.valueOrNull != null) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacingTokens.md,
+            vertical: SpacingTokens.sm,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _startTodayPractice(context, ref, filledDrillIds),
+              icon: const Icon(Icons.play_arrow, color: Colors.white),
+              label: Text(
+                'Start Today\'s Practice (${filledDrillIds.length} drills)',
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: ColorTokens.successDefault,
+                padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Future<void> _startTodayPractice(
+    BuildContext context,
+    WidgetRef ref,
+    List<String> drillIds,
+  ) async {
+    final actions = ref.read(practiceActionsProvider);
+    final pb = await actions.startPracticeBlock(
+      userId,
+      initialDrillIds: drillIds,
+    );
+
+    if (context.mounted) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PracticeQueueScreen(
+          practiceBlockId: pb.practiceBlockId,
+          userId: userId,
+        ),
+      ));
+    }
+  }
+
+  List<Slot> _parseSlotsFromJson(String slotsJson) {
+    if (slotsJson.isEmpty || slotsJson == '[]') return [];
+    final List<dynamic> list = jsonDecode(slotsJson) as List<dynamic>;
+    return list.map((e) => Slot.fromJson(e as Map<String, dynamic>)).toList();
+  }
+}
 
 class _EmptyDayCard extends StatelessWidget {
   final DateTime date;

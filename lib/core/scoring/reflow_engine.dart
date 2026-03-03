@@ -264,8 +264,9 @@ class ReflowEngine {
       final schema = schemaCache[swd.drill.metricSchemaId];
       final instances = instancesBySession[swd.session.sessionId] ?? [];
 
+      // Fix 1 — Multi-Output: score with the target subskill's anchors.
       final sessionScore =
-          _scoreSessionInMemory(swd, schema, instances);
+          _scoreSessionInMemory(swd, schema, instances, forSubskillId: subskillId);
       if (sessionScore == null) continue;
 
       // Determine occupancy: dual-mapped = 0.5, single = 1.0
@@ -339,11 +340,14 @@ class ReflowEngine {
 
   /// Score a session using pre-fetched data (no DB queries).
   /// Returns null for technique blocks or missing schemas.
+  /// [forSubskillId]: when provided (Fix 1 — Multi-Output), use that subskill's
+  /// anchors instead of defaulting to the first subskill.
   double? _scoreSessionInMemory(
     SessionWithDrill swd,
     MetricSchema? schema,
-    List<Instance> instances,
-  ) {
+    List<Instance> instances, {
+    String? forSubskillId,
+  }) {
     if (schema == null) return null;
 
     final adapterType = parseScoringAdapterBinding(schema.scoringAdapterBinding);
@@ -355,9 +359,11 @@ class ReflowEngine {
     final subskillMapping = _parseSubskillMapping(swd.drill.subskillMapping);
     if (subskillMapping.isEmpty || anchorsMap.isEmpty) return 0.0;
 
-    // Use the first subskill's anchors for scoring.
-    final firstSubskill = subskillMapping.first;
-    final anchors = anchorsMap[firstSubskill];
+    // Fix 1 — Multi-Output: use the target subskill's anchors if specified.
+    final targetSubskill = forSubskillId != null && anchorsMap.containsKey(forSubskillId)
+        ? forSubskillId
+        : subskillMapping.first;
+    final anchors = anchorsMap[targetSubskill];
     if (anchors == null) return 0.0;
 
     if (adapterType == ScoringAdapterType.linearInterpolation) {
@@ -731,8 +737,11 @@ class ReflowEngine {
           final subskillIds = drillSubskillCache[ls.drillId]!;
           if (subskillIds.isEmpty || anchorsMap.isEmpty) continue;
 
-          final firstSubskill = subskillIds.first;
-          final anchors = anchorsMap[firstSubskill];
+          // Fix 1 — Multi-Output: use the current subskill's anchors, not always the first.
+          final targetSubskill = anchorsMap.containsKey(ref.subskillId)
+              ? ref.subskillId
+              : subskillIds.first;
+          final anchors = anchorsMap[targetSubskill];
           if (anchors == null) continue;
 
           double sessionScore;
@@ -1000,17 +1009,20 @@ class ReflowEngine {
       ),
     );
 
-    // Trigger scoped reflow for affected subskills (if scorable drill type).
+    // Fix 8 — Session close pipeline: update materialised tables directly
+    // instead of routing through executeReflow(). Per TD-03 §4.4, session close
+    // is the primary scoring pipeline, not a reflow.
     if (adapterType != ScoringAdapterType.none &&
         drill.drillType != DrillType.techniqueBlock &&
         subskillMapping.isNotEmpty) {
-      final trigger = buildSessionCloseTrigger(
+      final trigger = ReflowTrigger(
+        type: ReflowTriggerType.sessionClose,
         userId: userId,
+        affectedSubskillIds: subskillMapping,
         sessionId: sessionId,
         drillId: drill.drillId,
-        subskillMapping: subskillMapping,
       );
-      await executeReflow(trigger);
+      await _executeSessionClosePipeline(trigger);
     }
 
     // Emit EventLog: SessionCompletion.
@@ -1052,6 +1064,70 @@ class ReflowEngine {
       sessionId: sessionId,
       drillId: drillId,
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // _executeSessionClosePipeline — Fix 8: TD-03 §4.4
+  // ---------------------------------------------------------------------------
+
+  /// Fix 8 — Session close pipeline: runs the same scoring steps as reflow but
+  /// is classified as a session close event, not a reflow. Acquires lock, updates
+  /// materialised tables, emits SessionCloseComplete (not ReflowComplete).
+  Future<void> _executeSessionClosePipeline(ReflowTrigger trigger) async {
+    final stopwatch = Stopwatch()..start();
+
+    // Acquire UserScoringLock (same pattern as executeReflow).
+    var lockAcquired = false;
+    for (var attempt = 0; attempt <= kLockMaxRetries; attempt++) {
+      lockAcquired = await _scoringRepo.acquireLock(trigger.userId);
+      if (lockAcquired) break;
+      if (attempt < kLockMaxRetries) {
+        await Future.delayed(kLockRetryDelay);
+      }
+    }
+    if (!lockAcquired) {
+      stopwatch.stop();
+      throw ReflowException(
+        code: ReflowException.lockTimeout,
+        message: 'Failed to acquire scoring lock for session close pipeline',
+        context: {'userId': trigger.userId},
+      );
+    }
+
+    try {
+      await _setRebuildNeeded(true);
+
+      await _db.transaction(() async {
+        return _executeReflowSteps(trigger, stopwatch);
+      });
+
+      await _setRebuildNeeded(false);
+
+      // Emit SessionCloseComplete (not ReflowComplete).
+      await _eventLogRepo.create(EventLogsCompanion.insert(
+        eventLogId: _uuid.v4(),
+        userId: trigger.userId,
+        eventTypeId: 'SessionCloseComplete',
+        affectedSubskills:
+            Value(jsonEncode(trigger.affectedSubskillIds.toList())),
+        metadata: Value(jsonEncode({
+          'sessionId': trigger.sessionId,
+          'drillId': trigger.drillId,
+        })),
+      ));
+
+      stopwatch.stop();
+    } catch (e) {
+      stopwatch.stop();
+      if (e is ReflowException) rethrow;
+      throw ReflowException(
+        code: ReflowException.transactionFailed,
+        message: 'Session close pipeline failed: $e',
+        context: {'userId': trigger.userId},
+      );
+    } finally {
+      await _scoringRepo.releaseLock(trigger.userId);
+    }
   }
 
   // ---------------------------------------------------------------------------

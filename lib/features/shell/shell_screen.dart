@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
@@ -59,6 +61,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       });
     });
 
+    // Fix 10 — Hide bottom navigation during live practice.
+    final activePb = ref.watch(activePracticeBlockProvider(kDevUserId));
+    final hasActivePractice = activePb.valueOrNull != null;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ZX Golf'),
@@ -79,27 +85,29 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           Expanded(child: _tabs[_currentIndex]),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Plan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sports_golf),
-            label: 'Track',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics_outlined),
-            label: 'Review',
-          ),
-        ],
-        backgroundColor: ColorTokens.surfacePrimary,
-        selectedItemColor: ColorTokens.primaryDefault,
-        unselectedItemColor: ColorTokens.textSecondary,
-      ),
+      bottomNavigationBar: hasActivePractice
+          ? null
+          : BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_today),
+                  label: 'Plan',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.sports_golf),
+                  label: 'Track',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.analytics_outlined),
+                  label: 'Review',
+                ),
+              ],
+              backgroundColor: ColorTokens.surfacePrimary,
+              selectedItemColor: ColorTokens.primaryDefault,
+              unselectedItemColor: ColorTokens.textSecondary,
+            ),
     );
   }
 }

@@ -54,7 +54,9 @@ class PostSessionSummaryScreen extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.close),
                     color: ColorTokens.textSecondary,
-                    onPressed: () => Navigator.of(context).pop(),
+                    // Fix 11 — Route back to Home, not just pop one screen.
+                    onPressed: () => Navigator.of(context)
+                        .popUntil((route) => route.isFirst),
                   ),
                 ],
               ),
@@ -170,7 +172,9 @@ class PostSessionSummaryScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  // Fix 11 — Route back to Home, not just pop one screen.
+                  onPressed: () => Navigator.of(context)
+                      .popUntil((route) => route.isFirst),
                   style: FilledButton.styleFrom(
                     backgroundColor: ColorTokens.primaryDefault,
                     padding:

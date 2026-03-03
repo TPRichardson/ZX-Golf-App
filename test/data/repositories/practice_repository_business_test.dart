@@ -28,6 +28,7 @@ void main() {
   late String drillId1;
   late String drillId2;
   late String drillId3;
+  late String drillIdUnstructured;
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -90,6 +91,22 @@ void main() {
       metricSchemaId: 'technique_duration',
       origin: DrillOrigin.system,
       subskillMapping: const Value('[]'),
+      requiredSetCount: const Value(1),
+    ));
+
+    // Unstructured drill (requiredAttemptsPerSet = null) for post-close deletion tests.
+    drillIdUnstructured = 'drill-unstruct-4';
+    await db.into(db.drills).insert(DrillsCompanion.insert(
+      drillId: drillIdUnstructured,
+      name: 'Unstructured Grid Drill',
+      skillArea: SkillArea.putting,
+      drillType: DrillType.transition,
+      inputMode: InputMode.gridCell,
+      metricSchemaId: 'grid_1x3_direction',
+      origin: DrillOrigin.system,
+      subskillMapping: const Value('["putting_direction_control"]'),
+      anchors: const Value(
+          '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
       requiredSetCount: const Value(1),
     ));
   });
@@ -686,11 +703,45 @@ void main() {
 
     test('deleteInstance on Closed Session triggers reflow (no throw)',
         () async {
-      await repo.deleteInstance(instanceId, userId);
+      // Fix 5: structured drills block post-close deletion, so use unstructured.
+      // End the existing PB from setUp first (guard: single active PB per user).
+      final existingPb = await (db.select(db.practiceBlocks)
+            ..where((t) => t.userId.equals(userId))
+            ..where((t) => t.endTimestamp.isNull())
+            ..where((t) => t.isDeleted.equals(false)))
+          .getSingleOrNull();
+      if (existingPb != null) {
+        await repo.endPracticeBlock(existingPb.practiceBlockId, userId);
+      }
+
+      final pb2 = await repo.createPracticeBlock(
+        userId,
+        initialDrillIds: [drillIdUnstructured],
+      );
+      final entries2 = await (db.select(db.practiceEntries)
+            ..where(
+                (t) => t.practiceBlockId.equals(pb2.practiceBlockId)))
+          .get();
+      final session2 =
+          await repo.startSession(entries2.first.practiceEntryId, userId);
+      final set2 = await repo.getCurrentSet(session2.sessionId);
+      final inst2 = await repo.logInstance(
+        set2!.setId,
+        InstancesCompanion.insert(
+          instanceId: 'inst-for-delete-unstruct',
+          setId: set2.setId,
+          selectedClub: 'Putter',
+          rawMetrics: '{"hit": true}',
+        ),
+        session2.sessionId,
+      );
+      await repo.endSession(session2.sessionId, userId);
+
+      await repo.deleteInstance(inst2.instanceId, userId);
 
       // Instance should be soft-deleted.
       final instance = await (db.select(db.instances)
-            ..where((t) => t.instanceId.equals(instanceId)))
+            ..where((t) => t.instanceId.equals(inst2.instanceId)))
           .getSingleOrNull();
       expect(instance!.isDeleted, true);
     });

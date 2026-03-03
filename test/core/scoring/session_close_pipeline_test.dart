@@ -197,6 +197,96 @@ void main() {
       expect(completionLogs, isNotEmpty);
     });
 
+    // Fix 8 — Session close emits SessionCloseComplete, not ReflowComplete.
+    test('session close emits SessionCloseComplete, not ReflowComplete',
+        () async {
+      final pbId = await seedPracticeBlock(db, userId,
+          practiceBlockId: 'pb-fix8');
+
+      await seedSessionWithInstances(db,
+          userId: userId,
+          drillId: 'a0000002-0000-4000-8000-000000000002',
+          practiceBlockId: pbId,
+          instanceCount: 10,
+          rawMetrics: '{"hit": true}',
+          sessionId: 'session-fix8',
+          status: SessionStatus.active);
+
+      await engine.closeSession('session-fix8', userId);
+
+      final logs = await eventLogRepo.watchByUser(userId).first;
+
+      // Should have SessionCloseComplete (from the pipeline).
+      final closeCompleteLogs = logs
+          .where((l) => l.eventTypeId == 'SessionCloseComplete')
+          .toList();
+      expect(closeCompleteLogs, isNotEmpty,
+          reason: 'Session close pipeline should emit SessionCloseComplete');
+
+      // Should NOT have ReflowComplete from session close.
+      final reflowCompleteLogs = logs
+          .where((l) => l.eventTypeId == 'ReflowComplete')
+          .toList();
+      expect(reflowCompleteLogs, isEmpty,
+          reason: 'Session close should not emit ReflowComplete');
+    });
+
+    test('session close pipeline still updates materialised tables', () async {
+      final pbId = await seedPracticeBlock(db, userId,
+          practiceBlockId: 'pb-fix8-mat');
+
+      await seedSessionWithInstances(db,
+          userId: userId,
+          drillId: 'a0000002-0000-4000-8000-000000000002',
+          practiceBlockId: pbId,
+          instanceCount: 10,
+          rawMetrics: '{"hit": true}',
+          sessionId: 'session-fix8-mat',
+          status: SessionStatus.active);
+
+      // No materialised state before close.
+      final windowsBefore =
+          await scoringRepo.watchWindowStatesByUser(userId).first;
+      expect(windowsBefore, isEmpty);
+
+      await engine.closeSession('session-fix8-mat', userId);
+
+      // Materialised state should exist after close.
+      final windowsAfter =
+          await scoringRepo.watchWindowStatesByUser(userId).first;
+      expect(windowsAfter, isNotEmpty,
+          reason: 'Session close pipeline should update materialised tables');
+
+      // Overall score should be computed.
+      final overall =
+          await scoringRepo.watchOverallScoreByUser(userId).first;
+      expect(overall, isNotNull);
+    });
+
+    test('session close pipeline clears rebuildNeeded flag', () async {
+      final pbId = await seedPracticeBlock(db, userId,
+          practiceBlockId: 'pb-fix8-rebuild');
+
+      await seedSessionWithInstances(db,
+          userId: userId,
+          drillId: 'a0000002-0000-4000-8000-000000000002',
+          practiceBlockId: pbId,
+          instanceCount: 10,
+          rawMetrics: '{"hit": true}',
+          sessionId: 'session-fix8-rebuild',
+          status: SessionStatus.active);
+
+      await engine.closeSession('session-fix8-rebuild', userId);
+
+      // rebuildNeeded should be false after successful pipeline.
+      final row = await (db.select(db.syncMetadataEntries)
+            ..where((t) => t.key.equals('rebuildNeeded')))
+          .getSingleOrNull();
+      // Either null (never set) or 'false'.
+      expect(row == null || row.value == 'false', isTrue,
+          reason: 'rebuildNeeded should be cleared after session close');
+    });
+
     test('dual-mapped session close contributes to 2 windows at 0.5 occupancy',
         () async {
       // Create a dual-mapped user drill.

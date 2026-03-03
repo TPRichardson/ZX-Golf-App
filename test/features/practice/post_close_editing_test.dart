@@ -24,6 +24,7 @@ void main() {
 
   late String rawDrillId;
   late String gridDrillId;
+  late String unstructuredDrillId;
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -72,6 +73,22 @@ void main() {
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
       requiredSetCount: const Value(1),
       requiredAttemptsPerSet: const Value(3),
+    ));
+
+    // Seed unstructured drill for post-close deletion tests (Fix 5).
+    unstructuredDrillId = 'drill-edit-unstruct';
+    await db.into(db.drills).insert(DrillsCompanion.insert(
+      drillId: unstructuredDrillId,
+      name: 'Edit Test Unstructured',
+      skillArea: SkillArea.putting,
+      drillType: DrillType.transition,
+      inputMode: InputMode.gridCell,
+      metricSchemaId: 'grid_1x3_direction',
+      origin: DrillOrigin.system,
+      subskillMapping: const Value('["putting_direction_control"]'),
+      anchors: const Value(
+          '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
+      requiredSetCount: const Value(1),
     ));
   });
 
@@ -169,7 +186,8 @@ void main() {
     });
 
     test('delete Instance on Closed Session triggers reflow', () async {
-      final (session, instanceIds) = await createClosedSession(gridDrillId);
+      // Fix 5: structured drills block post-close deletion, so use unstructured.
+      final (session, instanceIds) = await createClosedSession(unstructuredDrillId);
       expect(session.status, SessionStatus.closed);
 
       final diagsBefore = instrumentation.diagnostics.length;

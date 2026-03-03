@@ -225,19 +225,21 @@ final _sessionDetailProvider =
 
   // Session scores aren't persisted on the Session row; look them up
   // from materialised window entries.
-  double sessionScore = 0;
+  // Fix 7 — Multi-Output: collect all scores for this session across windows
+  // and average them for drill-level display.
   final userId = kDevUserId;
   final windows = await scoringRepo.getWindowStatesForUser(userId);
+  final scores = <double>[];
   for (final w in windows) {
     final entries = parseWindowEntries(w.entries);
     for (final e in entries) {
       if (e.sessionId == sessionId) {
-        sessionScore = e.score;
-        break;
+        scores.add(e.score);
       }
     }
-    if (sessionScore > 0) break;
   }
+  final sessionScore =
+      scores.isEmpty ? 0.0 : scores.reduce((a, b) => a + b) / scores.length;
 
   return _SessionDetail(
     drillName: drill?.name ?? 'Unknown',

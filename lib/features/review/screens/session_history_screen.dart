@@ -194,17 +194,11 @@ class SessionHistoryScreen extends ConsumerWidget {
   }
 
   /// Build a map of sessionId → score from window entry data.
+  /// Fix 7 — Multi-Output: delegates to buildDrillLevelScoreMap which
+  /// averages scores when a session appears in multiple subskill windows.
   Map<String, double> _buildSessionScoreMap(
       List<MaterialisedWindowState> windows) {
-    final map = <String, double>{};
-    for (final w in windows) {
-      final entries = parseWindowEntries(w.entries);
-      for (final e in entries) {
-        // Use the first score found per session (all windows have same score).
-        map.putIfAbsent(e.sessionId, () => e.score);
-      }
-    }
-    return map;
+    return buildDrillLevelScoreMap(windows);
   }
 
   _VarianceData? _computeVariance(

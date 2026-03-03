@@ -56,6 +56,30 @@ List<WindowEntry> parseWindowEntries(String json) {
 }
 
 // ---------------------------------------------------------------------------
+// Drill-level session score map — Fix 7: Multi-Output averaging
+// ---------------------------------------------------------------------------
+
+/// Fix 7 — Build a map of sessionId → drill-level score from window entries.
+/// For Multi-Output drills, a session appears in multiple subskill windows
+/// with different scores. The drill-level score is the mean of all window scores.
+Map<String, double> buildDrillLevelScoreMap(
+    List<MaterialisedWindowState> windows) {
+  final scoreAccumulator = <String, List<double>>{};
+  for (final w in windows) {
+    final entries = parseWindowEntries(w.entries);
+    for (final e in entries) {
+      scoreAccumulator.putIfAbsent(e.sessionId, () => []).add(e.score);
+    }
+  }
+  return scoreAccumulator.map(
+    (sessionId, scores) => MapEntry(
+      sessionId,
+      scores.reduce((a, b) => a + b) / scores.length,
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Heatmap provider — S15 §15.3.3 continuous grey-to-green
 // ---------------------------------------------------------------------------
 

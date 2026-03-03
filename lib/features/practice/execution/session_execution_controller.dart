@@ -123,6 +123,42 @@ class SessionExecutionController {
     return (_completedSetCount + 1) >= requiredSetCount;
   }
 
+  /// Fix 4 — Maximum instances that can be bulk-added in the current set.
+  /// For structured drills: remaining capacity. For unstructured: unlimited (returns null).
+  int? get remainingSetCapacity {
+    if (!isStructured || requiredAttemptsPerSet == null) return null;
+    return (requiredAttemptsPerSet! - _currentSetInstanceCount)
+        .clamp(0, requiredAttemptsPerSet!);
+  }
+
+  /// Fix 4 — Log multiple instances with the same metrics in a batch.
+  /// Timestamps use 1ms micro-offsets for ordering.
+  /// Returns the count of instances actually logged.
+  Future<int> logBulkInstances(
+    int count,
+    InstancesCompanion Function(int index) dataBuilder,
+  ) async {
+    if (_currentSet == null) {
+      throw StateError('No current set available');
+    }
+
+    // Cap at remaining capacity for structured drills.
+    final cap = remainingSetCapacity;
+    final actualCount = cap != null ? count.clamp(0, cap) : count;
+
+    for (var i = 0; i < actualCount; i++) {
+      final data = dataBuilder(i);
+      await _repo.logInstance(
+        _currentSet!.setId,
+        data,
+        session.sessionId,
+      );
+      _currentSetInstanceCount++;
+    }
+
+    return actualCount;
+  }
+
   /// S13 §13.7 — Advance to the next set.
   Future<PracticeSet> advanceSet() async {
     _completedSetCount++;
