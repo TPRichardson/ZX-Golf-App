@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
+import 'package:zx_golf_app/core/validation/bag_gate.dart' as bag_gate;
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
@@ -22,6 +23,23 @@ class PlanningRepository {
   static const _uuid = Uuid();
 
   PlanningRepository(this._db, this._gate);
+
+  // ===========================================================================
+  // S09 §9.3 — Bag gate helper (exposed for applicators)
+  // ===========================================================================
+
+  /// Validate that a drill's Skill Area has eligible clubs for the user.
+  /// Exposed so RoutineApplicator / ScheduleApplicator can call it.
+  Future<void> validateDrillClubEligibility(
+      String userId, String drillId) async {
+    final drill = await (_db.select(_db.drills)
+          ..where((t) => t.drillId.equals(drillId)))
+        .getSingleOrNull();
+    if (drill != null) {
+      await bag_gate.validateClubEligibility(
+          _db, userId, drill.skillArea, drill.drillType);
+    }
+  }
 
   // ===========================================================================
   // Slot Helpers — S08 §8.13.2
@@ -89,6 +107,16 @@ class PlanningRepository {
     String drillId,
   ) async {
     await _gate.awaitGateRelease();
+
+    // S09 §9.3 — Bag gate: validate drill has eligible clubs.
+    final drill = await (_db.select(_db.drills)
+          ..where((t) => t.drillId.equals(drillId)))
+        .getSingleOrNull();
+    if (drill != null) {
+      await bag_gate.validateClubEligibility(
+          _db, userId, drill.skillArea, drill.drillType);
+    }
+
     try {
       return await _db.transaction(() async {
         final day = await getOrCreateCalendarDay(userId, date);
@@ -447,6 +475,19 @@ class PlanningRepository {
         message: 'Routine must have at least one entry',
         context: {'name': name},
       );
+    }
+
+    // S09 §9.3 — Bag gate: validate fixed drill entries have eligible clubs.
+    for (final entry in entries) {
+      if (entry.type == RoutineEntryType.fixed && entry.drillId != null) {
+        final drill = await (_db.select(_db.drills)
+              ..where((t) => t.drillId.equals(entry.drillId!)))
+            .getSingleOrNull();
+        if (drill != null) {
+          await bag_gate.validateClubEligibility(
+              _db, userId, drill.skillArea, drill.drillType);
+        }
+      }
     }
 
     return createRoutine(RoutinesCompanion(

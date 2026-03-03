@@ -92,6 +92,16 @@ class ScheduleApplicator {
     DateTime endDate,
     SchedulePreview resolvedMap,
   ) async {
+    // S09 §9.3 — Bag gate: validate all resolved drills have eligible clubs.
+    final checkedDrills = <String>{};
+    for (final drillIds in resolvedMap.values) {
+      for (final drillId in drillIds) {
+        if (checkedDrills.add(drillId)) {
+          await _planningRepo.validateDrillClubEligibility(userId, drillId);
+        }
+      }
+    }
+
     final instanceId = _uuid.v4();
     final ownedSlotsMap = <String, List<int>>{};
 

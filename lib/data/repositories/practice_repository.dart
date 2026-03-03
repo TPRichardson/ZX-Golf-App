@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/scoring/integrity_evaluator.dart';
+import 'package:zx_golf_app/core/validation/bag_gate.dart' as bag_gate;
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
 import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
@@ -939,6 +940,10 @@ class PracticeRepository {
         context: {'drillId': entry.drillId},
       );
     }
+
+    // S09 §9.3 — Bag gate: require at least one active club for this Skill Area.
+    await bag_gate.validateClubEligibility(
+        _db, userId, drill.skillArea, drill.drillType);
 
     final sessionId = _uuid.v4();
     final pb = await getPracticeBlockById(entry.practiceBlockId);

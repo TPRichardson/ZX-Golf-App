@@ -46,6 +46,11 @@ class RoutineApplicator {
     DateTime date,
     List<String> resolvedDrillIds,
   ) async {
+    // S09 §9.3 — Bag gate: validate all resolved drills have eligible clubs.
+    for (final drillId in resolvedDrillIds) {
+      await _planningRepo.validateDrillClubEligibility(userId, drillId);
+    }
+
     final day = await _planningRepo.getOrCreateCalendarDay(userId, date);
     final slots = _planningRepo.parseSlots(day.slots);
 

@@ -7,6 +7,7 @@ import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/repositories/club_repository.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
@@ -40,6 +41,15 @@ void main() {
       instrumentation: ReflowInstrumentation(),
     );
     repo = PracticeRepository(db, reflowEngine, eventLogRepo, SyncWriteGate());
+
+    // S09 §9.3 — Seed clubs so bag gate passes for Putting, Irons, Driving.
+    final clubRepo = ClubRepository(db, SyncWriteGate());
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.putter)));
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.i7)));
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.driver)));
 
     // Seed structured drill: 2 sets × 3 attempts.
     structuredDrillId = 'drill-structured';

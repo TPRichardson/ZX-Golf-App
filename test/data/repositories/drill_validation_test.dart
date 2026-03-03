@@ -8,6 +8,7 @@ import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/repositories/club_repository.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
@@ -36,6 +37,11 @@ void main() {
       instrumentation: ReflowInstrumentation(),
     );
     repo = DrillRepository(db, eventLogRepo, reflowEngine, syncWriteGate);
+
+    // S09 §9.3 — Seed clubs so bag gate passes for Irons.
+    final clubRepo = ClubRepository(db, syncWriteGate);
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.i7)));
   });
 
   tearDown(() async {

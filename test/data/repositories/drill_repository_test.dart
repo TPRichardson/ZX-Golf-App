@@ -8,6 +8,7 @@ import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/repositories/club_repository.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
@@ -39,6 +40,19 @@ void main() {
       instrumentation: ReflowInstrumentation(),
     );
     repo = DrillRepository(db, eventLogRepo, reflowEngine, syncWriteGate);
+
+    // S09 §9.3 — Seed clubs so bag gate passes for all 7 Skill Areas.
+    final clubRepo = ClubRepository(db, syncWriteGate);
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.driver)));
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.i7)));
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.putter)));
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.w3)));
+    await clubRepo.addClub(
+        userId, const UserClubsCompanion(clubType: Value(ClubType.sw)));
   });
 
   tearDown(() async {
@@ -592,6 +606,48 @@ void main() {
 
       final adopted = await repo.watchAdoptedDrills(userId).first;
       expect(adopted.length, 2);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Bag gate enforcement — S09 §9.3
+  // ---------------------------------------------------------------------------
+  group('Bag gate (S09 §9.3)', () {
+    const otherUserId = 'user-no-clubs';
+
+    test('createCustomDrill throws when no clubs for Skill Area', () async {
+      // otherUserId has no clubs at all.
+      expect(
+        () => repo.createCustomDrill(
+          otherUserId,
+          customDrillCompanion(skillArea: SkillArea.driving),
+        ),
+        throwsA(isA<ValidationException>()),
+      );
+    });
+
+    test('adoptDrill throws when no clubs for Skill Area', () async {
+      // Find a system drill and try to adopt it as a user with no clubs.
+      final systemDrills = await repo.watchSystemDrills().first;
+      expect(
+        () => repo.adoptDrill(otherUserId, systemDrills.first.drillId),
+        throwsA(isA<ValidationException>()),
+      );
+    });
+
+    test('createCustomDrill TechniqueBlock passes without clubs', () async {
+      // TechniqueBlock is exempt from bag gate.
+      final drill = await repo.createCustomDrill(
+        otherUserId,
+        customDrillCompanion(
+          name: 'Tech Block No Club',
+          drillType: DrillType.techniqueBlock,
+          subskillMapping: '[]',
+          anchors: '{}',
+          requiredAttemptsPerSet: null,
+        ),
+      );
+      expect(drill.drillType, DrillType.techniqueBlock);
     });
   });
 }

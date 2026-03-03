@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
+import 'package:zx_golf_app/core/validation/bag_gate.dart' as bag_gate;
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -196,6 +197,9 @@ class DrillRepository {
         data.anchors.value != '{}') {
       _validateAnchors(data.anchors.value, subskillMapping);
     }
+
+    // S09 §9.3 — Bag gate: require at least one active club for this Skill Area.
+    await bag_gate.validateClubEligibility(_db, userId, skillArea, drillType);
 
     final drillId = _uuid.v4();
     final companion = data.copyWith(
@@ -443,6 +447,10 @@ class DrillRepository {
   Future<UserDrillAdoption> adoptDrill(String userId, String drillId) async {
     await _gate.awaitGateRelease();
     final drill = await _getActiveDrill(drillId);
+
+    // S09 §9.3 — Bag gate: require at least one active club for this Skill Area.
+    await bag_gate.validateClubEligibility(
+        _db, userId, drill.skillArea, drill.drillType);
 
     // Check for existing adoption.
     final existing = await (_db.select(_db.userDrillAdoptions)
