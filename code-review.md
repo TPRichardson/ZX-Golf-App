@@ -171,3 +171,35 @@
 | Peak RSS delta | 39.0 MB | — | Excellent |
 
 **No code changes needed.** Both benchmarks are comfortably within their targets after the Layer 1 index additions. The full rebuild is especially efficient at only 15% of its 1-second budget.
+
+---
+
+## Layer 5: Memory
+
+**Status:** Complete — no code changes needed
+
+### 5.1 Audit Summary (30 StatefulWidget classes audited)
+
+| Category | Count | Status |
+|----------|-------|--------|
+| TextEditingController fields | 14 | All properly disposed |
+| AnimationController fields | 2 | All properly disposed |
+| Timer fields | 1 | Properly cancelled |
+| StreamSubscription fields | 0 | Using Riverpod StreamProvider instead |
+| Drift `.watch()` manual subscriptions | 0 | All go through StreamProvider |
+| FocusNode / TabController / PageController | 0 | Not used in stateful widgets |
+| Image caching | 0 | No large assets or custom caching |
+
+### 5.2 Family Providers Missing .autoDispose (MEDIUM — deferred)
+
+16 family providers across `review_providers.dart`, `scoring_providers.dart`, `practice_providers.dart`, `planning_providers.dart`, `bag_providers.dart`, and `drill_providers.dart` lack `.autoDispose`. These can accumulate provider instances when parameters change.
+
+**Current impact: LOW** — app uses single `kDevUserId` so parameters never change. For production multi-user support, `.autoDispose` should be added with case-by-case analysis to avoid breaking `ref.read()` call sites. (Same finding as Layer 2 §2.6 — deferred to focused refactor.)
+
+### 5.3 Highlights
+
+- **Zero critical leaks.** All controllers, timers, and animation controllers have matching `dispose()` calls.
+- **No manual stream subscriptions.** All Drift `.watch()` streams are consumed through Riverpod `StreamProvider`, which handles subscription lifecycle automatically.
+- **SyncOrchestrator lifecycle** (`shell_screen.dart`) properly started in `initState()` and stopped in `dispose()`.
+
+**No files changed.**
