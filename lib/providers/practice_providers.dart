@@ -219,8 +219,11 @@ class PracticeActions {
   }
 
   // Auto-end callback: S13 §13.10.2 — 4h practice block timeout.
+  // 6D — Persist deferred summary flag so next launch shows PostSessionSummary.
   Future<void> _autoEndPracticeBlock(
       String pbId, String userId) async {
+    SessionScoringResult? lastResult;
+
     // Discard any active session first.
     final activeSession = await _repo.getActiveSessionInBlock(pbId);
     if (activeSession != null) {
@@ -232,7 +235,8 @@ class PracticeActions {
           final count =
               await _repo.getInstanceCount(currentSet.setId);
           if (count > 0) {
-            await _repo.endSession(activeSession.sessionId, userId);
+            lastResult =
+                await _repo.endSession(activeSession.sessionId, userId);
           } else {
             await _repo.discardSession(entry.practiceEntryId);
           }
@@ -241,6 +245,14 @@ class PracticeActions {
     }
 
     await _repo.endPracticeBlock(pbId, userId);
+
+    // 6D — Persist pending summary for deferred display on next app open.
+    await _repo.setPendingSummary(
+      blockId: pbId,
+      sessionId: lastResult?.sessionId,
+      sessionScore: lastResult?.sessionScore,
+      integrityBreach: lastResult?.integrityBreach ?? false,
+    );
   }
 
   Future<PracticeEntry?> _findEntryForSession(String sessionId) async {

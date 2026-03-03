@@ -10,6 +10,7 @@ import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
 import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 import 'package:zx_golf_app/core/scoring/scoring_types.dart';
+import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -1777,5 +1778,49 @@ class PracticeRepository {
         context: {'sessionId': sessionId, 'error': e.toString()},
       );
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6D: Pending post-session summary persistence
+  // ---------------------------------------------------------------------------
+
+  /// Persist a deferred post-session summary flag with scoring data.
+  /// Called when a PracticeBlock auto-ends (4h timer).
+  Future<void> setPendingSummary({
+    required String blockId,
+    String? sessionId,
+    double? sessionScore,
+    bool integrityBreach = false,
+  }) async {
+    final value = jsonEncode({
+      'blockId': blockId,
+      if (sessionId != null) 'sessionId': sessionId,
+      if (sessionScore != null) 'sessionScore': sessionScore,
+      'integrityBreach': integrityBreach,
+    });
+    await _db.into(_db.syncMetadataEntries).insertOnConflictUpdate(
+          SyncMetadataEntriesCompanion.insert(
+            key: SyncMetadataKeys.pendingPostSessionSummary,
+            value: value,
+          ),
+        );
+  }
+
+  /// Read the pending summary flag. Returns null if none set.
+  Future<Map<String, dynamic>?> getPendingSummary() async {
+    final row = await (_db.select(_db.syncMetadataEntries)
+          ..where(
+              (t) => t.key.equals(SyncMetadataKeys.pendingPostSessionSummary)))
+        .getSingleOrNull();
+    if (row == null) return null;
+    return jsonDecode(row.value) as Map<String, dynamic>;
+  }
+
+  /// Clear the pending summary flag.
+  Future<void> clearPendingSummary() async {
+    await (_db.delete(_db.syncMetadataEntries)
+          ..where(
+              (t) => t.key.equals(SyncMetadataKeys.pendingPostSessionSummary)))
+        .go();
   }
 }

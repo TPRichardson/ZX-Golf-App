@@ -20,6 +20,7 @@ import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
+import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -174,6 +175,10 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
       if (_controller.isSessionAutoComplete()) {
         await _endSession();
       } else {
+        if (mounted) {
+          await SetTransitionOverlay.show(context,
+              completedSetIndex: _controller.currentSetIndex);
+        }
         await _controller.advanceSet();
         if (mounted) setState(() {});
       }
@@ -382,6 +387,12 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
     );
   }
 
+  /// S14 §14.10 — Undo the last logged instance.
+  Future<void> _undoLast() async {
+    await _controller.undoLastInstance();
+    if (mounted) setState(() {});
+  }
+
   // Fix 4 — Bulk add hits.
   Future<void> _bulkAddHits() async {
     if (!_initialized || _ending) return;
@@ -409,6 +420,10 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
       if (_controller.isSessionAutoComplete()) {
         await _endSession();
       } else {
+        if (mounted) {
+          await SetTransitionOverlay.show(context,
+              completedSetIndex: _controller.currentSetIndex);
+        }
         await _controller.advanceSet();
         if (mounted) setState(() {});
       }
@@ -426,6 +441,13 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
       ),
       child: Row(
         children: [
+          // S14 §14.10 — Undo last instance.
+          if (_controller.canUndo)
+            TextButton.icon(
+              onPressed: _undoLast,
+              icon: const Icon(Icons.undo, size: 16),
+              label: const Text('Undo'),
+            ),
           // Fix 4 — Bulk add button.
           TextButton.icon(
             onPressed: _bulkAddHits,

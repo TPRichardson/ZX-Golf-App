@@ -26,6 +26,8 @@ class SyncMetadataKeys {
   static const schemaMismatchDetected = 'schemaMismatchDetected';
   // TD-07 §13.6 — Set 'true' before materialised state modification, cleared after.
   static const rebuildNeeded = 'rebuildNeeded';
+  // 6D — Persisted when PracticeBlock auto-ends; cleared after summary shown.
+  static const pendingPostSessionSummary = 'pendingPostSessionSummary';
 }
 
 /// TD-03 §5.1 — Result of a sync cycle.

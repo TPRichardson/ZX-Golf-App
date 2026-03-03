@@ -108,6 +108,25 @@ class SessionExecutionController {
     );
   }
 
+  /// S14 §14.10 — Undo the last instance logged in the current set.
+  /// Available only while session is active (pre-scoring). Hard-deletes.
+  /// Returns the deleted instance, or null if no instances exist.
+  Future<Instance?> undoLastInstance() async {
+    if (_currentSet == null || _currentSetInstanceCount <= 0) return null;
+
+    // Get the most recent instance in this set.
+    final instances = await _repo.watchInstancesBySet(_currentSet!.setId).first;
+    if (instances.isEmpty) return null;
+
+    final lastInstance = instances.last;
+    await _repo.hardDeleteInstance(lastInstance.instanceId);
+    _currentSetInstanceCount--;
+    return lastInstance;
+  }
+
+  /// Whether undo is available (at least one instance in current set).
+  bool get canUndo => _currentSetInstanceCount > 0;
+
   /// S13 §13.7 — Check if the current set is complete (structured only).
   bool isCurrentSetComplete() {
     if (!isStructured) return false;

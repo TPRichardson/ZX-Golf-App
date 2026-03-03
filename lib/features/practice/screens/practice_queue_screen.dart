@@ -9,6 +9,7 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
+import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_entry_card.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -49,6 +50,24 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
   Future<void> _removePendingEntry(String entryId) async {
     await ref.read(practiceRepositoryProvider).removePendingEntry(entryId);
+  }
+
+  /// S13 §13.12 — Save current queue as a Routine.
+  Future<void> _saveAsRoutine(List<PracticeEntryWithDrill> entries) async {
+    final drillIds = entries.map((e) => e.drill.drillId).toList();
+    if (drillIds.isEmpty) return;
+
+    final planningRepo = ref.read(planningRepositoryProvider);
+    final routine = await planningRepo.createRoutineWithEntries(
+      widget.userId,
+      'Practice ${DateTime.now().month}/${DateTime.now().day}',
+      drillIds.map((id) => RoutineEntry.fixed(id)).toList(),
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Saved as "${routine.name}"')),
+    );
   }
 
   Future<void> _startSession(PracticeEntryWithDrill entryWithDrill) async {
@@ -171,6 +190,28 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             icon: const Icon(Icons.add),
             tooltip: 'Add Drill',
             onPressed: _addDrill,
+          ),
+          // S13 §13.12 — Save queue as Routine (overflow menu).
+          pbStream.when(
+            data: (pb) {
+              final hasEntries = pb != null && pb.entries.isNotEmpty;
+              if (!hasEntries) return const SizedBox.shrink();
+              return PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'saveAsRoutine') {
+                    _saveAsRoutine(pb.entries);
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'saveAsRoutine',
+                    child: Text('Save as Routine'),
+                  ),
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
         ],
       ),

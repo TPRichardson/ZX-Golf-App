@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
+import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
+import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
@@ -38,7 +40,62 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     // Phase 7A — Start sync orchestrator on app launch.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).start();
+      _checkDeferredSummary();
     });
+  }
+
+  // 6D — Check for deferred post-session summary after auto-end.
+  Future<void> _checkDeferredSummary() async {
+    final repo = ref.read(practiceRepositoryProvider);
+    final pending = await repo.getPendingSummary();
+    if (pending == null) return;
+
+    await repo.clearPendingSummary();
+
+    final blockId = pending['blockId'] as String?;
+    if (blockId == null) return;
+
+    // Look up sessions for this block.
+    final sessions =
+        await repo.watchSessionsByBlock(blockId).first;
+    if (sessions.isEmpty) {
+      // 0 Sessions — show passive snackbar.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Your practice session ended with no completed drills.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Show summary for the last completed session.
+    final sessionId = pending['sessionId'] as String?;
+    final targetSession = sessionId != null
+        ? sessions.firstWhere((s) => s.sessionId == sessionId,
+            orElse: () => sessions.last)
+        : sessions.last;
+
+    final drill = await ref
+        .read(drillRepositoryProvider)
+        .getById(targetSession.drillId);
+    if (drill == null || !mounted) return;
+
+    final score = pending['sessionScore'] as num?;
+    final integrity = pending['integrityBreach'] as bool? ?? false;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PostSessionSummaryScreen(
+          drill: drill,
+          session: targetSession,
+          sessionScore: score?.toDouble(),
+          integrityBreach: integrity,
+        ),
+      ),
+    );
   }
 
   @override
