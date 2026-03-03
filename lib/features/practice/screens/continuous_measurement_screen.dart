@@ -19,6 +19,7 @@ import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 /// S14 §14.3 — Continuous measurement input (distance/deviation).
 class ContinuousMeasurementScreen extends ConsumerStatefulWidget {
@@ -172,6 +173,9 @@ class _ContinuousMeasurementScreenState
       );
     }
 
+    // Gap 39–42 — Disable submission while scoring lock is held.
+    final isLocked = ref.watch(scoringLockActiveProvider).valueOrNull ?? false;
+
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
       body: SafeArea(
@@ -259,10 +263,23 @@ class _ContinuousMeasurementScreenState
                       onSubmitted: (_) => _submitValue(),
                     ),
                     const SizedBox(height: SpacingTokens.md),
+                    // Gap 42 — Inline lock indicator.
+                    if (isLocked)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            bottom: SpacingTokens.sm),
+                        child: Text(
+                          'Updating scores\u2026',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.bodySize,
+                            color: ColorTokens.textTertiary,
+                          ),
+                        ),
+                      ),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: _submitValue,
+                        onPressed: isLocked ? null : _submitValue,
                         style: FilledButton.styleFrom(
                           backgroundColor: ColorTokens.primaryDefault,
                           padding: const EdgeInsets.symmetric(

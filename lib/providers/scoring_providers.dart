@@ -35,6 +35,16 @@ final reflowEngineProvider = Provider<ReflowEngine>((ref) {
   );
 });
 
+/// Gap 39–42 — Scoring lock state observable by UI.
+/// Emits true when the rebuild guard is held, false otherwise.
+final scoringLockActiveProvider = StreamProvider<bool>((ref) {
+  final guard = ref.watch(rebuildGuardProvider);
+  return guard.lockStream;
+});
+
+/// Gap 43 — System maintenance flag (defaults to false, trigger deferred).
+final systemMaintenanceActiveProvider = StateProvider<bool>((ref) => false);
+
 /// S16 §16.1.6 — Reactive stream of materialised window states by userId.
 final windowStatesProvider =
     StreamProvider.family<List<MaterialisedWindowState>, String>((ref, userId) {

@@ -23,6 +23,7 @@ import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 /// S14 §14.3 — Grid cell input screen.
 /// 1×3 direction: 3 cells in a row — Miss Left, Hit, Miss Right.
@@ -216,6 +217,9 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
       );
     }
 
+    // Gap 39–42 — Disable submission while scoring lock is held.
+    final isLocked = ref.watch(scoringLockActiveProvider).valueOrNull ?? false;
+
     final cells = _cells;
     final is3x3 = widget.drill.gridType == GridType.threeByThree;
 
@@ -245,12 +249,31 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
                   onClubSelected: (club) =>
                       setState(() => _selectedClub = club),
                 ),
+              // Gap 42 — Inline lock indicator.
+              if (isLocked)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.md),
+                  child: Text(
+                    'Updating scores\u2026',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      color: ColorTokens.textTertiary,
+                    ),
+                  ),
+                ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(SpacingTokens.lg),
-                  child: is3x3
-                      ? _build3x3Grid(cells)
-                      : _build1x3Or3x1(cells),
+                child: IgnorePointer(
+                  ignoring: isLocked,
+                  child: Opacity(
+                    opacity: isLocked ? 0.4 : 1.0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(SpacingTokens.lg),
+                      child: is3x3
+                          ? _build3x3Grid(cells)
+                          : _build1x3Or3x1(cells),
+                    ),
+                  ),
                 ),
               ),
               _buildBottomBar(),

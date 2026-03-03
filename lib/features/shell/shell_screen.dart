@@ -11,6 +11,7 @@ import 'tabs/track_tab.dart';
 import 'tabs/review_tab.dart';
 import 'widgets/dual_active_session_dialog.dart';
 import 'widgets/sync_status_banner.dart';
+import 'widgets/system_maintenance_banner.dart';
 
 // TD-06 §4.3 — Shell app with bottom navigation: Plan, Track, Review.
 // S12 §12.2 — Home Dashboard sits above tabs as persistent launch layer.
@@ -104,6 +105,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       body: Column(
         children: [
           const SyncStatusBanner(),
+          // Gap 43 — Maintenance banner (trigger deferred to post-V1).
+          const SystemMaintenanceBanner(),
           Expanded(
             child: showHome
                 ? HomeDashboardScreen(onGoToTab: _goToTab)

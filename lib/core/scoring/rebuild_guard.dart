@@ -12,15 +12,20 @@ class RebuildGuard {
   final List<ReflowTrigger> _deferredTriggers = [];
   final List<Completer<void>> _waiters = [];
   Timer? _timeoutTimer;
+  final _lockController = StreamController<bool>.broadcast();
 
   /// Whether the guard is currently held.
   bool get isHeld => _held;
+
+  /// Reactive stream of lock state changes.
+  Stream<bool> get lockStream => _lockController.stream;
 
   /// TD-04 §3.3 — Acquire the rebuild guard.
   /// Returns false if the guard is already held.
   bool acquire() {
     if (_held) return false;
     _held = true;
+    _lockController.add(true);
     _timeoutTimer = Timer(kRebuildGuardTimeout, () {
       // TD-03 §4.5 — Auto-release after timeout.
       release();
@@ -34,6 +39,7 @@ class RebuildGuard {
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
     _held = false;
+    _lockController.add(false);
 
     // Coalesce all deferred triggers into one via mergeWith.
     ReflowTrigger? coalesced;
@@ -73,6 +79,7 @@ class RebuildGuard {
     _timeoutTimer = null;
     _held = false;
     _deferredTriggers.clear();
+    _lockController.close();
     for (final waiter in _waiters) {
       if (!waiter.isCompleted) {
         waiter.complete();

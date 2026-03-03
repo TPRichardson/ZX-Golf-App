@@ -20,6 +20,7 @@ import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 /// S14 §14.3 — Binary hit/miss input screen.
 class BinaryHitMissScreen extends ConsumerStatefulWidget {
@@ -175,6 +176,9 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
       );
     }
 
+    // Gap 39–42 — Disable submission while scoring lock is held.
+    final isLocked = ref.watch(scoringLockActiveProvider).valueOrNull ?? false;
+
     final total = _hitCount + _missCount;
     final hitRate = total > 0 ? (_hitCount / total * 100).round() : 0;
 
@@ -217,6 +221,19 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
                   ],
                 ),
               ),
+              // Gap 42 — Inline lock indicator.
+              if (isLocked)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.md),
+                  child: Text(
+                    'Updating scores\u2026',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      color: ColorTokens.textTertiary,
+                    ),
+                  ),
+                ),
               // Hit/Miss buttons.
               Expanded(
                 child: Padding(
@@ -226,18 +243,28 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
                       Expanded(
                         child: _HitMissButton(
                           label: 'MISS',
-                          color: ColorTokens.missDefault,
+                          color: isLocked
+                              ? ColorTokens.missDefault
+                                  .withValues(alpha: 0.4)
+                              : ColorTokens.missDefault,
                           borderColor: ColorTokens.missBorder,
-                          onTap: () => _recordHitMiss(false),
+                          onTap: isLocked
+                              ? () {}
+                              : () => _recordHitMiss(false),
                         ),
                       ),
                       const SizedBox(width: SpacingTokens.md),
                       Expanded(
                         child: _HitMissButton(
                           label: 'HIT',
-                          color: ColorTokens.successDefault,
+                          color: isLocked
+                              ? ColorTokens.successDefault
+                                  .withValues(alpha: 0.4)
+                              : ColorTokens.successDefault,
                           borderColor: ColorTokens.successActive,
-                          onTap: () => _recordHitMiss(true),
+                          onTap: isLocked
+                              ? () {}
+                              : () => _recordHitMiss(true),
                         ),
                       ),
                     ],
