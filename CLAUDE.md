@@ -77,6 +77,13 @@ When documents conflict, higher precedence wins:
 
 ---
 
+## Shell Command Rules
+
+- **No compound commands.** Never chain commands with `&&`, `;`, or `||` — this triggers the security confirmation prompt on Windows. Issue each command as a separate Bash tool call.
+- For git operations, use `git -C <path>` instead of `cd <path> && git ...`.
+
+---
+
 ## Current Build Phase
 
 > **Complete (V1)**
