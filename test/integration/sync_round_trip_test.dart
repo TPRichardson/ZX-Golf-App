@@ -1,4 +1,6 @@
 // ignore_for_file: avoid_print
+@Tags(['integration'])
+library;
 // Integration test: live Supabase sync round-trip.
 // Requires SUPABASE_TEST_EMAIL and SUPABASE_TEST_PASSWORD in .env.
 //

@@ -1,4 +1,6 @@
 // ignore_for_file: avoid_print
+@Tags(['integration'])
+library;
 // TD-06 §6.4 — Server acceptance criteria tests.
 // Requires SUPABASE_TEST_EMAIL and SUPABASE_TEST_PASSWORD in .env.
 // Test 3 (RLS isolation) additionally requires SUPABASE_TEST_EMAIL_2 /
