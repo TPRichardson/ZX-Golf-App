@@ -11,6 +11,8 @@ import 'package:zx_golf_app/core/widgets/zx_card.dart';
 import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 // Phase 3 — Multi-step drill creation screen.
@@ -531,6 +533,18 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
             onPressed: isLastStep ? _createDrill : _nextStep,
           ),
         ),
+        // 7A — Save & Practice shortcut on last step.
+        if (isLastStep) ...[
+          const SizedBox(width: SpacingTokens.sm),
+          Expanded(
+            child: ZxButton(
+              label: 'Save & Practice',
+              variant: ZxButtonVariant.secondary,
+              isLoading: _isCreating,
+              onPressed: _saveAndPractice,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -622,6 +636,67 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
           );
 
       if (mounted) Navigator.pop(context);
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isCreating = false;
+      });
+    }
+  }
+
+  // 7A — Save drill then create PracticeBlock and navigate to queue.
+  Future<void> _saveAndPractice() async {
+    setState(() => _isCreating = true);
+
+    final anchorsMap = <String, Map<String, double>>{};
+    for (final entry in _anchors.entries) {
+      anchorsMap[entry.key] = {
+        'Min': entry.value.min,
+        'Scratch': entry.value.scratch,
+        'Pro': entry.value.pro,
+      };
+    }
+
+    final inputMode = _schemas
+            .where((s) => s.metricSchemaId == _metricSchemaId)
+            .firstOrNull
+            ?.inputMode ??
+        InputMode.rawDataEntry;
+
+    try {
+      final drill = await ref.read(drillRepositoryProvider).createCustomDrill(
+            _userId,
+            DrillsCompanion(
+              name: drift.Value(_nameController.text.trim()),
+              skillArea: drift.Value(_skillArea!),
+              drillType: drift.Value(_drillType!),
+              inputMode: drift.Value(inputMode),
+              metricSchemaId: drift.Value(_metricSchemaId!),
+              subskillMapping:
+                  drift.Value(jsonEncode(_selectedSubskills.toList())),
+              anchors: drift.Value(jsonEncode(anchorsMap)),
+              requiredSetCount: drift.Value(_requiredSetCount),
+              requiredAttemptsPerSet: drift.Value(_requiredAttemptsPerSet),
+            ),
+          );
+
+      if (!mounted) return;
+
+      // Create PracticeBlock with the new drill.
+      final actions = ref.read(practiceActionsProvider);
+      final pb = await actions.startPracticeBlock(_userId,
+          initialDrillIds: [drill.drillId]);
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PracticeQueueScreen(
+            practiceBlockId: pb.practiceBlockId,
+            userId: _userId,
+          ),
+        ),
+      );
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();

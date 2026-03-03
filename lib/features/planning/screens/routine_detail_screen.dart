@@ -79,6 +79,11 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
             color: ColorTokens.surfaceModal,
             onSelected: _onMenuAction,
             itemBuilder: (context) => [
+              // 7B — Clone Routine.
+              const PopupMenuItem(
+                value: 'duplicate',
+                child: Text('Duplicate'),
+              ),
               if (isActive)
                 const PopupMenuItem(
                   value: 'retire',
@@ -292,6 +297,23 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     final actions = ref.read(planningActionsProvider);
     try {
       switch (action) {
+        // 7B — Clone Routine with entries, append " (Copy)".
+        case 'duplicate':
+          final repo = ref.read(planningRepositoryProvider);
+          final newRoutine = await repo.createRoutineWithEntries(
+            _routine!.userId,
+            '${_routine!.name} (Copy)',
+            _entries,
+          );
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    RoutineDetailScreen(routineId: newRoutine.routineId),
+              ),
+            );
+          }
         case 'retire':
           await actions.retireRoutine(_routine!.routineId);
           await _loadRoutine();

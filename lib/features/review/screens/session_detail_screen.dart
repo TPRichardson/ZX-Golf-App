@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/drill/drill_detail_screen.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
 
@@ -133,6 +135,30 @@ class SessionDetailScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
+                    // 7C — Edit Drill cross-navigation for custom drills.
+                    if (detail.drillOrigin == DrillOrigin.userCustom)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            top: SpacingTokens.md),
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DrillDetailScreen(
+                                drillId: detail.drillId,
+                                isCustom: true,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.edit, size: 16),
+                          label: const Text('Edit Drill'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorTokens.primaryDefault,
+                            side: const BorderSide(
+                                color: ColorTokens.primaryDefault),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -211,6 +237,8 @@ class _InfoRow extends StatelessWidget {
 /// Lightweight session detail data.
 class _SessionDetail {
   final String drillName;
+  final String drillId;
+  final DrillOrigin drillOrigin;
   final double sessionScore;
   final DateTime? completionTimestamp;
   final String skillArea;
@@ -221,6 +249,8 @@ class _SessionDetail {
 
   const _SessionDetail({
     required this.drillName,
+    required this.drillId,
+    required this.drillOrigin,
     required this.sessionScore,
     this.completionTimestamp,
     required this.skillArea,
@@ -258,6 +288,8 @@ final _sessionDetailProvider = FutureProvider.family<_SessionDetail?,
 
   return _SessionDetail(
     drillName: drill?.name ?? 'Unknown',
+    drillId: session.drillId,
+    drillOrigin: drill?.origin ?? DrillOrigin.system,
     sessionScore: sessionScore,
     completionTimestamp: session.completionTimestamp,
     skillArea: drill?.skillArea.dbValue ?? 'Unknown',

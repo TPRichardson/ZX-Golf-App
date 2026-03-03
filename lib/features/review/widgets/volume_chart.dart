@@ -76,7 +76,9 @@ class VolumeChart extends StatelessWidget {
           borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
           border: Border.all(color: ColorTokens.surfaceBorder),
         ),
-        child: BarChart(
+        child: Column(
+          children: [
+        BarChart(
         BarChartData(
           barGroups: barGroups,
           gridData: FlGridData(
@@ -119,7 +121,44 @@ class VolumeChart extends StatelessWidget {
           borderData: FlBorderData(show: false),
         ),
       ),
-    ),
+            // 7D — Volume chart legend.
+            const SizedBox(height: SpacingTokens.sm),
+            _buildLegend(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 7D — Legend mapping each SkillArea colour to its label.
+  Widget _buildLegend() {
+    return Wrap(
+      spacing: SpacingTokens.md,
+      runSpacing: SpacingTokens.xs,
+      children: [
+        for (final area in SkillArea.values)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: _colorForArea(area),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.xs),
+              Text(
+                area.dbValue,
+                style: TextStyle(
+                  fontSize: TypographyTokens.microSize,
+                  color: ColorTokens.textSecondary,
+                ),
+              ),
+            ],
+          ),
+      ],
     );
   }
 
