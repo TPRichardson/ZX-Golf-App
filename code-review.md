@@ -203,3 +203,54 @@
 - **SyncOrchestrator lifecycle** (`shell_screen.dart`) properly started in `initState()` and stopped in `dispose()`.
 
 **No files changed.**
+
+---
+
+## Layer 6: App Size
+
+**Status:** Complete — 2 unused dependencies identified, no code changes (removal deferred)
+
+### 6.1 Dependency Audit (14 direct → 155 total packages)
+
+| Dependency | Used? | Import Locations | Notes |
+|------------|-------|------------------|-------|
+| `drift` | YES | database.dart, repositories, sync_engine | Core ORM |
+| `sqlite3_flutter_libs` | YES | (transitive, required by Drift) | Native SQLite bindings |
+| `flutter_riverpod` | YES | All providers, all ConsumerWidgets | State management |
+| `riverpod_annotation` | **NO** | Not imported anywhere | For `@riverpod` code generation — not used |
+| `uuid` | YES | sync_engine.dart, repositories | UUID generation |
+| `google_fonts` | YES | zx_theme.dart | Manrope font (downloaded at runtime, no bundled files) |
+| `path_provider` | YES | database.dart | App documents directory |
+| `path` | YES | database.dart | Path joining |
+| `supabase_flutter` | YES | main.dart, auth_service.dart, sync_engine.dart | Heaviest dep (~50 transitive packages) |
+| `google_sign_in` | **NO** | Not imported anywhere | Auth uses Supabase `signInWithOAuth` instead |
+| `flutter_dotenv` | YES | main.dart | .env loading |
+| `fl_chart` | YES | performance_chart.dart, volume_chart.dart | Charts |
+| `connectivity_plus` | YES | connectivity_monitor.dart | Network monitoring |
+
+### 6.2 Unused Dependencies (2 found)
+
+| Package | Impact | Recommendation |
+|---------|--------|----------------|
+| `google_sign_in` | HIGH — pulls in Google Play Services native SDK, adds ~2-4MB to APK | Remove from pubspec.yaml. Supabase handles OAuth via web flow. |
+| `riverpod_annotation` | LOW — small Dart-only package, no native code | Remove from pubspec.yaml. All providers use manual definitions. |
+
+**Action deferred:** Removing `google_sign_in` may affect Android build configuration (`google-services.json`). Removing `riverpod_annotation` is safe but low-impact. Both should be done in a focused dependency cleanup.
+
+### 6.3 Assets
+
+| Asset | Size | Notes |
+|-------|------|-------|
+| `.env` | 348 bytes | Credentials file (gitignored) |
+| Launcher icons | Default Flutter | Standard mipmap set, no custom icons |
+| Custom images/SVGs | None | App uses only Material Icons |
+| Bundled fonts | None | google_fonts downloads Manrope at runtime |
+
+### 6.4 Size Observations
+
+- **No custom assets** — the app is code-only, which is ideal for APK size.
+- **`supabase_flutter`** is the single heaviest dependency, bringing ~50 transitive packages. This is necessary for the backend.
+- **`google_sign_in` removal** would be the single biggest APK size win since it pulls in native Google Play Services.
+- `flutter build apk --analyze-size` not run (requires Android SDK toolchain on this machine). Recommended for CI.
+
+**No files changed.**
