@@ -79,13 +79,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
           await seedReferenceData(this);
+          await _createIndexes();
         },
         // TD-06 §18 — Migration framework.
         // Column additions are safe. Column type changes require explicit transforms.
@@ -94,12 +95,36 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (Migrator m, int from, int to) async {
           for (var version = from; version < to; version++) {
             switch (version) {
-              // Future migrations go here:
-              // case 1: await _migrateV1ToV2(m); break;
+              case 1:
+                await _migrateV1ToV2(m);
             }
           }
         },
       );
+
+  Future<void> _migrateV1ToV2(Migrator m) async {
+    await _createIndexes();
+  }
+
+  /// Secondary indexes for FK lookup columns. Drift Dart DSL doesn't support
+  /// declarative indexes, so these are created via raw SQL.
+  Future<void> _createIndexes() async {
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_session_practice_block_id '
+        'ON Session (PracticeBlockID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_session_drill_id '
+        'ON Session (DrillID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_instance_set_id '
+        'ON Instance (SetID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_practice_block_user_end '
+        'ON PracticeBlock (UserID, EndTimestamp)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_drill_user_id '
+        'ON Drill (UserID)');
+  }
 }
 
 LazyDatabase _openConnection() {

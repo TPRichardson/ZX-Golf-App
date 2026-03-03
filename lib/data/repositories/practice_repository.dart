@@ -645,26 +645,44 @@ class PracticeRepository {
   // ---------------------------------------------------------------------------
 
   /// TD-03 §3.3.3 #2 — Composite stream: PB + entries + drill info.
+  /// Batch-fetches drills and sessions to avoid N+1 per-entry queries.
   Stream<PracticeBlockWithEntries?> watchPracticeBlock(String pbId) {
     return watchEntriesByBlock(pbId).asyncMap((entries) async {
       final pb = await getPracticeBlockById(pbId);
       if (pb == null) return null;
+      if (entries.isEmpty) {
+        return PracticeBlockWithEntries(practiceBlock: pb, entries: []);
+      }
+
+      // Batch fetch all referenced drills in one query.
+      final drillIds = entries.map((e) => e.drillId).toSet().toList();
+      final drills = await (_db.select(_db.drills)
+            ..where((t) => t.drillId.isIn(drillIds)))
+          .get();
+      final drillMap = {for (final d in drills) d.drillId: d};
+
+      // Batch fetch all referenced sessions in one query.
+      final sessionIds = entries
+          .where((e) => e.sessionId != null)
+          .map((e) => e.sessionId!)
+          .toSet()
+          .toList();
+      final sessions = sessionIds.isEmpty
+          ? <Session>[]
+          : await (_db.select(_db.sessions)
+                ..where((t) => t.sessionId.isIn(sessionIds)))
+              .get();
+      final sessionMap = {for (final s in sessions) s.sessionId: s};
 
       final enriched = <PracticeEntryWithDrill>[];
       for (final entry in entries) {
-        final drill = await (_db.select(_db.drills)
-              ..where((t) => t.drillId.equals(entry.drillId)))
-            .getSingleOrNull();
+        final drill = drillMap[entry.drillId];
         if (drill == null) continue;
-
-        Session? session;
-        if (entry.sessionId != null) {
-          session = await getSessionById(entry.sessionId!);
-        }
         enriched.add(PracticeEntryWithDrill(
           entry: entry,
           drill: drill,
-          session: session,
+          session:
+              entry.sessionId != null ? sessionMap[entry.sessionId] : null,
         ));
       }
 
@@ -1310,11 +1328,16 @@ class PracticeRepository {
     }
     final session = await getSessionById(set.sessionId);
 
-    // Fix 5 — Post-close structured drill: block instance deletion.
+    // Fetch drill once for both Fix 5 guard and Fix 6 auto-discard check.
+    Drill? drill;
     if (session != null && session.status == SessionStatus.closed) {
-      final drill = await (_db.select(_db.drills)
+      drill = await (_db.select(_db.drills)
             ..where((t) => t.drillId.equals(session.drillId)))
           .getSingleOrNull();
+    }
+
+    // Fix 5 — Post-close structured drill: block instance deletion.
+    if (session != null && session.status == SessionStatus.closed) {
       if (drill != null && drill.requiredAttemptsPerSet != null) {
         throw ValidationException(
           code: ValidationException.stateTransition,
@@ -1338,9 +1361,6 @@ class PracticeRepository {
       final remainingInstances = await _countNonDeletedInstancesInSession(
           session.sessionId);
       if (remainingInstances == 0) {
-        final drill = await (_db.select(_db.drills)
-              ..where((t) => t.drillId.equals(session.drillId)))
-            .getSingleOrNull();
         if (drill != null && drill.requiredAttemptsPerSet == null) {
           // Hard-delete the session (auto-discard).
           await _db.transaction(() async {
@@ -1466,22 +1486,22 @@ class PracticeRepository {
     return sets.isEmpty ? null : sets.first;
   }
 
-  /// Count non-deleted instances in a set.
+  /// Count non-deleted instances in a set. Uses COUNT(*) instead of fetching rows.
   Future<int> getInstanceCount(String setId) async {
-    final instances = await (_db.select(_db.instances)
-          ..where((t) => t.setId.equals(setId))
-          ..where((t) => t.isDeleted.equals(false)))
-        .get();
-    return instances.length;
+    final result = await _db.customSelect(
+      'SELECT COUNT(*) AS c FROM Instance WHERE SetID = ? AND IsDeleted = 0',
+      variables: [Variable.withString(setId)],
+    ).getSingle();
+    return result.read<int>('c');
   }
 
-  /// Count non-deleted sets in a session.
+  /// Count non-deleted sets in a session. Uses COUNT(*) instead of fetching rows.
   Future<int> getSetCount(String sessionId) async {
-    final sets = await (_db.select(_db.sets)
-          ..where((t) => t.sessionId.equals(sessionId))
-          ..where((t) => t.isDeleted.equals(false)))
-        .get();
-    return sets.length;
+    final result = await _db.customSelect(
+      'SELECT COUNT(*) AS c FROM "Set" WHERE SessionID = ? AND IsDeleted = 0',
+      variables: [Variable.withString(sessionId)],
+    ).getSingle();
+    return result.read<int>('c');
   }
 
   // ---------------------------------------------------------------------------
@@ -1489,20 +1509,15 @@ class PracticeRepository {
   // ---------------------------------------------------------------------------
 
   /// Count all non-deleted instances across all sets of a session.
+  /// Single JOIN query instead of N+1 per-set loop.
   Future<int> _countNonDeletedInstancesInSession(String sessionId) async {
-    final sets = await (_db.select(_db.sets)
-          ..where((t) => t.sessionId.equals(sessionId))
-          ..where((t) => t.isDeleted.equals(false)))
-        .get();
-    var total = 0;
-    for (final s in sets) {
-      final instances = await (_db.select(_db.instances)
-            ..where((t) => t.setId.equals(s.setId))
-            ..where((t) => t.isDeleted.equals(false)))
-          .get();
-      total += instances.length;
-    }
-    return total;
+    final result = await _db.customSelect(
+      'SELECT COUNT(*) AS c FROM Instance i '
+      'INNER JOIN "Set" s ON i.SetID = s.SetID '
+      'WHERE s.SessionID = ? AND s.IsDeleted = 0 AND i.IsDeleted = 0',
+      variables: [Variable.withString(sessionId)],
+    ).getSingle();
+    return result.read<int>('c');
   }
 
   Future<PracticeBlock?> _findActivePracticeBlock(String userId) async {
@@ -1590,32 +1605,33 @@ class PracticeRepository {
     // Only linear interpolation drills have integrity checks.
     if (adapterType != ScoringAdapterType.linearInterpolation) return;
 
-    // Gather all non-deleted instances across all sets of this session.
-    final sets = await (_db.select(_db.sets)
+    // Gather all non-deleted instances across all sets in one batch.
+    final setIds = await (_db.select(_db.sets)
           ..where((t) => t.sessionId.equals(session.sessionId))
           ..where((t) => t.isDeleted.equals(false)))
-        .get();
+        .get()
+        .then((sets) => sets.map((s) => s.setId).toList());
+
+    final allInstances = setIds.isEmpty
+        ? <Instance>[]
+        : await (_db.select(_db.instances)
+              ..where((t) => t.setId.isIn(setIds))
+              ..where((t) => t.isDeleted.equals(false)))
+            .get();
 
     bool anyBreach = false;
-    for (final s in sets) {
-      final instances = await (_db.select(_db.instances)
-            ..where((t) => t.setId.equals(s.setId))
-            ..where((t) => t.isDeleted.equals(false)))
-          .get();
-      for (final instance in instances) {
-        final value = _extractNumericValue(instance.rawMetrics);
-        final breach = evaluateIntegrity(IntegrityInput(
-          value: value,
-          hardMinInput: schema.hardMinInput,
-          hardMaxInput: schema.hardMaxInput,
-          adapterType: adapterType,
-        ));
-        if (breach) {
-          anyBreach = true;
-          break;
-        }
+    for (final instance in allInstances) {
+      final value = _extractNumericValue(instance.rawMetrics);
+      final breach = evaluateIntegrity(IntegrityInput(
+        value: value,
+        hardMinInput: schema.hardMinInput,
+        hardMaxInput: schema.hardMaxInput,
+        adapterType: adapterType,
+      ));
+      if (breach) {
+        anyBreach = true;
+        break;
       }
-      if (anyBreach) break;
     }
 
     // If no breach remains, auto-clear the integrity flag.
