@@ -2,11 +2,13 @@
 // S13 §13.13 — Summary after session close: score, delta, integrity.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 
 /// S13 §13.13 — Post-session summary showing score and performance data.
-class PostSessionSummaryScreen extends StatelessWidget {
+class PostSessionSummaryScreen extends ConsumerWidget {
   final Drill drill;
   final Session session;
   final double? sessionScore;
@@ -21,7 +23,7 @@ class PostSessionSummaryScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final score = sessionScore;
     final hasIntegrityFlag = integrityBreach;
 
@@ -55,8 +57,12 @@ class PostSessionSummaryScreen extends StatelessWidget {
                     icon: const Icon(Icons.close),
                     color: ColorTokens.textSecondary,
                     // Fix 11 — Route back to Home, not just pop one screen.
-                    onPressed: () => Navigator.of(context)
-                        .popUntil((route) => route.isFirst),
+                    // S12 §12.2 — Set showHome before pop so ShellScreen shows Home Dashboard.
+                    onPressed: () {
+                      ref.read(showHomeProvider.notifier).state = true;
+                      Navigator.of(context)
+                          .popUntil((route) => route.isFirst);
+                    },
                   ),
                 ],
               ),
@@ -173,8 +179,12 @@ class PostSessionSummaryScreen extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   // Fix 11 — Route back to Home, not just pop one screen.
-                  onPressed: () => Navigator.of(context)
-                      .popUntil((route) => route.isFirst),
+                  // S12 §12.2 — Set showHome before pop so ShellScreen shows Home Dashboard.
+                  onPressed: () {
+                    ref.read(showHomeProvider.notifier).state = true;
+                    Navigator.of(context)
+                        .popUntil((route) => route.isFirst);
+                  },
                   style: FilledButton.styleFrom(
                     backgroundColor: ColorTokens.primaryDefault,
                     padding:

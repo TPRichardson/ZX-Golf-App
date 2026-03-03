@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
@@ -264,11 +262,8 @@ class _StartTodayButton extends ConsumerWidget {
     }
   }
 
-  List<Slot> _parseSlotsFromJson(String slotsJson) {
-    if (slotsJson.isEmpty || slotsJson == '[]') return [];
-    final List<dynamic> list = jsonDecode(slotsJson) as List<dynamic>;
-    return list.map((e) => Slot.fromJson(e as Map<String, dynamic>)).toList();
-  }
+  List<Slot> _parseSlotsFromJson(String slotsJson) =>
+      parseSlotsFromJson(slotsJson);
 }
 
 class _EmptyDayCard extends StatelessWidget {

@@ -167,8 +167,10 @@ lib/
 │       ├── event_log_dto.dart
 │       └── user_device_dto.dart
 ├── features/
+│   ├── home/
+│   │   └── home_dashboard_screen.dart  # S12 §12.2 — Home Dashboard (score + slots + actions)
 │   ├── shell/
-│   │   ├── shell_screen.dart       # Bottom nav (Plan/Track/Review)
+│   │   ├── shell_screen.dart       # Home/Tab navigator (Plan/Track/Review)
 │   │   ├── tabs/                   # Tab screens
 │   │   └── widgets/                # [Phase 7C] Shell-level widgets
 │   │       ├── sync_banner_state.dart         # Pure banner priority resolution

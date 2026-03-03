@@ -17,6 +17,10 @@ import 'planning_providers.dart';
 import 'repository_providers.dart';
 import 'sync_providers.dart';
 
+/// S12 §12.2 — Controls whether ShellScreen shows Home Dashboard or tab layout.
+/// Set to true on app launch and after post-session Done; false when navigating to tabs.
+final showHomeProvider = StateProvider<bool>((ref) => true);
+
 /// S13 §13.5.3 — Singleton TimerService.
 final timerServiceProvider = Provider<TimerService>((ref) {
   final service = TimerService();

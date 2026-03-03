@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
@@ -12,6 +13,7 @@ import 'widgets/dual_active_session_dialog.dart';
 import 'widgets/sync_status_banner.dart';
 
 // TD-06 §4.3 — Shell app with bottom navigation: Plan, Track, Review.
+// S12 §12.2 — Home Dashboard sits above tabs as persistent launch layer.
 
 class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({super.key});
@@ -45,6 +47,15 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     super.dispose();
   }
 
+  void _goHome() {
+    ref.read(showHomeProvider.notifier).state = true;
+  }
+
+  void _goToTab(int index) {
+    ref.read(showHomeProvider.notifier).state = false;
+    setState(() => _currentIndex = index);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Phase 7C — Listen for dual active session conflicts.
@@ -61,6 +72,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       });
     });
 
+    // S12 §12.2 — showHomeProvider controls Home vs Tab display.
+    final showHome = ref.watch(showHomeProvider);
+
     // Fix 10 — Hide bottom navigation during live practice.
     final activePb = ref.watch(activePracticeBlockProvider(kDevUserId));
     final hasActivePractice = activePb.valueOrNull != null;
@@ -69,27 +83,39 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       appBar: AppBar(
         title: const Text('ZX Golf'),
         backgroundColor: ColorTokens.surfacePrimary,
+        leading: showHome
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.home, color: ColorTokens.textSecondary),
+                onPressed: _goHome,
+              ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: ColorTokens.textSecondary),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          if (showHome)
+            IconButton(
+              icon:
+                  const Icon(Icons.settings, color: ColorTokens.textSecondary),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
             ),
-          ),
         ],
       ),
       body: Column(
         children: [
           const SyncStatusBanner(),
-          Expanded(child: _tabs[_currentIndex]),
+          Expanded(
+            child: showHome
+                ? HomeDashboardScreen(onGoToTab: _goToTab)
+                : _tabs[_currentIndex],
+          ),
         ],
       ),
-      bottomNavigationBar: hasActivePractice
+      bottomNavigationBar: showHome || hasActivePractice
           ? null
           : BottomNavigationBar(
               currentIndex: _currentIndex,
-              onTap: (index) => setState(() => _currentIndex = index),
+              onTap: _goToTab,
               items: const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.calendar_today),

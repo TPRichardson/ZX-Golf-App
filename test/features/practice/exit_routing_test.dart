@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -42,7 +43,8 @@ void main() {
   group('Fix 11: Exit routing to Home', () {
     testWidgets('Done button pops to first route', (tester) async {
       // Build nav stack: Home → Intermediate → PostSessionSummary.
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
@@ -72,7 +74,7 @@ void main() {
             ),
           ),
         ),
-      ));
+      )));
 
       // Navigate: Home → Intermediate.
       await tester.tap(find.text('Go Intermediate'));
@@ -97,7 +99,8 @@ void main() {
     });
 
     testWidgets('Close (X) button pops to first route', (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
         home: Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
@@ -114,7 +117,7 @@ void main() {
             ),
           ),
         ),
-      ));
+      )));
 
       // Navigate: Home → PostSessionSummary.
       await tester.tap(find.text('Go Summary'));

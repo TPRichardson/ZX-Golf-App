@@ -1,7 +1,17 @@
+import 'dart:convert';
+
 import 'package:zx_golf_app/data/enums.dart';
 
 // S08 §8.13.2 — Slot data class for CalendarDay slot container.
 // Slots are stored as JSON in the CalendarDay.Slots TEXT column.
+
+/// Parse CalendarDay.Slots JSON string to a list of [Slot].
+/// Shared utility used by calendar, planning, review, and home dashboard.
+List<Slot> parseSlotsFromJson(String slotsJson) {
+  if (slotsJson.isEmpty || slotsJson == '[]') return [];
+  final List<dynamic> list = jsonDecode(slotsJson) as List<dynamic>;
+  return list.map((e) => Slot.fromJson(e as Map<String, dynamic>)).toList();
+}
 
 class Slot {
   final String? drillId;

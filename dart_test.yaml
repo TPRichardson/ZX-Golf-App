@@ -1,0 +1,5 @@
+# Exclude server-dependent integration tests from default `flutter test` runs.
+# Run them explicitly with: flutter test -t integration
+tags:
+  integration:
+    skip: "Requires live Supabase server. Run explicitly with: flutter test -t integration"

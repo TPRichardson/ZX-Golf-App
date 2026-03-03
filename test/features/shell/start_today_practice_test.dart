@@ -13,13 +13,7 @@ import 'package:zx_golf_app/features/planning/models/slot.dart';
 // 1. Slot parsing from CalendarDay JSON.
 // 2. Filled slot detection and drill ID extraction.
 // 3. Visibility conditions.
-
-/// Mirrors the private _parseSlotsFromJson in CalendarScreen.
-List<Slot> parseSlotsFromJson(String slotsJson) {
-  if (slotsJson.isEmpty || slotsJson == '[]') return [];
-  final List<dynamic> list = jsonDecode(slotsJson) as List<dynamic>;
-  return list.map((e) => Slot.fromJson(e as Map<String, dynamic>)).toList();
-}
+// Uses the shared parseSlotsFromJson from slot.dart.
 
 void main() {
   group('Fix 12: Start Today\'s Practice logic', () {

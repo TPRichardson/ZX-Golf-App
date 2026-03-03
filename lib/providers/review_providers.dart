@@ -326,10 +326,4 @@ class PlanAdherence {
   });
 }
 
-List<Slot> _parseSlotsJson(String json) {
-  if (json.isEmpty || json == '[]') return [];
-  final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-  return list
-      .map((e) => Slot.fromJson(e as Map<String, dynamic>))
-      .toList();
-}
+List<Slot> _parseSlotsJson(String json) => parseSlotsFromJson(json);
