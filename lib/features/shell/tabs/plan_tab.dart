@@ -45,8 +45,7 @@ class _PlanTabBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       color: ColorTokens.surfaceRaised,
       child: TabBar(
-        indicatorColor: ColorTokens.primaryDefault,
-        indicatorWeight: 3,
+        indicatorSize: TabBarIndicatorSize.tab,
         labelColor: ColorTokens.textPrimary,
         unselectedLabelColor: ColorTokens.textSecondary,
         indicator: BoxDecoration(
