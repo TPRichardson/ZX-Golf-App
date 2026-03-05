@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/features/review/screens/analysis_screen.dart';
 import 'package:zx_golf_app/features/review/screens/review_dashboard_screen.dart';
 
@@ -19,15 +20,10 @@ class ReviewTab extends StatelessWidget {
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          bottom: TabBar(
-            indicatorColor: ColorTokens.primaryDefault,
-            labelColor: ColorTokens.textPrimary,
-            unselectedLabelColor: ColorTokens.textSecondary,
-            tabs: const [
-              Tab(text: 'Dashboard'),
-              Tab(text: 'Analysis'),
-            ],
-          ),
+          bottom: const ZxTabBar(tabs: [
+            Tab(text: 'Dashboard'),
+            Tab(text: 'Analysis'),
+          ]),
         ),
         body: const TabBarView(
           children: [

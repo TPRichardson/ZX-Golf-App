@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/features/planning/screens/calendar_screen.dart';
 import 'package:zx_golf_app/features/planning/screens/routine_list_screen.dart';
 import 'package:zx_golf_app/features/planning/screens/schedule_list_screen.dart';
@@ -19,7 +20,10 @@ class PlanTab extends StatelessWidget {
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          bottom: const _PlanTabBar(),
+          bottom: const ZxTabBar(tabs: [
+            Tab(text: 'Calendar'),
+            Tab(text: 'Create'),
+          ]),
         ),
         body: const TabBarView(
           children: [
@@ -27,40 +31,6 @@ class PlanTab extends StatelessWidget {
             _CreateTab(),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Tab bar where the selected tab matches the title bar colour and
-/// the unselected tab is slightly raised to create visual separation.
-class _PlanTabBar extends StatelessWidget implements PreferredSizeWidget {
-  const _PlanTabBar();
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: ColorTokens.surfaceRaised,
-      child: TabBar(
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: ColorTokens.textPrimary,
-        unselectedLabelColor: ColorTokens.textSecondary,
-        indicator: BoxDecoration(
-          color: ColorTokens.surfacePrimary,
-          border: const Border(
-            bottom: BorderSide(
-              color: ColorTokens.primaryDefault,
-              width: 3,
-            ),
-          ),
-        ),
-        tabs: const [
-          Tab(text: 'Calendar'),
-          Tab(text: 'Create'),
-        ],
       ),
     );
   }

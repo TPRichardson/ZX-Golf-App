@@ -30,3 +30,36 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+
+/// Shared styled tab bar — selected tab matches title bar colour,
+/// unselected tab slightly raised for visual separation.
+class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
+  final List<Tab> tabs;
+
+  const ZxTabBar({super.key, required this.tabs});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: ColorTokens.surfaceRaised,
+      child: TabBar(
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: ColorTokens.textPrimary,
+        unselectedLabelColor: ColorTokens.textSecondary,
+        indicator: BoxDecoration(
+          color: ColorTokens.surfacePrimary,
+          border: const Border(
+            bottom: BorderSide(
+              color: ColorTokens.primaryDefault,
+              width: 3,
+            ),
+          ),
+        ),
+        tabs: tabs,
+      ),
+    );
+  }
+}
