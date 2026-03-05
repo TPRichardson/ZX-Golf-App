@@ -192,7 +192,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: const Text('ZX Golf'),
-        backgroundColor: ColorTokens.surfacePrimary,
+        backgroundColor: ColorTokens.surfaceBase,
         leading: IconButton(
           icon: Icon(
             Icons.home,
