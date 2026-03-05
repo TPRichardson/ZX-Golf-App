@@ -40,14 +40,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       final diff = (_today.weekday - weekStartDay + 7) % 7;
       return _today.subtract(Duration(days: diff));
     }
-    return _today.subtract(const Duration(days: 1));
+    return _today;
   }
 
   DateTime _rangeEndFor(DateTime rangeStart) {
     if (_showTwoWeeks) {
       return rangeStart.add(const Duration(days: 13));
     }
-    return _today.add(const Duration(days: 1));
+    return _today.add(const Duration(days: 2));
   }
 
   @override
