@@ -32,7 +32,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
   static const _userId = kDevUserId;
 
-  bool _showTwoWeeks = false;
+  bool _showTwoWeeks = true;
 
   // 2-week grid: selected day for inline slot panel.
   DateTime? _selectedDay;
