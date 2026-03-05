@@ -58,9 +58,10 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
     // Container has a cyan top border across the full width.
     // The selected tab indicator extends upward to cover that border,
     // so only unselected tabs show the cyan top line.
+    // Background painter draws grey U-borders for ALL tabs; the selected
+    // indicator paints on top and covers the grey for the active tab.
     return Container(
       decoration: const BoxDecoration(
-        color: ColorTokens.surfaceRaised,
         border: Border(
           top: BorderSide(
             color: ColorTokens.primaryDefault,
@@ -68,19 +69,29 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ),
-      child: TabBar(
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicatorPadding: const EdgeInsets.symmetric(horizontal: 1),
-        labelColor: ColorTokens.textPrimary,
-        unselectedLabelColor: ColorTokens.textSecondary,
-        dividerHeight: 0,
-        indicator: _ConnectedTabIndicator(
-          color: ColorTokens.surfacePrimary,
-          borderColor: ColorTokens.primaryDefault,
+      child: CustomPaint(
+        painter: _AllTabsBorderPainter(
+          tabCount: tabs.length,
+          fillColor: ColorTokens.surfaceRaised,
+          borderColor: ColorTokens.surfaceBorder,
           borderWidth: _borderWidth,
           radius: ShapeTokens.radiusCard,
+          padding: 1.0,
         ),
-        tabs: tabs,
+        child: TabBar(
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding: const EdgeInsets.symmetric(horizontal: 1),
+          labelColor: ColorTokens.textPrimary,
+          unselectedLabelColor: ColorTokens.textSecondary,
+          dividerHeight: 0,
+          indicator: _ConnectedTabIndicator(
+            color: ColorTokens.surfacePrimary,
+            borderColor: ColorTokens.primaryDefault,
+            borderWidth: _borderWidth,
+            radius: ShapeTokens.radiusCard,
+          ),
+          tabs: tabs,
+        ),
       ),
     );
   }
@@ -113,6 +124,94 @@ class _ConnectedTabIndicator extends Decoration {
   }
 }
 
+/// Paints fill + grey U-border with convex bottom corners for every tab.
+/// The selected tab's indicator paints on top, so grey is only visible
+/// on unselected tabs.
+class _AllTabsBorderPainter extends CustomPainter {
+  final int tabCount;
+  final Color fillColor;
+  final Color borderColor;
+  final double borderWidth;
+  final double radius;
+  final double padding;
+
+  const _AllTabsBorderPainter({
+    required this.tabCount,
+    required this.fillColor,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.radius,
+    required this.padding,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final tabWidth = size.width / tabCount;
+    final r = radius;
+    final bw = borderWidth;
+
+    for (int i = 0; i < tabCount; i++) {
+      final left = i * tabWidth + padding;
+      final right = (i + 1) * tabWidth - padding;
+      const top = 0.0;
+      final bottom = size.height + borderWidth - 1;
+
+      // Fill path expanded by half the border width so the fill covers
+      // everything inside the border's outer edge (no corner bleed).
+      final hw = bw / 2;
+      final fillPath = Path()
+        ..moveTo(left - hw, top)
+        ..lineTo(left - hw, bottom - r)
+        ..arcToPoint(
+          Offset(left - hw + r, bottom + hw),
+          radius: Radius.circular(r),
+          clockwise: false,
+        )
+        ..lineTo(right + hw - r, bottom + hw)
+        ..arcToPoint(
+          Offset(right + hw, bottom - r),
+          radius: Radius.circular(r),
+          clockwise: false,
+        )
+        ..lineTo(right + hw, top)
+        ..close();
+
+      canvas.drawPath(fillPath, Paint()..color = fillColor);
+
+      // U-shaped border (left + bottom + right) with convex corners.
+      final borderPath = Path()
+        ..moveTo(left, top)
+        ..lineTo(left, bottom - r)
+        ..arcToPoint(
+          Offset(left + r, bottom),
+          radius: Radius.circular(r),
+          clockwise: false,
+        )
+        ..lineTo(right - r, bottom)
+        ..arcToPoint(
+          Offset(right, bottom - r),
+          radius: Radius.circular(r),
+          clockwise: false,
+        )
+        ..lineTo(right, top);
+
+      canvas.drawPath(
+        borderPath,
+        Paint()
+          ..color = borderColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = bw,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_AllTabsBorderPainter old) =>
+      old.tabCount != tabCount ||
+      old.fillColor != fillColor ||
+      old.borderColor != borderColor;
+}
+
 class _ConnectedTabPainter extends BoxPainter {
   final Color color;
   final Color borderColor;
@@ -137,7 +236,7 @@ class _ConnectedTabPainter extends BoxPainter {
       offset.dx,
       offset.dy - bw,
       size.width,
-      size.height + bw,
+      size.height + bw + bw - 1,
     );
 
     // Fill path with convex (outward-curving) bottom corners.
