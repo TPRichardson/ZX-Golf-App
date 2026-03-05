@@ -132,12 +132,10 @@ class _ConnectedTabPainter extends BoxPainter {
     final bw = borderWidth;
 
     // Extend upward by borderWidth to cover the container's cyan top border.
-    // Extend left/right by borderWidth/2 so the stroke is fully visible
-    // at screen edges (stroke is centered on the path).
     final rect = Rect.fromLTWH(
-      offset.dx - bw / 2,
+      offset.dx,
       offset.dy - bw,
-      size.width + bw,
+      size.width,
       size.height + bw,
     );
 
