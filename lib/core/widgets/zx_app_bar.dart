@@ -47,6 +47,8 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
   /// Shape for the parent AppBar — cyan top border on the header.
   static const connectedHeaderShape = Border(
     top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+    left: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+    right: BorderSide(color: ColorTokens.primaryDefault, width: 2),
   );
 
   static const _borderWidth = 2.0;
