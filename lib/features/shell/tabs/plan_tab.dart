@@ -19,15 +19,7 @@ class PlanTab extends StatelessWidget {
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          bottom: TabBar(
-            indicatorColor: ColorTokens.primaryDefault,
-            labelColor: ColorTokens.textPrimary,
-            unselectedLabelColor: ColorTokens.textSecondary,
-            tabs: const [
-              Tab(text: 'Calendar'),
-              Tab(text: 'Create'),
-            ],
-          ),
+          bottom: const _PlanTabBar(),
         ),
         body: const TabBarView(
           children: [
@@ -35,6 +27,41 @@ class PlanTab extends StatelessWidget {
             _CreateTab(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Tab bar where the selected tab matches the title bar colour and
+/// the unselected tab is slightly raised to create visual separation.
+class _PlanTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const _PlanTabBar();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: ColorTokens.surfaceRaised,
+      child: TabBar(
+        indicatorColor: ColorTokens.primaryDefault,
+        indicatorWeight: 3,
+        labelColor: ColorTokens.textPrimary,
+        unselectedLabelColor: ColorTokens.textSecondary,
+        indicator: BoxDecoration(
+          color: ColorTokens.surfacePrimary,
+          border: const Border(
+            bottom: BorderSide(
+              color: ColorTokens.primaryDefault,
+              width: 3,
+            ),
+          ),
+        ),
+        tabs: const [
+          Tab(text: 'Calendar'),
+          Tab(text: 'Create'),
+        ],
       ),
     );
   }
