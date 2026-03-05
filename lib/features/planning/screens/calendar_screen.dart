@@ -71,35 +71,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             vertical: SpacingTokens.sm,
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
+              Expanded(
                 child: daysAsync.when(
                   data: (days) => AdherenceBadge(recentDays: days, repo: repo),
                   loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
                 ),
               ),
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('3 Day')),
-                  ButtonSegment(value: true, label: Text('2 Week')),
-                ],
-                selected: {_showTwoWeeks},
-                onSelectionChanged: (selected) {
-                  setState(() => _showTwoWeeks = selected.first);
-                },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return ColorTokens.primaryDefault;
-                    }
-                    return ColorTokens.surfaceRaised;
-                  }),
-                  foregroundColor: WidgetStateProperty.all(
-                    ColorTokens.textPrimary,
-                  ),
-                ),
+              const SizedBox(width: SpacingTokens.sm),
+              _ViewToggle(
+                showTwoWeeks: _showTwoWeeks,
+                onChanged: (v) => setState(() => _showTwoWeeks = v),
               ),
             ],
           ),
@@ -253,6 +236,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
+          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: isToday
                 ? ColorTokens.primaryDefault.withValues(alpha: 0.15)
@@ -267,11 +251,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 '${date.day}',
                 style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
+                  fontSize: TypographyTokens.microSize,
                   fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
                   color: isToday
                       ? ColorTokens.textPrimary
@@ -280,19 +265,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               if (slotCount > 0)
                 Container(
-                  margin: const EdgeInsets.only(top: 2),
+                  margin: const EdgeInsets.only(top: 1),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 1,
+                    horizontal: 4,
+                    vertical: 0,
                   ),
                   decoration: BoxDecoration(
                     color: ColorTokens.primaryDefault.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     '$slotCount',
                     style: const TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: 10,
                       color: ColorTokens.primaryDefault,
                       fontWeight: FontWeight.w600,
                     ),
@@ -523,6 +508,55 @@ class _StartTodayButton extends ConsumerWidget {
 
   List<Slot> _parseSlotsFromJson(String slotsJson) =>
       parseSlotsFromJson(slotsJson);
+}
+
+/// Compact 3D / 2W toggle replacing SegmentedButton for narrow layouts.
+class _ViewToggle extends StatelessWidget {
+  final bool showTwoWeeks;
+  final ValueChanged<bool> onChanged;
+
+  const _ViewToggle({required this.showTwoWeeks, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: ColorTokens.surfaceRaised,
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _option('3D', false),
+          _option('2W', true),
+        ],
+      ),
+    );
+  }
+
+  Widget _option(String label, bool value) {
+    final selected = showTwoWeeks == value;
+    return GestureDetector(
+      onTap: () => onChanged(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? ColorTokens.primaryDefault : Colors.transparent,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: TypographyTokens.microSize,
+            color: selected
+                ? ColorTokens.textPrimary
+                : ColorTokens.textSecondary,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _EmptyDayCard extends StatelessWidget {
