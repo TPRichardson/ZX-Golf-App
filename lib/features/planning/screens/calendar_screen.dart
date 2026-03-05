@@ -19,6 +19,7 @@ import '../widgets/calendar_day_card.dart';
 import '../widgets/slot_tile.dart';
 import 'calendar_day_detail_screen.dart';
 import 'routine_apply_screen.dart';
+import 'schedule_apply_screen.dart';
 
 // S08 §8.12.1 — Calendar screen: 3-day rolling + 2-week toggle.
 
@@ -443,16 +444,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   ),
                   const SizedBox(height: SpacingTokens.sm),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        _showRoutinePicker(_selectedDay!),
-                    icon: const Icon(Icons.playlist_add, size: 18),
-                    label: const Text('Apply routine'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorTokens.primaryDefault,
-                      side:
-                          const BorderSide(color: ColorTokens.primaryDefault),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            _showRoutinePicker(_selectedDay!),
+                        icon: const Icon(Icons.playlist_add, size: 18),
+                        label: const Text('Routine'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ColorTokens.primaryDefault,
+                          side: const BorderSide(
+                              color: ColorTokens.primaryDefault),
+                        ),
+                      ),
+                      const SizedBox(width: SpacingTokens.sm),
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            _showSchedulePicker(_selectedDay!),
+                        icon: const Icon(Icons.date_range, size: 18),
+                        label: const Text('Schedule'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ColorTokens.primaryDefault,
+                          side: const BorderSide(
+                              color: ColorTokens.primaryDefault),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -484,8 +502,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _addSlot(day!),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Add slot'),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Slot'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
                             side: const BorderSide(
@@ -493,13 +511,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: SpacingTokens.sm),
+                      const SizedBox(width: SpacingTokens.xs),
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () =>
                               _showRoutinePicker(_selectedDay!),
-                          icon: const Icon(Icons.playlist_add, size: 18),
-                          label: const Text('Apply routine'),
+                          icon: const Icon(Icons.playlist_add, size: 16),
+                          label: const Text('Routine'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorTokens.primaryDefault,
+                            side: const BorderSide(
+                                color: ColorTokens.primaryDefault),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: SpacingTokens.xs),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              _showSchedulePicker(_selectedDay!),
+                          icon: const Icon(Icons.date_range, size: 16),
+                          label: const Text('Schedule'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
                             side: const BorderSide(
@@ -581,6 +613,63 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     builder: (_) => RoutineApplyScreen(
                       routineId: routine.routineId,
                       targetDate: date,
+                    ),
+                  ));
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show schedule picker bottom sheet, then navigate to ScheduleApplyScreen.
+  void _showSchedulePicker(DateTime date) {
+    final schedulesAsync = ref.read(schedulesProvider(_userId));
+    final schedules = schedulesAsync.valueOrNull ?? [];
+
+    if (schedules.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active schedules')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(ShapeTokens.radiusModal)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm),
+              child: Text(
+                'Apply schedule',
+                style: TextStyle(
+                  fontSize: TypographyTokens.headerSize,
+                  fontWeight: TypographyTokens.headerWeight,
+                  color: ColorTokens.textPrimary,
+                ),
+              ),
+            ),
+            for (final schedule in schedules)
+              ListTile(
+                leading: const Icon(Icons.date_range,
+                    color: ColorTokens.primaryDefault),
+                title: Text(schedule.name),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => ScheduleApplyScreen(
+                      scheduleId: schedule.scheduleId,
+                      startDate: date,
                     ),
                   ));
                 },

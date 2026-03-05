@@ -9,8 +9,13 @@ import 'package:zx_golf_app/providers/planning_providers.dart';
 
 class ScheduleApplyScreen extends ConsumerStatefulWidget {
   final String scheduleId;
+  final DateTime? startDate;
 
-  const ScheduleApplyScreen({super.key, required this.scheduleId});
+  const ScheduleApplyScreen({
+    super.key,
+    required this.scheduleId,
+    this.startDate,
+  });
 
   @override
   ConsumerState<ScheduleApplyScreen> createState() =>
@@ -22,6 +27,15 @@ class _ScheduleApplyScreenState
   DateTime? _startDate;
   DateTime? _endDate;
   bool _applying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.startDate != null) {
+      _startDate = widget.startDate;
+      _endDate = widget.startDate!.add(const Duration(days: 6));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
