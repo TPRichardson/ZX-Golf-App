@@ -13,6 +13,7 @@ import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 
+import '../../settings/calendar_defaults_screen.dart';
 import '../widgets/adherence_badge.dart';
 import '../widgets/calendar_day_card.dart';
 import '../widgets/slot_tile.dart';
@@ -139,6 +140,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   data: (days) => AdherenceBadge(recentDays: days, repo: repo),
                   loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.sm),
+              // Link to slot capacity settings.
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const CalendarDefaultsScreen(),
+                )),
+                child: const Icon(
+                  Icons.tune,
+                  size: 20,
+                  color: ColorTokens.textSecondary,
                 ),
               ),
               const SizedBox(width: SpacingTokens.sm),
