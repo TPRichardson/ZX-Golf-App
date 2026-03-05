@@ -192,7 +192,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: const SizedBox.shrink(),
-        backgroundColor: ColorTokens.surfacePrimary,
+        backgroundColor: ColorTokens.surfaceBase,
         leading: IconButton(
           icon: Icon(
             Icons.home,
