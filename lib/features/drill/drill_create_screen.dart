@@ -688,8 +688,11 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
           initialDrillIds: [drill.drillId]);
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
+      // Pop drill create from nested tab navigator, then push practice
+      // on root navigator so it covers the shell.
+      final rootNav = Navigator.of(context, rootNavigator: true);
+      Navigator.of(context).pop();
+      rootNav.push(
         MaterialPageRoute(
           builder: (_) => PracticeQueueScreen(
             practiceBlockId: pb.practiceBlockId,

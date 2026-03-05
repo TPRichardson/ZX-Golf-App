@@ -18,25 +18,23 @@ class SkillAreaPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 36,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          if (showAll)
-            _Chip(
-              label: 'All',
-              isSelected: selected == null,
-              onTap: () => onChanged(null),
-            ),
-          for (final area in SkillArea.values)
-            _Chip(
-              label: area.dbValue,
-              isSelected: selected == area,
-              onTap: () => onChanged(area),
-            ),
-        ],
-      ),
+    return Wrap(
+      spacing: SpacingTokens.xs,
+      runSpacing: SpacingTokens.xs,
+      children: [
+        if (showAll)
+          _Chip(
+            label: 'All',
+            isSelected: selected == null,
+            onTap: () => onChanged(null),
+          ),
+        for (final area in SkillArea.values)
+          _Chip(
+            label: area.dbValue,
+            isSelected: selected == area,
+            onTap: () => onChanged(area),
+          ),
+      ],
     );
   }
 }
@@ -54,11 +52,9 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: SpacingTokens.xs),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
           duration: MotionTokens.fast,
           curve: MotionTokens.curve,
           padding: const EdgeInsets.symmetric(
@@ -84,7 +80,6 @@ class _Chip extends StatelessWidget {
                 ),
           ),
         ),
-      ),
     );
   }
 }

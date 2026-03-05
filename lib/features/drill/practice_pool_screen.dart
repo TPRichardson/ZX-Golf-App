@@ -49,20 +49,11 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
             ? null
             : [
                 IconButton(
-                  icon: const Icon(Icons.golf_course),
+                  icon: const Icon(Icons.shopping_bag_outlined),
                   tooltip: 'Golf Bag',
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => const BagScreen(),
-                    ));
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.library_books),
-                  tooltip: 'System Library',
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const DrillLibraryScreen(),
                     ));
                   },
                 ),
@@ -160,16 +151,56 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
           ),
         ],
       ),
-      floatingActionButton: widget.pickMode
+      bottomNavigationBar: widget.pickMode
           ? null
-          : FloatingActionButton(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const DrillCreateScreen(),
-                ));
-              },
-              backgroundColor: ColorTokens.primaryDefault,
-              child: const Icon(Icons.add, color: Colors.white),
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SpacingTokens.md,
+                SpacingTokens.sm,
+                SpacingTokens.md,
+                SpacingTokens.md,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const DrillLibraryScreen(),
+                        ));
+                      },
+                      icon: const Icon(Icons.library_books, size: 18),
+                      label: const Text('System Drills'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorTokens.primaryDefault,
+                        side: const BorderSide(
+                            color: ColorTokens.primaryDefault),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: SpacingTokens.sm),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: SpacingTokens.sm),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const DrillCreateScreen(),
+                        ));
+                      },
+                      icon: const Icon(Icons.add, color: Colors.white,
+                          size: 18),
+                      label: const Text('Create Drill',
+                          style: TextStyle(color: Colors.white)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ColorTokens.primaryDefault,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: SpacingTokens.sm),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }

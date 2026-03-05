@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -26,6 +29,9 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   int _currentIndex = 1; // Start on Track tab
+
+  // Nested navigators for each tab — keeps shell AppBar + bottom nav visible.
+  final _navigatorKeys = List.generate(3, (_) => GlobalKey<NavigatorState>());
 
   static const _tabs = [
     PlanTab(),
@@ -110,7 +116,35 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   void _goToTab(int index) {
     ref.read(showHomeProvider.notifier).state = false;
-    setState(() => _currentIndex = index);
+    if (index == _currentIndex) {
+      // Tapping active tab pops nested navigator to root.
+      _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+    } else {
+      setState(() => _currentIndex = index);
+    }
+  }
+
+  void _resumePractice(String practiceBlockId) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => PracticeQueueScreen(
+        practiceBlockId: practiceBlockId,
+        userId: kDevUserId,
+      ),
+    ));
+  }
+
+  Future<void> _discardPracticeBlock(String practiceBlockId) async {
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Discard Practice?',
+      message: 'This will end the current practice block and discard '
+          'any in-progress session.',
+      isDestructive: true,
+    );
+    if (!confirmed || !mounted) return;
+
+    final actions = ref.read(practiceActionsProvider);
+    await actions.discardPracticeBlock(practiceBlockId, kDevUserId);
   }
 
   @override
@@ -132,16 +166,35 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     // S12 §12.2 — showHomeProvider controls Home vs Tab display.
     final showHome = ref.watch(showHomeProvider);
 
-    return Scaffold(
+    // Active practice block for persistent resume bar.
+    final activePb = ref.watch(activePracticeBlockProvider(kDevUserId));
+    final activePbData = activePb.valueOrNull;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (showHome) return;
+        final nav = _navigatorKeys[_currentIndex].currentState;
+        if (nav != null && nav.canPop()) {
+          nav.pop();
+        } else {
+          _goHome();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('ZX Golf'),
         backgroundColor: ColorTokens.surfacePrimary,
-        leading: showHome
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.home, color: ColorTokens.textSecondary),
-                onPressed: _goHome,
-              ),
+        leading: IconButton(
+          icon: Icon(
+            Icons.home,
+            color: showHome
+                ? ColorTokens.primaryDefault
+                : ColorTokens.textSecondary,
+          ),
+          onPressed: _goHome,
+        ),
         actions: [
           if (showHome)
             IconButton(
@@ -162,33 +215,102 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           Expanded(
             child: showHome
                 ? HomeDashboardScreen(onGoToTab: _goToTab)
-                : _tabs[_currentIndex],
+                : IndexedStack(
+                    index: _currentIndex,
+                    children: [
+                      for (int i = 0; i < _tabs.length; i++)
+                        Navigator(
+                          key: _navigatorKeys[i],
+                          onGenerateRoute: (_) => MaterialPageRoute(
+                            builder: (_) => _tabs[i],
+                          ),
+                        ),
+                    ],
+                  ),
           ),
         ],
       ),
-      // Fix 10 — Practice screens are pushed via Navigator.push (own Scaffold),
-      // so shell bottom nav is already hidden during live practice.
-      bottomNavigationBar: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: _goToTab,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.calendar_today),
-                  label: 'Plan',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.sports_golf),
-                  label: 'Track',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.analytics_outlined),
-                  label: 'Review',
-                ),
-              ],
-              backgroundColor: ColorTokens.surfacePrimary,
-              selectedItemColor: ColorTokens.primaryDefault,
-              unselectedItemColor: ColorTokens.textSecondary,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Persistent resume bar when a practice block is active.
+          if (activePbData != null)
+            Container(
+              color: ColorTokens.surfaceRaised,
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingTokens.md,
+                vertical: SpacingTokens.sm,
+              ),
+              child: Row(
+                children: [
+                  // Delete (discard) button.
+                  SizedBox(
+                    height: 40,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _discardPracticeBlock(
+                        activePbData.practiceBlockId,
+                      ),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Discard'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorTokens.errorDestructive,
+                        side: const BorderSide(
+                          color: ColorTokens.errorDestructive,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SpacingTokens.sm,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: SpacingTokens.sm),
+                  // Resume button.
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: FilledButton.icon(
+                        onPressed: () => _resumePractice(
+                          activePbData.practiceBlockId,
+                        ),
+                        icon: const Icon(Icons.play_arrow,
+                            color: Colors.white, size: 20),
+                        label: const Text(
+                          'Resume Practice',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ColorTokens.successDefault,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _goToTab,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: 'Plan',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.sports_golf),
+                label: 'Track',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.analytics_outlined),
+                label: 'Review',
+              ),
+            ],
+            backgroundColor: ColorTokens.surfacePrimary,
+            selectedItemColor: ColorTokens.primaryDefault,
+            unselectedItemColor: ColorTokens.textSecondary,
+          ),
+        ],
+      ),
+      ),
     );
   }
 }
