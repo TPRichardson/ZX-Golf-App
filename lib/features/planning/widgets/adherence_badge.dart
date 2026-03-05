@@ -33,20 +33,23 @@ class AdherenceBadge extends StatelessWidget {
         children: [
           Icon(
             Icons.check_circle_outline,
-            size: 20,
+            size: 16,
             color: adherence >= 0.7
                 ? ColorTokens.successDefault
                 : adherence >= 0.4
                     ? ColorTokens.warningIntegrity
                     : ColorTokens.textTertiary,
           ),
-          const SizedBox(width: SpacingTokens.sm),
-          Text(
-            '${(adherence * 100).round()}% adherence',
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              fontWeight: FontWeight.w500,
-              color: ColorTokens.textPrimary,
+          const SizedBox(width: SpacingTokens.xs),
+          Flexible(
+            child: Text(
+              '${(adherence * 100).round()}%',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                fontWeight: FontWeight.w500,
+                color: ColorTokens.textPrimary,
+              ),
             ),
           ),
         ],
