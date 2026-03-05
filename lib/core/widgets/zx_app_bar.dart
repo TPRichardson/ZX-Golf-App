@@ -70,7 +70,7 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       child: TabBar(
         indicatorSize: TabBarIndicatorSize.tab,
-        indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
+        indicatorPadding: const EdgeInsets.symmetric(horizontal: 2),
         labelColor: ColorTokens.textPrimary,
         unselectedLabelColor: ColorTokens.textSecondary,
         dividerHeight: 0,
