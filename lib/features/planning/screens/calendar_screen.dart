@@ -30,7 +30,11 @@ class CalendarScreen extends ConsumerStatefulWidget {
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
   static const _userId = kDevUserId;
 
@@ -117,6 +121,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin
     final prefs = ref.watch(userPreferencesProvider);
     final rangeStart = _rangeStartFor(prefs.weekStartDay);
     final rangeEnd = _rangeEndFor(rangeStart);
