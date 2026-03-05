@@ -16,6 +16,7 @@ class PlanTab extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
+          centerTitle: true,
           title: const Text('Plan Future Training'),
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,

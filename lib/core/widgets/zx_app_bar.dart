@@ -21,6 +21,7 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      centerTitle: true,
       title: Text(title),
       leading: leading,
       actions: actions,
