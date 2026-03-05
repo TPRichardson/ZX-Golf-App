@@ -73,10 +73,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              daysAsync.when(
-                data: (days) => AdherenceBadge(recentDays: days, repo: repo),
-                loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+              Flexible(
+                child: daysAsync.when(
+                  data: (days) => AdherenceBadge(recentDays: days, repo: repo),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
+                ),
               ),
               SegmentedButton<bool>(
                 segments: const [
@@ -107,7 +109,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Calendar day list.
         Expanded(
           child: daysAsync.when(
-            data: (days) => _buildDayList(days, rangeStart, rangeEnd),
+            data: (days) => _showTwoWeeks
+                ? _buildWeekGrid(days, rangeStart, rangeEnd)
+                : _buildDayList(days, rangeStart, rangeEnd),
             loading: () => const Center(
               child: CircularProgressIndicator(
                 color: ColorTokens.primaryDefault,
@@ -167,6 +171,255 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           onTap: () => _createAndNavigate(date),
         );
       },
+    );
+  }
+
+  Widget _buildWeekGrid(
+      List<CalendarDay> days, DateTime rangeStart, DateTime rangeEnd) {
+    // Map dates to CalendarDay entries.
+    final dayMap = <DateTime, CalendarDay>{};
+    for (final day in days) {
+      final dateOnly = DateTime(day.date.year, day.date.month, day.date.day);
+      dayMap[dateOnly] = day;
+    }
+
+    // Build 14 dates.
+    final dateRange = <DateTime>[];
+    var current = rangeStart;
+    while (!current.isAfter(rangeEnd)) {
+      dateRange.add(current);
+      current = current.add(const Duration(days: 1));
+    }
+
+    // Day-of-week headers (starting from configured week start).
+    final prefs = ref.watch(userPreferencesProvider);
+    final headers = List.generate(7, (i) {
+      final day = (prefs.weekStartDay + i - 1) % 7;
+      return _weekdayNames[day];
+    });
+
+    return Padding(
+      padding: const EdgeInsets.all(SpacingTokens.md),
+      child: Column(
+        children: [
+          // Header row.
+          Row(
+            children: [
+              for (final h in headers)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      h,
+                      style: const TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.textTertiary,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          // 2 rows of 7 day cells.
+          for (int row = 0; row < 2; row++) ...[
+            if (row > 0) const SizedBox(height: SpacingTokens.xs),
+            Row(
+              children: [
+                for (int col = 0; col < 7; col++) ...[
+                  if (col > 0) const SizedBox(width: SpacingTokens.xs),
+                  Expanded(
+                    child: _buildGridCell(
+                      dateRange[row * 7 + col],
+                      dayMap[dateRange[row * 7 + col]],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridCell(DateTime date, CalendarDay? day) {
+    final isToday = date == _today;
+    final slotCount = day != null
+        ? parseSlotsFromJson(day.slots).where((s) => s.isFilled).length
+        : 0;
+
+    return GestureDetector(
+      onTap: () => _showDayBottomSheet(date, day),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isToday
+                ? ColorTokens.primaryDefault.withValues(alpha: 0.15)
+                : ColorTokens.surfaceRaised,
+            borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+            border: Border.all(
+              color: isToday
+                  ? ColorTokens.primaryDefault
+                  : ColorTokens.surfaceBorder,
+              width: isToday ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${date.day}',
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySize,
+                  fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
+                  color: isToday
+                      ? ColorTokens.textPrimary
+                      : ColorTokens.textSecondary,
+                ),
+              ),
+              if (slotCount > 0)
+                Container(
+                  margin: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.primaryDefault.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '$slotCount',
+                    style: const TextStyle(
+                      fontSize: TypographyTokens.microSize,
+                      color: ColorTokens.primaryDefault,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDayBottomSheet(DateTime date, CalendarDay? day) {
+    final dateLabel =
+        '${_weekdayNames[date.weekday - 1]}, ${_monthNames[date.month - 1]} ${date.day}';
+    final slots = day != null ? parseSlotsFromJson(day.slots) : <Slot>[];
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ShapeTokens.radiusModal),
+        ),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(SpacingTokens.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: TypographyTokens.headerSize,
+                    fontWeight: TypographyTokens.headerWeight,
+                    color: ColorTokens.textPrimary,
+                  ),
+                ),
+                if (date == _today)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ColorTokens.primaryDefault.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'Today',
+                      style: TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.primaryDefault,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: SpacingTokens.md),
+            // Slot summary.
+            if (slots.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: SpacingTokens.md),
+                child: Text(
+                  'No slots planned',
+                  style: TextStyle(color: ColorTokens.textTertiary),
+                ),
+              )
+            else
+              for (final slot in slots)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+                  child: Row(
+                    children: [
+                      Icon(
+                        slot.isFilled
+                            ? Icons.sports_golf
+                            : Icons.radio_button_unchecked,
+                        size: 16,
+                        color: slot.isFilled
+                            ? ColorTokens.primaryDefault
+                            : ColorTokens.textTertiary,
+                      ),
+                      const SizedBox(width: SpacingTokens.sm),
+                      Expanded(
+                        child: Text(
+                          slot.isFilled ? 'Drill assigned' : 'Empty slot',
+                          style: TextStyle(
+                            color: slot.isFilled
+                                ? ColorTokens.textPrimary
+                                : ColorTokens.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            const SizedBox(height: SpacingTokens.sm),
+            // Action button.
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  if (day != null) {
+                    _navigateToDetail(day);
+                  } else {
+                    _createAndNavigate(date);
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorTokens.primaryDefault,
+                  side: const BorderSide(color: ColorTokens.primaryDefault),
+                ),
+                child: const Text('View / Edit Day'),
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.sm),
+          ],
+        ),
+      ),
     );
   }
 
