@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/features/shell/shell_screen.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'sync_banner_state.dart';
 
@@ -77,6 +78,12 @@ class SyncStatusBanner extends ConsumerWidget {
 
     if (bannerState == null) return const SizedBox.shrink();
 
+    // Auth banner can be dismissed — sign in is accessible from top bar.
+    if (bannerState.type == SyncBannerType.authRequired) {
+      final dismissed = ref.watch(authBannerDismissedProvider);
+      if (dismissed) return const SizedBox.shrink();
+    }
+
     return AnimatedSize(
       duration: MotionTokens.standard,
       curve: MotionTokens.curve,
@@ -85,13 +92,13 @@ class SyncStatusBanner extends ConsumerWidget {
   }
 }
 
-class _BannerContent extends StatelessWidget {
+class _BannerContent extends ConsumerWidget {
   final SyncBannerState state;
 
   const _BannerContent({required this.state});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final accentColor = _accentColor(state.type);
     final icon = _icon(state.type);
 
@@ -135,6 +142,18 @@ class _BannerContent extends StatelessWidget {
                       ),
                     ),
                     child: Text(state.actionLabel!),
+                  ),
+                ),
+              // Dismiss X for auth-required banner.
+              if (state.type == SyncBannerType.authRequired)
+                GestureDetector(
+                  onTap: () => ref
+                      .read(authBannerDismissedProvider.notifier)
+                      .state = true,
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: SpacingTokens.xs),
+                    child: Icon(Icons.close, size: 18,
+                        color: ColorTokens.textTertiary),
                   ),
                 ),
             ],

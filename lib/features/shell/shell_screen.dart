@@ -17,6 +17,9 @@ import 'widgets/dual_active_session_dialog.dart';
 import 'widgets/sync_status_banner.dart';
 import 'widgets/system_maintenance_banner.dart';
 
+/// Whether the auth-required sync banner has been dismissed this session.
+final authBannerDismissedProvider = StateProvider<bool>((ref) => false);
+
 // TD-06 §4.3 — Shell app with bottom navigation: Plan, Track, Review.
 // S12 §12.2 — Home Dashboard sits above tabs as persistent launch layer.
 
@@ -170,6 +173,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     final activePb = ref.watch(activePracticeBlockProvider(kDevUserId));
     final activePbData = activePb.valueOrNull;
 
+    // Auth state for top-bar sign-in action.
+    final bi = ref.watch(syncBannerInputProvider);
+    final isAuthenticated = bi.isAuthenticated;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -196,15 +203,34 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           onPressed: _goHome,
         ),
         actions: [
-          if (showHome)
-            IconButton(
-              icon:
-                  const Icon(Icons.settings, color: ColorTokens.textSecondary),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          // Sign In prompt when not authenticated.
+          if (!isAuthenticated)
+            TextButton(
+              onPressed: () {
+                // TODO: navigate to sign-in flow.
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: ColorTokens.primaryDefault,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.sm,
+                ),
               ),
+              child: const Text('Sign In'),
             ),
+          // Account button — always visible.
+          IconButton(
+            icon: Icon(
+              Icons.account_circle_outlined,
+              color: isAuthenticated
+                  ? ColorTokens.textSecondary
+                  : ColorTokens.textTertiary,
+            ),
+            tooltip: isAuthenticated ? 'Account' : 'Not signed in',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
         ],
       ),
       body: Column(
