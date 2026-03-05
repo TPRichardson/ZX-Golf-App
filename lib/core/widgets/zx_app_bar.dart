@@ -32,10 +32,10 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Shared styled tab bar — selected tab visually connects to the header above
-/// via a cyan U-shaped border (left, bottom, right with rounded bottom corners).
-/// The parent AppBar should use [connectedAppBarDecoration] on its bottom border
-/// to complete the visual connection.
+/// Shared styled tab bar — selected tab visually connects to the header above.
+/// The selected tab has a U-shaped cyan border (left, bottom, right) with
+/// rounded bottom corners. Unselected tabs show a cyan top border.
+/// Parent AppBar should use [connectedHeaderShape] to add a matching cyan top border.
 class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Tab> tabs;
 
@@ -44,25 +44,37 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
 
-  /// Decoration for the AppBar above this tab bar — adds a cyan bottom border
-  /// so the selected tab's side borders connect into the header.
-  static const connectedAppBarBottom = BorderSide(
-    color: ColorTokens.primaryDefault,
-    width: 2,
+  /// Shape for the parent AppBar — cyan top border on the header.
+  static const connectedHeaderShape = Border(
+    top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
   );
+
+  static const _borderWidth = 2.0;
 
   @override
   Widget build(BuildContext context) {
+    // Container has a cyan top border across the full width.
+    // The selected tab indicator extends upward to cover that border,
+    // so only unselected tabs show the cyan top line.
     return Container(
-      color: ColorTokens.surfaceRaised,
+      decoration: const BoxDecoration(
+        color: ColorTokens.surfaceRaised,
+        border: Border(
+          top: BorderSide(
+            color: ColorTokens.primaryDefault,
+            width: _borderWidth,
+          ),
+        ),
+      ),
       child: TabBar(
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: ColorTokens.textPrimary,
         unselectedLabelColor: ColorTokens.textSecondary,
+        dividerHeight: 0,
         indicator: _ConnectedTabIndicator(
           color: ColorTokens.surfacePrimary,
           borderColor: ColorTokens.primaryDefault,
-          borderWidth: 2,
+          borderWidth: _borderWidth,
           radius: ShapeTokens.radiusCard,
         ),
         tabs: tabs,
@@ -72,7 +84,8 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 /// Custom decoration that draws a U-shaped border (left + bottom + right)
-/// with rounded bottom corners, connecting visually to the header above.
+/// with rounded bottom corners. Extends upward by [borderWidth] to cover
+/// the container's top cyan border, connecting the tab to the header.
 class _ConnectedTabIndicator extends Decoration {
   final Color color;
   final Color borderColor;
@@ -113,7 +126,14 @@ class _ConnectedTabPainter extends BoxPainter {
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final size = configuration.size ?? Size.zero;
-    final rect = offset & size;
+
+    // Extend upward by borderWidth to cover the container's cyan top border.
+    final rect = Rect.fromLTWH(
+      offset.dx,
+      offset.dy - borderWidth,
+      size.width,
+      size.height + borderWidth,
+    );
 
     // Tab background with rounded bottom corners.
     final rrect = RRect.fromRectAndCorners(
@@ -122,7 +142,7 @@ class _ConnectedTabPainter extends BoxPainter {
       bottomRight: Radius.circular(radius),
     );
 
-    // Fill.
+    // Fill — matches header background so it appears connected.
     canvas.drawRRect(rrect, Paint()..color = color);
 
     // U-shaped border: left side, bottom, right side.

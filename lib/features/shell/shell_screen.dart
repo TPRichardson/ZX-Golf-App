@@ -192,7 +192,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: const SizedBox.shrink(),
-        backgroundColor: ColorTokens.surfaceBase,
+        backgroundColor: ColorTokens.surfacePrimary,
         leading: IconButton(
           icon: Icon(
             Icons.home,
@@ -313,30 +313,53 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 ],
               ),
             ),
-          Theme(
-            data: Theme.of(context).copyWith(
-              // When on Home, suppress the selected highlight so no tab appears active.
-              bottomNavigationBarTheme: BottomNavigationBarThemeData(
-                selectedItemColor: showHome
-                    ? ColorTokens.textSecondary
-                    : ColorTokens.primaryDefault,
-                unselectedItemColor: ColorTokens.textSecondary,
-                backgroundColor: ColorTokens.surfacePrimary,
-              ),
+          NavigationBarTheme(
+            data: NavigationBarThemeData(
+              backgroundColor: ColorTokens.surfacePrimary,
+              surfaceTintColor: Colors.transparent,
+              indicatorColor: showHome
+                  ? Colors.transparent
+                  : ColorTokens.surfaceRaised,
+              iconTheme: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return IconThemeData(
+                    color: showHome
+                        ? ColorTokens.textSecondary
+                        : ColorTokens.primaryDefault,
+                  );
+                }
+                return const IconThemeData(
+                  color: ColorTokens.textSecondary,
+                );
+              }),
+              labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return TextStyle(
+                    color: showHome
+                        ? ColorTokens.textSecondary
+                        : ColorTokens.primaryDefault,
+                    fontSize: TypographyTokens.microSize,
+                  );
+                }
+                return TextStyle(
+                  color: ColorTokens.textSecondary,
+                  fontSize: TypographyTokens.microSize,
+                );
+              }),
             ),
-            child: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: _goToTab,
-              items: const [
-                BottomNavigationBarItem(
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _goToTab,
+              destinations: const [
+                NavigationDestination(
                   icon: Icon(Icons.calendar_today),
                   label: 'Plan',
                 ),
-                BottomNavigationBarItem(
+                NavigationDestination(
                   icon: Icon(Icons.sports_golf),
                   label: 'Track',
                 ),
-                BottomNavigationBarItem(
+                NavigationDestination(
                   icon: Icon(Icons.analytics_outlined),
                   label: 'Review',
                 ),

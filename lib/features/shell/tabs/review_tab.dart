@@ -21,7 +21,7 @@ class ReviewTab extends StatelessWidget {
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          shape: const Border(bottom: ZxTabBar.connectedAppBarBottom),
+          shape: ZxTabBar.connectedHeaderShape,
           bottom: const ZxTabBar(tabs: [
             Tab(text: 'Dashboard'),
             Tab(text: 'Analysis'),
