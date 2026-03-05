@@ -22,15 +22,21 @@ class ReviewTab extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           shape: ZxTabBar.connectedHeaderShape,
-          bottom: const ZxTabBar(tabs: [
-            Tab(text: 'Dashboard'),
-            Tab(text: 'Analysis'),
-          ]),
         ),
-        body: const TabBarView(
+        body: const Column(
           children: [
-            ReviewDashboardScreen(),
-            AnalysisScreen(),
+            ZxTabBar(tabs: [
+              Tab(text: 'Dashboard'),
+              Tab(text: 'Analysis'),
+            ]),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ReviewDashboardScreen(),
+                  AnalysisScreen(),
+                ],
+              ),
+            ),
           ],
         ),
       ),

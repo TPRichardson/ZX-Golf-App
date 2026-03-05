@@ -32,15 +32,21 @@ class TrackTab extends StatelessWidget {
               },
             ),
           ],
-          bottom: const ZxTabBar(tabs: [
-            Tab(text: 'Track Drills'),
-            Tab(text: 'Matrix'),
-          ]),
         ),
-        body: const TabBarView(
+        body: const Column(
           children: [
-            PracticePoolScreen(embedded: true),
-            _MatrixTab(),
+            ZxTabBar(tabs: [
+              Tab(text: 'Track Drills'),
+              Tab(text: 'Matrix'),
+            ]),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  PracticePoolScreen(embedded: true),
+                  _MatrixTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),

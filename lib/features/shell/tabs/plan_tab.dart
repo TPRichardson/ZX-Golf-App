@@ -22,15 +22,21 @@ class PlanTab extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           shape: ZxTabBar.connectedHeaderShape,
-          bottom: const ZxTabBar(tabs: [
-            Tab(text: 'Calendar'),
-            Tab(text: 'Create'),
-          ]),
         ),
-        body: const TabBarView(
-          children: [
-            CalendarScreen(),
-            _CreateTab(),
+        body: Column(
+          children: const [
+            ZxTabBar(tabs: [
+              Tab(text: 'Calendar'),
+              Tab(text: 'Create'),
+            ]),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  CalendarScreen(),
+                  _CreateTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
