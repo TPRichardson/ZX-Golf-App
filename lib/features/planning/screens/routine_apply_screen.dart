@@ -14,8 +14,13 @@ import 'package:zx_golf_app/providers/repository_providers.dart';
 
 class RoutineApplyScreen extends ConsumerStatefulWidget {
   final String routineId;
+  final DateTime? targetDate;
 
-  const RoutineApplyScreen({super.key, required this.routineId});
+  const RoutineApplyScreen({
+    super.key,
+    required this.routineId,
+    this.targetDate,
+  });
 
   @override
   ConsumerState<RoutineApplyScreen> createState() =>
@@ -42,9 +47,9 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
     final routine = await repo.getRoutineById(widget.routineId);
     if (routine == null || !mounted) return;
 
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    final day = await repo.getOrCreateCalendarDay(_userId, todayDate);
+    final target = widget.targetDate ?? DateTime.now();
+    final targetDate = DateTime(target.year, target.month, target.day);
+    final day = await repo.getOrCreateCalendarDay(_userId, targetDate);
 
     final entries = _parseEntries(routine.entries);
 
@@ -118,7 +123,7 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
                           color: ColorTokens.primaryDefault, size: 20),
                       const SizedBox(width: SpacingTokens.sm),
                       Text(
-                        'Today — ${_targetDay!.slotCapacity} slots',
+                        '${_formatDate(_targetDay!.date)} — ${_targetDay!.slotCapacity} slots',
                         style: TextStyle(
                           fontSize: TypographyTokens.bodySize,
                           color: ColorTokens.textPrimary,
@@ -255,6 +260,15 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
   }
 
   void _reroll() {

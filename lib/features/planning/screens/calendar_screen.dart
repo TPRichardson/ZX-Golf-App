@@ -18,6 +18,7 @@ import '../widgets/adherence_badge.dart';
 import '../widgets/calendar_day_card.dart';
 import '../widgets/slot_tile.dart';
 import 'calendar_day_detail_screen.dart';
+import 'routine_apply_screen.dart';
 
 // S08 §8.12.1 — Calendar screen: 3-day rolling + 2-week toggle.
 
@@ -441,6 +442,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           const BorderSide(color: ColorTokens.primaryDefault),
                     ),
                   ),
+                  const SizedBox(height: SpacingTokens.sm),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        _showRoutinePicker(_selectedDay!),
+                    icon: const Icon(Icons.playlist_add, size: 18),
+                    label: const Text('Apply routine'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColorTokens.primaryDefault,
+                      side:
+                          const BorderSide(color: ColorTokens.primaryDefault),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -463,18 +476,38 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     onTap: () => _onInlineSlotTap(day!, slots, index),
                   );
                 }
-                // "Add slot" button after last slot.
+                // Action buttons after last slot.
                 return Padding(
                   padding: const EdgeInsets.only(top: SpacingTokens.xs),
-                  child: OutlinedButton.icon(
-                    onPressed: () => _addSlot(day!),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add slot'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorTokens.primaryDefault,
-                      side: const BorderSide(
-                          color: ColorTokens.primaryDefault),
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _addSlot(day!),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Add slot'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorTokens.primaryDefault,
+                            side: const BorderSide(
+                                color: ColorTokens.primaryDefault),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: SpacingTokens.sm),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              _showRoutinePicker(_selectedDay!),
+                          icon: const Icon(Icons.playlist_add, size: 18),
+                          label: const Text('Apply routine'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorTokens.primaryDefault,
+                            side: const BorderSide(
+                                color: ColorTokens.primaryDefault),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -499,6 +532,63 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final actions = ref.read(planningActionsProvider);
     final currentSlots = parseSlotsFromJson(day.slots);
     await actions.updateSlotCapacity(_userId, date, currentSlots.length + 1);
+  }
+
+  /// Show routine picker bottom sheet, then navigate to RoutineApplyScreen.
+  void _showRoutinePicker(DateTime date) {
+    final routinesAsync = ref.read(routinesProvider(_userId));
+    final routines = routinesAsync.valueOrNull ?? [];
+
+    if (routines.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active routines')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(ShapeTokens.radiusModal)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm),
+              child: Text(
+                'Apply routine',
+                style: TextStyle(
+                  fontSize: TypographyTokens.headerSize,
+                  fontWeight: TypographyTokens.headerWeight,
+                  color: ColorTokens.textPrimary,
+                ),
+              ),
+            ),
+            for (final routine in routines)
+              ListTile(
+                leading: const Icon(Icons.playlist_play,
+                    color: ColorTokens.primaryDefault),
+                title: Text(routine.name),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => RoutineApplyScreen(
+                      routineId: routine.routineId,
+                      targetDate: date,
+                    ),
+                  ));
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Handle tap on an inline slot: empty → assign drill, filled → actions sheet.
