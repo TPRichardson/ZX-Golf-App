@@ -24,11 +24,15 @@ class ReviewDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _ReviewDashboardScreenState
-    extends ConsumerState<ReviewDashboardScreen> {
+    extends ConsumerState<ReviewDashboardScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   SkillArea? _expandedSkillArea;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin
     final overallAsync = ref.watch(overallScoreProvider(kDevUserId));
 
     return overallAsync.when(

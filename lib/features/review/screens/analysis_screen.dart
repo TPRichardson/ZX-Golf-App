@@ -32,7 +32,10 @@ class AnalysisScreen extends ConsumerStatefulWidget {
   ConsumerState<AnalysisScreen> createState() => _AnalysisScreenState();
 }
 
-class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
+class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   AnalysisScope _scope = AnalysisScope.overall;
   SkillArea? _selectedSkillArea;
   String? _selectedSubskillId;
@@ -53,6 +56,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin
     // Check if filter persistence has expired (1 hour).
     if (_lastFilterChange != null &&
         DateTime.now().difference(_lastFilterChange!) >

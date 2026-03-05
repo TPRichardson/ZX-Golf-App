@@ -39,7 +39,10 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
       _PracticePoolScreenState();
 }
 
-class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
+class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => widget.embedded;
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = kDevUserId;
 
@@ -195,6 +198,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin
     // Embedded mode: no Scaffold, used inside a parent TabBarView.
     if (widget.embedded) {
       return Column(
