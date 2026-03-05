@@ -313,26 +313,35 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 ],
               ),
             ),
-          BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: _goToTab,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today),
-                label: 'Plan',
+          Theme(
+            data: Theme.of(context).copyWith(
+              // When on Home, suppress the selected highlight so no tab appears active.
+              bottomNavigationBarTheme: BottomNavigationBarThemeData(
+                selectedItemColor: showHome
+                    ? ColorTokens.textSecondary
+                    : ColorTokens.primaryDefault,
+                unselectedItemColor: ColorTokens.textSecondary,
+                backgroundColor: ColorTokens.surfacePrimary,
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.sports_golf),
-                label: 'Track',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.analytics_outlined),
-                label: 'Review',
-              ),
-            ],
-            backgroundColor: ColorTokens.surfacePrimary,
-            selectedItemColor: ColorTokens.primaryDefault,
-            unselectedItemColor: ColorTokens.textSecondary,
+            ),
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: _goToTab,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_today),
+                  label: 'Plan',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.sports_golf),
+                  label: 'Track',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.analytics_outlined),
+                  label: 'Review',
+                ),
+              ],
+            ),
           ),
         ],
       ),
