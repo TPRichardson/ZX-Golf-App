@@ -128,45 +128,61 @@ class _ConnectedTabPainter extends BoxPainter {
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final size = configuration.size ?? Size.zero;
+    final r = radius;
+    final bw = borderWidth;
 
     // Extend upward by borderWidth to cover the container's cyan top border.
+    // Extend left/right by borderWidth/2 so the stroke is fully visible
+    // at screen edges (stroke is centered on the path).
     final rect = Rect.fromLTWH(
-      offset.dx,
-      offset.dy - borderWidth,
-      size.width,
-      size.height + borderWidth,
+      offset.dx - bw / 2,
+      offset.dy - bw,
+      size.width + bw,
+      size.height + bw,
     );
 
-    // Tab background with rounded bottom corners.
-    final rrect = RRect.fromRectAndCorners(
-      rect,
-      bottomLeft: Radius.circular(radius),
-      bottomRight: Radius.circular(radius),
-    );
+    // Fill path with convex (outward-curving) bottom corners.
+    final fillPath = Path()
+      ..moveTo(rect.left, rect.top)
+      ..lineTo(rect.left, rect.bottom - r)
+      ..arcToPoint(
+        Offset(rect.left + r, rect.bottom),
+        radius: Radius.circular(r),
+        clockwise: false, // convex: curves outward
+      )
+      ..lineTo(rect.right - r, rect.bottom)
+      ..arcToPoint(
+        Offset(rect.right, rect.bottom - r),
+        radius: Radius.circular(r),
+        clockwise: false, // convex: curves outward
+      )
+      ..lineTo(rect.right, rect.top)
+      ..close();
 
-    // Fill — matches header background so it appears connected.
-    canvas.drawRRect(rrect, Paint()..color = color);
+    canvas.drawPath(fillPath, Paint()..color = color);
 
-    // U-shaped border: left side, bottom, right side.
+    // U-shaped border (left + bottom + right) with convex corners.
     final borderPaint = Paint()
       ..color = borderColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = borderWidth;
+      ..strokeWidth = bw;
 
-    final path = Path()
-      ..moveTo(rect.left, rect.top) // top-left
-      ..lineTo(rect.left, rect.bottom - radius) // left side down
+    final borderPath = Path()
+      ..moveTo(rect.left, rect.top)
+      ..lineTo(rect.left, rect.bottom - r)
       ..arcToPoint(
-        Offset(rect.left + radius, rect.bottom),
-        radius: Radius.circular(radius),
-      ) // bottom-left corner
-      ..lineTo(rect.right - radius, rect.bottom) // bottom edge
+        Offset(rect.left + r, rect.bottom),
+        radius: Radius.circular(r),
+        clockwise: false,
+      )
+      ..lineTo(rect.right - r, rect.bottom)
       ..arcToPoint(
-        Offset(rect.right, rect.bottom - radius),
-        radius: Radius.circular(radius),
-      ) // bottom-right corner
-      ..lineTo(rect.right, rect.top); // right side up
+        Offset(rect.right, rect.bottom - r),
+        radius: Radius.circular(r),
+        clockwise: false,
+      )
+      ..lineTo(rect.right, rect.top);
 
-    canvas.drawPath(path, borderPaint);
+    canvas.drawPath(borderPath, borderPaint);
   }
 }
