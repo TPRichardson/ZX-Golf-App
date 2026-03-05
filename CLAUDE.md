@@ -17,6 +17,13 @@
 
 ---
 
+## Workflow Rules
+
+- **No compound shell commands.** Never chain commands with `&&`, `;`, or `||`. If you need to change directory and then run a command, issue them as two separate Bash tool calls. Compound commands trigger a security approval dialog on Windows.
+- **Git workflow.** Always commit and push without asking for confirmation. Stage only files relevant to the work done (don't include unrelated changes).
+
+---
+
 ## Spec Version Registry
 
 Verify loaded context documents match these versions before starting work. Flag any mismatch.
