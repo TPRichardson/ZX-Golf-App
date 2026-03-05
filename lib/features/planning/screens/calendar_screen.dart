@@ -403,19 +403,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
               ),
             ],
-            const Spacer(),
-            // Navigate to full day detail.
-            if (day != null)
-              GestureDetector(
-                onTap: () => _navigateToDetail(day),
-                child: const Text(
-                  'Edit day',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySize,
-                    color: ColorTokens.primaryDefault,
-                  ),
-                ),
-              ),
           ],
         ),
         const SizedBox(height: SpacingTokens.sm),
@@ -431,14 +418,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     style: TextStyle(color: ColorTokens.textTertiary),
                   ),
                   const SizedBox(height: SpacingTokens.sm),
-                  OutlinedButton(
-                    onPressed: () => _createAndNavigate(_selectedDay!),
+                  OutlinedButton.icon(
+                    onPressed: () => _addSlotForDate(_selectedDay!),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add slot'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: ColorTokens.primaryDefault,
                       side:
                           const BorderSide(color: ColorTokens.primaryDefault),
                     ),
-                    child: const Text('Tap to plan'),
                   ),
                 ],
               ),
@@ -447,24 +435,57 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         else
           Expanded(
             child: ListView.separated(
-              itemCount: slots.length,
+              itemCount: slots.length + 1,
               separatorBuilder: (_, _) =>
                   const SizedBox(height: SpacingTokens.xs),
               itemBuilder: (context, index) {
-                final slot = slots[index];
-                return SlotTile(
-                  slot: slot,
-                  index: index,
-                  drillName: slot.drillId != null
-                      ? _drillNames[slot.drillId]
-                      : null,
-                  onTap: () => _onInlineSlotTap(day!, slots, index),
+                if (index < slots.length) {
+                  final slot = slots[index];
+                  return SlotTile(
+                    slot: slot,
+                    index: index,
+                    drillName: slot.drillId != null
+                        ? _drillNames[slot.drillId]
+                        : null,
+                    onTap: () => _onInlineSlotTap(day!, slots, index),
+                  );
+                }
+                // "Add slot" button after last slot.
+                return Padding(
+                  padding: const EdgeInsets.only(top: SpacingTokens.xs),
+                  child: OutlinedButton.icon(
+                    onPressed: () => _addSlot(day!),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add slot'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColorTokens.primaryDefault,
+                      side: const BorderSide(
+                          color: ColorTokens.primaryDefault),
+                    ),
+                  ),
                 );
               },
             ),
           ),
       ],
     );
+  }
+
+  /// Add an empty slot to a CalendarDay by incrementing its capacity.
+  Future<void> _addSlot(CalendarDay day) async {
+    final actions = ref.read(planningActionsProvider);
+    final currentSlots = parseSlotsFromJson(day.slots);
+    await actions.updateSlotCapacity(
+        _userId, day.date, currentSlots.length + 1);
+  }
+
+  /// Add a slot to a day that may not exist yet (creates CalendarDay first).
+  Future<void> _addSlotForDate(DateTime date) async {
+    final repo = ref.read(planningRepositoryProvider);
+    final day = await repo.getOrCreateCalendarDay(_userId, date);
+    final actions = ref.read(planningActionsProvider);
+    final currentSlots = parseSlotsFromJson(day.slots);
+    await actions.updateSlotCapacity(_userId, date, currentSlots.length + 1);
   }
 
   /// Handle tap on an inline slot: empty → assign drill, filled → actions sheet.
