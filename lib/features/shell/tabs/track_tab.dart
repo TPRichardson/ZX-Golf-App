@@ -20,6 +20,7 @@ class TrackTab extends StatelessWidget {
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
+          shape: const Border(bottom: ZxTabBar.connectedAppBarBottom),
           actions: [
             IconButton(
               icon: const Icon(Icons.shopping_bag_outlined),
