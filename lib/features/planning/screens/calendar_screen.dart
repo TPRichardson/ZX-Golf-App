@@ -149,7 +149,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   builder: (_) => const CalendarDefaultsScreen(),
                 )),
                 child: const Icon(
-                  Icons.tune,
+                  Icons.settings,
                   size: 20,
                   color: ColorTokens.textSecondary,
                 ),
