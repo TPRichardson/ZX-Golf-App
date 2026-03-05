@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -12,6 +15,7 @@ import 'package:zx_golf_app/providers/settings_providers.dart';
 
 import '../widgets/adherence_badge.dart';
 import '../widgets/calendar_day_card.dart';
+import '../widgets/slot_tile.dart';
 import 'calendar_day_detail_screen.dart';
 
 // S08 §8.12.1 — Calendar screen: 3-day rolling + 2-week toggle.
@@ -28,6 +32,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   static const _userId = kDevUserId;
 
   bool _showTwoWeeks = false;
+
+  // 2-week grid: selected day for inline slot panel.
+  DateTime? _selectedDay;
+
+  // Heat scale ceiling, computed from surrounding data.
+  int _maxSlots = 1;
+
+  // Drill name cache for inline slot panel.
+  final Map<String, String> _drillNames = {};
 
   DateTime get _today {
     final now = DateTime.now();
@@ -48,6 +61,55 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       return rangeStart.add(const Duration(days: 13));
     }
     return _today.add(const Duration(days: 2));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _today;
+    _computeHeatRange();
+  }
+
+  /// Fetch 60-day window to determine max filled slots for heat colouring.
+  Future<void> _computeHeatRange() async {
+    final repo = ref.read(planningRepositoryProvider);
+    final days = await repo.getCalendarDaysByUser(
+      _userId,
+      from: _today.subtract(const Duration(days: 30)),
+      to: _today.add(const Duration(days: 30)),
+    );
+    if (!mounted) return;
+    int maxFilled = 1;
+    for (final day in days) {
+      final filled =
+          parseSlotsFromJson(day.slots).where((s) => s.isFilled).length;
+      maxFilled = max(maxFilled, filled);
+    }
+    setState(() => _maxSlots = maxFilled);
+  }
+
+  /// Resolve drill names for slots on the selected day.
+  Future<void> _resolveDrillNames(List<Slot> slots) async {
+    final drillRepo = ref.read(drillRepositoryProvider);
+    final ids = slots
+        .map((s) => s.drillId)
+        .whereType<String>()
+        .where((id) => !_drillNames.containsKey(id))
+        .toSet();
+    for (final id in ids) {
+      final drill = await drillRepo.getById(id);
+      if (drill != null) {
+        _drillNames[id] = drill.name;
+      }
+    }
+    if (mounted && ids.isNotEmpty) setState(() {});
+  }
+
+  /// Heat colour interpolated from surfaceRaised (0 slots) → primaryDefault at ~0.35 alpha.
+  Color _heatColor(int filled) {
+    if (filled == 0) return ColorTokens.surfaceRaised;
+    final t = (filled / _maxSlots).clamp(0.0, 1.0);
+    return ColorTokens.primaryDefault.withValues(alpha: 0.08 + t * 0.32);
   }
 
   @override
@@ -220,6 +282,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ],
             ),
           ],
+          const SizedBox(height: SpacingTokens.md),
+          // Inline slot panel for selected day.
+          Expanded(
+            child: _buildInlineSlotPanel(dayMap),
+          ),
         ],
       ),
     );
@@ -227,32 +294,45 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildGridCell(DateTime date, CalendarDay? day) {
     final isToday = date == _today;
-    final slotCount = day != null
+    final isSelected = _selectedDay != null &&
+        date.year == _selectedDay!.year &&
+        date.month == _selectedDay!.month &&
+        date.day == _selectedDay!.day;
+    final filledCount = day != null
         ? parseSlotsFromJson(day.slots).where((s) => s.isFilled).length
         : 0;
 
     return GestureDetector(
-      onTap: () => _showDayBottomSheet(date, day),
+      onTap: () => setState(() => _selectedDay = date),
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
-            color: isToday
-                ? ColorTokens.primaryDefault.withValues(alpha: 0.15)
-                : ColorTokens.surfaceRaised,
+            color: _heatColor(filledCount),
             borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
             border: Border.all(
-              color: isToday
-                  ? ColorTokens.primaryDefault
-                  : ColorTokens.surfaceBorder,
-              width: isToday ? 2 : 1,
+              color: isSelected
+                  ? ColorTokens.primaryHover
+                  : isToday
+                      ? ColorTokens.primaryDefault
+                      : ColorTokens.surfaceBorder,
+              width: isSelected ? 2.5 : (isToday ? 2 : 1),
             ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (filledCount > 0)
+                Text(
+                  '$filledCount',
+                  style: const TextStyle(
+                    fontSize: TypographyTokens.microSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.primaryDefault,
+                  ),
+                ),
               Text(
                 '${date.day}',
                 style: TextStyle(
@@ -263,26 +343,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       : ColorTokens.textSecondary,
                 ),
               ),
-              if (slotCount > 0)
-                Container(
-                  margin: const EdgeInsets.only(top: 1),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.primaryDefault.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '$slotCount',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: ColorTokens.primaryDefault,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -290,122 +350,232 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  void _showDayBottomSheet(DateTime date, CalendarDay? day) {
+  /// Inline slot panel below the 2-week grid, showing slots for the selected day.
+  Widget _buildInlineSlotPanel(Map<DateTime, CalendarDay> dayMap) {
+    if (_selectedDay == null) {
+      return const SizedBox.shrink();
+    }
+
     final dateLabel =
-        '${_weekdayNames[date.weekday - 1]}, ${_monthNames[date.month - 1]} ${date.day}';
+        '${_weekdayNames[_selectedDay!.weekday - 1]}, ${_monthNames[_selectedDay!.month - 1]} ${_selectedDay!.day}';
+    final selectedDateOnly = DateTime(
+        _selectedDay!.year, _selectedDay!.month, _selectedDay!.day);
+    final day = dayMap[selectedDateOnly];
     final slots = day != null ? parseSlotsFromJson(day.slots) : <Slot>[];
 
-    showModalBottomSheet<void>(
+    // Trigger drill name resolution for filled slots.
+    if (slots.any((s) => s.isFilled)) {
+      _resolveDrillNames(slots);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Day header.
+        Row(
+          children: [
+            Text(
+              dateLabel,
+              style: const TextStyle(
+                fontSize: TypographyTokens.headerSize,
+                fontWeight: TypographyTokens.headerWeight,
+                color: ColorTokens.textPrimary,
+              ),
+            ),
+            if (_selectedDay == _today) ...[
+              const SizedBox(width: SpacingTokens.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.sm,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: ColorTokens.primaryDefault.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Today',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.microSize,
+                    color: ColorTokens.primaryDefault,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            // Navigate to full day detail.
+            if (day != null)
+              GestureDetector(
+                onTap: () => _navigateToDetail(day),
+                child: const Text(
+                  'Edit day',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    color: ColorTokens.primaryDefault,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: SpacingTokens.sm),
+        // Slot list.
+        if (slots.isEmpty)
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'No slots planned',
+                    style: TextStyle(color: ColorTokens.textTertiary),
+                  ),
+                  const SizedBox(height: SpacingTokens.sm),
+                  OutlinedButton(
+                    onPressed: () => _createAndNavigate(_selectedDay!),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColorTokens.primaryDefault,
+                      side:
+                          const BorderSide(color: ColorTokens.primaryDefault),
+                    ),
+                    child: const Text('Tap to plan'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: ListView.separated(
+              itemCount: slots.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: SpacingTokens.xs),
+              itemBuilder: (context, index) {
+                final slot = slots[index];
+                return SlotTile(
+                  slot: slot,
+                  index: index,
+                  drillName: slot.drillId != null
+                      ? _drillNames[slot.drillId]
+                      : null,
+                  onTap: () => _onInlineSlotTap(day!, slots, index),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Handle tap on an inline slot: empty → assign drill, filled → actions sheet.
+  void _onInlineSlotTap(CalendarDay day, List<Slot> slots, int index) {
+    final slot = slots[index];
+    if (slot.isEmpty) {
+      _showDrillAssignDialog(day, index);
+    } else {
+      _showSlotActionsSheet(day, index, slot);
+    }
+  }
+
+  Future<void> _showDrillAssignDialog(CalendarDay day, int index) async {
+    final controller = TextEditingController();
+    final drillId = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Assign drill'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter drill ID',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Assign'),
+          ),
+        ],
+      ),
+    );
+
+    if (drillId != null && drillId.isNotEmpty) {
+      final actions = ref.read(planningActionsProvider);
+      await actions.assignDrillToSlot(
+          _userId, day.date, index, drillId);
+      _computeHeatRange();
+    }
+  }
+
+  void _showSlotActionsSheet(CalendarDay day, int index, Slot slot) {
+    showModalBottomSheet(
       context: context,
       backgroundColor: ColorTokens.surfaceModal,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(ShapeTokens.radiusModal),
-        ),
+            top: Radius.circular(ShapeTokens.radiusModal)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(SpacingTokens.md),
+      builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  dateLabel,
-                  style: const TextStyle(
-                    fontSize: TypographyTokens.headerSize,
-                    fontWeight: TypographyTokens.headerWeight,
-                    color: ColorTokens.textPrimary,
-                  ),
-                ),
-                if (date == _today)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: SpacingTokens.sm,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: ColorTokens.primaryDefault.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'Today',
-                      style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.primaryDefault,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: SpacingTokens.md),
-            // Slot summary.
-            if (slots.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: SpacingTokens.md),
-                child: Text(
-                  'No slots planned',
-                  style: TextStyle(color: ColorTokens.textTertiary),
-                ),
-              )
-            else
-              for (final slot in slots)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-                  child: Row(
-                    children: [
-                      Icon(
-                        slot.isFilled
-                            ? Icons.sports_golf
-                            : Icons.radio_button_unchecked,
-                        size: 16,
-                        color: slot.isFilled
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.textTertiary,
-                      ),
-                      const SizedBox(width: SpacingTokens.sm),
-                      Expanded(
-                        child: Text(
-                          slot.isFilled ? 'Drill assigned' : 'Empty slot',
-                          style: TextStyle(
-                            color: slot.isFilled
-                                ? ColorTokens.textPrimary
-                                : ColorTokens.textTertiary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            const SizedBox(height: SpacingTokens.sm),
-            // Action button.
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  if (day != null) {
-                    _navigateToDetail(day);
-                  } else {
-                    _createAndNavigate(date);
-                  }
+            if (slot.isFilled &&
+                slot.completionState == CompletionState.incomplete)
+              ListTile(
+                leading: const Icon(Icons.check,
+                    color: ColorTokens.successDefault),
+                title: const Text('Mark complete'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _markManualComplete(day.calendarDayId, index);
                 },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ColorTokens.primaryDefault,
-                  side: const BorderSide(color: ColorTokens.primaryDefault),
-                ),
-                child: const Text('View / Edit Day'),
               ),
-            ),
-            const SizedBox(height: SpacingTokens.sm),
+            if (slot.isCompleted)
+              ListTile(
+                leading: const Icon(Icons.undo,
+                    color: ColorTokens.primaryDefault),
+                title: const Text('Revert completion'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _revertCompletion(day.calendarDayId, index);
+                },
+              ),
+            if (slot.isFilled)
+              ListTile(
+                leading: const Icon(Icons.clear,
+                    color: ColorTokens.errorDestructive),
+                title: const Text('Clear slot'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _clearSlot(day.date, index);
+                },
+              ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _markManualComplete(
+      String calendarDayId, int index) async {
+    final actions = ref.read(planningActionsProvider);
+    await actions.markSlotManualComplete(calendarDayId, index);
+  }
+
+  Future<void> _revertCompletion(
+      String calendarDayId, int index) async {
+    final actions = ref.read(planningActionsProvider);
+    await actions.revertSlotCompletion(calendarDayId, index);
+  }
+
+  Future<void> _clearSlot(DateTime date, int index) async {
+    final actions = ref.read(planningActionsProvider);
+    await actions.clearSlot(_userId, date, index);
+    _computeHeatRange();
   }
 
   void _navigateToDetail(CalendarDay day) {
