@@ -7,7 +7,9 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/matrix/screens/matrix_completion_screen.dart';
+import 'package:zx_golf_app/features/matrix/review/chipping_review_screen.dart';
+import 'package:zx_golf_app/features/matrix/review/gapping_review_screen.dart';
+import 'package:zx_golf_app/features/matrix/review/wedge_review_screen.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
 
 /// Phase M8 — Matrix review: run history, distance ladder, snapshot management.
@@ -160,14 +162,18 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
     return GestureDetector(
       onTap: () {
         if (run.runState == RunState.completed) {
+          final Widget screen;
+          switch (run.matrixType) {
+            case MatrixType.gappingChart:
+              screen = GappingReviewScreen(matrixRunId: run.matrixRunId);
+            case MatrixType.wedgeMatrix:
+              screen = WedgeReviewScreen(matrixRunId: run.matrixRunId);
+            case MatrixType.chippingMatrix:
+              screen = ChippingReviewScreen(matrixRunId: run.matrixRunId);
+          }
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => MatrixCompletionScreen(
-                matrixRunId: run.matrixRunId,
-                userId: kDevUserId,
-              ),
-            ),
+            MaterialPageRoute(builder: (_) => screen),
           );
         }
       },
