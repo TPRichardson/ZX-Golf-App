@@ -6,6 +6,7 @@ import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/core/widgets/golf_club_plus_icon.dart';
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -204,6 +205,19 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           onPressed: _goHome,
         ),
         actions: [
+          // Golf Bag button.
+          IconButton(
+            icon: GolfClubPlusIcon(
+              size: 24,
+              clubColor: ColorTokens.textSecondary,
+              plusColor: ColorTokens.primaryDefault,
+            ),
+            tooltip: 'Golf Bag',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BagScreen()),
+            ),
+          ),
           // Sign In prompt when not authenticated.
           if (!isAuthenticated)
             TextButton(
@@ -218,37 +232,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ),
               child: const Text('Sign In'),
             ),
-          // Golf Bag button.
-          IconButton(
-            icon: const SizedBox(
-              width: 24,
-              height: 24,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    Icons.golf_course,
-                    color: ColorTokens.textSecondary,
-                    size: 24,
-                  ),
-                  Positioned(
-                    right: -4,
-                    bottom: -2,
-                    child: Icon(
-                      Icons.add_circle,
-                      color: ColorTokens.primaryDefault,
-                      size: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            tooltip: 'Golf Bag',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const BagScreen()),
-            ),
-          ),
           // Account button — always visible.
           IconButton(
             icon: Icon(
