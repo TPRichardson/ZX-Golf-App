@@ -201,6 +201,19 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             ),
           ),
         ),
+
+        // Bottom bar: Resolution, Range, Chart.
+        AnalysisBottomFilters(
+          resolution: _resolution,
+          dateRange: _dateRange,
+          chartMode: _chartMode,
+          onResolutionChanged: (r) =>
+              _updateFilter(() => _resolution = r),
+          onDateRangeChanged: (dr) =>
+              _updateFilter(() => _dateRange = dr),
+          onChartModeChanged: (cm) =>
+              _updateFilter(() => _chartMode = cm),
+        ),
       ],
     );
   }

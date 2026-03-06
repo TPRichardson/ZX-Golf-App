@@ -4,7 +4,6 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/gapping_execution_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/gapping_setup_screen.dart';
@@ -30,23 +29,13 @@ class TrackTab extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           shape: ZxTabBar.connectedHeaderShape,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.shopping_bag_outlined),
-              tooltip: 'Golf Bag',
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const BagScreen(),
-                ));
-              },
-            ),
-          ],
+          actions: const [],
         ),
         body: const Column(
           children: [
             ZxTabBar(tabs: [
               Tab(text: 'Track Drills'),
-              Tab(text: 'Matrix'),
+              Tab(text: 'Gapping'),
             ]),
             Expanded(
               child: TabBarView(
@@ -181,7 +170,7 @@ class _MatrixTab extends ConsumerWidget {
               _MatrixLaunchCard(
                 icon: Icons.grid_view,
                 title: 'Wedge Matrix',
-                subtitle: 'Club × Effort × Flight — map your wedge system.',
+                subtitle: 'Map your wedges.',
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => WedgeSetupScreen(userId: userId),
                 )),
@@ -190,8 +179,7 @@ class _MatrixTab extends ConsumerWidget {
               _MatrixLaunchCard(
                 icon: Icons.grid_3x3,
                 title: 'Chipping Matrix',
-                subtitle:
-                    'Club × Distance × Flight — dial in short game accuracy.',
+                subtitle: 'Dial in short game accuracy.',
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => ChippingSetupScreen(userId: userId),
                 )),

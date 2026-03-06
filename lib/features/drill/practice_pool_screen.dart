@@ -8,9 +8,8 @@ import 'package:zx_golf_app/data/repositories/drill_repository.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
 
 import '../bag/bag_screen.dart';
+import 'add_drills_screen.dart';
 import 'drill_detail_screen.dart';
-import 'drill_create_screen.dart';
-import 'drill_library_screen.dart';
 import 'widgets/drill_card.dart';
 import 'widgets/skill_area_picker.dart';
 
@@ -152,46 +151,26 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         SpacingTokens.md,
         SpacingTokens.md,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const DrillLibraryScreen(),
-                ));
-              },
-              icon: const Icon(Icons.library_books, size: 18),
-              label: const Text('System Drills'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ColorTokens.primaryDefault,
-                side: const BorderSide(
-                    color: ColorTokens.primaryDefault),
-                padding: const EdgeInsets.symmetric(
-                    vertical: SpacingTokens.sm),
-              ),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const AddDrillsScreen(),
+            ));
+          },
+          icon: const Icon(Icons.add, color: Colors.white, size: 18),
+          label: const Text(
+            'Add drills to your library',
+            style: TextStyle(color: Colors.white),
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: ColorTokens.primaryDefault,
+            padding: const EdgeInsets.symmetric(
+              vertical: SpacingTokens.sm,
             ),
           ),
-          const SizedBox(width: SpacingTokens.sm),
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const DrillCreateScreen(),
-                ));
-              },
-              icon: const Icon(Icons.add, color: Colors.white,
-                  size: 18),
-              label: const Text('Create Drill',
-                  style: TextStyle(color: Colors.white)),
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.primaryDefault,
-                padding: const EdgeInsets.symmetric(
-                    vertical: SpacingTokens.sm),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

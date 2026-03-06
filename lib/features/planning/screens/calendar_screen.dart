@@ -13,7 +13,6 @@ import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 
-import '../../settings/calendar_defaults_screen.dart';
 import '../widgets/adherence_badge.dart';
 import '../widgets/calendar_day_card.dart';
 import '../widgets/slot_tile.dart';
@@ -142,26 +141,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           ),
           child: Row(
             children: [
-              Expanded(
-                child: daysAsync.when(
-                  data: (days) => AdherenceBadge(recentDays: days, repo: repo),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
+              daysAsync.when(
+                data: (days) => AdherenceBadge(recentDays: days, repo: repo),
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
               ),
-              const SizedBox(width: SpacingTokens.sm),
-              // Link to slot capacity settings.
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const CalendarDefaultsScreen(),
-                )),
-                child: const Icon(
-                  Icons.settings,
-                  size: 20,
-                  color: ColorTokens.textSecondary,
-                ),
-              ),
-              const SizedBox(width: SpacingTokens.sm),
+              const Spacer(),
               _ViewToggle(
                 showTwoWeeks: _showTwoWeeks,
                 onChanged: (v) => setState(() => _showTwoWeeks = v),
@@ -391,7 +376,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Day header.
+        // Day header with +/- slot buttons.
         Row(
           children: [
             Text(
@@ -423,6 +408,41 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                 ),
               ),
             ],
+            const Spacer(),
+            // Remove slot button.
+            if (slots.isNotEmpty)
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  iconSize: 20,
+                  icon: const Icon(Icons.remove_circle_outline,
+                      color: ColorTokens.textTertiary),
+                  tooltip: 'Remove slot',
+                  onPressed: () => _removeSlotForDate(_selectedDay!, slots.length),
+                ),
+              ),
+            const Text(
+              'slot',
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                color: ColorTokens.textTertiary,
+              ),
+            ),
+            // Add slot button.
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 20,
+                icon: const Icon(Icons.add_circle_outline,
+                    color: ColorTokens.primaryDefault),
+                tooltip: 'Add slot',
+                onPressed: () => _addSlotForDate(_selectedDay!),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: SpacingTokens.sm),
@@ -569,6 +589,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final actions = ref.read(planningActionsProvider);
     final currentSlots = parseSlotsFromJson(day.slots);
     await actions.updateSlotCapacity(_userId, date, currentSlots.length + 1);
+  }
+
+  /// Remove the last slot from a day (reduce capacity by 1).
+  Future<void> _removeSlotForDate(DateTime date, int currentCount) async {
+    if (currentCount <= 0) return;
+    final actions = ref.read(planningActionsProvider);
+    try {
+      await actions.updateSlotCapacity(_userId, date, currentCount - 1);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
   }
 
   /// Show routine picker bottom sheet, then navigate to RoutineApplyScreen.

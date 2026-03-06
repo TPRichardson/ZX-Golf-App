@@ -193,11 +193,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       },
       child: Scaffold(
       appBar: AppBar(
+        toolbarHeight: 68,
         title: const SizedBox.shrink(),
         backgroundColor: ColorTokens.surfaceBase,
         leading: IconButton(
           icon: Icon(
             Icons.home,
+            size: 32,
             color: showHome
                 ? ColorTokens.primaryDefault
                 : ColorTokens.textSecondary,
@@ -208,7 +210,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           // Golf Bag button.
           IconButton(
             icon: GolfClubPlusIcon(
-              size: 24,
+              size: 32,
               clubColor: ColorTokens.textSecondary,
               plusColor: ColorTokens.primaryDefault,
             ),
@@ -227,15 +229,19 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: ColorTokens.primaryDefault,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.sm,
+                  horizontal: SpacingTokens.xs,
                 ),
               ),
-              child: const Text('Sign In'),
+              child: const Text(
+                'Sign In',
+                style: TextStyle(fontSize: 19),
+              ),
             ),
           // Account button — always visible.
           IconButton(
             icon: Icon(
               Icons.account_circle_outlined,
+              size: 32,
               color: isAuthenticated
                   ? ColorTokens.textSecondary
                   : ColorTokens.textTertiary,

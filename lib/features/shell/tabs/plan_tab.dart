@@ -4,6 +4,7 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/features/planning/screens/calendar_screen.dart';
 import 'package:zx_golf_app/features/planning/screens/routine_list_screen.dart';
 import 'package:zx_golf_app/features/planning/screens/schedule_list_screen.dart';
+import 'package:zx_golf_app/features/settings/settings_screen.dart';
 
 // S08 §8.12.1 — Plan tab: Calendar | Create dual-tab layout.
 
@@ -22,6 +23,20 @@ class PlanTab extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           shape: ZxTabBar.connectedHeaderShape,
+          actions: [
+            IconButton(
+              icon: const Icon(
+                Icons.settings,
+                size: 20,
+                color: ColorTokens.textSecondary,
+              ),
+              tooltip: 'Plan Settings',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) =>
+                    const SettingsScreen(scrollToSection: 'calendar'),
+              )),
+            ),
+          ],
         ),
         body: Column(
           children: const [

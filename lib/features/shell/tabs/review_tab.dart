@@ -5,8 +5,8 @@ import 'package:zx_golf_app/features/review/screens/analysis_screen.dart';
 import 'package:zx_golf_app/features/review/screens/matrix_review_screen.dart';
 import 'package:zx_golf_app/features/review/screens/review_dashboard_screen.dart';
 
-// S12 §12.6 — Review tab: Dashboard | Analysis | Matrices tri-tab layout.
-// Phase M8 — Added Matrices tab for matrix run history and snapshot management.
+// S12 §12.6 — Review tab: Dashboard | Analysis | Gapping tri-tab layout.
+// Phase M8 — Added Gapping tab for matrix run history and snapshot management.
 
 class ReviewTab extends StatelessWidget {
   const ReviewTab({super.key});
@@ -29,8 +29,9 @@ class ReviewTab extends StatelessWidget {
             ZxTabBar(tabs: [
               Tab(text: 'Dashboard'),
               Tab(text: 'Analysis'),
-              Tab(text: 'Matrices'),
+              Tab(text: 'Gapping'),
             ]),
+            SizedBox(height: 8),
             Expanded(
               child: TabBarView(
                 children: [

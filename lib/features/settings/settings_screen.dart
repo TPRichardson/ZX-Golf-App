@@ -11,11 +11,54 @@ import 'calendar_defaults_screen.dart';
 
 // S10 — Settings hub screen. Accessed via gear icon in ShellScreen AppBar.
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+class SettingsScreen extends ConsumerStatefulWidget {
+  /// Optional section key to scroll to and highlight on open.
+  final String? scrollToSection;
+
+  const SettingsScreen({super.key, this.scrollToSection});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final _scrollController = ScrollController();
+  final _calendarKey = GlobalKey();
+  String? _highlightedSection;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollToSection != null) {
+      _highlightedSection = widget.scrollToSection;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSection());
+      // Clear highlight after 2 seconds.
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _highlightedSection = null);
+      });
+    }
+  }
+
+  void _scrollToSection() {
+    final keyMap = {'calendar': _calendarKey};
+    final key = keyMap[widget.scrollToSection];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final prefs = ref.watch(userPreferencesProvider);
     final userAsync = ref.watch(currentUserProvider);
 
@@ -26,6 +69,7 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: ColorTokens.surfacePrimary,
       ),
       body: ListView(
+        controller: _scrollController,
         children: [
           // --- Profile Section ---
           _SectionHeader(title: 'Profile'),
@@ -84,7 +128,11 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // --- Calendar Section ---
-          _SectionHeader(title: 'Calendar'),
+          _SectionHeader(
+            key: _calendarKey,
+            title: 'Calendar',
+            highlighted: _highlightedSection == 'calendar',
+          ),
           _ToggleTile(
             label: 'Week Starts On',
             value: prefs.weekStartDay == 7 ? 'Sunday' : 'Monday',
@@ -333,17 +381,21 @@ class SettingsScreen extends ConsumerWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final bool highlighted;
+  const _SectionHeader({super.key, required this.title, this.highlighted = false});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.fromLTRB(
         SpacingTokens.md,
         SpacingTokens.lg,
         SpacingTokens.md,
         SpacingTokens.sm,
       ),
+      color: highlighted
+          ? ColorTokens.primaryDefault.withValues(alpha: 0.1)
+          : null,
       child: Text(
         title,
         style: TextStyle(
