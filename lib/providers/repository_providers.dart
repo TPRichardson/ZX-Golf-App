@@ -6,6 +6,8 @@ import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
 import 'package:zx_golf_app/data/repositories/club_repository.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
+import 'package:zx_golf_app/data/repositories/matrix_repository.dart';
+import 'package:zx_golf_app/data/repositories/performance_snapshot_repository.dart';
 import 'package:zx_golf_app/data/repositories/reference_repository.dart';
 import 'database_providers.dart';
 import 'scoring_providers.dart';
@@ -77,4 +79,20 @@ final eventLogRepositoryProvider = Provider<EventLogRepository>((ref) {
 
 final referenceRepositoryProvider = Provider<ReferenceRepository>((ref) {
   return ReferenceRepository(ref.watch(databaseProvider));
+});
+
+// Phase M2 — Matrix repositories with SyncWriteGate.
+final matrixRepositoryProvider = Provider<MatrixRepository>((ref) {
+  return MatrixRepository(
+    ref.watch(databaseProvider),
+    ref.watch(syncWriteGateProvider),
+  );
+});
+
+final performanceSnapshotRepositoryProvider =
+    Provider<PerformanceSnapshotRepository>((ref) {
+  return PerformanceSnapshotRepository(
+    ref.watch(databaseProvider),
+    ref.watch(syncWriteGateProvider),
+  );
 });

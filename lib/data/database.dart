@@ -33,6 +33,13 @@ import 'tables/materialised_overall_scores.dart';
 import 'tables/event_logs.dart';
 import 'tables/user_devices.dart';
 import 'tables/user_scoring_locks.dart';
+import 'tables/matrix_runs.dart';
+import 'tables/matrix_axes.dart';
+import 'tables/matrix_axis_values.dart';
+import 'tables/matrix_cells.dart';
+import 'tables/matrix_attempts.dart';
+import 'tables/performance_snapshots.dart';
+import 'tables/snapshot_clubs.dart';
 import 'tables/sync_metadata.dart';
 import 'seed_data.dart';
 
@@ -70,6 +77,14 @@ part 'database.g.dart';
   EventLogs,
   UserDevices,
   UserScoringLocks,
+  // Matrix tables (7) — Matrix §8.3
+  MatrixRuns,
+  MatrixAxes,
+  MatrixAxisValues,
+  MatrixCells,
+  MatrixAttempts,
+  PerformanceSnapshots,
+  SnapshotClubs,
   // Local-only (1)
   SyncMetadataEntries,
 ])
@@ -79,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -101,6 +116,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV2ToV3(m);
               case 3:
                 await _migrateV3ToV4(m);
+              case 4:
+                await _migrateV4ToV5(m);
             }
           }
         },
@@ -119,6 +136,43 @@ class AppDatabase extends _$AppDatabase {
   // 8A — Partial indexes on IsDeleted=false for high-traffic queries.
   Future<void> _migrateV3ToV4(Migrator m) async {
     await _createPartialIndexes();
+  }
+
+  // M1 — Matrix & Gapping System tables (7 new tables + indexes).
+  Future<void> _migrateV4ToV5(Migrator m) async {
+    await m.createTable(matrixRuns);
+    await m.createTable(matrixAxes);
+    await m.createTable(matrixAxisValues);
+    await m.createTable(matrixCells);
+    await m.createTable(matrixAttempts);
+    await m.createTable(performanceSnapshots);
+    await m.createTable(snapshotClubs);
+    await _createMatrixIndexes();
+  }
+
+  /// Matrix FK indexes for query performance.
+  Future<void> _createMatrixIndexes() async {
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_matrix_axis_run_id '
+        'ON MatrixAxis (MatrixRunID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_matrix_axis_value_axis_id '
+        'ON MatrixAxisValue (MatrixAxisID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_matrix_cell_run_id '
+        'ON MatrixCell (MatrixRunID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_matrix_attempt_cell_id '
+        'ON MatrixAttempt (MatrixCellID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_snapshot_club_snapshot_id '
+        'ON SnapshotClub (SnapshotID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_matrix_run_user_id '
+        'ON MatrixRun (UserID)');
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_performance_snapshot_user_id '
+        'ON PerformanceSnapshot (UserID)');
   }
 
   /// Secondary indexes for FK lookup columns. Drift Dart DSL doesn't support
@@ -140,6 +194,7 @@ class AppDatabase extends _$AppDatabase {
         'CREATE INDEX IF NOT EXISTS idx_drill_user_id '
         'ON Drill (UserID)');
     await _createPartialIndexes();
+    await _createMatrixIndexes();
   }
 
   /// 8A — Partial indexes for IsDeleted=false on high-traffic tables.

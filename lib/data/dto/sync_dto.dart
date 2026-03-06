@@ -18,3 +18,11 @@ export 'routine_instance_dto.dart';
 export 'schedule_instance_dto.dart';
 export 'event_log_dto.dart';
 export 'user_device_dto.dart';
+// Phase M3 — Matrix DTOs.
+export 'matrix_run_dto.dart';
+export 'matrix_axis_dto.dart';
+export 'matrix_axis_value_dto.dart';
+export 'matrix_cell_dto.dart';
+export 'matrix_attempt_dto.dart';
+export 'performance_snapshot_dto.dart';
+export 'snapshot_club_dto.dart';

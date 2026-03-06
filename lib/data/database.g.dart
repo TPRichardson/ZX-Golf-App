@@ -13870,6 +13870,4415 @@ class UserScoringLocksCompanion extends UpdateCompanion<UserScoringLock> {
   }
 }
 
+class $MatrixRunsTable extends MatrixRuns
+    with TableInfo<$MatrixRunsTable, MatrixRun> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MatrixRunsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _matrixRunIdMeta = const VerificationMeta(
+    'matrixRunId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixRunId = GeneratedColumn<String>(
+    'MatrixRunID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'UserID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<MatrixType, String> matrixType =
+      GeneratedColumn<String>(
+        'MatrixType',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<MatrixType>($MatrixRunsTable.$convertermatrixType);
+  static const VerificationMeta _runNumberMeta = const VerificationMeta(
+    'runNumber',
+  );
+  @override
+  late final GeneratedColumn<int> runNumber = GeneratedColumn<int>(
+    'RunNumber',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<RunState, String> runState =
+      GeneratedColumn<String>(
+        'RunState',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<RunState>($MatrixRunsTable.$converterrunState);
+  static const VerificationMeta _startTimestampMeta = const VerificationMeta(
+    'startTimestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startTimestamp =
+      GeneratedColumn<DateTime>(
+        'StartTimestamp',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        clientDefault: () => DateTime.now(),
+      );
+  static const VerificationMeta _endTimestampMeta = const VerificationMeta(
+    'endTimestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endTimestamp = GeneratedColumn<DateTime>(
+    'EndTimestamp',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sessionShotTargetMeta = const VerificationMeta(
+    'sessionShotTarget',
+  );
+  @override
+  late final GeneratedColumn<int> sessionShotTarget = GeneratedColumn<int>(
+    'SessionShotTarget',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ShotOrderMode, String>
+  shotOrderMode = GeneratedColumn<String>(
+    'ShotOrderMode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<ShotOrderMode>($MatrixRunsTable.$convertershotOrderMode);
+  static const VerificationMeta _dispersionCaptureEnabledMeta =
+      const VerificationMeta('dispersionCaptureEnabled');
+  @override
+  late final GeneratedColumn<bool> dispersionCaptureEnabled =
+      GeneratedColumn<bool>(
+        'DispersionCaptureEnabled',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("DispersionCaptureEnabled" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _measurementDeviceMeta = const VerificationMeta(
+    'measurementDevice',
+  );
+  @override
+  late final GeneratedColumn<String> measurementDevice =
+      GeneratedColumn<String>(
+        'MeasurementDevice',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  late final GeneratedColumnWithTypeConverter<EnvironmentType?, String>
+  environmentType =
+      GeneratedColumn<String>(
+        'EnvironmentType',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<EnvironmentType?>(
+        $MatrixRunsTable.$converterenvironmentTypen,
+      );
+  @override
+  late final GeneratedColumnWithTypeConverter<SurfaceType?, String>
+  surfaceType = GeneratedColumn<String>(
+    'SurfaceType',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<SurfaceType?>($MatrixRunsTable.$convertersurfaceTypen);
+  static const VerificationMeta _greenSpeedMeta = const VerificationMeta(
+    'greenSpeed',
+  );
+  @override
+  late final GeneratedColumn<double> greenSpeed = GeneratedColumn<double>(
+    'GreenSpeed',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<GreenFirmness?, String>
+  greenFirmness = GeneratedColumn<String>(
+    'GreenFirmness',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<GreenFirmness?>($MatrixRunsTable.$convertergreenFirmnessn);
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'IsDeleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("IsDeleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    matrixRunId,
+    userId,
+    matrixType,
+    runNumber,
+    runState,
+    startTimestamp,
+    endTimestamp,
+    sessionShotTarget,
+    shotOrderMode,
+    dispersionCaptureEnabled,
+    measurementDevice,
+    environmentType,
+    surfaceType,
+    greenSpeed,
+    greenFirmness,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'MatrixRun';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MatrixRun> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('MatrixRunID')) {
+      context.handle(
+        _matrixRunIdMeta,
+        matrixRunId.isAcceptableOrUnknown(
+          data['MatrixRunID']!,
+          _matrixRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixRunIdMeta);
+    }
+    if (data.containsKey('UserID')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['UserID']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('RunNumber')) {
+      context.handle(
+        _runNumberMeta,
+        runNumber.isAcceptableOrUnknown(data['RunNumber']!, _runNumberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_runNumberMeta);
+    }
+    if (data.containsKey('StartTimestamp')) {
+      context.handle(
+        _startTimestampMeta,
+        startTimestamp.isAcceptableOrUnknown(
+          data['StartTimestamp']!,
+          _startTimestampMeta,
+        ),
+      );
+    }
+    if (data.containsKey('EndTimestamp')) {
+      context.handle(
+        _endTimestampMeta,
+        endTimestamp.isAcceptableOrUnknown(
+          data['EndTimestamp']!,
+          _endTimestampMeta,
+        ),
+      );
+    }
+    if (data.containsKey('SessionShotTarget')) {
+      context.handle(
+        _sessionShotTargetMeta,
+        sessionShotTarget.isAcceptableOrUnknown(
+          data['SessionShotTarget']!,
+          _sessionShotTargetMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionShotTargetMeta);
+    }
+    if (data.containsKey('DispersionCaptureEnabled')) {
+      context.handle(
+        _dispersionCaptureEnabledMeta,
+        dispersionCaptureEnabled.isAcceptableOrUnknown(
+          data['DispersionCaptureEnabled']!,
+          _dispersionCaptureEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('MeasurementDevice')) {
+      context.handle(
+        _measurementDeviceMeta,
+        measurementDevice.isAcceptableOrUnknown(
+          data['MeasurementDevice']!,
+          _measurementDeviceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('GreenSpeed')) {
+      context.handle(
+        _greenSpeedMeta,
+        greenSpeed.isAcceptableOrUnknown(data['GreenSpeed']!, _greenSpeedMeta),
+      );
+    }
+    if (data.containsKey('IsDeleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['IsDeleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {matrixRunId};
+  @override
+  MatrixRun map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MatrixRun(
+      matrixRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixRunID'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}UserID'],
+      )!,
+      matrixType: $MatrixRunsTable.$convertermatrixType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}MatrixType'],
+        )!,
+      ),
+      runNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}RunNumber'],
+      )!,
+      runState: $MatrixRunsTable.$converterrunState.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}RunState'],
+        )!,
+      ),
+      startTimestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}StartTimestamp'],
+      )!,
+      endTimestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}EndTimestamp'],
+      ),
+      sessionShotTarget: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}SessionShotTarget'],
+      )!,
+      shotOrderMode: $MatrixRunsTable.$convertershotOrderMode.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}ShotOrderMode'],
+        )!,
+      ),
+      dispersionCaptureEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}DispersionCaptureEnabled'],
+      )!,
+      measurementDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MeasurementDevice'],
+      ),
+      environmentType: $MatrixRunsTable.$converterenvironmentTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}EnvironmentType'],
+        ),
+      ),
+      surfaceType: $MatrixRunsTable.$convertersurfaceTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}SurfaceType'],
+        ),
+      ),
+      greenSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}GreenSpeed'],
+      ),
+      greenFirmness: $MatrixRunsTable.$convertergreenFirmnessn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}GreenFirmness'],
+        ),
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}IsDeleted'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $MatrixRunsTable createAlias(String alias) {
+    return $MatrixRunsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<MatrixType, String> $convertermatrixType =
+      const MatrixTypeConverter();
+  static TypeConverter<RunState, String> $converterrunState =
+      const RunStateConverter();
+  static TypeConverter<ShotOrderMode, String> $convertershotOrderMode =
+      const ShotOrderModeConverter();
+  static TypeConverter<EnvironmentType, String> $converterenvironmentType =
+      const EnvironmentTypeConverter();
+  static TypeConverter<EnvironmentType?, String?> $converterenvironmentTypen =
+      NullAwareTypeConverter.wrap($converterenvironmentType);
+  static TypeConverter<SurfaceType, String> $convertersurfaceType =
+      const SurfaceTypeConverter();
+  static TypeConverter<SurfaceType?, String?> $convertersurfaceTypen =
+      NullAwareTypeConverter.wrap($convertersurfaceType);
+  static TypeConverter<GreenFirmness, String> $convertergreenFirmness =
+      const GreenFirmnessConverter();
+  static TypeConverter<GreenFirmness?, String?> $convertergreenFirmnessn =
+      NullAwareTypeConverter.wrap($convertergreenFirmness);
+}
+
+class MatrixRun extends DataClass implements Insertable<MatrixRun> {
+  final String matrixRunId;
+  final String userId;
+  final MatrixType matrixType;
+  final int runNumber;
+  final RunState runState;
+  final DateTime startTimestamp;
+  final DateTime? endTimestamp;
+  final int sessionShotTarget;
+  final ShotOrderMode shotOrderMode;
+  final bool dispersionCaptureEnabled;
+  final String? measurementDevice;
+  final EnvironmentType? environmentType;
+  final SurfaceType? surfaceType;
+  final double? greenSpeed;
+  final GreenFirmness? greenFirmness;
+  final bool isDeleted;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const MatrixRun({
+    required this.matrixRunId,
+    required this.userId,
+    required this.matrixType,
+    required this.runNumber,
+    required this.runState,
+    required this.startTimestamp,
+    this.endTimestamp,
+    required this.sessionShotTarget,
+    required this.shotOrderMode,
+    required this.dispersionCaptureEnabled,
+    this.measurementDevice,
+    this.environmentType,
+    this.surfaceType,
+    this.greenSpeed,
+    this.greenFirmness,
+    required this.isDeleted,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['MatrixRunID'] = Variable<String>(matrixRunId);
+    map['UserID'] = Variable<String>(userId);
+    {
+      map['MatrixType'] = Variable<String>(
+        $MatrixRunsTable.$convertermatrixType.toSql(matrixType),
+      );
+    }
+    map['RunNumber'] = Variable<int>(runNumber);
+    {
+      map['RunState'] = Variable<String>(
+        $MatrixRunsTable.$converterrunState.toSql(runState),
+      );
+    }
+    map['StartTimestamp'] = Variable<DateTime>(startTimestamp);
+    if (!nullToAbsent || endTimestamp != null) {
+      map['EndTimestamp'] = Variable<DateTime>(endTimestamp);
+    }
+    map['SessionShotTarget'] = Variable<int>(sessionShotTarget);
+    {
+      map['ShotOrderMode'] = Variable<String>(
+        $MatrixRunsTable.$convertershotOrderMode.toSql(shotOrderMode),
+      );
+    }
+    map['DispersionCaptureEnabled'] = Variable<bool>(dispersionCaptureEnabled);
+    if (!nullToAbsent || measurementDevice != null) {
+      map['MeasurementDevice'] = Variable<String>(measurementDevice);
+    }
+    if (!nullToAbsent || environmentType != null) {
+      map['EnvironmentType'] = Variable<String>(
+        $MatrixRunsTable.$converterenvironmentTypen.toSql(environmentType),
+      );
+    }
+    if (!nullToAbsent || surfaceType != null) {
+      map['SurfaceType'] = Variable<String>(
+        $MatrixRunsTable.$convertersurfaceTypen.toSql(surfaceType),
+      );
+    }
+    if (!nullToAbsent || greenSpeed != null) {
+      map['GreenSpeed'] = Variable<double>(greenSpeed);
+    }
+    if (!nullToAbsent || greenFirmness != null) {
+      map['GreenFirmness'] = Variable<String>(
+        $MatrixRunsTable.$convertergreenFirmnessn.toSql(greenFirmness),
+      );
+    }
+    map['IsDeleted'] = Variable<bool>(isDeleted);
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MatrixRunsCompanion toCompanion(bool nullToAbsent) {
+    return MatrixRunsCompanion(
+      matrixRunId: Value(matrixRunId),
+      userId: Value(userId),
+      matrixType: Value(matrixType),
+      runNumber: Value(runNumber),
+      runState: Value(runState),
+      startTimestamp: Value(startTimestamp),
+      endTimestamp: endTimestamp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endTimestamp),
+      sessionShotTarget: Value(sessionShotTarget),
+      shotOrderMode: Value(shotOrderMode),
+      dispersionCaptureEnabled: Value(dispersionCaptureEnabled),
+      measurementDevice: measurementDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(measurementDevice),
+      environmentType: environmentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(environmentType),
+      surfaceType: surfaceType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(surfaceType),
+      greenSpeed: greenSpeed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(greenSpeed),
+      greenFirmness: greenFirmness == null && nullToAbsent
+          ? const Value.absent()
+          : Value(greenFirmness),
+      isDeleted: Value(isDeleted),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MatrixRun.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MatrixRun(
+      matrixRunId: serializer.fromJson<String>(json['matrixRunId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      matrixType: serializer.fromJson<MatrixType>(json['matrixType']),
+      runNumber: serializer.fromJson<int>(json['runNumber']),
+      runState: serializer.fromJson<RunState>(json['runState']),
+      startTimestamp: serializer.fromJson<DateTime>(json['startTimestamp']),
+      endTimestamp: serializer.fromJson<DateTime?>(json['endTimestamp']),
+      sessionShotTarget: serializer.fromJson<int>(json['sessionShotTarget']),
+      shotOrderMode: serializer.fromJson<ShotOrderMode>(json['shotOrderMode']),
+      dispersionCaptureEnabled: serializer.fromJson<bool>(
+        json['dispersionCaptureEnabled'],
+      ),
+      measurementDevice: serializer.fromJson<String?>(
+        json['measurementDevice'],
+      ),
+      environmentType: serializer.fromJson<EnvironmentType?>(
+        json['environmentType'],
+      ),
+      surfaceType: serializer.fromJson<SurfaceType?>(json['surfaceType']),
+      greenSpeed: serializer.fromJson<double?>(json['greenSpeed']),
+      greenFirmness: serializer.fromJson<GreenFirmness?>(json['greenFirmness']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'matrixRunId': serializer.toJson<String>(matrixRunId),
+      'userId': serializer.toJson<String>(userId),
+      'matrixType': serializer.toJson<MatrixType>(matrixType),
+      'runNumber': serializer.toJson<int>(runNumber),
+      'runState': serializer.toJson<RunState>(runState),
+      'startTimestamp': serializer.toJson<DateTime>(startTimestamp),
+      'endTimestamp': serializer.toJson<DateTime?>(endTimestamp),
+      'sessionShotTarget': serializer.toJson<int>(sessionShotTarget),
+      'shotOrderMode': serializer.toJson<ShotOrderMode>(shotOrderMode),
+      'dispersionCaptureEnabled': serializer.toJson<bool>(
+        dispersionCaptureEnabled,
+      ),
+      'measurementDevice': serializer.toJson<String?>(measurementDevice),
+      'environmentType': serializer.toJson<EnvironmentType?>(environmentType),
+      'surfaceType': serializer.toJson<SurfaceType?>(surfaceType),
+      'greenSpeed': serializer.toJson<double?>(greenSpeed),
+      'greenFirmness': serializer.toJson<GreenFirmness?>(greenFirmness),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MatrixRun copyWith({
+    String? matrixRunId,
+    String? userId,
+    MatrixType? matrixType,
+    int? runNumber,
+    RunState? runState,
+    DateTime? startTimestamp,
+    Value<DateTime?> endTimestamp = const Value.absent(),
+    int? sessionShotTarget,
+    ShotOrderMode? shotOrderMode,
+    bool? dispersionCaptureEnabled,
+    Value<String?> measurementDevice = const Value.absent(),
+    Value<EnvironmentType?> environmentType = const Value.absent(),
+    Value<SurfaceType?> surfaceType = const Value.absent(),
+    Value<double?> greenSpeed = const Value.absent(),
+    Value<GreenFirmness?> greenFirmness = const Value.absent(),
+    bool? isDeleted,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => MatrixRun(
+    matrixRunId: matrixRunId ?? this.matrixRunId,
+    userId: userId ?? this.userId,
+    matrixType: matrixType ?? this.matrixType,
+    runNumber: runNumber ?? this.runNumber,
+    runState: runState ?? this.runState,
+    startTimestamp: startTimestamp ?? this.startTimestamp,
+    endTimestamp: endTimestamp.present ? endTimestamp.value : this.endTimestamp,
+    sessionShotTarget: sessionShotTarget ?? this.sessionShotTarget,
+    shotOrderMode: shotOrderMode ?? this.shotOrderMode,
+    dispersionCaptureEnabled:
+        dispersionCaptureEnabled ?? this.dispersionCaptureEnabled,
+    measurementDevice: measurementDevice.present
+        ? measurementDevice.value
+        : this.measurementDevice,
+    environmentType: environmentType.present
+        ? environmentType.value
+        : this.environmentType,
+    surfaceType: surfaceType.present ? surfaceType.value : this.surfaceType,
+    greenSpeed: greenSpeed.present ? greenSpeed.value : this.greenSpeed,
+    greenFirmness: greenFirmness.present
+        ? greenFirmness.value
+        : this.greenFirmness,
+    isDeleted: isDeleted ?? this.isDeleted,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MatrixRun copyWithCompanion(MatrixRunsCompanion data) {
+    return MatrixRun(
+      matrixRunId: data.matrixRunId.present
+          ? data.matrixRunId.value
+          : this.matrixRunId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      matrixType: data.matrixType.present
+          ? data.matrixType.value
+          : this.matrixType,
+      runNumber: data.runNumber.present ? data.runNumber.value : this.runNumber,
+      runState: data.runState.present ? data.runState.value : this.runState,
+      startTimestamp: data.startTimestamp.present
+          ? data.startTimestamp.value
+          : this.startTimestamp,
+      endTimestamp: data.endTimestamp.present
+          ? data.endTimestamp.value
+          : this.endTimestamp,
+      sessionShotTarget: data.sessionShotTarget.present
+          ? data.sessionShotTarget.value
+          : this.sessionShotTarget,
+      shotOrderMode: data.shotOrderMode.present
+          ? data.shotOrderMode.value
+          : this.shotOrderMode,
+      dispersionCaptureEnabled: data.dispersionCaptureEnabled.present
+          ? data.dispersionCaptureEnabled.value
+          : this.dispersionCaptureEnabled,
+      measurementDevice: data.measurementDevice.present
+          ? data.measurementDevice.value
+          : this.measurementDevice,
+      environmentType: data.environmentType.present
+          ? data.environmentType.value
+          : this.environmentType,
+      surfaceType: data.surfaceType.present
+          ? data.surfaceType.value
+          : this.surfaceType,
+      greenSpeed: data.greenSpeed.present
+          ? data.greenSpeed.value
+          : this.greenSpeed,
+      greenFirmness: data.greenFirmness.present
+          ? data.greenFirmness.value
+          : this.greenFirmness,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixRun(')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('userId: $userId, ')
+          ..write('matrixType: $matrixType, ')
+          ..write('runNumber: $runNumber, ')
+          ..write('runState: $runState, ')
+          ..write('startTimestamp: $startTimestamp, ')
+          ..write('endTimestamp: $endTimestamp, ')
+          ..write('sessionShotTarget: $sessionShotTarget, ')
+          ..write('shotOrderMode: $shotOrderMode, ')
+          ..write('dispersionCaptureEnabled: $dispersionCaptureEnabled, ')
+          ..write('measurementDevice: $measurementDevice, ')
+          ..write('environmentType: $environmentType, ')
+          ..write('surfaceType: $surfaceType, ')
+          ..write('greenSpeed: $greenSpeed, ')
+          ..write('greenFirmness: $greenFirmness, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    matrixRunId,
+    userId,
+    matrixType,
+    runNumber,
+    runState,
+    startTimestamp,
+    endTimestamp,
+    sessionShotTarget,
+    shotOrderMode,
+    dispersionCaptureEnabled,
+    measurementDevice,
+    environmentType,
+    surfaceType,
+    greenSpeed,
+    greenFirmness,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MatrixRun &&
+          other.matrixRunId == this.matrixRunId &&
+          other.userId == this.userId &&
+          other.matrixType == this.matrixType &&
+          other.runNumber == this.runNumber &&
+          other.runState == this.runState &&
+          other.startTimestamp == this.startTimestamp &&
+          other.endTimestamp == this.endTimestamp &&
+          other.sessionShotTarget == this.sessionShotTarget &&
+          other.shotOrderMode == this.shotOrderMode &&
+          other.dispersionCaptureEnabled == this.dispersionCaptureEnabled &&
+          other.measurementDevice == this.measurementDevice &&
+          other.environmentType == this.environmentType &&
+          other.surfaceType == this.surfaceType &&
+          other.greenSpeed == this.greenSpeed &&
+          other.greenFirmness == this.greenFirmness &&
+          other.isDeleted == this.isDeleted &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MatrixRunsCompanion extends UpdateCompanion<MatrixRun> {
+  final Value<String> matrixRunId;
+  final Value<String> userId;
+  final Value<MatrixType> matrixType;
+  final Value<int> runNumber;
+  final Value<RunState> runState;
+  final Value<DateTime> startTimestamp;
+  final Value<DateTime?> endTimestamp;
+  final Value<int> sessionShotTarget;
+  final Value<ShotOrderMode> shotOrderMode;
+  final Value<bool> dispersionCaptureEnabled;
+  final Value<String?> measurementDevice;
+  final Value<EnvironmentType?> environmentType;
+  final Value<SurfaceType?> surfaceType;
+  final Value<double?> greenSpeed;
+  final Value<GreenFirmness?> greenFirmness;
+  final Value<bool> isDeleted;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MatrixRunsCompanion({
+    this.matrixRunId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.matrixType = const Value.absent(),
+    this.runNumber = const Value.absent(),
+    this.runState = const Value.absent(),
+    this.startTimestamp = const Value.absent(),
+    this.endTimestamp = const Value.absent(),
+    this.sessionShotTarget = const Value.absent(),
+    this.shotOrderMode = const Value.absent(),
+    this.dispersionCaptureEnabled = const Value.absent(),
+    this.measurementDevice = const Value.absent(),
+    this.environmentType = const Value.absent(),
+    this.surfaceType = const Value.absent(),
+    this.greenSpeed = const Value.absent(),
+    this.greenFirmness = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MatrixRunsCompanion.insert({
+    required String matrixRunId,
+    required String userId,
+    required MatrixType matrixType,
+    required int runNumber,
+    required RunState runState,
+    this.startTimestamp = const Value.absent(),
+    this.endTimestamp = const Value.absent(),
+    required int sessionShotTarget,
+    required ShotOrderMode shotOrderMode,
+    this.dispersionCaptureEnabled = const Value.absent(),
+    this.measurementDevice = const Value.absent(),
+    this.environmentType = const Value.absent(),
+    this.surfaceType = const Value.absent(),
+    this.greenSpeed = const Value.absent(),
+    this.greenFirmness = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : matrixRunId = Value(matrixRunId),
+       userId = Value(userId),
+       matrixType = Value(matrixType),
+       runNumber = Value(runNumber),
+       runState = Value(runState),
+       sessionShotTarget = Value(sessionShotTarget),
+       shotOrderMode = Value(shotOrderMode);
+  static Insertable<MatrixRun> custom({
+    Expression<String>? matrixRunId,
+    Expression<String>? userId,
+    Expression<String>? matrixType,
+    Expression<int>? runNumber,
+    Expression<String>? runState,
+    Expression<DateTime>? startTimestamp,
+    Expression<DateTime>? endTimestamp,
+    Expression<int>? sessionShotTarget,
+    Expression<String>? shotOrderMode,
+    Expression<bool>? dispersionCaptureEnabled,
+    Expression<String>? measurementDevice,
+    Expression<String>? environmentType,
+    Expression<String>? surfaceType,
+    Expression<double>? greenSpeed,
+    Expression<String>? greenFirmness,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (matrixRunId != null) 'MatrixRunID': matrixRunId,
+      if (userId != null) 'UserID': userId,
+      if (matrixType != null) 'MatrixType': matrixType,
+      if (runNumber != null) 'RunNumber': runNumber,
+      if (runState != null) 'RunState': runState,
+      if (startTimestamp != null) 'StartTimestamp': startTimestamp,
+      if (endTimestamp != null) 'EndTimestamp': endTimestamp,
+      if (sessionShotTarget != null) 'SessionShotTarget': sessionShotTarget,
+      if (shotOrderMode != null) 'ShotOrderMode': shotOrderMode,
+      if (dispersionCaptureEnabled != null)
+        'DispersionCaptureEnabled': dispersionCaptureEnabled,
+      if (measurementDevice != null) 'MeasurementDevice': measurementDevice,
+      if (environmentType != null) 'EnvironmentType': environmentType,
+      if (surfaceType != null) 'SurfaceType': surfaceType,
+      if (greenSpeed != null) 'GreenSpeed': greenSpeed,
+      if (greenFirmness != null) 'GreenFirmness': greenFirmness,
+      if (isDeleted != null) 'IsDeleted': isDeleted,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MatrixRunsCompanion copyWith({
+    Value<String>? matrixRunId,
+    Value<String>? userId,
+    Value<MatrixType>? matrixType,
+    Value<int>? runNumber,
+    Value<RunState>? runState,
+    Value<DateTime>? startTimestamp,
+    Value<DateTime?>? endTimestamp,
+    Value<int>? sessionShotTarget,
+    Value<ShotOrderMode>? shotOrderMode,
+    Value<bool>? dispersionCaptureEnabled,
+    Value<String?>? measurementDevice,
+    Value<EnvironmentType?>? environmentType,
+    Value<SurfaceType?>? surfaceType,
+    Value<double?>? greenSpeed,
+    Value<GreenFirmness?>? greenFirmness,
+    Value<bool>? isDeleted,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MatrixRunsCompanion(
+      matrixRunId: matrixRunId ?? this.matrixRunId,
+      userId: userId ?? this.userId,
+      matrixType: matrixType ?? this.matrixType,
+      runNumber: runNumber ?? this.runNumber,
+      runState: runState ?? this.runState,
+      startTimestamp: startTimestamp ?? this.startTimestamp,
+      endTimestamp: endTimestamp ?? this.endTimestamp,
+      sessionShotTarget: sessionShotTarget ?? this.sessionShotTarget,
+      shotOrderMode: shotOrderMode ?? this.shotOrderMode,
+      dispersionCaptureEnabled:
+          dispersionCaptureEnabled ?? this.dispersionCaptureEnabled,
+      measurementDevice: measurementDevice ?? this.measurementDevice,
+      environmentType: environmentType ?? this.environmentType,
+      surfaceType: surfaceType ?? this.surfaceType,
+      greenSpeed: greenSpeed ?? this.greenSpeed,
+      greenFirmness: greenFirmness ?? this.greenFirmness,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (matrixRunId.present) {
+      map['MatrixRunID'] = Variable<String>(matrixRunId.value);
+    }
+    if (userId.present) {
+      map['UserID'] = Variable<String>(userId.value);
+    }
+    if (matrixType.present) {
+      map['MatrixType'] = Variable<String>(
+        $MatrixRunsTable.$convertermatrixType.toSql(matrixType.value),
+      );
+    }
+    if (runNumber.present) {
+      map['RunNumber'] = Variable<int>(runNumber.value);
+    }
+    if (runState.present) {
+      map['RunState'] = Variable<String>(
+        $MatrixRunsTable.$converterrunState.toSql(runState.value),
+      );
+    }
+    if (startTimestamp.present) {
+      map['StartTimestamp'] = Variable<DateTime>(startTimestamp.value);
+    }
+    if (endTimestamp.present) {
+      map['EndTimestamp'] = Variable<DateTime>(endTimestamp.value);
+    }
+    if (sessionShotTarget.present) {
+      map['SessionShotTarget'] = Variable<int>(sessionShotTarget.value);
+    }
+    if (shotOrderMode.present) {
+      map['ShotOrderMode'] = Variable<String>(
+        $MatrixRunsTable.$convertershotOrderMode.toSql(shotOrderMode.value),
+      );
+    }
+    if (dispersionCaptureEnabled.present) {
+      map['DispersionCaptureEnabled'] = Variable<bool>(
+        dispersionCaptureEnabled.value,
+      );
+    }
+    if (measurementDevice.present) {
+      map['MeasurementDevice'] = Variable<String>(measurementDevice.value);
+    }
+    if (environmentType.present) {
+      map['EnvironmentType'] = Variable<String>(
+        $MatrixRunsTable.$converterenvironmentTypen.toSql(
+          environmentType.value,
+        ),
+      );
+    }
+    if (surfaceType.present) {
+      map['SurfaceType'] = Variable<String>(
+        $MatrixRunsTable.$convertersurfaceTypen.toSql(surfaceType.value),
+      );
+    }
+    if (greenSpeed.present) {
+      map['GreenSpeed'] = Variable<double>(greenSpeed.value);
+    }
+    if (greenFirmness.present) {
+      map['GreenFirmness'] = Variable<String>(
+        $MatrixRunsTable.$convertergreenFirmnessn.toSql(greenFirmness.value),
+      );
+    }
+    if (isDeleted.present) {
+      map['IsDeleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixRunsCompanion(')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('userId: $userId, ')
+          ..write('matrixType: $matrixType, ')
+          ..write('runNumber: $runNumber, ')
+          ..write('runState: $runState, ')
+          ..write('startTimestamp: $startTimestamp, ')
+          ..write('endTimestamp: $endTimestamp, ')
+          ..write('sessionShotTarget: $sessionShotTarget, ')
+          ..write('shotOrderMode: $shotOrderMode, ')
+          ..write('dispersionCaptureEnabled: $dispersionCaptureEnabled, ')
+          ..write('measurementDevice: $measurementDevice, ')
+          ..write('environmentType: $environmentType, ')
+          ..write('surfaceType: $surfaceType, ')
+          ..write('greenSpeed: $greenSpeed, ')
+          ..write('greenFirmness: $greenFirmness, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MatrixAxesTable extends MatrixAxes
+    with TableInfo<$MatrixAxesTable, MatrixAxis> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MatrixAxesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _matrixAxisIdMeta = const VerificationMeta(
+    'matrixAxisId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixAxisId = GeneratedColumn<String>(
+    'MatrixAxisID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _matrixRunIdMeta = const VerificationMeta(
+    'matrixRunId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixRunId = GeneratedColumn<String>(
+    'MatrixRunID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<AxisType, String> axisType =
+      GeneratedColumn<String>(
+        'AxisType',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<AxisType>($MatrixAxesTable.$converteraxisType);
+  static const VerificationMeta _axisNameMeta = const VerificationMeta(
+    'axisName',
+  );
+  @override
+  late final GeneratedColumn<String> axisName = GeneratedColumn<String>(
+    'AxisName',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _axisOrderMeta = const VerificationMeta(
+    'axisOrder',
+  );
+  @override
+  late final GeneratedColumn<int> axisOrder = GeneratedColumn<int>(
+    'AxisOrder',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    matrixAxisId,
+    matrixRunId,
+    axisType,
+    axisName,
+    axisOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'MatrixAxis';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MatrixAxis> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('MatrixAxisID')) {
+      context.handle(
+        _matrixAxisIdMeta,
+        matrixAxisId.isAcceptableOrUnknown(
+          data['MatrixAxisID']!,
+          _matrixAxisIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixAxisIdMeta);
+    }
+    if (data.containsKey('MatrixRunID')) {
+      context.handle(
+        _matrixRunIdMeta,
+        matrixRunId.isAcceptableOrUnknown(
+          data['MatrixRunID']!,
+          _matrixRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixRunIdMeta);
+    }
+    if (data.containsKey('AxisName')) {
+      context.handle(
+        _axisNameMeta,
+        axisName.isAcceptableOrUnknown(data['AxisName']!, _axisNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_axisNameMeta);
+    }
+    if (data.containsKey('AxisOrder')) {
+      context.handle(
+        _axisOrderMeta,
+        axisOrder.isAcceptableOrUnknown(data['AxisOrder']!, _axisOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_axisOrderMeta);
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {matrixAxisId};
+  @override
+  MatrixAxis map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MatrixAxis(
+      matrixAxisId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixAxisID'],
+      )!,
+      matrixRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixRunID'],
+      )!,
+      axisType: $MatrixAxesTable.$converteraxisType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}AxisType'],
+        )!,
+      ),
+      axisName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}AxisName'],
+      )!,
+      axisOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}AxisOrder'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $MatrixAxesTable createAlias(String alias) {
+    return $MatrixAxesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<AxisType, String> $converteraxisType =
+      const AxisTypeConverter();
+}
+
+class MatrixAxis extends DataClass implements Insertable<MatrixAxis> {
+  final String matrixAxisId;
+  final String matrixRunId;
+  final AxisType axisType;
+  final String axisName;
+  final int axisOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const MatrixAxis({
+    required this.matrixAxisId,
+    required this.matrixRunId,
+    required this.axisType,
+    required this.axisName,
+    required this.axisOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['MatrixAxisID'] = Variable<String>(matrixAxisId);
+    map['MatrixRunID'] = Variable<String>(matrixRunId);
+    {
+      map['AxisType'] = Variable<String>(
+        $MatrixAxesTable.$converteraxisType.toSql(axisType),
+      );
+    }
+    map['AxisName'] = Variable<String>(axisName);
+    map['AxisOrder'] = Variable<int>(axisOrder);
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MatrixAxesCompanion toCompanion(bool nullToAbsent) {
+    return MatrixAxesCompanion(
+      matrixAxisId: Value(matrixAxisId),
+      matrixRunId: Value(matrixRunId),
+      axisType: Value(axisType),
+      axisName: Value(axisName),
+      axisOrder: Value(axisOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MatrixAxis.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MatrixAxis(
+      matrixAxisId: serializer.fromJson<String>(json['matrixAxisId']),
+      matrixRunId: serializer.fromJson<String>(json['matrixRunId']),
+      axisType: serializer.fromJson<AxisType>(json['axisType']),
+      axisName: serializer.fromJson<String>(json['axisName']),
+      axisOrder: serializer.fromJson<int>(json['axisOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'matrixAxisId': serializer.toJson<String>(matrixAxisId),
+      'matrixRunId': serializer.toJson<String>(matrixRunId),
+      'axisType': serializer.toJson<AxisType>(axisType),
+      'axisName': serializer.toJson<String>(axisName),
+      'axisOrder': serializer.toJson<int>(axisOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MatrixAxis copyWith({
+    String? matrixAxisId,
+    String? matrixRunId,
+    AxisType? axisType,
+    String? axisName,
+    int? axisOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => MatrixAxis(
+    matrixAxisId: matrixAxisId ?? this.matrixAxisId,
+    matrixRunId: matrixRunId ?? this.matrixRunId,
+    axisType: axisType ?? this.axisType,
+    axisName: axisName ?? this.axisName,
+    axisOrder: axisOrder ?? this.axisOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MatrixAxis copyWithCompanion(MatrixAxesCompanion data) {
+    return MatrixAxis(
+      matrixAxisId: data.matrixAxisId.present
+          ? data.matrixAxisId.value
+          : this.matrixAxisId,
+      matrixRunId: data.matrixRunId.present
+          ? data.matrixRunId.value
+          : this.matrixRunId,
+      axisType: data.axisType.present ? data.axisType.value : this.axisType,
+      axisName: data.axisName.present ? data.axisName.value : this.axisName,
+      axisOrder: data.axisOrder.present ? data.axisOrder.value : this.axisOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixAxis(')
+          ..write('matrixAxisId: $matrixAxisId, ')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('axisType: $axisType, ')
+          ..write('axisName: $axisName, ')
+          ..write('axisOrder: $axisOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    matrixAxisId,
+    matrixRunId,
+    axisType,
+    axisName,
+    axisOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MatrixAxis &&
+          other.matrixAxisId == this.matrixAxisId &&
+          other.matrixRunId == this.matrixRunId &&
+          other.axisType == this.axisType &&
+          other.axisName == this.axisName &&
+          other.axisOrder == this.axisOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MatrixAxesCompanion extends UpdateCompanion<MatrixAxis> {
+  final Value<String> matrixAxisId;
+  final Value<String> matrixRunId;
+  final Value<AxisType> axisType;
+  final Value<String> axisName;
+  final Value<int> axisOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MatrixAxesCompanion({
+    this.matrixAxisId = const Value.absent(),
+    this.matrixRunId = const Value.absent(),
+    this.axisType = const Value.absent(),
+    this.axisName = const Value.absent(),
+    this.axisOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MatrixAxesCompanion.insert({
+    required String matrixAxisId,
+    required String matrixRunId,
+    required AxisType axisType,
+    required String axisName,
+    required int axisOrder,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : matrixAxisId = Value(matrixAxisId),
+       matrixRunId = Value(matrixRunId),
+       axisType = Value(axisType),
+       axisName = Value(axisName),
+       axisOrder = Value(axisOrder);
+  static Insertable<MatrixAxis> custom({
+    Expression<String>? matrixAxisId,
+    Expression<String>? matrixRunId,
+    Expression<String>? axisType,
+    Expression<String>? axisName,
+    Expression<int>? axisOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (matrixAxisId != null) 'MatrixAxisID': matrixAxisId,
+      if (matrixRunId != null) 'MatrixRunID': matrixRunId,
+      if (axisType != null) 'AxisType': axisType,
+      if (axisName != null) 'AxisName': axisName,
+      if (axisOrder != null) 'AxisOrder': axisOrder,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MatrixAxesCompanion copyWith({
+    Value<String>? matrixAxisId,
+    Value<String>? matrixRunId,
+    Value<AxisType>? axisType,
+    Value<String>? axisName,
+    Value<int>? axisOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MatrixAxesCompanion(
+      matrixAxisId: matrixAxisId ?? this.matrixAxisId,
+      matrixRunId: matrixRunId ?? this.matrixRunId,
+      axisType: axisType ?? this.axisType,
+      axisName: axisName ?? this.axisName,
+      axisOrder: axisOrder ?? this.axisOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (matrixAxisId.present) {
+      map['MatrixAxisID'] = Variable<String>(matrixAxisId.value);
+    }
+    if (matrixRunId.present) {
+      map['MatrixRunID'] = Variable<String>(matrixRunId.value);
+    }
+    if (axisType.present) {
+      map['AxisType'] = Variable<String>(
+        $MatrixAxesTable.$converteraxisType.toSql(axisType.value),
+      );
+    }
+    if (axisName.present) {
+      map['AxisName'] = Variable<String>(axisName.value);
+    }
+    if (axisOrder.present) {
+      map['AxisOrder'] = Variable<int>(axisOrder.value);
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixAxesCompanion(')
+          ..write('matrixAxisId: $matrixAxisId, ')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('axisType: $axisType, ')
+          ..write('axisName: $axisName, ')
+          ..write('axisOrder: $axisOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MatrixAxisValuesTable extends MatrixAxisValues
+    with TableInfo<$MatrixAxisValuesTable, MatrixAxisValue> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MatrixAxisValuesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _axisValueIdMeta = const VerificationMeta(
+    'axisValueId',
+  );
+  @override
+  late final GeneratedColumn<String> axisValueId = GeneratedColumn<String>(
+    'AxisValueID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _matrixAxisIdMeta = const VerificationMeta(
+    'matrixAxisId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixAxisId = GeneratedColumn<String>(
+    'MatrixAxisID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'Label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'SortOrder',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    axisValueId,
+    matrixAxisId,
+    label,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'MatrixAxisValue';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MatrixAxisValue> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('AxisValueID')) {
+      context.handle(
+        _axisValueIdMeta,
+        axisValueId.isAcceptableOrUnknown(
+          data['AxisValueID']!,
+          _axisValueIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_axisValueIdMeta);
+    }
+    if (data.containsKey('MatrixAxisID')) {
+      context.handle(
+        _matrixAxisIdMeta,
+        matrixAxisId.isAcceptableOrUnknown(
+          data['MatrixAxisID']!,
+          _matrixAxisIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixAxisIdMeta);
+    }
+    if (data.containsKey('Label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['Label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('SortOrder')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['SortOrder']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {axisValueId};
+  @override
+  MatrixAxisValue map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MatrixAxisValue(
+      axisValueId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}AxisValueID'],
+      )!,
+      matrixAxisId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixAxisID'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}Label'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}SortOrder'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $MatrixAxisValuesTable createAlias(String alias) {
+    return $MatrixAxisValuesTable(attachedDatabase, alias);
+  }
+}
+
+class MatrixAxisValue extends DataClass implements Insertable<MatrixAxisValue> {
+  final String axisValueId;
+  final String matrixAxisId;
+  final String label;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const MatrixAxisValue({
+    required this.axisValueId,
+    required this.matrixAxisId,
+    required this.label,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['AxisValueID'] = Variable<String>(axisValueId);
+    map['MatrixAxisID'] = Variable<String>(matrixAxisId);
+    map['Label'] = Variable<String>(label);
+    map['SortOrder'] = Variable<int>(sortOrder);
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MatrixAxisValuesCompanion toCompanion(bool nullToAbsent) {
+    return MatrixAxisValuesCompanion(
+      axisValueId: Value(axisValueId),
+      matrixAxisId: Value(matrixAxisId),
+      label: Value(label),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MatrixAxisValue.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MatrixAxisValue(
+      axisValueId: serializer.fromJson<String>(json['axisValueId']),
+      matrixAxisId: serializer.fromJson<String>(json['matrixAxisId']),
+      label: serializer.fromJson<String>(json['label']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'axisValueId': serializer.toJson<String>(axisValueId),
+      'matrixAxisId': serializer.toJson<String>(matrixAxisId),
+      'label': serializer.toJson<String>(label),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MatrixAxisValue copyWith({
+    String? axisValueId,
+    String? matrixAxisId,
+    String? label,
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => MatrixAxisValue(
+    axisValueId: axisValueId ?? this.axisValueId,
+    matrixAxisId: matrixAxisId ?? this.matrixAxisId,
+    label: label ?? this.label,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MatrixAxisValue copyWithCompanion(MatrixAxisValuesCompanion data) {
+    return MatrixAxisValue(
+      axisValueId: data.axisValueId.present
+          ? data.axisValueId.value
+          : this.axisValueId,
+      matrixAxisId: data.matrixAxisId.present
+          ? data.matrixAxisId.value
+          : this.matrixAxisId,
+      label: data.label.present ? data.label.value : this.label,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixAxisValue(')
+          ..write('axisValueId: $axisValueId, ')
+          ..write('matrixAxisId: $matrixAxisId, ')
+          ..write('label: $label, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    axisValueId,
+    matrixAxisId,
+    label,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MatrixAxisValue &&
+          other.axisValueId == this.axisValueId &&
+          other.matrixAxisId == this.matrixAxisId &&
+          other.label == this.label &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MatrixAxisValuesCompanion extends UpdateCompanion<MatrixAxisValue> {
+  final Value<String> axisValueId;
+  final Value<String> matrixAxisId;
+  final Value<String> label;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MatrixAxisValuesCompanion({
+    this.axisValueId = const Value.absent(),
+    this.matrixAxisId = const Value.absent(),
+    this.label = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MatrixAxisValuesCompanion.insert({
+    required String axisValueId,
+    required String matrixAxisId,
+    required String label,
+    required int sortOrder,
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : axisValueId = Value(axisValueId),
+       matrixAxisId = Value(matrixAxisId),
+       label = Value(label),
+       sortOrder = Value(sortOrder);
+  static Insertable<MatrixAxisValue> custom({
+    Expression<String>? axisValueId,
+    Expression<String>? matrixAxisId,
+    Expression<String>? label,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (axisValueId != null) 'AxisValueID': axisValueId,
+      if (matrixAxisId != null) 'MatrixAxisID': matrixAxisId,
+      if (label != null) 'Label': label,
+      if (sortOrder != null) 'SortOrder': sortOrder,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MatrixAxisValuesCompanion copyWith({
+    Value<String>? axisValueId,
+    Value<String>? matrixAxisId,
+    Value<String>? label,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MatrixAxisValuesCompanion(
+      axisValueId: axisValueId ?? this.axisValueId,
+      matrixAxisId: matrixAxisId ?? this.matrixAxisId,
+      label: label ?? this.label,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (axisValueId.present) {
+      map['AxisValueID'] = Variable<String>(axisValueId.value);
+    }
+    if (matrixAxisId.present) {
+      map['MatrixAxisID'] = Variable<String>(matrixAxisId.value);
+    }
+    if (label.present) {
+      map['Label'] = Variable<String>(label.value);
+    }
+    if (sortOrder.present) {
+      map['SortOrder'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixAxisValuesCompanion(')
+          ..write('axisValueId: $axisValueId, ')
+          ..write('matrixAxisId: $matrixAxisId, ')
+          ..write('label: $label, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MatrixCellsTable extends MatrixCells
+    with TableInfo<$MatrixCellsTable, MatrixCell> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MatrixCellsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _matrixCellIdMeta = const VerificationMeta(
+    'matrixCellId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixCellId = GeneratedColumn<String>(
+    'MatrixCellID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _matrixRunIdMeta = const VerificationMeta(
+    'matrixRunId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixRunId = GeneratedColumn<String>(
+    'MatrixRunID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _axisValueIdsMeta = const VerificationMeta(
+    'axisValueIds',
+  );
+  @override
+  late final GeneratedColumn<String> axisValueIds = GeneratedColumn<String>(
+    'AxisValueIDs',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _excludedFromRunMeta = const VerificationMeta(
+    'excludedFromRun',
+  );
+  @override
+  late final GeneratedColumn<bool> excludedFromRun = GeneratedColumn<bool>(
+    'ExcludedFromRun',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("ExcludedFromRun" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    matrixCellId,
+    matrixRunId,
+    axisValueIds,
+    excludedFromRun,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'MatrixCell';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MatrixCell> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('MatrixCellID')) {
+      context.handle(
+        _matrixCellIdMeta,
+        matrixCellId.isAcceptableOrUnknown(
+          data['MatrixCellID']!,
+          _matrixCellIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixCellIdMeta);
+    }
+    if (data.containsKey('MatrixRunID')) {
+      context.handle(
+        _matrixRunIdMeta,
+        matrixRunId.isAcceptableOrUnknown(
+          data['MatrixRunID']!,
+          _matrixRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixRunIdMeta);
+    }
+    if (data.containsKey('AxisValueIDs')) {
+      context.handle(
+        _axisValueIdsMeta,
+        axisValueIds.isAcceptableOrUnknown(
+          data['AxisValueIDs']!,
+          _axisValueIdsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ExcludedFromRun')) {
+      context.handle(
+        _excludedFromRunMeta,
+        excludedFromRun.isAcceptableOrUnknown(
+          data['ExcludedFromRun']!,
+          _excludedFromRunMeta,
+        ),
+      );
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {matrixCellId};
+  @override
+  MatrixCell map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MatrixCell(
+      matrixCellId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixCellID'],
+      )!,
+      matrixRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixRunID'],
+      )!,
+      axisValueIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}AxisValueIDs'],
+      )!,
+      excludedFromRun: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}ExcludedFromRun'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $MatrixCellsTable createAlias(String alias) {
+    return $MatrixCellsTable(attachedDatabase, alias);
+  }
+}
+
+class MatrixCell extends DataClass implements Insertable<MatrixCell> {
+  final String matrixCellId;
+  final String matrixRunId;
+  final String axisValueIds;
+  final bool excludedFromRun;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const MatrixCell({
+    required this.matrixCellId,
+    required this.matrixRunId,
+    required this.axisValueIds,
+    required this.excludedFromRun,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['MatrixCellID'] = Variable<String>(matrixCellId);
+    map['MatrixRunID'] = Variable<String>(matrixRunId);
+    map['AxisValueIDs'] = Variable<String>(axisValueIds);
+    map['ExcludedFromRun'] = Variable<bool>(excludedFromRun);
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MatrixCellsCompanion toCompanion(bool nullToAbsent) {
+    return MatrixCellsCompanion(
+      matrixCellId: Value(matrixCellId),
+      matrixRunId: Value(matrixRunId),
+      axisValueIds: Value(axisValueIds),
+      excludedFromRun: Value(excludedFromRun),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MatrixCell.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MatrixCell(
+      matrixCellId: serializer.fromJson<String>(json['matrixCellId']),
+      matrixRunId: serializer.fromJson<String>(json['matrixRunId']),
+      axisValueIds: serializer.fromJson<String>(json['axisValueIds']),
+      excludedFromRun: serializer.fromJson<bool>(json['excludedFromRun']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'matrixCellId': serializer.toJson<String>(matrixCellId),
+      'matrixRunId': serializer.toJson<String>(matrixRunId),
+      'axisValueIds': serializer.toJson<String>(axisValueIds),
+      'excludedFromRun': serializer.toJson<bool>(excludedFromRun),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MatrixCell copyWith({
+    String? matrixCellId,
+    String? matrixRunId,
+    String? axisValueIds,
+    bool? excludedFromRun,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => MatrixCell(
+    matrixCellId: matrixCellId ?? this.matrixCellId,
+    matrixRunId: matrixRunId ?? this.matrixRunId,
+    axisValueIds: axisValueIds ?? this.axisValueIds,
+    excludedFromRun: excludedFromRun ?? this.excludedFromRun,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MatrixCell copyWithCompanion(MatrixCellsCompanion data) {
+    return MatrixCell(
+      matrixCellId: data.matrixCellId.present
+          ? data.matrixCellId.value
+          : this.matrixCellId,
+      matrixRunId: data.matrixRunId.present
+          ? data.matrixRunId.value
+          : this.matrixRunId,
+      axisValueIds: data.axisValueIds.present
+          ? data.axisValueIds.value
+          : this.axisValueIds,
+      excludedFromRun: data.excludedFromRun.present
+          ? data.excludedFromRun.value
+          : this.excludedFromRun,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixCell(')
+          ..write('matrixCellId: $matrixCellId, ')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('axisValueIds: $axisValueIds, ')
+          ..write('excludedFromRun: $excludedFromRun, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    matrixCellId,
+    matrixRunId,
+    axisValueIds,
+    excludedFromRun,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MatrixCell &&
+          other.matrixCellId == this.matrixCellId &&
+          other.matrixRunId == this.matrixRunId &&
+          other.axisValueIds == this.axisValueIds &&
+          other.excludedFromRun == this.excludedFromRun &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MatrixCellsCompanion extends UpdateCompanion<MatrixCell> {
+  final Value<String> matrixCellId;
+  final Value<String> matrixRunId;
+  final Value<String> axisValueIds;
+  final Value<bool> excludedFromRun;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MatrixCellsCompanion({
+    this.matrixCellId = const Value.absent(),
+    this.matrixRunId = const Value.absent(),
+    this.axisValueIds = const Value.absent(),
+    this.excludedFromRun = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MatrixCellsCompanion.insert({
+    required String matrixCellId,
+    required String matrixRunId,
+    this.axisValueIds = const Value.absent(),
+    this.excludedFromRun = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : matrixCellId = Value(matrixCellId),
+       matrixRunId = Value(matrixRunId);
+  static Insertable<MatrixCell> custom({
+    Expression<String>? matrixCellId,
+    Expression<String>? matrixRunId,
+    Expression<String>? axisValueIds,
+    Expression<bool>? excludedFromRun,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (matrixCellId != null) 'MatrixCellID': matrixCellId,
+      if (matrixRunId != null) 'MatrixRunID': matrixRunId,
+      if (axisValueIds != null) 'AxisValueIDs': axisValueIds,
+      if (excludedFromRun != null) 'ExcludedFromRun': excludedFromRun,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MatrixCellsCompanion copyWith({
+    Value<String>? matrixCellId,
+    Value<String>? matrixRunId,
+    Value<String>? axisValueIds,
+    Value<bool>? excludedFromRun,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MatrixCellsCompanion(
+      matrixCellId: matrixCellId ?? this.matrixCellId,
+      matrixRunId: matrixRunId ?? this.matrixRunId,
+      axisValueIds: axisValueIds ?? this.axisValueIds,
+      excludedFromRun: excludedFromRun ?? this.excludedFromRun,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (matrixCellId.present) {
+      map['MatrixCellID'] = Variable<String>(matrixCellId.value);
+    }
+    if (matrixRunId.present) {
+      map['MatrixRunID'] = Variable<String>(matrixRunId.value);
+    }
+    if (axisValueIds.present) {
+      map['AxisValueIDs'] = Variable<String>(axisValueIds.value);
+    }
+    if (excludedFromRun.present) {
+      map['ExcludedFromRun'] = Variable<bool>(excludedFromRun.value);
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixCellsCompanion(')
+          ..write('matrixCellId: $matrixCellId, ')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('axisValueIds: $axisValueIds, ')
+          ..write('excludedFromRun: $excludedFromRun, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MatrixAttemptsTable extends MatrixAttempts
+    with TableInfo<$MatrixAttemptsTable, MatrixAttempt> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MatrixAttemptsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _matrixAttemptIdMeta = const VerificationMeta(
+    'matrixAttemptId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixAttemptId = GeneratedColumn<String>(
+    'MatrixAttemptID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _matrixCellIdMeta = const VerificationMeta(
+    'matrixCellId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixCellId = GeneratedColumn<String>(
+    'MatrixCellID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptTimestampMeta = const VerificationMeta(
+    'attemptTimestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> attemptTimestamp =
+      GeneratedColumn<DateTime>(
+        'AttemptTimestamp',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        clientDefault: () => DateTime.now(),
+      );
+  static const VerificationMeta _carryDistanceMetersMeta =
+      const VerificationMeta('carryDistanceMeters');
+  @override
+  late final GeneratedColumn<double> carryDistanceMeters =
+      GeneratedColumn<double>(
+        'CarryDistanceMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _totalDistanceMetersMeta =
+      const VerificationMeta('totalDistanceMeters');
+  @override
+  late final GeneratedColumn<double> totalDistanceMeters =
+      GeneratedColumn<double>(
+        'TotalDistanceMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _leftDeviationMetersMeta =
+      const VerificationMeta('leftDeviationMeters');
+  @override
+  late final GeneratedColumn<double> leftDeviationMeters =
+      GeneratedColumn<double>(
+        'LeftDeviationMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _rightDeviationMetersMeta =
+      const VerificationMeta('rightDeviationMeters');
+  @override
+  late final GeneratedColumn<double> rightDeviationMeters =
+      GeneratedColumn<double>(
+        'RightDeviationMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _rolloutDistanceMetersMeta =
+      const VerificationMeta('rolloutDistanceMeters');
+  @override
+  late final GeneratedColumn<double> rolloutDistanceMeters =
+      GeneratedColumn<double>(
+        'RolloutDistanceMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    matrixAttemptId,
+    matrixCellId,
+    attemptTimestamp,
+    carryDistanceMeters,
+    totalDistanceMeters,
+    leftDeviationMeters,
+    rightDeviationMeters,
+    rolloutDistanceMeters,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'MatrixAttempt';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MatrixAttempt> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('MatrixAttemptID')) {
+      context.handle(
+        _matrixAttemptIdMeta,
+        matrixAttemptId.isAcceptableOrUnknown(
+          data['MatrixAttemptID']!,
+          _matrixAttemptIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixAttemptIdMeta);
+    }
+    if (data.containsKey('MatrixCellID')) {
+      context.handle(
+        _matrixCellIdMeta,
+        matrixCellId.isAcceptableOrUnknown(
+          data['MatrixCellID']!,
+          _matrixCellIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_matrixCellIdMeta);
+    }
+    if (data.containsKey('AttemptTimestamp')) {
+      context.handle(
+        _attemptTimestampMeta,
+        attemptTimestamp.isAcceptableOrUnknown(
+          data['AttemptTimestamp']!,
+          _attemptTimestampMeta,
+        ),
+      );
+    }
+    if (data.containsKey('CarryDistanceMeters')) {
+      context.handle(
+        _carryDistanceMetersMeta,
+        carryDistanceMeters.isAcceptableOrUnknown(
+          data['CarryDistanceMeters']!,
+          _carryDistanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('TotalDistanceMeters')) {
+      context.handle(
+        _totalDistanceMetersMeta,
+        totalDistanceMeters.isAcceptableOrUnknown(
+          data['TotalDistanceMeters']!,
+          _totalDistanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('LeftDeviationMeters')) {
+      context.handle(
+        _leftDeviationMetersMeta,
+        leftDeviationMeters.isAcceptableOrUnknown(
+          data['LeftDeviationMeters']!,
+          _leftDeviationMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('RightDeviationMeters')) {
+      context.handle(
+        _rightDeviationMetersMeta,
+        rightDeviationMeters.isAcceptableOrUnknown(
+          data['RightDeviationMeters']!,
+          _rightDeviationMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('RolloutDistanceMeters')) {
+      context.handle(
+        _rolloutDistanceMetersMeta,
+        rolloutDistanceMeters.isAcceptableOrUnknown(
+          data['RolloutDistanceMeters']!,
+          _rolloutDistanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {matrixAttemptId};
+  @override
+  MatrixAttempt map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MatrixAttempt(
+      matrixAttemptId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixAttemptID'],
+      )!,
+      matrixCellId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixCellID'],
+      )!,
+      attemptTimestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}AttemptTimestamp'],
+      )!,
+      carryDistanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}CarryDistanceMeters'],
+      ),
+      totalDistanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}TotalDistanceMeters'],
+      ),
+      leftDeviationMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}LeftDeviationMeters'],
+      ),
+      rightDeviationMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}RightDeviationMeters'],
+      ),
+      rolloutDistanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}RolloutDistanceMeters'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $MatrixAttemptsTable createAlias(String alias) {
+    return $MatrixAttemptsTable(attachedDatabase, alias);
+  }
+}
+
+class MatrixAttempt extends DataClass implements Insertable<MatrixAttempt> {
+  final String matrixAttemptId;
+  final String matrixCellId;
+  final DateTime attemptTimestamp;
+  final double? carryDistanceMeters;
+  final double? totalDistanceMeters;
+  final double? leftDeviationMeters;
+  final double? rightDeviationMeters;
+  final double? rolloutDistanceMeters;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const MatrixAttempt({
+    required this.matrixAttemptId,
+    required this.matrixCellId,
+    required this.attemptTimestamp,
+    this.carryDistanceMeters,
+    this.totalDistanceMeters,
+    this.leftDeviationMeters,
+    this.rightDeviationMeters,
+    this.rolloutDistanceMeters,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['MatrixAttemptID'] = Variable<String>(matrixAttemptId);
+    map['MatrixCellID'] = Variable<String>(matrixCellId);
+    map['AttemptTimestamp'] = Variable<DateTime>(attemptTimestamp);
+    if (!nullToAbsent || carryDistanceMeters != null) {
+      map['CarryDistanceMeters'] = Variable<double>(carryDistanceMeters);
+    }
+    if (!nullToAbsent || totalDistanceMeters != null) {
+      map['TotalDistanceMeters'] = Variable<double>(totalDistanceMeters);
+    }
+    if (!nullToAbsent || leftDeviationMeters != null) {
+      map['LeftDeviationMeters'] = Variable<double>(leftDeviationMeters);
+    }
+    if (!nullToAbsent || rightDeviationMeters != null) {
+      map['RightDeviationMeters'] = Variable<double>(rightDeviationMeters);
+    }
+    if (!nullToAbsent || rolloutDistanceMeters != null) {
+      map['RolloutDistanceMeters'] = Variable<double>(rolloutDistanceMeters);
+    }
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MatrixAttemptsCompanion toCompanion(bool nullToAbsent) {
+    return MatrixAttemptsCompanion(
+      matrixAttemptId: Value(matrixAttemptId),
+      matrixCellId: Value(matrixCellId),
+      attemptTimestamp: Value(attemptTimestamp),
+      carryDistanceMeters: carryDistanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carryDistanceMeters),
+      totalDistanceMeters: totalDistanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalDistanceMeters),
+      leftDeviationMeters: leftDeviationMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(leftDeviationMeters),
+      rightDeviationMeters: rightDeviationMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rightDeviationMeters),
+      rolloutDistanceMeters: rolloutDistanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rolloutDistanceMeters),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MatrixAttempt.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MatrixAttempt(
+      matrixAttemptId: serializer.fromJson<String>(json['matrixAttemptId']),
+      matrixCellId: serializer.fromJson<String>(json['matrixCellId']),
+      attemptTimestamp: serializer.fromJson<DateTime>(json['attemptTimestamp']),
+      carryDistanceMeters: serializer.fromJson<double?>(
+        json['carryDistanceMeters'],
+      ),
+      totalDistanceMeters: serializer.fromJson<double?>(
+        json['totalDistanceMeters'],
+      ),
+      leftDeviationMeters: serializer.fromJson<double?>(
+        json['leftDeviationMeters'],
+      ),
+      rightDeviationMeters: serializer.fromJson<double?>(
+        json['rightDeviationMeters'],
+      ),
+      rolloutDistanceMeters: serializer.fromJson<double?>(
+        json['rolloutDistanceMeters'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'matrixAttemptId': serializer.toJson<String>(matrixAttemptId),
+      'matrixCellId': serializer.toJson<String>(matrixCellId),
+      'attemptTimestamp': serializer.toJson<DateTime>(attemptTimestamp),
+      'carryDistanceMeters': serializer.toJson<double?>(carryDistanceMeters),
+      'totalDistanceMeters': serializer.toJson<double?>(totalDistanceMeters),
+      'leftDeviationMeters': serializer.toJson<double?>(leftDeviationMeters),
+      'rightDeviationMeters': serializer.toJson<double?>(rightDeviationMeters),
+      'rolloutDistanceMeters': serializer.toJson<double?>(
+        rolloutDistanceMeters,
+      ),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MatrixAttempt copyWith({
+    String? matrixAttemptId,
+    String? matrixCellId,
+    DateTime? attemptTimestamp,
+    Value<double?> carryDistanceMeters = const Value.absent(),
+    Value<double?> totalDistanceMeters = const Value.absent(),
+    Value<double?> leftDeviationMeters = const Value.absent(),
+    Value<double?> rightDeviationMeters = const Value.absent(),
+    Value<double?> rolloutDistanceMeters = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => MatrixAttempt(
+    matrixAttemptId: matrixAttemptId ?? this.matrixAttemptId,
+    matrixCellId: matrixCellId ?? this.matrixCellId,
+    attemptTimestamp: attemptTimestamp ?? this.attemptTimestamp,
+    carryDistanceMeters: carryDistanceMeters.present
+        ? carryDistanceMeters.value
+        : this.carryDistanceMeters,
+    totalDistanceMeters: totalDistanceMeters.present
+        ? totalDistanceMeters.value
+        : this.totalDistanceMeters,
+    leftDeviationMeters: leftDeviationMeters.present
+        ? leftDeviationMeters.value
+        : this.leftDeviationMeters,
+    rightDeviationMeters: rightDeviationMeters.present
+        ? rightDeviationMeters.value
+        : this.rightDeviationMeters,
+    rolloutDistanceMeters: rolloutDistanceMeters.present
+        ? rolloutDistanceMeters.value
+        : this.rolloutDistanceMeters,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MatrixAttempt copyWithCompanion(MatrixAttemptsCompanion data) {
+    return MatrixAttempt(
+      matrixAttemptId: data.matrixAttemptId.present
+          ? data.matrixAttemptId.value
+          : this.matrixAttemptId,
+      matrixCellId: data.matrixCellId.present
+          ? data.matrixCellId.value
+          : this.matrixCellId,
+      attemptTimestamp: data.attemptTimestamp.present
+          ? data.attemptTimestamp.value
+          : this.attemptTimestamp,
+      carryDistanceMeters: data.carryDistanceMeters.present
+          ? data.carryDistanceMeters.value
+          : this.carryDistanceMeters,
+      totalDistanceMeters: data.totalDistanceMeters.present
+          ? data.totalDistanceMeters.value
+          : this.totalDistanceMeters,
+      leftDeviationMeters: data.leftDeviationMeters.present
+          ? data.leftDeviationMeters.value
+          : this.leftDeviationMeters,
+      rightDeviationMeters: data.rightDeviationMeters.present
+          ? data.rightDeviationMeters.value
+          : this.rightDeviationMeters,
+      rolloutDistanceMeters: data.rolloutDistanceMeters.present
+          ? data.rolloutDistanceMeters.value
+          : this.rolloutDistanceMeters,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixAttempt(')
+          ..write('matrixAttemptId: $matrixAttemptId, ')
+          ..write('matrixCellId: $matrixCellId, ')
+          ..write('attemptTimestamp: $attemptTimestamp, ')
+          ..write('carryDistanceMeters: $carryDistanceMeters, ')
+          ..write('totalDistanceMeters: $totalDistanceMeters, ')
+          ..write('leftDeviationMeters: $leftDeviationMeters, ')
+          ..write('rightDeviationMeters: $rightDeviationMeters, ')
+          ..write('rolloutDistanceMeters: $rolloutDistanceMeters, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    matrixAttemptId,
+    matrixCellId,
+    attemptTimestamp,
+    carryDistanceMeters,
+    totalDistanceMeters,
+    leftDeviationMeters,
+    rightDeviationMeters,
+    rolloutDistanceMeters,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MatrixAttempt &&
+          other.matrixAttemptId == this.matrixAttemptId &&
+          other.matrixCellId == this.matrixCellId &&
+          other.attemptTimestamp == this.attemptTimestamp &&
+          other.carryDistanceMeters == this.carryDistanceMeters &&
+          other.totalDistanceMeters == this.totalDistanceMeters &&
+          other.leftDeviationMeters == this.leftDeviationMeters &&
+          other.rightDeviationMeters == this.rightDeviationMeters &&
+          other.rolloutDistanceMeters == this.rolloutDistanceMeters &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MatrixAttemptsCompanion extends UpdateCompanion<MatrixAttempt> {
+  final Value<String> matrixAttemptId;
+  final Value<String> matrixCellId;
+  final Value<DateTime> attemptTimestamp;
+  final Value<double?> carryDistanceMeters;
+  final Value<double?> totalDistanceMeters;
+  final Value<double?> leftDeviationMeters;
+  final Value<double?> rightDeviationMeters;
+  final Value<double?> rolloutDistanceMeters;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MatrixAttemptsCompanion({
+    this.matrixAttemptId = const Value.absent(),
+    this.matrixCellId = const Value.absent(),
+    this.attemptTimestamp = const Value.absent(),
+    this.carryDistanceMeters = const Value.absent(),
+    this.totalDistanceMeters = const Value.absent(),
+    this.leftDeviationMeters = const Value.absent(),
+    this.rightDeviationMeters = const Value.absent(),
+    this.rolloutDistanceMeters = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MatrixAttemptsCompanion.insert({
+    required String matrixAttemptId,
+    required String matrixCellId,
+    this.attemptTimestamp = const Value.absent(),
+    this.carryDistanceMeters = const Value.absent(),
+    this.totalDistanceMeters = const Value.absent(),
+    this.leftDeviationMeters = const Value.absent(),
+    this.rightDeviationMeters = const Value.absent(),
+    this.rolloutDistanceMeters = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : matrixAttemptId = Value(matrixAttemptId),
+       matrixCellId = Value(matrixCellId);
+  static Insertable<MatrixAttempt> custom({
+    Expression<String>? matrixAttemptId,
+    Expression<String>? matrixCellId,
+    Expression<DateTime>? attemptTimestamp,
+    Expression<double>? carryDistanceMeters,
+    Expression<double>? totalDistanceMeters,
+    Expression<double>? leftDeviationMeters,
+    Expression<double>? rightDeviationMeters,
+    Expression<double>? rolloutDistanceMeters,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (matrixAttemptId != null) 'MatrixAttemptID': matrixAttemptId,
+      if (matrixCellId != null) 'MatrixCellID': matrixCellId,
+      if (attemptTimestamp != null) 'AttemptTimestamp': attemptTimestamp,
+      if (carryDistanceMeters != null)
+        'CarryDistanceMeters': carryDistanceMeters,
+      if (totalDistanceMeters != null)
+        'TotalDistanceMeters': totalDistanceMeters,
+      if (leftDeviationMeters != null)
+        'LeftDeviationMeters': leftDeviationMeters,
+      if (rightDeviationMeters != null)
+        'RightDeviationMeters': rightDeviationMeters,
+      if (rolloutDistanceMeters != null)
+        'RolloutDistanceMeters': rolloutDistanceMeters,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MatrixAttemptsCompanion copyWith({
+    Value<String>? matrixAttemptId,
+    Value<String>? matrixCellId,
+    Value<DateTime>? attemptTimestamp,
+    Value<double?>? carryDistanceMeters,
+    Value<double?>? totalDistanceMeters,
+    Value<double?>? leftDeviationMeters,
+    Value<double?>? rightDeviationMeters,
+    Value<double?>? rolloutDistanceMeters,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MatrixAttemptsCompanion(
+      matrixAttemptId: matrixAttemptId ?? this.matrixAttemptId,
+      matrixCellId: matrixCellId ?? this.matrixCellId,
+      attemptTimestamp: attemptTimestamp ?? this.attemptTimestamp,
+      carryDistanceMeters: carryDistanceMeters ?? this.carryDistanceMeters,
+      totalDistanceMeters: totalDistanceMeters ?? this.totalDistanceMeters,
+      leftDeviationMeters: leftDeviationMeters ?? this.leftDeviationMeters,
+      rightDeviationMeters: rightDeviationMeters ?? this.rightDeviationMeters,
+      rolloutDistanceMeters:
+          rolloutDistanceMeters ?? this.rolloutDistanceMeters,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (matrixAttemptId.present) {
+      map['MatrixAttemptID'] = Variable<String>(matrixAttemptId.value);
+    }
+    if (matrixCellId.present) {
+      map['MatrixCellID'] = Variable<String>(matrixCellId.value);
+    }
+    if (attemptTimestamp.present) {
+      map['AttemptTimestamp'] = Variable<DateTime>(attemptTimestamp.value);
+    }
+    if (carryDistanceMeters.present) {
+      map['CarryDistanceMeters'] = Variable<double>(carryDistanceMeters.value);
+    }
+    if (totalDistanceMeters.present) {
+      map['TotalDistanceMeters'] = Variable<double>(totalDistanceMeters.value);
+    }
+    if (leftDeviationMeters.present) {
+      map['LeftDeviationMeters'] = Variable<double>(leftDeviationMeters.value);
+    }
+    if (rightDeviationMeters.present) {
+      map['RightDeviationMeters'] = Variable<double>(
+        rightDeviationMeters.value,
+      );
+    }
+    if (rolloutDistanceMeters.present) {
+      map['RolloutDistanceMeters'] = Variable<double>(
+        rolloutDistanceMeters.value,
+      );
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MatrixAttemptsCompanion(')
+          ..write('matrixAttemptId: $matrixAttemptId, ')
+          ..write('matrixCellId: $matrixCellId, ')
+          ..write('attemptTimestamp: $attemptTimestamp, ')
+          ..write('carryDistanceMeters: $carryDistanceMeters, ')
+          ..write('totalDistanceMeters: $totalDistanceMeters, ')
+          ..write('leftDeviationMeters: $leftDeviationMeters, ')
+          ..write('rightDeviationMeters: $rightDeviationMeters, ')
+          ..write('rolloutDistanceMeters: $rolloutDistanceMeters, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PerformanceSnapshotsTable extends PerformanceSnapshots
+    with TableInfo<$PerformanceSnapshotsTable, PerformanceSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PerformanceSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _snapshotIdMeta = const VerificationMeta(
+    'snapshotId',
+  );
+  @override
+  late final GeneratedColumn<String> snapshotId = GeneratedColumn<String>(
+    'SnapshotID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'UserID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _matrixRunIdMeta = const VerificationMeta(
+    'matrixRunId',
+  );
+  @override
+  late final GeneratedColumn<String> matrixRunId = GeneratedColumn<String>(
+    'MatrixRunID',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<MatrixType?, String> matrixType =
+      GeneratedColumn<String>(
+        'MatrixType',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<MatrixType?>(
+        $PerformanceSnapshotsTable.$convertermatrixTypen,
+      );
+  static const VerificationMeta _isPrimaryMeta = const VerificationMeta(
+    'isPrimary',
+  );
+  @override
+  late final GeneratedColumn<bool> isPrimary = GeneratedColumn<bool>(
+    'IsPrimary',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("IsPrimary" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'Label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _snapshotTimestampMeta = const VerificationMeta(
+    'snapshotTimestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> snapshotTimestamp =
+      GeneratedColumn<DateTime>(
+        'SnapshotTimestamp',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        clientDefault: () => DateTime.now(),
+      );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'IsDeleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("IsDeleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    snapshotId,
+    userId,
+    matrixRunId,
+    matrixType,
+    isPrimary,
+    label,
+    snapshotTimestamp,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'PerformanceSnapshot';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PerformanceSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('SnapshotID')) {
+      context.handle(
+        _snapshotIdMeta,
+        snapshotId.isAcceptableOrUnknown(data['SnapshotID']!, _snapshotIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotIdMeta);
+    }
+    if (data.containsKey('UserID')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['UserID']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('MatrixRunID')) {
+      context.handle(
+        _matrixRunIdMeta,
+        matrixRunId.isAcceptableOrUnknown(
+          data['MatrixRunID']!,
+          _matrixRunIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('IsPrimary')) {
+      context.handle(
+        _isPrimaryMeta,
+        isPrimary.isAcceptableOrUnknown(data['IsPrimary']!, _isPrimaryMeta),
+      );
+    }
+    if (data.containsKey('Label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['Label']!, _labelMeta),
+      );
+    }
+    if (data.containsKey('SnapshotTimestamp')) {
+      context.handle(
+        _snapshotTimestampMeta,
+        snapshotTimestamp.isAcceptableOrUnknown(
+          data['SnapshotTimestamp']!,
+          _snapshotTimestampMeta,
+        ),
+      );
+    }
+    if (data.containsKey('IsDeleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['IsDeleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {snapshotId};
+  @override
+  PerformanceSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PerformanceSnapshot(
+      snapshotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}SnapshotID'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}UserID'],
+      )!,
+      matrixRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}MatrixRunID'],
+      ),
+      matrixType: $PerformanceSnapshotsTable.$convertermatrixTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}MatrixType'],
+        ),
+      ),
+      isPrimary: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}IsPrimary'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}Label'],
+      ),
+      snapshotTimestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}SnapshotTimestamp'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}IsDeleted'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $PerformanceSnapshotsTable createAlias(String alias) {
+    return $PerformanceSnapshotsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<MatrixType, String> $convertermatrixType =
+      const MatrixTypeConverter();
+  static TypeConverter<MatrixType?, String?> $convertermatrixTypen =
+      NullAwareTypeConverter.wrap($convertermatrixType);
+}
+
+class PerformanceSnapshot extends DataClass
+    implements Insertable<PerformanceSnapshot> {
+  final String snapshotId;
+  final String userId;
+  final String? matrixRunId;
+  final MatrixType? matrixType;
+  final bool isPrimary;
+  final String? label;
+  final DateTime snapshotTimestamp;
+  final bool isDeleted;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PerformanceSnapshot({
+    required this.snapshotId,
+    required this.userId,
+    this.matrixRunId,
+    this.matrixType,
+    required this.isPrimary,
+    this.label,
+    required this.snapshotTimestamp,
+    required this.isDeleted,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['SnapshotID'] = Variable<String>(snapshotId);
+    map['UserID'] = Variable<String>(userId);
+    if (!nullToAbsent || matrixRunId != null) {
+      map['MatrixRunID'] = Variable<String>(matrixRunId);
+    }
+    if (!nullToAbsent || matrixType != null) {
+      map['MatrixType'] = Variable<String>(
+        $PerformanceSnapshotsTable.$convertermatrixTypen.toSql(matrixType),
+      );
+    }
+    map['IsPrimary'] = Variable<bool>(isPrimary);
+    if (!nullToAbsent || label != null) {
+      map['Label'] = Variable<String>(label);
+    }
+    map['SnapshotTimestamp'] = Variable<DateTime>(snapshotTimestamp);
+    map['IsDeleted'] = Variable<bool>(isDeleted);
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PerformanceSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return PerformanceSnapshotsCompanion(
+      snapshotId: Value(snapshotId),
+      userId: Value(userId),
+      matrixRunId: matrixRunId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(matrixRunId),
+      matrixType: matrixType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(matrixType),
+      isPrimary: Value(isPrimary),
+      label: label == null && nullToAbsent
+          ? const Value.absent()
+          : Value(label),
+      snapshotTimestamp: Value(snapshotTimestamp),
+      isDeleted: Value(isDeleted),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PerformanceSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PerformanceSnapshot(
+      snapshotId: serializer.fromJson<String>(json['snapshotId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      matrixRunId: serializer.fromJson<String?>(json['matrixRunId']),
+      matrixType: serializer.fromJson<MatrixType?>(json['matrixType']),
+      isPrimary: serializer.fromJson<bool>(json['isPrimary']),
+      label: serializer.fromJson<String?>(json['label']),
+      snapshotTimestamp: serializer.fromJson<DateTime>(
+        json['snapshotTimestamp'],
+      ),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'snapshotId': serializer.toJson<String>(snapshotId),
+      'userId': serializer.toJson<String>(userId),
+      'matrixRunId': serializer.toJson<String?>(matrixRunId),
+      'matrixType': serializer.toJson<MatrixType?>(matrixType),
+      'isPrimary': serializer.toJson<bool>(isPrimary),
+      'label': serializer.toJson<String?>(label),
+      'snapshotTimestamp': serializer.toJson<DateTime>(snapshotTimestamp),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PerformanceSnapshot copyWith({
+    String? snapshotId,
+    String? userId,
+    Value<String?> matrixRunId = const Value.absent(),
+    Value<MatrixType?> matrixType = const Value.absent(),
+    bool? isPrimary,
+    Value<String?> label = const Value.absent(),
+    DateTime? snapshotTimestamp,
+    bool? isDeleted,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PerformanceSnapshot(
+    snapshotId: snapshotId ?? this.snapshotId,
+    userId: userId ?? this.userId,
+    matrixRunId: matrixRunId.present ? matrixRunId.value : this.matrixRunId,
+    matrixType: matrixType.present ? matrixType.value : this.matrixType,
+    isPrimary: isPrimary ?? this.isPrimary,
+    label: label.present ? label.value : this.label,
+    snapshotTimestamp: snapshotTimestamp ?? this.snapshotTimestamp,
+    isDeleted: isDeleted ?? this.isDeleted,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PerformanceSnapshot copyWithCompanion(PerformanceSnapshotsCompanion data) {
+    return PerformanceSnapshot(
+      snapshotId: data.snapshotId.present
+          ? data.snapshotId.value
+          : this.snapshotId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      matrixRunId: data.matrixRunId.present
+          ? data.matrixRunId.value
+          : this.matrixRunId,
+      matrixType: data.matrixType.present
+          ? data.matrixType.value
+          : this.matrixType,
+      isPrimary: data.isPrimary.present ? data.isPrimary.value : this.isPrimary,
+      label: data.label.present ? data.label.value : this.label,
+      snapshotTimestamp: data.snapshotTimestamp.present
+          ? data.snapshotTimestamp.value
+          : this.snapshotTimestamp,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PerformanceSnapshot(')
+          ..write('snapshotId: $snapshotId, ')
+          ..write('userId: $userId, ')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('matrixType: $matrixType, ')
+          ..write('isPrimary: $isPrimary, ')
+          ..write('label: $label, ')
+          ..write('snapshotTimestamp: $snapshotTimestamp, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    snapshotId,
+    userId,
+    matrixRunId,
+    matrixType,
+    isPrimary,
+    label,
+    snapshotTimestamp,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PerformanceSnapshot &&
+          other.snapshotId == this.snapshotId &&
+          other.userId == this.userId &&
+          other.matrixRunId == this.matrixRunId &&
+          other.matrixType == this.matrixType &&
+          other.isPrimary == this.isPrimary &&
+          other.label == this.label &&
+          other.snapshotTimestamp == this.snapshotTimestamp &&
+          other.isDeleted == this.isDeleted &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PerformanceSnapshotsCompanion
+    extends UpdateCompanion<PerformanceSnapshot> {
+  final Value<String> snapshotId;
+  final Value<String> userId;
+  final Value<String?> matrixRunId;
+  final Value<MatrixType?> matrixType;
+  final Value<bool> isPrimary;
+  final Value<String?> label;
+  final Value<DateTime> snapshotTimestamp;
+  final Value<bool> isDeleted;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PerformanceSnapshotsCompanion({
+    this.snapshotId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.matrixRunId = const Value.absent(),
+    this.matrixType = const Value.absent(),
+    this.isPrimary = const Value.absent(),
+    this.label = const Value.absent(),
+    this.snapshotTimestamp = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PerformanceSnapshotsCompanion.insert({
+    required String snapshotId,
+    required String userId,
+    this.matrixRunId = const Value.absent(),
+    this.matrixType = const Value.absent(),
+    this.isPrimary = const Value.absent(),
+    this.label = const Value.absent(),
+    this.snapshotTimestamp = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : snapshotId = Value(snapshotId),
+       userId = Value(userId);
+  static Insertable<PerformanceSnapshot> custom({
+    Expression<String>? snapshotId,
+    Expression<String>? userId,
+    Expression<String>? matrixRunId,
+    Expression<String>? matrixType,
+    Expression<bool>? isPrimary,
+    Expression<String>? label,
+    Expression<DateTime>? snapshotTimestamp,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (snapshotId != null) 'SnapshotID': snapshotId,
+      if (userId != null) 'UserID': userId,
+      if (matrixRunId != null) 'MatrixRunID': matrixRunId,
+      if (matrixType != null) 'MatrixType': matrixType,
+      if (isPrimary != null) 'IsPrimary': isPrimary,
+      if (label != null) 'Label': label,
+      if (snapshotTimestamp != null) 'SnapshotTimestamp': snapshotTimestamp,
+      if (isDeleted != null) 'IsDeleted': isDeleted,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PerformanceSnapshotsCompanion copyWith({
+    Value<String>? snapshotId,
+    Value<String>? userId,
+    Value<String?>? matrixRunId,
+    Value<MatrixType?>? matrixType,
+    Value<bool>? isPrimary,
+    Value<String?>? label,
+    Value<DateTime>? snapshotTimestamp,
+    Value<bool>? isDeleted,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PerformanceSnapshotsCompanion(
+      snapshotId: snapshotId ?? this.snapshotId,
+      userId: userId ?? this.userId,
+      matrixRunId: matrixRunId ?? this.matrixRunId,
+      matrixType: matrixType ?? this.matrixType,
+      isPrimary: isPrimary ?? this.isPrimary,
+      label: label ?? this.label,
+      snapshotTimestamp: snapshotTimestamp ?? this.snapshotTimestamp,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (snapshotId.present) {
+      map['SnapshotID'] = Variable<String>(snapshotId.value);
+    }
+    if (userId.present) {
+      map['UserID'] = Variable<String>(userId.value);
+    }
+    if (matrixRunId.present) {
+      map['MatrixRunID'] = Variable<String>(matrixRunId.value);
+    }
+    if (matrixType.present) {
+      map['MatrixType'] = Variable<String>(
+        $PerformanceSnapshotsTable.$convertermatrixTypen.toSql(
+          matrixType.value,
+        ),
+      );
+    }
+    if (isPrimary.present) {
+      map['IsPrimary'] = Variable<bool>(isPrimary.value);
+    }
+    if (label.present) {
+      map['Label'] = Variable<String>(label.value);
+    }
+    if (snapshotTimestamp.present) {
+      map['SnapshotTimestamp'] = Variable<DateTime>(snapshotTimestamp.value);
+    }
+    if (isDeleted.present) {
+      map['IsDeleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PerformanceSnapshotsCompanion(')
+          ..write('snapshotId: $snapshotId, ')
+          ..write('userId: $userId, ')
+          ..write('matrixRunId: $matrixRunId, ')
+          ..write('matrixType: $matrixType, ')
+          ..write('isPrimary: $isPrimary, ')
+          ..write('label: $label, ')
+          ..write('snapshotTimestamp: $snapshotTimestamp, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SnapshotClubsTable extends SnapshotClubs
+    with TableInfo<$SnapshotClubsTable, SnapshotClub> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SnapshotClubsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _snapshotClubIdMeta = const VerificationMeta(
+    'snapshotClubId',
+  );
+  @override
+  late final GeneratedColumn<String> snapshotClubId = GeneratedColumn<String>(
+    'SnapshotClubID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _snapshotIdMeta = const VerificationMeta(
+    'snapshotId',
+  );
+  @override
+  late final GeneratedColumn<String> snapshotId = GeneratedColumn<String>(
+    'SnapshotID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clubIdMeta = const VerificationMeta('clubId');
+  @override
+  late final GeneratedColumn<String> clubId = GeneratedColumn<String>(
+    'ClubID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _carryDistanceMetersMeta =
+      const VerificationMeta('carryDistanceMeters');
+  @override
+  late final GeneratedColumn<double> carryDistanceMeters =
+      GeneratedColumn<double>(
+        'CarryDistanceMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _totalDistanceMetersMeta =
+      const VerificationMeta('totalDistanceMeters');
+  @override
+  late final GeneratedColumn<double> totalDistanceMeters =
+      GeneratedColumn<double>(
+        'TotalDistanceMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _dispersionLeftMetersMeta =
+      const VerificationMeta('dispersionLeftMeters');
+  @override
+  late final GeneratedColumn<double> dispersionLeftMeters =
+      GeneratedColumn<double>(
+        'DispersionLeftMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _dispersionRightMetersMeta =
+      const VerificationMeta('dispersionRightMeters');
+  @override
+  late final GeneratedColumn<double> dispersionRightMeters =
+      GeneratedColumn<double>(
+        'DispersionRightMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _rolloutDistanceMetersMeta =
+      const VerificationMeta('rolloutDistanceMeters');
+  @override
+  late final GeneratedColumn<double> rolloutDistanceMeters =
+      GeneratedColumn<double>(
+        'RolloutDistanceMeters',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    snapshotClubId,
+    snapshotId,
+    clubId,
+    carryDistanceMeters,
+    totalDistanceMeters,
+    dispersionLeftMeters,
+    dispersionRightMeters,
+    rolloutDistanceMeters,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'SnapshotClub';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SnapshotClub> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('SnapshotClubID')) {
+      context.handle(
+        _snapshotClubIdMeta,
+        snapshotClubId.isAcceptableOrUnknown(
+          data['SnapshotClubID']!,
+          _snapshotClubIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotClubIdMeta);
+    }
+    if (data.containsKey('SnapshotID')) {
+      context.handle(
+        _snapshotIdMeta,
+        snapshotId.isAcceptableOrUnknown(data['SnapshotID']!, _snapshotIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotIdMeta);
+    }
+    if (data.containsKey('ClubID')) {
+      context.handle(
+        _clubIdMeta,
+        clubId.isAcceptableOrUnknown(data['ClubID']!, _clubIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clubIdMeta);
+    }
+    if (data.containsKey('CarryDistanceMeters')) {
+      context.handle(
+        _carryDistanceMetersMeta,
+        carryDistanceMeters.isAcceptableOrUnknown(
+          data['CarryDistanceMeters']!,
+          _carryDistanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('TotalDistanceMeters')) {
+      context.handle(
+        _totalDistanceMetersMeta,
+        totalDistanceMeters.isAcceptableOrUnknown(
+          data['TotalDistanceMeters']!,
+          _totalDistanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('DispersionLeftMeters')) {
+      context.handle(
+        _dispersionLeftMetersMeta,
+        dispersionLeftMeters.isAcceptableOrUnknown(
+          data['DispersionLeftMeters']!,
+          _dispersionLeftMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('DispersionRightMeters')) {
+      context.handle(
+        _dispersionRightMetersMeta,
+        dispersionRightMeters.isAcceptableOrUnknown(
+          data['DispersionRightMeters']!,
+          _dispersionRightMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('RolloutDistanceMeters')) {
+      context.handle(
+        _rolloutDistanceMetersMeta,
+        rolloutDistanceMeters.isAcceptableOrUnknown(
+          data['RolloutDistanceMeters']!,
+          _rolloutDistanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {snapshotClubId};
+  @override
+  SnapshotClub map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SnapshotClub(
+      snapshotClubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}SnapshotClubID'],
+      )!,
+      snapshotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}SnapshotID'],
+      )!,
+      clubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ClubID'],
+      )!,
+      carryDistanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}CarryDistanceMeters'],
+      ),
+      totalDistanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}TotalDistanceMeters'],
+      ),
+      dispersionLeftMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}DispersionLeftMeters'],
+      ),
+      dispersionRightMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}DispersionRightMeters'],
+      ),
+      rolloutDistanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}RolloutDistanceMeters'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $SnapshotClubsTable createAlias(String alias) {
+    return $SnapshotClubsTable(attachedDatabase, alias);
+  }
+}
+
+class SnapshotClub extends DataClass implements Insertable<SnapshotClub> {
+  final String snapshotClubId;
+  final String snapshotId;
+  final String clubId;
+  final double? carryDistanceMeters;
+  final double? totalDistanceMeters;
+  final double? dispersionLeftMeters;
+  final double? dispersionRightMeters;
+  final double? rolloutDistanceMeters;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const SnapshotClub({
+    required this.snapshotClubId,
+    required this.snapshotId,
+    required this.clubId,
+    this.carryDistanceMeters,
+    this.totalDistanceMeters,
+    this.dispersionLeftMeters,
+    this.dispersionRightMeters,
+    this.rolloutDistanceMeters,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['SnapshotClubID'] = Variable<String>(snapshotClubId);
+    map['SnapshotID'] = Variable<String>(snapshotId);
+    map['ClubID'] = Variable<String>(clubId);
+    if (!nullToAbsent || carryDistanceMeters != null) {
+      map['CarryDistanceMeters'] = Variable<double>(carryDistanceMeters);
+    }
+    if (!nullToAbsent || totalDistanceMeters != null) {
+      map['TotalDistanceMeters'] = Variable<double>(totalDistanceMeters);
+    }
+    if (!nullToAbsent || dispersionLeftMeters != null) {
+      map['DispersionLeftMeters'] = Variable<double>(dispersionLeftMeters);
+    }
+    if (!nullToAbsent || dispersionRightMeters != null) {
+      map['DispersionRightMeters'] = Variable<double>(dispersionRightMeters);
+    }
+    if (!nullToAbsent || rolloutDistanceMeters != null) {
+      map['RolloutDistanceMeters'] = Variable<double>(rolloutDistanceMeters);
+    }
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  SnapshotClubsCompanion toCompanion(bool nullToAbsent) {
+    return SnapshotClubsCompanion(
+      snapshotClubId: Value(snapshotClubId),
+      snapshotId: Value(snapshotId),
+      clubId: Value(clubId),
+      carryDistanceMeters: carryDistanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(carryDistanceMeters),
+      totalDistanceMeters: totalDistanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalDistanceMeters),
+      dispersionLeftMeters: dispersionLeftMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dispersionLeftMeters),
+      dispersionRightMeters: dispersionRightMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dispersionRightMeters),
+      rolloutDistanceMeters: rolloutDistanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rolloutDistanceMeters),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory SnapshotClub.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SnapshotClub(
+      snapshotClubId: serializer.fromJson<String>(json['snapshotClubId']),
+      snapshotId: serializer.fromJson<String>(json['snapshotId']),
+      clubId: serializer.fromJson<String>(json['clubId']),
+      carryDistanceMeters: serializer.fromJson<double?>(
+        json['carryDistanceMeters'],
+      ),
+      totalDistanceMeters: serializer.fromJson<double?>(
+        json['totalDistanceMeters'],
+      ),
+      dispersionLeftMeters: serializer.fromJson<double?>(
+        json['dispersionLeftMeters'],
+      ),
+      dispersionRightMeters: serializer.fromJson<double?>(
+        json['dispersionRightMeters'],
+      ),
+      rolloutDistanceMeters: serializer.fromJson<double?>(
+        json['rolloutDistanceMeters'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'snapshotClubId': serializer.toJson<String>(snapshotClubId),
+      'snapshotId': serializer.toJson<String>(snapshotId),
+      'clubId': serializer.toJson<String>(clubId),
+      'carryDistanceMeters': serializer.toJson<double?>(carryDistanceMeters),
+      'totalDistanceMeters': serializer.toJson<double?>(totalDistanceMeters),
+      'dispersionLeftMeters': serializer.toJson<double?>(dispersionLeftMeters),
+      'dispersionRightMeters': serializer.toJson<double?>(
+        dispersionRightMeters,
+      ),
+      'rolloutDistanceMeters': serializer.toJson<double?>(
+        rolloutDistanceMeters,
+      ),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  SnapshotClub copyWith({
+    String? snapshotClubId,
+    String? snapshotId,
+    String? clubId,
+    Value<double?> carryDistanceMeters = const Value.absent(),
+    Value<double?> totalDistanceMeters = const Value.absent(),
+    Value<double?> dispersionLeftMeters = const Value.absent(),
+    Value<double?> dispersionRightMeters = const Value.absent(),
+    Value<double?> rolloutDistanceMeters = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => SnapshotClub(
+    snapshotClubId: snapshotClubId ?? this.snapshotClubId,
+    snapshotId: snapshotId ?? this.snapshotId,
+    clubId: clubId ?? this.clubId,
+    carryDistanceMeters: carryDistanceMeters.present
+        ? carryDistanceMeters.value
+        : this.carryDistanceMeters,
+    totalDistanceMeters: totalDistanceMeters.present
+        ? totalDistanceMeters.value
+        : this.totalDistanceMeters,
+    dispersionLeftMeters: dispersionLeftMeters.present
+        ? dispersionLeftMeters.value
+        : this.dispersionLeftMeters,
+    dispersionRightMeters: dispersionRightMeters.present
+        ? dispersionRightMeters.value
+        : this.dispersionRightMeters,
+    rolloutDistanceMeters: rolloutDistanceMeters.present
+        ? rolloutDistanceMeters.value
+        : this.rolloutDistanceMeters,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  SnapshotClub copyWithCompanion(SnapshotClubsCompanion data) {
+    return SnapshotClub(
+      snapshotClubId: data.snapshotClubId.present
+          ? data.snapshotClubId.value
+          : this.snapshotClubId,
+      snapshotId: data.snapshotId.present
+          ? data.snapshotId.value
+          : this.snapshotId,
+      clubId: data.clubId.present ? data.clubId.value : this.clubId,
+      carryDistanceMeters: data.carryDistanceMeters.present
+          ? data.carryDistanceMeters.value
+          : this.carryDistanceMeters,
+      totalDistanceMeters: data.totalDistanceMeters.present
+          ? data.totalDistanceMeters.value
+          : this.totalDistanceMeters,
+      dispersionLeftMeters: data.dispersionLeftMeters.present
+          ? data.dispersionLeftMeters.value
+          : this.dispersionLeftMeters,
+      dispersionRightMeters: data.dispersionRightMeters.present
+          ? data.dispersionRightMeters.value
+          : this.dispersionRightMeters,
+      rolloutDistanceMeters: data.rolloutDistanceMeters.present
+          ? data.rolloutDistanceMeters.value
+          : this.rolloutDistanceMeters,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SnapshotClub(')
+          ..write('snapshotClubId: $snapshotClubId, ')
+          ..write('snapshotId: $snapshotId, ')
+          ..write('clubId: $clubId, ')
+          ..write('carryDistanceMeters: $carryDistanceMeters, ')
+          ..write('totalDistanceMeters: $totalDistanceMeters, ')
+          ..write('dispersionLeftMeters: $dispersionLeftMeters, ')
+          ..write('dispersionRightMeters: $dispersionRightMeters, ')
+          ..write('rolloutDistanceMeters: $rolloutDistanceMeters, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    snapshotClubId,
+    snapshotId,
+    clubId,
+    carryDistanceMeters,
+    totalDistanceMeters,
+    dispersionLeftMeters,
+    dispersionRightMeters,
+    rolloutDistanceMeters,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SnapshotClub &&
+          other.snapshotClubId == this.snapshotClubId &&
+          other.snapshotId == this.snapshotId &&
+          other.clubId == this.clubId &&
+          other.carryDistanceMeters == this.carryDistanceMeters &&
+          other.totalDistanceMeters == this.totalDistanceMeters &&
+          other.dispersionLeftMeters == this.dispersionLeftMeters &&
+          other.dispersionRightMeters == this.dispersionRightMeters &&
+          other.rolloutDistanceMeters == this.rolloutDistanceMeters &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SnapshotClubsCompanion extends UpdateCompanion<SnapshotClub> {
+  final Value<String> snapshotClubId;
+  final Value<String> snapshotId;
+  final Value<String> clubId;
+  final Value<double?> carryDistanceMeters;
+  final Value<double?> totalDistanceMeters;
+  final Value<double?> dispersionLeftMeters;
+  final Value<double?> dispersionRightMeters;
+  final Value<double?> rolloutDistanceMeters;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const SnapshotClubsCompanion({
+    this.snapshotClubId = const Value.absent(),
+    this.snapshotId = const Value.absent(),
+    this.clubId = const Value.absent(),
+    this.carryDistanceMeters = const Value.absent(),
+    this.totalDistanceMeters = const Value.absent(),
+    this.dispersionLeftMeters = const Value.absent(),
+    this.dispersionRightMeters = const Value.absent(),
+    this.rolloutDistanceMeters = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SnapshotClubsCompanion.insert({
+    required String snapshotClubId,
+    required String snapshotId,
+    required String clubId,
+    this.carryDistanceMeters = const Value.absent(),
+    this.totalDistanceMeters = const Value.absent(),
+    this.dispersionLeftMeters = const Value.absent(),
+    this.dispersionRightMeters = const Value.absent(),
+    this.rolloutDistanceMeters = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : snapshotClubId = Value(snapshotClubId),
+       snapshotId = Value(snapshotId),
+       clubId = Value(clubId);
+  static Insertable<SnapshotClub> custom({
+    Expression<String>? snapshotClubId,
+    Expression<String>? snapshotId,
+    Expression<String>? clubId,
+    Expression<double>? carryDistanceMeters,
+    Expression<double>? totalDistanceMeters,
+    Expression<double>? dispersionLeftMeters,
+    Expression<double>? dispersionRightMeters,
+    Expression<double>? rolloutDistanceMeters,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (snapshotClubId != null) 'SnapshotClubID': snapshotClubId,
+      if (snapshotId != null) 'SnapshotID': snapshotId,
+      if (clubId != null) 'ClubID': clubId,
+      if (carryDistanceMeters != null)
+        'CarryDistanceMeters': carryDistanceMeters,
+      if (totalDistanceMeters != null)
+        'TotalDistanceMeters': totalDistanceMeters,
+      if (dispersionLeftMeters != null)
+        'DispersionLeftMeters': dispersionLeftMeters,
+      if (dispersionRightMeters != null)
+        'DispersionRightMeters': dispersionRightMeters,
+      if (rolloutDistanceMeters != null)
+        'RolloutDistanceMeters': rolloutDistanceMeters,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SnapshotClubsCompanion copyWith({
+    Value<String>? snapshotClubId,
+    Value<String>? snapshotId,
+    Value<String>? clubId,
+    Value<double?>? carryDistanceMeters,
+    Value<double?>? totalDistanceMeters,
+    Value<double?>? dispersionLeftMeters,
+    Value<double?>? dispersionRightMeters,
+    Value<double?>? rolloutDistanceMeters,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return SnapshotClubsCompanion(
+      snapshotClubId: snapshotClubId ?? this.snapshotClubId,
+      snapshotId: snapshotId ?? this.snapshotId,
+      clubId: clubId ?? this.clubId,
+      carryDistanceMeters: carryDistanceMeters ?? this.carryDistanceMeters,
+      totalDistanceMeters: totalDistanceMeters ?? this.totalDistanceMeters,
+      dispersionLeftMeters: dispersionLeftMeters ?? this.dispersionLeftMeters,
+      dispersionRightMeters:
+          dispersionRightMeters ?? this.dispersionRightMeters,
+      rolloutDistanceMeters:
+          rolloutDistanceMeters ?? this.rolloutDistanceMeters,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (snapshotClubId.present) {
+      map['SnapshotClubID'] = Variable<String>(snapshotClubId.value);
+    }
+    if (snapshotId.present) {
+      map['SnapshotID'] = Variable<String>(snapshotId.value);
+    }
+    if (clubId.present) {
+      map['ClubID'] = Variable<String>(clubId.value);
+    }
+    if (carryDistanceMeters.present) {
+      map['CarryDistanceMeters'] = Variable<double>(carryDistanceMeters.value);
+    }
+    if (totalDistanceMeters.present) {
+      map['TotalDistanceMeters'] = Variable<double>(totalDistanceMeters.value);
+    }
+    if (dispersionLeftMeters.present) {
+      map['DispersionLeftMeters'] = Variable<double>(
+        dispersionLeftMeters.value,
+      );
+    }
+    if (dispersionRightMeters.present) {
+      map['DispersionRightMeters'] = Variable<double>(
+        dispersionRightMeters.value,
+      );
+    }
+    if (rolloutDistanceMeters.present) {
+      map['RolloutDistanceMeters'] = Variable<double>(
+        rolloutDistanceMeters.value,
+      );
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SnapshotClubsCompanion(')
+          ..write('snapshotClubId: $snapshotClubId, ')
+          ..write('snapshotId: $snapshotId, ')
+          ..write('clubId: $clubId, ')
+          ..write('carryDistanceMeters: $carryDistanceMeters, ')
+          ..write('totalDistanceMeters: $totalDistanceMeters, ')
+          ..write('dispersionLeftMeters: $dispersionLeftMeters, ')
+          ..write('dispersionRightMeters: $dispersionRightMeters, ')
+          ..write('rolloutDistanceMeters: $rolloutDistanceMeters, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncMetadataEntriesTable extends SyncMetadataEntries
     with TableInfo<$SyncMetadataEntriesTable, SyncMetadataEntry> {
   @override
@@ -14177,6 +18586,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $UserScoringLocksTable userScoringLocks = $UserScoringLocksTable(
     this,
   );
+  late final $MatrixRunsTable matrixRuns = $MatrixRunsTable(this);
+  late final $MatrixAxesTable matrixAxes = $MatrixAxesTable(this);
+  late final $MatrixAxisValuesTable matrixAxisValues = $MatrixAxisValuesTable(
+    this,
+  );
+  late final $MatrixCellsTable matrixCells = $MatrixCellsTable(this);
+  late final $MatrixAttemptsTable matrixAttempts = $MatrixAttemptsTable(this);
+  late final $PerformanceSnapshotsTable performanceSnapshots =
+      $PerformanceSnapshotsTable(this);
+  late final $SnapshotClubsTable snapshotClubs = $SnapshotClubsTable(this);
   late final $SyncMetadataEntriesTable syncMetadataEntries =
       $SyncMetadataEntriesTable(this);
   @override
@@ -14210,6 +18629,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     eventLogs,
     userDevices,
     userScoringLocks,
+    matrixRuns,
+    matrixAxes,
+    matrixAxisValues,
+    matrixCells,
+    matrixAttempts,
+    performanceSnapshots,
+    snapshotClubs,
     syncMetadataEntries,
   ];
 }
@@ -21203,6 +25629,2124 @@ typedef $$UserScoringLocksTableProcessedTableManager =
       UserScoringLock,
       PrefetchHooks Function()
     >;
+typedef $$MatrixRunsTableCreateCompanionBuilder =
+    MatrixRunsCompanion Function({
+      required String matrixRunId,
+      required String userId,
+      required MatrixType matrixType,
+      required int runNumber,
+      required RunState runState,
+      Value<DateTime> startTimestamp,
+      Value<DateTime?> endTimestamp,
+      required int sessionShotTarget,
+      required ShotOrderMode shotOrderMode,
+      Value<bool> dispersionCaptureEnabled,
+      Value<String?> measurementDevice,
+      Value<EnvironmentType?> environmentType,
+      Value<SurfaceType?> surfaceType,
+      Value<double?> greenSpeed,
+      Value<GreenFirmness?> greenFirmness,
+      Value<bool> isDeleted,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MatrixRunsTableUpdateCompanionBuilder =
+    MatrixRunsCompanion Function({
+      Value<String> matrixRunId,
+      Value<String> userId,
+      Value<MatrixType> matrixType,
+      Value<int> runNumber,
+      Value<RunState> runState,
+      Value<DateTime> startTimestamp,
+      Value<DateTime?> endTimestamp,
+      Value<int> sessionShotTarget,
+      Value<ShotOrderMode> shotOrderMode,
+      Value<bool> dispersionCaptureEnabled,
+      Value<String?> measurementDevice,
+      Value<EnvironmentType?> environmentType,
+      Value<SurfaceType?> surfaceType,
+      Value<double?> greenSpeed,
+      Value<GreenFirmness?> greenFirmness,
+      Value<bool> isDeleted,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MatrixRunsTableFilterComposer
+    extends Composer<_$AppDatabase, $MatrixRunsTable> {
+  $$MatrixRunsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MatrixType, MatrixType, String>
+  get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get runNumber => $composableBuilder(
+    column: $table.runNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<RunState, RunState, String> get runState =>
+      $composableBuilder(
+        column: $table.runState,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<DateTime> get startTimestamp => $composableBuilder(
+    column: $table.startTimestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endTimestamp => $composableBuilder(
+    column: $table.endTimestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sessionShotTarget => $composableBuilder(
+    column: $table.sessionShotTarget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ShotOrderMode, ShotOrderMode, String>
+  get shotOrderMode => $composableBuilder(
+    column: $table.shotOrderMode,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get dispersionCaptureEnabled => $composableBuilder(
+    column: $table.dispersionCaptureEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get measurementDevice => $composableBuilder(
+    column: $table.measurementDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<EnvironmentType?, EnvironmentType, String>
+  get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SurfaceType?, SurfaceType, String>
+  get surfaceType => $composableBuilder(
+    column: $table.surfaceType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<double> get greenSpeed => $composableBuilder(
+    column: $table.greenSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<GreenFirmness?, GreenFirmness, String>
+  get greenFirmness => $composableBuilder(
+    column: $table.greenFirmness,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MatrixRunsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MatrixRunsTable> {
+  $$MatrixRunsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get runNumber => $composableBuilder(
+    column: $table.runNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get runState => $composableBuilder(
+    column: $table.runState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startTimestamp => $composableBuilder(
+    column: $table.startTimestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endTimestamp => $composableBuilder(
+    column: $table.endTimestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sessionShotTarget => $composableBuilder(
+    column: $table.sessionShotTarget,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shotOrderMode => $composableBuilder(
+    column: $table.shotOrderMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dispersionCaptureEnabled => $composableBuilder(
+    column: $table.dispersionCaptureEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get measurementDevice => $composableBuilder(
+    column: $table.measurementDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get surfaceType => $composableBuilder(
+    column: $table.surfaceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get greenSpeed => $composableBuilder(
+    column: $table.greenSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get greenFirmness => $composableBuilder(
+    column: $table.greenFirmness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MatrixRunsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MatrixRunsTable> {
+  $$MatrixRunsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<MatrixType, String> get matrixType =>
+      $composableBuilder(
+        column: $table.matrixType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<int> get runNumber =>
+      $composableBuilder(column: $table.runNumber, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<RunState, String> get runState =>
+      $composableBuilder(column: $table.runState, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startTimestamp => $composableBuilder(
+    column: $table.startTimestamp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get endTimestamp => $composableBuilder(
+    column: $table.endTimestamp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sessionShotTarget => $composableBuilder(
+    column: $table.sessionShotTarget,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<ShotOrderMode, String> get shotOrderMode =>
+      $composableBuilder(
+        column: $table.shotOrderMode,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<bool> get dispersionCaptureEnabled => $composableBuilder(
+    column: $table.dispersionCaptureEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get measurementDevice => $composableBuilder(
+    column: $table.measurementDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<EnvironmentType?, String>
+  get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<SurfaceType?, String> get surfaceType =>
+      $composableBuilder(
+        column: $table.surfaceType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<double> get greenSpeed => $composableBuilder(
+    column: $table.greenSpeed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<GreenFirmness?, String> get greenFirmness =>
+      $composableBuilder(
+        column: $table.greenFirmness,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MatrixRunsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MatrixRunsTable,
+          MatrixRun,
+          $$MatrixRunsTableFilterComposer,
+          $$MatrixRunsTableOrderingComposer,
+          $$MatrixRunsTableAnnotationComposer,
+          $$MatrixRunsTableCreateCompanionBuilder,
+          $$MatrixRunsTableUpdateCompanionBuilder,
+          (
+            MatrixRun,
+            BaseReferences<_$AppDatabase, $MatrixRunsTable, MatrixRun>,
+          ),
+          MatrixRun,
+          PrefetchHooks Function()
+        > {
+  $$MatrixRunsTableTableManager(_$AppDatabase db, $MatrixRunsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MatrixRunsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MatrixRunsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MatrixRunsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> matrixRunId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<MatrixType> matrixType = const Value.absent(),
+                Value<int> runNumber = const Value.absent(),
+                Value<RunState> runState = const Value.absent(),
+                Value<DateTime> startTimestamp = const Value.absent(),
+                Value<DateTime?> endTimestamp = const Value.absent(),
+                Value<int> sessionShotTarget = const Value.absent(),
+                Value<ShotOrderMode> shotOrderMode = const Value.absent(),
+                Value<bool> dispersionCaptureEnabled = const Value.absent(),
+                Value<String?> measurementDevice = const Value.absent(),
+                Value<EnvironmentType?> environmentType = const Value.absent(),
+                Value<SurfaceType?> surfaceType = const Value.absent(),
+                Value<double?> greenSpeed = const Value.absent(),
+                Value<GreenFirmness?> greenFirmness = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixRunsCompanion(
+                matrixRunId: matrixRunId,
+                userId: userId,
+                matrixType: matrixType,
+                runNumber: runNumber,
+                runState: runState,
+                startTimestamp: startTimestamp,
+                endTimestamp: endTimestamp,
+                sessionShotTarget: sessionShotTarget,
+                shotOrderMode: shotOrderMode,
+                dispersionCaptureEnabled: dispersionCaptureEnabled,
+                measurementDevice: measurementDevice,
+                environmentType: environmentType,
+                surfaceType: surfaceType,
+                greenSpeed: greenSpeed,
+                greenFirmness: greenFirmness,
+                isDeleted: isDeleted,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String matrixRunId,
+                required String userId,
+                required MatrixType matrixType,
+                required int runNumber,
+                required RunState runState,
+                Value<DateTime> startTimestamp = const Value.absent(),
+                Value<DateTime?> endTimestamp = const Value.absent(),
+                required int sessionShotTarget,
+                required ShotOrderMode shotOrderMode,
+                Value<bool> dispersionCaptureEnabled = const Value.absent(),
+                Value<String?> measurementDevice = const Value.absent(),
+                Value<EnvironmentType?> environmentType = const Value.absent(),
+                Value<SurfaceType?> surfaceType = const Value.absent(),
+                Value<double?> greenSpeed = const Value.absent(),
+                Value<GreenFirmness?> greenFirmness = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixRunsCompanion.insert(
+                matrixRunId: matrixRunId,
+                userId: userId,
+                matrixType: matrixType,
+                runNumber: runNumber,
+                runState: runState,
+                startTimestamp: startTimestamp,
+                endTimestamp: endTimestamp,
+                sessionShotTarget: sessionShotTarget,
+                shotOrderMode: shotOrderMode,
+                dispersionCaptureEnabled: dispersionCaptureEnabled,
+                measurementDevice: measurementDevice,
+                environmentType: environmentType,
+                surfaceType: surfaceType,
+                greenSpeed: greenSpeed,
+                greenFirmness: greenFirmness,
+                isDeleted: isDeleted,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MatrixRunsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MatrixRunsTable,
+      MatrixRun,
+      $$MatrixRunsTableFilterComposer,
+      $$MatrixRunsTableOrderingComposer,
+      $$MatrixRunsTableAnnotationComposer,
+      $$MatrixRunsTableCreateCompanionBuilder,
+      $$MatrixRunsTableUpdateCompanionBuilder,
+      (MatrixRun, BaseReferences<_$AppDatabase, $MatrixRunsTable, MatrixRun>),
+      MatrixRun,
+      PrefetchHooks Function()
+    >;
+typedef $$MatrixAxesTableCreateCompanionBuilder =
+    MatrixAxesCompanion Function({
+      required String matrixAxisId,
+      required String matrixRunId,
+      required AxisType axisType,
+      required String axisName,
+      required int axisOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MatrixAxesTableUpdateCompanionBuilder =
+    MatrixAxesCompanion Function({
+      Value<String> matrixAxisId,
+      Value<String> matrixRunId,
+      Value<AxisType> axisType,
+      Value<String> axisName,
+      Value<int> axisOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MatrixAxesTableFilterComposer
+    extends Composer<_$AppDatabase, $MatrixAxesTable> {
+  $$MatrixAxesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get matrixAxisId => $composableBuilder(
+    column: $table.matrixAxisId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<AxisType, AxisType, String> get axisType =>
+      $composableBuilder(
+        column: $table.axisType,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get axisName => $composableBuilder(
+    column: $table.axisName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get axisOrder => $composableBuilder(
+    column: $table.axisOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MatrixAxesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MatrixAxesTable> {
+  $$MatrixAxesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get matrixAxisId => $composableBuilder(
+    column: $table.matrixAxisId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get axisType => $composableBuilder(
+    column: $table.axisType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get axisName => $composableBuilder(
+    column: $table.axisName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get axisOrder => $composableBuilder(
+    column: $table.axisOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MatrixAxesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MatrixAxesTable> {
+  $$MatrixAxesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get matrixAxisId => $composableBuilder(
+    column: $table.matrixAxisId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<AxisType, String> get axisType =>
+      $composableBuilder(column: $table.axisType, builder: (column) => column);
+
+  GeneratedColumn<String> get axisName =>
+      $composableBuilder(column: $table.axisName, builder: (column) => column);
+
+  GeneratedColumn<int> get axisOrder =>
+      $composableBuilder(column: $table.axisOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MatrixAxesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MatrixAxesTable,
+          MatrixAxis,
+          $$MatrixAxesTableFilterComposer,
+          $$MatrixAxesTableOrderingComposer,
+          $$MatrixAxesTableAnnotationComposer,
+          $$MatrixAxesTableCreateCompanionBuilder,
+          $$MatrixAxesTableUpdateCompanionBuilder,
+          (
+            MatrixAxis,
+            BaseReferences<_$AppDatabase, $MatrixAxesTable, MatrixAxis>,
+          ),
+          MatrixAxis,
+          PrefetchHooks Function()
+        > {
+  $$MatrixAxesTableTableManager(_$AppDatabase db, $MatrixAxesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MatrixAxesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MatrixAxesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MatrixAxesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> matrixAxisId = const Value.absent(),
+                Value<String> matrixRunId = const Value.absent(),
+                Value<AxisType> axisType = const Value.absent(),
+                Value<String> axisName = const Value.absent(),
+                Value<int> axisOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixAxesCompanion(
+                matrixAxisId: matrixAxisId,
+                matrixRunId: matrixRunId,
+                axisType: axisType,
+                axisName: axisName,
+                axisOrder: axisOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String matrixAxisId,
+                required String matrixRunId,
+                required AxisType axisType,
+                required String axisName,
+                required int axisOrder,
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixAxesCompanion.insert(
+                matrixAxisId: matrixAxisId,
+                matrixRunId: matrixRunId,
+                axisType: axisType,
+                axisName: axisName,
+                axisOrder: axisOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MatrixAxesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MatrixAxesTable,
+      MatrixAxis,
+      $$MatrixAxesTableFilterComposer,
+      $$MatrixAxesTableOrderingComposer,
+      $$MatrixAxesTableAnnotationComposer,
+      $$MatrixAxesTableCreateCompanionBuilder,
+      $$MatrixAxesTableUpdateCompanionBuilder,
+      (MatrixAxis, BaseReferences<_$AppDatabase, $MatrixAxesTable, MatrixAxis>),
+      MatrixAxis,
+      PrefetchHooks Function()
+    >;
+typedef $$MatrixAxisValuesTableCreateCompanionBuilder =
+    MatrixAxisValuesCompanion Function({
+      required String axisValueId,
+      required String matrixAxisId,
+      required String label,
+      required int sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MatrixAxisValuesTableUpdateCompanionBuilder =
+    MatrixAxisValuesCompanion Function({
+      Value<String> axisValueId,
+      Value<String> matrixAxisId,
+      Value<String> label,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MatrixAxisValuesTableFilterComposer
+    extends Composer<_$AppDatabase, $MatrixAxisValuesTable> {
+  $$MatrixAxisValuesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get axisValueId => $composableBuilder(
+    column: $table.axisValueId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matrixAxisId => $composableBuilder(
+    column: $table.matrixAxisId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MatrixAxisValuesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MatrixAxisValuesTable> {
+  $$MatrixAxisValuesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get axisValueId => $composableBuilder(
+    column: $table.axisValueId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixAxisId => $composableBuilder(
+    column: $table.matrixAxisId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MatrixAxisValuesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MatrixAxisValuesTable> {
+  $$MatrixAxisValuesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get axisValueId => $composableBuilder(
+    column: $table.axisValueId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get matrixAxisId => $composableBuilder(
+    column: $table.matrixAxisId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MatrixAxisValuesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MatrixAxisValuesTable,
+          MatrixAxisValue,
+          $$MatrixAxisValuesTableFilterComposer,
+          $$MatrixAxisValuesTableOrderingComposer,
+          $$MatrixAxisValuesTableAnnotationComposer,
+          $$MatrixAxisValuesTableCreateCompanionBuilder,
+          $$MatrixAxisValuesTableUpdateCompanionBuilder,
+          (
+            MatrixAxisValue,
+            BaseReferences<
+              _$AppDatabase,
+              $MatrixAxisValuesTable,
+              MatrixAxisValue
+            >,
+          ),
+          MatrixAxisValue,
+          PrefetchHooks Function()
+        > {
+  $$MatrixAxisValuesTableTableManager(
+    _$AppDatabase db,
+    $MatrixAxisValuesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MatrixAxisValuesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MatrixAxisValuesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MatrixAxisValuesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> axisValueId = const Value.absent(),
+                Value<String> matrixAxisId = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixAxisValuesCompanion(
+                axisValueId: axisValueId,
+                matrixAxisId: matrixAxisId,
+                label: label,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String axisValueId,
+                required String matrixAxisId,
+                required String label,
+                required int sortOrder,
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixAxisValuesCompanion.insert(
+                axisValueId: axisValueId,
+                matrixAxisId: matrixAxisId,
+                label: label,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MatrixAxisValuesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MatrixAxisValuesTable,
+      MatrixAxisValue,
+      $$MatrixAxisValuesTableFilterComposer,
+      $$MatrixAxisValuesTableOrderingComposer,
+      $$MatrixAxisValuesTableAnnotationComposer,
+      $$MatrixAxisValuesTableCreateCompanionBuilder,
+      $$MatrixAxisValuesTableUpdateCompanionBuilder,
+      (
+        MatrixAxisValue,
+        BaseReferences<_$AppDatabase, $MatrixAxisValuesTable, MatrixAxisValue>,
+      ),
+      MatrixAxisValue,
+      PrefetchHooks Function()
+    >;
+typedef $$MatrixCellsTableCreateCompanionBuilder =
+    MatrixCellsCompanion Function({
+      required String matrixCellId,
+      required String matrixRunId,
+      Value<String> axisValueIds,
+      Value<bool> excludedFromRun,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MatrixCellsTableUpdateCompanionBuilder =
+    MatrixCellsCompanion Function({
+      Value<String> matrixCellId,
+      Value<String> matrixRunId,
+      Value<String> axisValueIds,
+      Value<bool> excludedFromRun,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MatrixCellsTableFilterComposer
+    extends Composer<_$AppDatabase, $MatrixCellsTable> {
+  $$MatrixCellsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get matrixCellId => $composableBuilder(
+    column: $table.matrixCellId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get axisValueIds => $composableBuilder(
+    column: $table.axisValueIds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get excludedFromRun => $composableBuilder(
+    column: $table.excludedFromRun,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MatrixCellsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MatrixCellsTable> {
+  $$MatrixCellsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get matrixCellId => $composableBuilder(
+    column: $table.matrixCellId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get axisValueIds => $composableBuilder(
+    column: $table.axisValueIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get excludedFromRun => $composableBuilder(
+    column: $table.excludedFromRun,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MatrixCellsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MatrixCellsTable> {
+  $$MatrixCellsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get matrixCellId => $composableBuilder(
+    column: $table.matrixCellId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get axisValueIds => $composableBuilder(
+    column: $table.axisValueIds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get excludedFromRun => $composableBuilder(
+    column: $table.excludedFromRun,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MatrixCellsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MatrixCellsTable,
+          MatrixCell,
+          $$MatrixCellsTableFilterComposer,
+          $$MatrixCellsTableOrderingComposer,
+          $$MatrixCellsTableAnnotationComposer,
+          $$MatrixCellsTableCreateCompanionBuilder,
+          $$MatrixCellsTableUpdateCompanionBuilder,
+          (
+            MatrixCell,
+            BaseReferences<_$AppDatabase, $MatrixCellsTable, MatrixCell>,
+          ),
+          MatrixCell,
+          PrefetchHooks Function()
+        > {
+  $$MatrixCellsTableTableManager(_$AppDatabase db, $MatrixCellsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MatrixCellsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MatrixCellsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MatrixCellsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> matrixCellId = const Value.absent(),
+                Value<String> matrixRunId = const Value.absent(),
+                Value<String> axisValueIds = const Value.absent(),
+                Value<bool> excludedFromRun = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixCellsCompanion(
+                matrixCellId: matrixCellId,
+                matrixRunId: matrixRunId,
+                axisValueIds: axisValueIds,
+                excludedFromRun: excludedFromRun,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String matrixCellId,
+                required String matrixRunId,
+                Value<String> axisValueIds = const Value.absent(),
+                Value<bool> excludedFromRun = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixCellsCompanion.insert(
+                matrixCellId: matrixCellId,
+                matrixRunId: matrixRunId,
+                axisValueIds: axisValueIds,
+                excludedFromRun: excludedFromRun,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MatrixCellsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MatrixCellsTable,
+      MatrixCell,
+      $$MatrixCellsTableFilterComposer,
+      $$MatrixCellsTableOrderingComposer,
+      $$MatrixCellsTableAnnotationComposer,
+      $$MatrixCellsTableCreateCompanionBuilder,
+      $$MatrixCellsTableUpdateCompanionBuilder,
+      (
+        MatrixCell,
+        BaseReferences<_$AppDatabase, $MatrixCellsTable, MatrixCell>,
+      ),
+      MatrixCell,
+      PrefetchHooks Function()
+    >;
+typedef $$MatrixAttemptsTableCreateCompanionBuilder =
+    MatrixAttemptsCompanion Function({
+      required String matrixAttemptId,
+      required String matrixCellId,
+      Value<DateTime> attemptTimestamp,
+      Value<double?> carryDistanceMeters,
+      Value<double?> totalDistanceMeters,
+      Value<double?> leftDeviationMeters,
+      Value<double?> rightDeviationMeters,
+      Value<double?> rolloutDistanceMeters,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MatrixAttemptsTableUpdateCompanionBuilder =
+    MatrixAttemptsCompanion Function({
+      Value<String> matrixAttemptId,
+      Value<String> matrixCellId,
+      Value<DateTime> attemptTimestamp,
+      Value<double?> carryDistanceMeters,
+      Value<double?> totalDistanceMeters,
+      Value<double?> leftDeviationMeters,
+      Value<double?> rightDeviationMeters,
+      Value<double?> rolloutDistanceMeters,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MatrixAttemptsTableFilterComposer
+    extends Composer<_$AppDatabase, $MatrixAttemptsTable> {
+  $$MatrixAttemptsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get matrixAttemptId => $composableBuilder(
+    column: $table.matrixAttemptId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matrixCellId => $composableBuilder(
+    column: $table.matrixCellId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get attemptTimestamp => $composableBuilder(
+    column: $table.attemptTimestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carryDistanceMeters => $composableBuilder(
+    column: $table.carryDistanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalDistanceMeters => $composableBuilder(
+    column: $table.totalDistanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get leftDeviationMeters => $composableBuilder(
+    column: $table.leftDeviationMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rightDeviationMeters => $composableBuilder(
+    column: $table.rightDeviationMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rolloutDistanceMeters => $composableBuilder(
+    column: $table.rolloutDistanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MatrixAttemptsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MatrixAttemptsTable> {
+  $$MatrixAttemptsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get matrixAttemptId => $composableBuilder(
+    column: $table.matrixAttemptId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixCellId => $composableBuilder(
+    column: $table.matrixCellId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get attemptTimestamp => $composableBuilder(
+    column: $table.attemptTimestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carryDistanceMeters => $composableBuilder(
+    column: $table.carryDistanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalDistanceMeters => $composableBuilder(
+    column: $table.totalDistanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get leftDeviationMeters => $composableBuilder(
+    column: $table.leftDeviationMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rightDeviationMeters => $composableBuilder(
+    column: $table.rightDeviationMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rolloutDistanceMeters => $composableBuilder(
+    column: $table.rolloutDistanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MatrixAttemptsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MatrixAttemptsTable> {
+  $$MatrixAttemptsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get matrixAttemptId => $composableBuilder(
+    column: $table.matrixAttemptId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get matrixCellId => $composableBuilder(
+    column: $table.matrixCellId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get attemptTimestamp => $composableBuilder(
+    column: $table.attemptTimestamp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get carryDistanceMeters => $composableBuilder(
+    column: $table.carryDistanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalDistanceMeters => $composableBuilder(
+    column: $table.totalDistanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get leftDeviationMeters => $composableBuilder(
+    column: $table.leftDeviationMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rightDeviationMeters => $composableBuilder(
+    column: $table.rightDeviationMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rolloutDistanceMeters => $composableBuilder(
+    column: $table.rolloutDistanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MatrixAttemptsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MatrixAttemptsTable,
+          MatrixAttempt,
+          $$MatrixAttemptsTableFilterComposer,
+          $$MatrixAttemptsTableOrderingComposer,
+          $$MatrixAttemptsTableAnnotationComposer,
+          $$MatrixAttemptsTableCreateCompanionBuilder,
+          $$MatrixAttemptsTableUpdateCompanionBuilder,
+          (
+            MatrixAttempt,
+            BaseReferences<_$AppDatabase, $MatrixAttemptsTable, MatrixAttempt>,
+          ),
+          MatrixAttempt,
+          PrefetchHooks Function()
+        > {
+  $$MatrixAttemptsTableTableManager(
+    _$AppDatabase db,
+    $MatrixAttemptsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MatrixAttemptsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MatrixAttemptsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MatrixAttemptsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> matrixAttemptId = const Value.absent(),
+                Value<String> matrixCellId = const Value.absent(),
+                Value<DateTime> attemptTimestamp = const Value.absent(),
+                Value<double?> carryDistanceMeters = const Value.absent(),
+                Value<double?> totalDistanceMeters = const Value.absent(),
+                Value<double?> leftDeviationMeters = const Value.absent(),
+                Value<double?> rightDeviationMeters = const Value.absent(),
+                Value<double?> rolloutDistanceMeters = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixAttemptsCompanion(
+                matrixAttemptId: matrixAttemptId,
+                matrixCellId: matrixCellId,
+                attemptTimestamp: attemptTimestamp,
+                carryDistanceMeters: carryDistanceMeters,
+                totalDistanceMeters: totalDistanceMeters,
+                leftDeviationMeters: leftDeviationMeters,
+                rightDeviationMeters: rightDeviationMeters,
+                rolloutDistanceMeters: rolloutDistanceMeters,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String matrixAttemptId,
+                required String matrixCellId,
+                Value<DateTime> attemptTimestamp = const Value.absent(),
+                Value<double?> carryDistanceMeters = const Value.absent(),
+                Value<double?> totalDistanceMeters = const Value.absent(),
+                Value<double?> leftDeviationMeters = const Value.absent(),
+                Value<double?> rightDeviationMeters = const Value.absent(),
+                Value<double?> rolloutDistanceMeters = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MatrixAttemptsCompanion.insert(
+                matrixAttemptId: matrixAttemptId,
+                matrixCellId: matrixCellId,
+                attemptTimestamp: attemptTimestamp,
+                carryDistanceMeters: carryDistanceMeters,
+                totalDistanceMeters: totalDistanceMeters,
+                leftDeviationMeters: leftDeviationMeters,
+                rightDeviationMeters: rightDeviationMeters,
+                rolloutDistanceMeters: rolloutDistanceMeters,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MatrixAttemptsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MatrixAttemptsTable,
+      MatrixAttempt,
+      $$MatrixAttemptsTableFilterComposer,
+      $$MatrixAttemptsTableOrderingComposer,
+      $$MatrixAttemptsTableAnnotationComposer,
+      $$MatrixAttemptsTableCreateCompanionBuilder,
+      $$MatrixAttemptsTableUpdateCompanionBuilder,
+      (
+        MatrixAttempt,
+        BaseReferences<_$AppDatabase, $MatrixAttemptsTable, MatrixAttempt>,
+      ),
+      MatrixAttempt,
+      PrefetchHooks Function()
+    >;
+typedef $$PerformanceSnapshotsTableCreateCompanionBuilder =
+    PerformanceSnapshotsCompanion Function({
+      required String snapshotId,
+      required String userId,
+      Value<String?> matrixRunId,
+      Value<MatrixType?> matrixType,
+      Value<bool> isPrimary,
+      Value<String?> label,
+      Value<DateTime> snapshotTimestamp,
+      Value<bool> isDeleted,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PerformanceSnapshotsTableUpdateCompanionBuilder =
+    PerformanceSnapshotsCompanion Function({
+      Value<String> snapshotId,
+      Value<String> userId,
+      Value<String?> matrixRunId,
+      Value<MatrixType?> matrixType,
+      Value<bool> isPrimary,
+      Value<String?> label,
+      Value<DateTime> snapshotTimestamp,
+      Value<bool> isDeleted,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$PerformanceSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $PerformanceSnapshotsTable> {
+  $$PerformanceSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get snapshotId => $composableBuilder(
+    column: $table.snapshotId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MatrixType?, MatrixType, String>
+  get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get isPrimary => $composableBuilder(
+    column: $table.isPrimary,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get snapshotTimestamp => $composableBuilder(
+    column: $table.snapshotTimestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PerformanceSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PerformanceSnapshotsTable> {
+  $$PerformanceSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get snapshotId => $composableBuilder(
+    column: $table.snapshotId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPrimary => $composableBuilder(
+    column: $table.isPrimary,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get snapshotTimestamp => $composableBuilder(
+    column: $table.snapshotTimestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PerformanceSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PerformanceSnapshotsTable> {
+  $$PerformanceSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get snapshotId => $composableBuilder(
+    column: $table.snapshotId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get matrixRunId => $composableBuilder(
+    column: $table.matrixRunId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<MatrixType?, String> get matrixType =>
+      $composableBuilder(
+        column: $table.matrixType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<bool> get isPrimary =>
+      $composableBuilder(column: $table.isPrimary, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get snapshotTimestamp => $composableBuilder(
+    column: $table.snapshotTimestamp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PerformanceSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PerformanceSnapshotsTable,
+          PerformanceSnapshot,
+          $$PerformanceSnapshotsTableFilterComposer,
+          $$PerformanceSnapshotsTableOrderingComposer,
+          $$PerformanceSnapshotsTableAnnotationComposer,
+          $$PerformanceSnapshotsTableCreateCompanionBuilder,
+          $$PerformanceSnapshotsTableUpdateCompanionBuilder,
+          (
+            PerformanceSnapshot,
+            BaseReferences<
+              _$AppDatabase,
+              $PerformanceSnapshotsTable,
+              PerformanceSnapshot
+            >,
+          ),
+          PerformanceSnapshot,
+          PrefetchHooks Function()
+        > {
+  $$PerformanceSnapshotsTableTableManager(
+    _$AppDatabase db,
+    $PerformanceSnapshotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PerformanceSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PerformanceSnapshotsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PerformanceSnapshotsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> snapshotId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String?> matrixRunId = const Value.absent(),
+                Value<MatrixType?> matrixType = const Value.absent(),
+                Value<bool> isPrimary = const Value.absent(),
+                Value<String?> label = const Value.absent(),
+                Value<DateTime> snapshotTimestamp = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PerformanceSnapshotsCompanion(
+                snapshotId: snapshotId,
+                userId: userId,
+                matrixRunId: matrixRunId,
+                matrixType: matrixType,
+                isPrimary: isPrimary,
+                label: label,
+                snapshotTimestamp: snapshotTimestamp,
+                isDeleted: isDeleted,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String snapshotId,
+                required String userId,
+                Value<String?> matrixRunId = const Value.absent(),
+                Value<MatrixType?> matrixType = const Value.absent(),
+                Value<bool> isPrimary = const Value.absent(),
+                Value<String?> label = const Value.absent(),
+                Value<DateTime> snapshotTimestamp = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PerformanceSnapshotsCompanion.insert(
+                snapshotId: snapshotId,
+                userId: userId,
+                matrixRunId: matrixRunId,
+                matrixType: matrixType,
+                isPrimary: isPrimary,
+                label: label,
+                snapshotTimestamp: snapshotTimestamp,
+                isDeleted: isDeleted,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PerformanceSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PerformanceSnapshotsTable,
+      PerformanceSnapshot,
+      $$PerformanceSnapshotsTableFilterComposer,
+      $$PerformanceSnapshotsTableOrderingComposer,
+      $$PerformanceSnapshotsTableAnnotationComposer,
+      $$PerformanceSnapshotsTableCreateCompanionBuilder,
+      $$PerformanceSnapshotsTableUpdateCompanionBuilder,
+      (
+        PerformanceSnapshot,
+        BaseReferences<
+          _$AppDatabase,
+          $PerformanceSnapshotsTable,
+          PerformanceSnapshot
+        >,
+      ),
+      PerformanceSnapshot,
+      PrefetchHooks Function()
+    >;
+typedef $$SnapshotClubsTableCreateCompanionBuilder =
+    SnapshotClubsCompanion Function({
+      required String snapshotClubId,
+      required String snapshotId,
+      required String clubId,
+      Value<double?> carryDistanceMeters,
+      Value<double?> totalDistanceMeters,
+      Value<double?> dispersionLeftMeters,
+      Value<double?> dispersionRightMeters,
+      Value<double?> rolloutDistanceMeters,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$SnapshotClubsTableUpdateCompanionBuilder =
+    SnapshotClubsCompanion Function({
+      Value<String> snapshotClubId,
+      Value<String> snapshotId,
+      Value<String> clubId,
+      Value<double?> carryDistanceMeters,
+      Value<double?> totalDistanceMeters,
+      Value<double?> dispersionLeftMeters,
+      Value<double?> dispersionRightMeters,
+      Value<double?> rolloutDistanceMeters,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$SnapshotClubsTableFilterComposer
+    extends Composer<_$AppDatabase, $SnapshotClubsTable> {
+  $$SnapshotClubsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get snapshotClubId => $composableBuilder(
+    column: $table.snapshotClubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snapshotId => $composableBuilder(
+    column: $table.snapshotId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carryDistanceMeters => $composableBuilder(
+    column: $table.carryDistanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalDistanceMeters => $composableBuilder(
+    column: $table.totalDistanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get dispersionLeftMeters => $composableBuilder(
+    column: $table.dispersionLeftMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get dispersionRightMeters => $composableBuilder(
+    column: $table.dispersionRightMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rolloutDistanceMeters => $composableBuilder(
+    column: $table.rolloutDistanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SnapshotClubsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SnapshotClubsTable> {
+  $$SnapshotClubsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get snapshotClubId => $composableBuilder(
+    column: $table.snapshotClubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get snapshotId => $composableBuilder(
+    column: $table.snapshotId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clubId => $composableBuilder(
+    column: $table.clubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carryDistanceMeters => $composableBuilder(
+    column: $table.carryDistanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalDistanceMeters => $composableBuilder(
+    column: $table.totalDistanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get dispersionLeftMeters => $composableBuilder(
+    column: $table.dispersionLeftMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get dispersionRightMeters => $composableBuilder(
+    column: $table.dispersionRightMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rolloutDistanceMeters => $composableBuilder(
+    column: $table.rolloutDistanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SnapshotClubsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SnapshotClubsTable> {
+  $$SnapshotClubsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get snapshotClubId => $composableBuilder(
+    column: $table.snapshotClubId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get snapshotId => $composableBuilder(
+    column: $table.snapshotId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clubId =>
+      $composableBuilder(column: $table.clubId, builder: (column) => column);
+
+  GeneratedColumn<double> get carryDistanceMeters => $composableBuilder(
+    column: $table.carryDistanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalDistanceMeters => $composableBuilder(
+    column: $table.totalDistanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get dispersionLeftMeters => $composableBuilder(
+    column: $table.dispersionLeftMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get dispersionRightMeters => $composableBuilder(
+    column: $table.dispersionRightMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rolloutDistanceMeters => $composableBuilder(
+    column: $table.rolloutDistanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SnapshotClubsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SnapshotClubsTable,
+          SnapshotClub,
+          $$SnapshotClubsTableFilterComposer,
+          $$SnapshotClubsTableOrderingComposer,
+          $$SnapshotClubsTableAnnotationComposer,
+          $$SnapshotClubsTableCreateCompanionBuilder,
+          $$SnapshotClubsTableUpdateCompanionBuilder,
+          (
+            SnapshotClub,
+            BaseReferences<_$AppDatabase, $SnapshotClubsTable, SnapshotClub>,
+          ),
+          SnapshotClub,
+          PrefetchHooks Function()
+        > {
+  $$SnapshotClubsTableTableManager(_$AppDatabase db, $SnapshotClubsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SnapshotClubsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SnapshotClubsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SnapshotClubsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> snapshotClubId = const Value.absent(),
+                Value<String> snapshotId = const Value.absent(),
+                Value<String> clubId = const Value.absent(),
+                Value<double?> carryDistanceMeters = const Value.absent(),
+                Value<double?> totalDistanceMeters = const Value.absent(),
+                Value<double?> dispersionLeftMeters = const Value.absent(),
+                Value<double?> dispersionRightMeters = const Value.absent(),
+                Value<double?> rolloutDistanceMeters = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SnapshotClubsCompanion(
+                snapshotClubId: snapshotClubId,
+                snapshotId: snapshotId,
+                clubId: clubId,
+                carryDistanceMeters: carryDistanceMeters,
+                totalDistanceMeters: totalDistanceMeters,
+                dispersionLeftMeters: dispersionLeftMeters,
+                dispersionRightMeters: dispersionRightMeters,
+                rolloutDistanceMeters: rolloutDistanceMeters,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String snapshotClubId,
+                required String snapshotId,
+                required String clubId,
+                Value<double?> carryDistanceMeters = const Value.absent(),
+                Value<double?> totalDistanceMeters = const Value.absent(),
+                Value<double?> dispersionLeftMeters = const Value.absent(),
+                Value<double?> dispersionRightMeters = const Value.absent(),
+                Value<double?> rolloutDistanceMeters = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SnapshotClubsCompanion.insert(
+                snapshotClubId: snapshotClubId,
+                snapshotId: snapshotId,
+                clubId: clubId,
+                carryDistanceMeters: carryDistanceMeters,
+                totalDistanceMeters: totalDistanceMeters,
+                dispersionLeftMeters: dispersionLeftMeters,
+                dispersionRightMeters: dispersionRightMeters,
+                rolloutDistanceMeters: rolloutDistanceMeters,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SnapshotClubsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SnapshotClubsTable,
+      SnapshotClub,
+      $$SnapshotClubsTableFilterComposer,
+      $$SnapshotClubsTableOrderingComposer,
+      $$SnapshotClubsTableAnnotationComposer,
+      $$SnapshotClubsTableCreateCompanionBuilder,
+      $$SnapshotClubsTableUpdateCompanionBuilder,
+      (
+        SnapshotClub,
+        BaseReferences<_$AppDatabase, $SnapshotClubsTable, SnapshotClub>,
+      ),
+      SnapshotClub,
+      PrefetchHooks Function()
+    >;
 typedef $$SyncMetadataEntriesTableCreateCompanionBuilder =
     SyncMetadataEntriesCompanion Function({
       required String key,
@@ -21456,6 +28000,20 @@ class $AppDatabaseManager {
       $$UserDevicesTableTableManager(_db, _db.userDevices);
   $$UserScoringLocksTableTableManager get userScoringLocks =>
       $$UserScoringLocksTableTableManager(_db, _db.userScoringLocks);
+  $$MatrixRunsTableTableManager get matrixRuns =>
+      $$MatrixRunsTableTableManager(_db, _db.matrixRuns);
+  $$MatrixAxesTableTableManager get matrixAxes =>
+      $$MatrixAxesTableTableManager(_db, _db.matrixAxes);
+  $$MatrixAxisValuesTableTableManager get matrixAxisValues =>
+      $$MatrixAxisValuesTableTableManager(_db, _db.matrixAxisValues);
+  $$MatrixCellsTableTableManager get matrixCells =>
+      $$MatrixCellsTableTableManager(_db, _db.matrixCells);
+  $$MatrixAttemptsTableTableManager get matrixAttempts =>
+      $$MatrixAttemptsTableTableManager(_db, _db.matrixAttempts);
+  $$PerformanceSnapshotsTableTableManager get performanceSnapshots =>
+      $$PerformanceSnapshotsTableTableManager(_db, _db.performanceSnapshots);
+  $$SnapshotClubsTableTableManager get snapshotClubs =>
+      $$SnapshotClubsTableTableManager(_db, _db.snapshotClubs);
   $$SyncMetadataEntriesTableTableManager get syncMetadataEntries =>
       $$SyncMetadataEntriesTableTableManager(_db, _db.syncMetadataEntries);
 }

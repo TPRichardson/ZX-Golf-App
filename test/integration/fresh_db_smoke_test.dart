@@ -25,32 +25,41 @@ void main() {
   tearDown(() => db.close());
 
   group('Fresh database smoke test', () {
-    test('schema version is 4', () {
-      expect(db.schemaVersion, 4);
+    test('schema version is 5', () {
+      expect(db.schemaVersion, 5);
     });
 
-    test('27 tables are created', () async {
+    test('34 tables are created', () async {
       final tables = await db.customSelect(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
       ).get();
-      expect(tables.length, 27);
+      // 27 original + 7 Matrix tables = 34.
+      expect(tables.length, 34);
     });
 
-    test('9 indexes are created', () async {
+    test('16 indexes are created', () async {
       final indexes = await db.customSelect(
         "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'",
       ).get();
       final names = indexes.map((r) => r.read<String>('name')).toList()..sort();
+      // 9 original + 7 Matrix indexes = 16.
       expect(names, [
         'idx_drill_user_id',
         'idx_drills_active',
         'idx_instance_set_id',
         'idx_instances_active',
+        'idx_matrix_attempt_cell_id',
+        'idx_matrix_axis_run_id',
+        'idx_matrix_axis_value_axis_id',
+        'idx_matrix_cell_run_id',
+        'idx_matrix_run_user_id',
+        'idx_performance_snapshot_user_id',
         'idx_practice_block_user_end',
         'idx_practice_blocks_active',
         'idx_session_drill_id',
         'idx_session_practice_block_id',
         'idx_sessions_active',
+        'idx_snapshot_club_snapshot_id',
       ]);
     });
 

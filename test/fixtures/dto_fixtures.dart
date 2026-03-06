@@ -273,6 +273,96 @@ EventLog makeEventLogMinimal() => EventLog(
       createdAt: _ts,
     );
 
+// Phase M3 — Matrix entity fixtures.
+
+MatrixRun makeMatrixRun() => MatrixRun(
+      matrixRunId: 'mr-001',
+      userId: 'u-001',
+      matrixType: MatrixType.gappingChart,
+      runNumber: 1,
+      runState: RunState.inProgress,
+      startTimestamp: _ts,
+      endTimestamp: null,
+      sessionShotTarget: 5,
+      shotOrderMode: ShotOrderMode.topToBottom,
+      dispersionCaptureEnabled: false,
+      measurementDevice: 'Trackman',
+      environmentType: EnvironmentType.outdoor,
+      surfaceType: SurfaceType.grass,
+      greenSpeed: null,
+      greenFirmness: null,
+      isDeleted: false,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
+MatrixAxis makeMatrixAxis() => MatrixAxis(
+      matrixAxisId: 'ma-001',
+      matrixRunId: 'mr-001',
+      axisType: AxisType.club,
+      axisName: 'Club',
+      axisOrder: 1,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
+MatrixAxisValue makeMatrixAxisValue() => MatrixAxisValue(
+      axisValueId: 'av-001',
+      matrixAxisId: 'ma-001',
+      label: '7-Iron',
+      sortOrder: 1,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
+MatrixCell makeMatrixCell() => MatrixCell(
+      matrixCellId: 'mc-001',
+      matrixRunId: 'mr-001',
+      axisValueIds: '["av-001"]',
+      excludedFromRun: false,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
+MatrixAttempt makeMatrixAttempt() => MatrixAttempt(
+      matrixAttemptId: 'matt-001',
+      matrixCellId: 'mc-001',
+      attemptTimestamp: _ts,
+      carryDistanceMeters: 145.5,
+      totalDistanceMeters: 155.0,
+      leftDeviationMeters: 2.5,
+      rightDeviationMeters: 1.8,
+      rolloutDistanceMeters: null,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
+PerformanceSnapshot makePerformanceSnapshot() => PerformanceSnapshot(
+      snapshotId: 'ps-001',
+      userId: 'u-001',
+      matrixRunId: 'mr-001',
+      matrixType: MatrixType.gappingChart,
+      isPrimary: true,
+      label: 'March gapping',
+      snapshotTimestamp: _ts,
+      isDeleted: false,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
+SnapshotClub makeSnapshotClub() => SnapshotClub(
+      snapshotClubId: 'sc-001',
+      snapshotId: 'ps-001',
+      clubId: '7-Iron',
+      carryDistanceMeters: 155.0,
+      totalDistanceMeters: 165.0,
+      dispersionLeftMeters: 3.2,
+      dispersionRightMeters: 2.8,
+      rolloutDistanceMeters: null,
+      createdAt: _ts,
+      updatedAt: _ts,
+    );
+
 UserDevice makeUserDevice() => UserDevice(
       deviceId: 'dev-001',
       userId: 'u-001',

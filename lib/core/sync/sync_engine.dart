@@ -705,6 +705,77 @@ class SyncEngine {
       payload['UserDevice'] = devices.map((e) => e.toSyncDto()).toList();
     }
 
+    // Phase M3 — Matrix tables (parent-before-child order).
+    final matrixRuns = lastSync == null
+        ? await _db.select(_db.matrixRuns).get()
+        : await (_db.select(_db.matrixRuns)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (matrixRuns.isNotEmpty) {
+      payload['MatrixRun'] =
+          matrixRuns.map((e) => e.toSyncDto()).toList();
+    }
+
+    final matrixAxes = lastSync == null
+        ? await _db.select(_db.matrixAxes).get()
+        : await (_db.select(_db.matrixAxes)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (matrixAxes.isNotEmpty) {
+      payload['MatrixAxis'] =
+          matrixAxes.map((e) => e.toSyncDto()).toList();
+    }
+
+    final matrixAxisValues = lastSync == null
+        ? await _db.select(_db.matrixAxisValues).get()
+        : await (_db.select(_db.matrixAxisValues)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (matrixAxisValues.isNotEmpty) {
+      payload['MatrixAxisValue'] =
+          matrixAxisValues.map((e) => e.toSyncDto()).toList();
+    }
+
+    final matrixCells = lastSync == null
+        ? await _db.select(_db.matrixCells).get()
+        : await (_db.select(_db.matrixCells)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (matrixCells.isNotEmpty) {
+      payload['MatrixCell'] =
+          matrixCells.map((e) => e.toSyncDto()).toList();
+    }
+
+    final matrixAttempts = lastSync == null
+        ? await _db.select(_db.matrixAttempts).get()
+        : await (_db.select(_db.matrixAttempts)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (matrixAttempts.isNotEmpty) {
+      payload['MatrixAttempt'] =
+          matrixAttempts.map((e) => e.toSyncDto()).toList();
+    }
+
+    final perfSnapshots = lastSync == null
+        ? await _db.select(_db.performanceSnapshots).get()
+        : await (_db.select(_db.performanceSnapshots)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (perfSnapshots.isNotEmpty) {
+      payload['PerformanceSnapshot'] =
+          perfSnapshots.map((e) => e.toSyncDto()).toList();
+    }
+
+    final snapClubs = lastSync == null
+        ? await _db.select(_db.snapshotClubs).get()
+        : await (_db.select(_db.snapshotClubs)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (snapClubs.isNotEmpty) {
+      payload['SnapshotClub'] =
+          snapClubs.map((e) => e.toSyncDto()).toList();
+    }
+
     return payload;
   }
 
@@ -815,6 +886,14 @@ class SyncEngine {
     'ScheduleInstance': 'scheduleInstanceId',
     'EventLog': 'eventLogId',
     'UserDevice': 'deviceId',
+    // Phase M3 — Matrix tables.
+    'MatrixRun': 'matrixRunId',
+    'MatrixAxis': 'matrixAxisId',
+    'MatrixAxisValue': 'axisValueId',
+    'MatrixCell': 'matrixCellId',
+    'MatrixAttempt': 'matrixAttemptId',
+    'PerformanceSnapshot': 'snapshotId',
+    'SnapshotClub': 'snapshotClubId',
   };
 
   /// DB table names (SQL) mapped from logical names.
@@ -837,6 +916,14 @@ class SyncEngine {
     'ScheduleInstance': 'ScheduleInstance',
     'EventLog': 'EventLog',
     'UserDevice': 'UserDevice',
+    // Phase M3 — Matrix tables.
+    'MatrixRun': 'MatrixRun',
+    'MatrixAxis': 'MatrixAxis',
+    'MatrixAxisValue': 'MatrixAxisValue',
+    'MatrixCell': 'MatrixCell',
+    'MatrixAttempt': 'MatrixAttempt',
+    'PerformanceSnapshot': 'PerformanceSnapshot',
+    'SnapshotClub': 'SnapshotClub',
   };
 
   /// DB primary key column names (SQL) mapped from logical names.
@@ -859,6 +946,14 @@ class SyncEngine {
     'ScheduleInstance': 'ScheduleInstanceID',
     'EventLog': 'EventLogID',
     'UserDevice': 'DeviceID',
+    // Phase M3 — Matrix tables.
+    'MatrixRun': 'MatrixRunID',
+    'MatrixAxis': 'MatrixAxisID',
+    'MatrixAxisValue': 'AxisValueID',
+    'MatrixCell': 'MatrixCellID',
+    'MatrixAttempt': 'MatrixAttemptID',
+    'PerformanceSnapshot': 'SnapshotID',
+    'SnapshotClub': 'SnapshotClubID',
   };
 
   /// Fetch a local row by primary key, returning it as a Map (DTO format)
@@ -926,6 +1021,21 @@ class SyncEngine {
         return _db.eventLogs.map(row.data).toSyncDto();
       case 'UserDevice':
         return _db.userDevices.map(row.data).toSyncDto();
+      // Phase M3 — Matrix tables.
+      case 'MatrixRun':
+        return _db.matrixRuns.map(row.data).toSyncDto();
+      case 'MatrixAxis':
+        return _db.matrixAxes.map(row.data).toSyncDto();
+      case 'MatrixAxisValue':
+        return _db.matrixAxisValues.map(row.data).toSyncDto();
+      case 'MatrixCell':
+        return _db.matrixCells.map(row.data).toSyncDto();
+      case 'MatrixAttempt':
+        return _db.matrixAttempts.map(row.data).toSyncDto();
+      case 'PerformanceSnapshot':
+        return _db.performanceSnapshots.map(row.data).toSyncDto();
+      case 'SnapshotClub':
+        return _db.snapshotClubs.map(row.data).toSyncDto();
       default:
         return null;
     }
@@ -988,6 +1098,28 @@ class SyncEngine {
       case 'UserDevice':
         await _db.into(_db.userDevices).insertOnConflictUpdate(
               userDeviceFromSyncDto(merged));
+      // Phase M3 — Matrix tables.
+      case 'MatrixRun':
+        await _db.into(_db.matrixRuns).insertOnConflictUpdate(
+              matrixRunFromSyncDto(merged));
+      case 'MatrixAxis':
+        await _db.into(_db.matrixAxes).insertOnConflictUpdate(
+              matrixAxisFromSyncDto(merged));
+      case 'MatrixAxisValue':
+        await _db.into(_db.matrixAxisValues).insertOnConflictUpdate(
+              matrixAxisValueFromSyncDto(merged));
+      case 'MatrixCell':
+        await _db.into(_db.matrixCells).insertOnConflictUpdate(
+              matrixCellFromSyncDto(merged));
+      case 'MatrixAttempt':
+        await _db.into(_db.matrixAttempts).insertOnConflictUpdate(
+              matrixAttemptFromSyncDto(merged));
+      case 'PerformanceSnapshot':
+        await _db.into(_db.performanceSnapshots).insertOnConflictUpdate(
+              performanceSnapshotFromSyncDto(merged));
+      case 'SnapshotClub':
+        await _db.into(_db.snapshotClubs).insertOnConflictUpdate(
+              snapshotClubFromSyncDto(merged));
     }
   }
 

@@ -351,3 +351,100 @@ enum SmallLengthUnit {
       values.firstWhere((e) => e.dbValue == value,
           orElse: () => throw ArgumentError('Invalid SmallLengthUnit: $value'));
 }
+
+/// Matrix §8.2.1 — Three matrix workflow types.
+enum MatrixType {
+  gappingChart('GappingChart'),
+  wedgeMatrix('WedgeMatrix'),
+  chippingMatrix('ChippingMatrix');
+
+  const MatrixType(this.dbValue);
+  final String dbValue;
+
+  static MatrixType fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid MatrixType: $value'));
+}
+
+/// Matrix §8.3.1 — Matrix run lifecycle states.
+enum RunState {
+  inProgress('InProgress'),
+  completed('Completed');
+
+  const RunState(this.dbValue);
+  final String dbValue;
+
+  static RunState fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid RunState: $value'));
+}
+
+/// Matrix §3.8, §8.3.1 — Shot ordering within a matrix run.
+enum ShotOrderMode {
+  topToBottom('TopToBottom'),
+  bottomToTop('BottomToTop'),
+  random('Random');
+
+  const ShotOrderMode(this.dbValue);
+  final String dbValue;
+
+  static ShotOrderMode fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid ShotOrderMode: $value'));
+}
+
+/// Matrix §8.3.2 — Axis dimension types.
+enum AxisType {
+  club('Club'),
+  effort('Effort'),
+  flight('Flight'),
+  carryDistance('CarryDistance'),
+  custom('Custom');
+
+  const AxisType(this.dbValue);
+  final String dbValue;
+
+  static AxisType fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid AxisType: $value'));
+}
+
+/// Matrix §3.5.2, §8.3.1 — Practice environment type.
+enum EnvironmentType {
+  indoor('Indoor'),
+  outdoor('Outdoor');
+
+  const EnvironmentType(this.dbValue);
+  final String dbValue;
+
+  static EnvironmentType fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid EnvironmentType: $value'));
+}
+
+/// Matrix §3.5.3, §8.3.1 — Practice surface type.
+enum SurfaceType {
+  grass('Grass'),
+  mat('Mat');
+
+  const SurfaceType(this.dbValue);
+  final String dbValue;
+
+  static SurfaceType fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid SurfaceType: $value'));
+}
+
+/// Matrix §5.5, §8.3.1 — Green firmness for chipping matrix.
+enum GreenFirmness {
+  soft('Soft'),
+  medium('Medium'),
+  firm('Firm');
+
+  const GreenFirmness(this.dbValue);
+  final String dbValue;
+
+  static GreenFirmness fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid GreenFirmness: $value'));
+}

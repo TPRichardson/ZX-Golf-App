@@ -179,3 +179,59 @@ class ScheduleStatusConverter extends TypeConverter<ScheduleStatus, String> {
   @override
   String toSql(ScheduleStatus value) => value.dbValue;
 }
+
+class MatrixTypeConverter extends TypeConverter<MatrixType, String> {
+  const MatrixTypeConverter();
+  @override
+  MatrixType fromSql(String fromDb) => MatrixType.fromString(fromDb);
+  @override
+  String toSql(MatrixType value) => value.dbValue;
+}
+
+class RunStateConverter extends TypeConverter<RunState, String> {
+  const RunStateConverter();
+  @override
+  RunState fromSql(String fromDb) => RunState.fromString(fromDb);
+  @override
+  String toSql(RunState value) => value.dbValue;
+}
+
+class ShotOrderModeConverter extends TypeConverter<ShotOrderMode, String> {
+  const ShotOrderModeConverter();
+  @override
+  ShotOrderMode fromSql(String fromDb) => ShotOrderMode.fromString(fromDb);
+  @override
+  String toSql(ShotOrderMode value) => value.dbValue;
+}
+
+class AxisTypeConverter extends TypeConverter<AxisType, String> {
+  const AxisTypeConverter();
+  @override
+  AxisType fromSql(String fromDb) => AxisType.fromString(fromDb);
+  @override
+  String toSql(AxisType value) => value.dbValue;
+}
+
+class EnvironmentTypeConverter extends TypeConverter<EnvironmentType, String> {
+  const EnvironmentTypeConverter();
+  @override
+  EnvironmentType fromSql(String fromDb) => EnvironmentType.fromString(fromDb);
+  @override
+  String toSql(EnvironmentType value) => value.dbValue;
+}
+
+class SurfaceTypeConverter extends TypeConverter<SurfaceType, String> {
+  const SurfaceTypeConverter();
+  @override
+  SurfaceType fromSql(String fromDb) => SurfaceType.fromString(fromDb);
+  @override
+  String toSql(SurfaceType value) => value.dbValue;
+}
+
+class GreenFirmnessConverter extends TypeConverter<GreenFirmness, String> {
+  const GreenFirmnessConverter();
+  @override
+  GreenFirmness fromSql(String fromDb) => GreenFirmness.fromString(fromDb);
+  @override
+  String toSql(GreenFirmness value) => value.dbValue;
+}

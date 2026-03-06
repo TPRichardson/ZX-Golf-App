@@ -6,11 +6,11 @@ import 'package:zx_golf_app/data/database.dart';
 
 void main() {
   group('Migration Infrastructure', () {
-    test('schemaVersion is 4 for V1', () {
+    test('schemaVersion is 5 after M1', () {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() => db.close());
 
-      expect(db.schemaVersion, 4);
+      expect(db.schemaVersion, 5);
     });
 
     test('onCreate creates all tables and seeds reference data', () async {
@@ -35,7 +35,7 @@ void main() {
       expect(totalAllocation, 1000);
     });
 
-    test('all 27 tables are created', () async {
+    test('all 34 tables are created', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() => db.close());
 
@@ -44,8 +44,8 @@ void main() {
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
       ).get();
 
-      // 27 Drift tables (26 from DDL + SyncMetadata).
-      expect(tables.length, 27);
+      // 34 Drift tables (26 from DDL + SyncMetadata + 7 Matrix tables).
+      expect(tables.length, 34);
     });
 
     test('migration strategy has onUpgrade handler', () {

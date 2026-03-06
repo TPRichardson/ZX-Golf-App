@@ -22,6 +22,9 @@ class Slot {
   final bool planned;
   // Phase 7B — Per-slot timestamp for LWW merge of CalendarDay slots.
   final DateTime? updatedAt;
+  // Matrix §8.6.1 — Matrix slot fields.
+  final String? matrixRunId;
+  final MatrixType? matrixType;
 
   const Slot({
     this.drillId,
@@ -31,13 +34,18 @@ class Slot {
     this.completingSessionId,
     this.planned = true,
     this.updatedAt,
+    this.matrixRunId,
+    this.matrixType,
   });
 
-  /// S08 §8.13.2 — Empty slot (no drill assigned).
-  bool get isEmpty => drillId == null;
+  /// S08 §8.13.2 — Empty slot (no drill or matrix assigned).
+  bool get isEmpty => drillId == null && matrixType == null;
 
   /// S08 §8.13.2 — Slot has a drill assigned.
   bool get isFilled => drillId != null;
+
+  /// Matrix §8.6.1 — Slot is a matrix slot.
+  bool get isMatrixSlot => matrixType != null;
 
   /// TD-04 §2.6 — Slot is in a completed state.
   bool get isCompleted =>
@@ -52,6 +60,8 @@ class Slot {
     String? Function()? completingSessionId,
     bool? planned,
     DateTime? Function()? updatedAt,
+    String? Function()? matrixRunId,
+    MatrixType? Function()? matrixType,
   }) {
     return Slot(
       drillId: drillId != null ? drillId() : this.drillId,
@@ -63,6 +73,10 @@ class Slot {
           : this.completingSessionId,
       planned: planned ?? this.planned,
       updatedAt: updatedAt != null ? updatedAt() : this.updatedAt,
+      matrixRunId:
+          matrixRunId != null ? matrixRunId() : this.matrixRunId,
+      matrixType:
+          matrixType != null ? matrixType() : this.matrixType,
     );
   }
 
@@ -74,6 +88,8 @@ class Slot {
         'completingSessionId': completingSessionId,
         'planned': planned,
         'updatedAt': updatedAt?.toIso8601String(),
+        'matrixRunId': matrixRunId,
+        'matrixType': matrixType?.dbValue,
       };
 
   factory Slot.fromJson(Map<String, dynamic> json) => Slot(
@@ -90,6 +106,10 @@ class Slot {
         updatedAt: json['updatedAt'] != null
             ? DateTime.parse(json['updatedAt'] as String)
             : null,
+        matrixRunId: json['matrixRunId'] as String?,
+        matrixType: json['matrixType'] != null
+            ? MatrixType.fromString(json['matrixType'] as String)
+            : null,
       );
 
   @override
@@ -102,16 +122,19 @@ class Slot {
           completionState == other.completionState &&
           completingSessionId == other.completingSessionId &&
           planned == other.planned &&
-          updatedAt == other.updatedAt;
+          updatedAt == other.updatedAt &&
+          matrixRunId == other.matrixRunId &&
+          matrixType == other.matrixType;
 
   @override
   int get hashCode => Object.hash(
       drillId, ownerType, ownerId, completionState, completingSessionId,
-      planned, updatedAt);
+      planned, updatedAt, matrixRunId, matrixType);
 
   @override
   String toString() =>
       'Slot(drillId: $drillId, ownerType: $ownerType, ownerId: $ownerId, '
       'completionState: $completionState, completingSessionId: $completingSessionId, '
-      'planned: $planned, updatedAt: $updatedAt)';
+      'planned: $planned, updatedAt: $updatedAt, '
+      'matrixRunId: $matrixRunId, matrixType: $matrixType)';
 }
