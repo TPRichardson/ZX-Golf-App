@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/features/review/screens/analysis_screen.dart';
+import 'package:zx_golf_app/features/review/screens/matrix_review_screen.dart';
 import 'package:zx_golf_app/features/review/screens/review_dashboard_screen.dart';
 
-// S12 §12.6 — Review tab: Dashboard | Analysis dual-tab layout.
-// Same pattern as PlanTab (DefaultTabController + TabBar + TabBarView).
+// S12 §12.6 — Review tab: Dashboard | Analysis | Matrices tri-tab layout.
+// Phase M8 — Added Matrices tab for matrix run history and snapshot management.
 
 class ReviewTab extends StatelessWidget {
   const ReviewTab({super.key});
@@ -13,7 +14,7 @@ class ReviewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -28,12 +29,14 @@ class ReviewTab extends StatelessWidget {
             ZxTabBar(tabs: [
               Tab(text: 'Dashboard'),
               Tab(text: 'Analysis'),
+              Tab(text: 'Matrices'),
             ]),
             Expanded(
               child: TabBarView(
                 children: [
                   ReviewDashboardScreen(),
                   AnalysisScreen(),
+                  MatrixReviewScreen(),
                 ],
               ),
             ),
