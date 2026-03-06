@@ -93,10 +93,12 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Complete (V1)**
+> **Complete (V1 + Matrix & Gapping System)**
 >
-> All 8 phases implemented. Settings, startup integrity checks, achievement banners,
-> migration infrastructure, audit & polish. Ready for production testing.
+> All 8 core phases + 10 matrix phases implemented. Matrix & Gapping System adds
+> distance calibration workflows (Gapping Chart, Wedge Matrix, Chipping Matrix),
+> cross-run analytics with outlier trimming and weighted aggregation, and automated
+> insights. 1104 tests passing.
 
 ---
 
@@ -142,9 +144,9 @@ lib/
 │   │   └── sync_diagnostics.dart    # [Phase 7A] SyncDiagnostic, SyncInstrumentation
 │   └── services/                   # [Phase 4] TimerService, shared services
 ├── data/
-│   ├── enums.dart                  # 23 enum types with TEXT serialisation
+│   ├── enums.dart                  # 30 enum types with TEXT serialisation
 │   ├── converters.dart             # Drift TypeConverters for enum↔TEXT
-│   ├── database.dart               # Drift database class (27 tables)
+│   ├── database.dart               # Drift database class (34 tables)
 │   ├── database.g.dart             # Drift generated code
 │   ├── seed_data.dart              # Reference data seeding (onCreate)
 │   ├── tables/                     # Drift table definitions (one per entity)
@@ -159,7 +161,9 @@ lib/
 │   │   ├── club_repository.dart
 │   │   ├── planning_repository.dart
 │   │   ├── event_log_repository.dart
-│   │   └── reference_repository.dart
+│   │   ├── reference_repository.dart
+│   │   ├── matrix_repository.dart              # [Matrix M1] Matrix run, axis, cell, attempt CRUD
+│   │   └── performance_snapshot_repository.dart # [Matrix M2] Snapshot + derived distances
 │   └── dto/                        # [Phase 2.5] Sync DTO serialisation
 │       ├── sync_dto.dart           # Barrel export
 │       ├── user_dto.dart
@@ -179,7 +183,13 @@ lib/
 │       ├── routine_instance_dto.dart
 │       ├── schedule_instance_dto.dart
 │       ├── event_log_dto.dart
-│       └── user_device_dto.dart
+│       ├── user_device_dto.dart
+│       ├── matrix_run_dto.dart             # [Matrix M3]
+│       ├── matrix_axis_dto.dart            # [Matrix M3]
+│       ├── matrix_axis_value_dto.dart      # [Matrix M3]
+│       ├── matrix_cell_dto.dart            # [Matrix M3]
+│       ├── matrix_attempt_dto.dart         # [Matrix M3]
+│       └── performance_snapshot_dto.dart   # [Matrix M3]
 ├── features/
 │   ├── home/
 │   │   └── home_dashboard_screen.dart  # S12 §12.2 — Home Dashboard (score + slots + actions)
@@ -257,7 +267,8 @@ lib/
 │   │   │   ├── weakness_ranking_screen.dart  # Ranked subskills by WeaknessIndex
 │   │   │   ├── session_history_screen.dart   # All sessions for a drill
 │   │   │   ├── session_detail_screen.dart    # Single session breakdown
-│   │   │   └── plan_adherence_screen.dart    # Weekly/monthly adherence rollups
+│   │   │   ├── plan_adherence_screen.dart    # Weekly/monthly adherence rollups
+│   │   │   └── matrix_review_screen.dart    # [Matrix M8] Run history + type filter
 │   │   └── widgets/
 │   │       ├── overall_score_display.dart     # 0–1000 score with tabular numerals
 │   │       ├── skill_area_heatmap.dart        # 7 tiles, grey-to-green opacity
@@ -268,6 +279,29 @@ lib/
 │   │       ├── performance_chart.dart         # Line chart (0–5 score trends)
 │   │       ├── volume_chart.dart              # Stacked bar chart (session counts)
 │   │       └── analysis_filters.dart          # Scope, DrillType, Resolution filters
+│   ├── matrix/                     # [Matrix M4-M10] Matrix & Gapping System
+│   │   ├── screens/                    # Setup, execution, completion screens
+│   │   │   ├── gapping_setup_screen.dart
+│   │   │   ├── wedge_setup_screen.dart
+│   │   │   ├── chipping_setup_screen.dart
+│   │   │   ├── gapping_execution_screen.dart
+│   │   │   ├── matrix_execution_screen.dart
+│   │   │   └── matrix_completion_screen.dart
+│   │   ├── review/                     # [M8-M9] Type-specific review screens
+│   │   │   ├── gapping_review_screen.dart
+│   │   │   ├── gapping_comparison_screen.dart
+│   │   │   ├── wedge_review_screen.dart
+│   │   │   ├── chipping_review_screen.dart
+│   │   │   └── cell_detail_screen.dart
+│   │   ├── analytics/                  # [M10] Cross-run analytics engine
+│   │   │   ├── analytics_types.dart
+│   │   │   ├── outlier_trimmer.dart
+│   │   │   ├── weighted_aggregator.dart
+│   │   │   ├── matrix_analytics_engine.dart
+│   │   │   └── insight_generator.dart
+│   │   └── widgets/
+│   │       ├── matrix_execution_header.dart
+│   │       └── matrix_cell_card.dart
 │   └── settings/                   # [Phase 8] Settings screens
 │       ├── settings_screen.dart        # Settings hub (S10)
 │       ├── execution_defaults_screen.dart  # Per-SkillArea club selection defaults
@@ -281,7 +315,9 @@ lib/
 │   ├── bag_providers.dart          # [Phase 3] User bag, club mappings
 │   ├── planning_providers.dart     # [Phase 5] Routines, schedules, calendar, PlanningActions
 │   ├── review_providers.dart      # [Phase 6] Heatmap, window detail, weakness, sessions, adherence
-│   └── settings_providers.dart    # [Phase 8] User preferences, currentUser
+│   ├── settings_providers.dart    # [Phase 8] User preferences, currentUser
+│   ├── matrix_providers.dart      # [Matrix M4] Matrix runs, details, actions, snapshots
+│   └── matrix_analytics_providers.dart # [Matrix M10] Analytics + insights
 └── main.dart
 
 test/
@@ -302,7 +338,10 @@ supabase/
     ├── 001_create_schema.sql
     ├── 002_seed_reference_data.sql
     ├── 003_sync_upload.sql
-    └── 004_sync_download.sql
+    ├── 004_sync_download.sql
+    ├── 005_matrix_schema.sql       # [Matrix M1] 7 matrix tables
+    ├── 006_matrix_tables.sql       # [Matrix M3] Server-side matrix tables
+    └── 007_sync_matrix.sql         # [Matrix M3] Matrix sync RPCs
 ```
 
 Update this tree when a phase adds new directories.
@@ -400,6 +439,11 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-02 | Phase 7B | Complete | MergeAlgorithm (row-level LWW + delete-always-wins + CalendarDay slot-level merge), Slot.updatedAt for per-slot timestamps, executeFullRebuildInternal (gate-free rebuild for merge pipeline), SyncWriteGate enforcement on 6 repositories (User, Drill, Practice, Club, Planning, EventLog — ScoringRepository exempt), SyncEngine merge pipeline with post-merge full rebuild, provider wiring (SyncWriteGate into repos, ReflowEngine into SyncEngine). 79 new tests (30 merge algorithm + 5 reflow internal + 15 gate repo + 24 merge integration + 10 convergence — note: 5 convergence tests are pure algorithm tests not counted as DB tests), 668 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 7C | Complete | SyncEngine hardening (merge timeout counter, schema mismatch persistent flag, dual active session detection, lastErrorCode, exception handler routing by code), StorageMonitor (injectable stub), SyncBannerState (pure priority resolution with 9 banner types), SyncStatusBanner (composite widget with accent stripes, progress indicator, schema mismatch dialog), DualActiveSessionDialog (cross-device conflict), ShellScreen wiring (banner + dual session listener), replaced 2 orphaned StateProviders + 7 new providers (consecutiveMergeTimeouts, connectivityStatus, lastSyncTimestamp, schemaMismatchDetected, dualActiveSession, storageMonitor, isStorageLow). 52 new tests (20 banner state + 15 engine hardening + 5 storage monitor + 12 provider wiring), 720 total tests passing. `flutter analyze` clean. |
 | 2026-03-02 | Phase 8 | Complete | UserPreferences model (JSON serialization, 2 new enums), Settings hub + 2 sub-screens (execution defaults, calendar defaults), confirmation dialogs (soft/strong), IntegritySuppressed toggle UI + bug fix (session_history_screen), StartupChecks (4 checks: rebuildNeeded, lock expiry, allocation invariant, FK check), migration infrastructure (onUpgrade handler), achievement banners (S15 §15.8.4), rebuildNeeded staleness indicator (dimmed opacity), settings providers, AppBar gear icon in shell. 55 new tests (11 user_preferences + 5 confirmation_dialog + 5 achievement_banner + 8 startup_checks + 10 integrity_suppression + 5 migration + 12 settings), 775 total tests passing. `flutter analyze` clean. |
+| 2026-03-06 | Matrix M1-M3 | Complete | 7 Drift tables (MatrixRun, MatrixAxis, MatrixAxisValue, MatrixCell, MatrixAttempt, PerformanceSnapshot, PerformanceClubData), 7 enums (MatrixType, RunState, ShotOrderMode, AxisType, EnvironmentType, SurfaceType, GreenFirmness), MatrixRepository (17 methods), PerformanceSnapshotRepository, 6 DTOs, 2 SQL migrations. `flutter analyze` clean. |
+| 2026-03-06 | Matrix M4-M7 | Complete | Matrix providers + MatrixActions coordinator, gapping/wedge/chipping setup screens, gapping execution screen (1D), matrix execution screen (2D/3D), matrix completion screen (snapshot creation), Review tab matrix integration (MatrixReviewScreen), matrix execution header + cell card widgets. `flutter analyze` clean. |
+| 2026-03-06 | Matrix M8 | Complete | MatrixReviewScreen with run history filters and ChoiceChip type selector, snapshot banner, tap navigation to type-specific review screens. 1028 total tests passing. |
+| 2026-03-06 | Matrix M9 | Complete | GappingReviewScreen (distance ladder + table + gap warnings), GappingComparisonScreen (multi-run overlay up to 3), WedgeReviewScreen (flight-coloured ladder + axis filtering), ChippingReviewScreen (accuracy overview + expandable club sections), CellDetailScreen (attempt list + edit/delete). 23 review tests (7 gapping + 5 wedge + 6 chipping + 5 cell detail), 1051 total tests passing. `flutter analyze` clean. |
+| 2026-03-06 | Matrix M10 | Complete | Outlier trimmer (10% symmetric trim §9.3.3), weighted aggregator (exp decay §9.4), matrix analytics engine (club distance, wedge coverage, chipping accuracy, distance trend — pure functions §9.5-9.9), insight generator (max 3, ranked by magnitude §9.10), analytics types, 8 Riverpod providers with weighted/raw toggle. 53 new tests (8 trimmer + 12 aggregator + 15 engine + 14 insight + 4 overview/trend), 1104 total tests passing. `flutter analyze` clean. |
 
 ---
 
@@ -407,7 +451,7 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 
 | Spec Reference | Deviation | Rationale | Date |
 |----------------|-----------|-----------|------|
-| TD-06 §4.4 "28 Drift tables" | 27 Drift tables (26 from DDL + SyncMetadata). SystemMaintenanceLock and MigrationLog excluded. | TD-02 §8 specifies these are server-only. TD-02 governs per source-of-truth hierarchy. | 2026-02-27 |
+| TD-06 §4.4 "28 Drift tables" | 34 Drift tables (26 from DDL + SyncMetadata + 7 matrix tables). SystemMaintenanceLock and MigrationLog excluded. | TD-02 §8 specifies these are server-only. Matrix tables added in Matrix M1-M3. | 2026-02-27 |
 | TD-02 §3.5 `Sets` table | Generated data class renamed to `PracticeSet` via `@DataClassName('PracticeSet')`. | Drift generates singular `Set` from `Sets`, clashing with `dart:core.Set`. | 2026-02-27 |
 | Phase 7C StorageMonitor | `StorageMonitor._defaultCheck()` returns `false` (stub). No real disk space detection. | `dart:io` doesn't expose free space without FFI/native plugin. Infrastructure wired for Phase 8 activation. | 2026-03-02 |
 | S10 §10.10 Notifications | Reminder toggle + time picker persist preferences but do not schedule system notifications. | `flutter_local_notifications` deferred to post-V1 to avoid native dependency complexity. | 2026-03-02 |
