@@ -5,9 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/matrix/screens/chipping_setup_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/gapping_execution_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/gapping_setup_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/wedge_setup_screen.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/review/widgets/overall_score_display.dart';
+import 'package:zx_golf_app/providers/matrix_providers.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/scoring_providers.dart';
@@ -209,6 +216,8 @@ class _ActionZone extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hasActivePb = activePb.valueOrNull != null;
     final activePbData = activePb.valueOrNull;
+    final activeMatrixRun =
+        ref.watch(activeMatrixRunProvider(userId)).valueOrNull;
 
     // Parse filled drill IDs from today's calendar.
     List<String> filledDrillIds = [];
@@ -244,6 +253,36 @@ class _ActionZone extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
             ),
           ),
+        // Resume active matrix run.
+        if (activeMatrixRun != null && !hasActivePb) ...[
+          FilledButton.icon(
+            onPressed: () {
+              // Route to appropriate execution screen.
+              final Widget screen =
+                  activeMatrixRun.matrixType == MatrixType.gappingChart
+                      ? GappingExecutionScreen(
+                          matrixRunId: activeMatrixRun.matrixRunId,
+                          userId: userId,
+                        )
+                      : MatrixExecutionScreen(
+                          matrixRunId: activeMatrixRun.matrixRunId,
+                          userId: userId,
+                        );
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => screen));
+            },
+            icon: const Icon(Icons.grid_on, color: Colors.white),
+            label: Text(
+              'Resume ${_matrixTypeLabel(activeMatrixRun.matrixType)}',
+              style: const TextStyle(color: Colors.white),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.primaryDefault,
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+        ],
         // "Start Today's Practice" — visible when filled incomplete slots exist and no active PB.
         if (!hasActivePb && filledDrillIds.isNotEmpty) ...[
           FilledButton.icon(
@@ -274,8 +313,82 @@ class _ActionZone extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
             ),
           ),
+        // Matrix — Start matrix buttons (gapping, wedge, chipping).
+        if (!hasActivePb && activeMatrixRun == null) ...[
+          const SizedBox(height: SpacingTokens.md),
+          const Text(
+            'Distance Calibration',
+            style: TextStyle(
+              fontSize: TypographyTokens.bodySize,
+              fontWeight: FontWeight.w500,
+              color: ColorTokens.textSecondary,
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => GappingSetupScreen(userId: userId),
+              ));
+            },
+            icon: Icon(Icons.grid_on, color: ColorTokens.primaryDefault),
+            label: Text(
+              'Gapping Chart',
+              style: TextStyle(color: ColorTokens.primaryDefault),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: ColorTokens.primaryDefault),
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => WedgeSetupScreen(userId: userId),
+              ));
+            },
+            icon: Icon(Icons.grid_view, color: ColorTokens.primaryDefault),
+            label: Text(
+              'Wedge Matrix',
+              style: TextStyle(color: ColorTokens.primaryDefault),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: ColorTokens.primaryDefault),
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => ChippingSetupScreen(userId: userId),
+              ));
+            },
+            icon: Icon(Icons.grid_3x3, color: ColorTokens.primaryDefault),
+            label: Text(
+              'Chipping Matrix',
+              style: TextStyle(color: ColorTokens.primaryDefault),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: ColorTokens.primaryDefault),
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  static String _matrixTypeLabel(MatrixType type) {
+    switch (type) {
+      case MatrixType.gappingChart:
+        return 'Gapping Chart';
+      case MatrixType.wedgeMatrix:
+        return 'Wedge Matrix';
+      case MatrixType.chippingMatrix:
+        return 'Chipping Matrix';
+    }
   }
 
   Future<void> _startTodayPractice(
