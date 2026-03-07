@@ -459,7 +459,7 @@ class _FilterButton extends StatelessWidget {
           Container(
             width: 1,
             height: 16,
-            color: ColorTokens.surfaceBorder,
+            color: ColorTokens.textTertiary,
           ),
           // Filter menu.
           GestureDetector(
