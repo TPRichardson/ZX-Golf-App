@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
-import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
-import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 import 'skill_area_tile.dart';
 import 'subskill_breakdown.dart';
@@ -33,20 +31,19 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
 
   @override
   Widget build(BuildContext context) {
-    final heatmapAsync =
-        ref.watch(skillAreaHeatmapProvider(widget.userId));
-    final scoresAsync =
-        ref.watch(skillAreaScoresProvider(widget.userId));
+    final windowStatsAsync =
+        ref.watch(skillAreaWindowStatsProvider(widget.userId));
+    final allocationsAsync =
+        ref.watch(skillAreaAllocationsProvider);
 
-    return heatmapAsync.when(
-      data: (heatmap) {
-        final scores = scoresAsync.valueOrNull ?? [];
-        final scoreMap = {for (final s in scores) s.skillArea: s};
+    return windowStatsAsync.when(
+      data: (windowStats) {
+        final allocations = allocationsAsync.valueOrNull ?? {};
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildGrid(heatmap, scoreMap),
+            _buildGrid(windowStats, allocations),
             // Accordion content when expanded.
             if (_expandedArea != null)
               AnimatedSize(
@@ -82,34 +79,32 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
   }
 
   Widget _buildGrid(
-    Map<SkillArea, double> heatmap,
-    Map<SkillArea, MaterialisedSkillAreaScore> scoreMap,
+    Map<SkillArea, ({double totalPoints, double average})> windowStats,
+    Map<SkillArea, int> allocations,
   ) {
     final areas = SkillArea.values;
-    // 4 tiles on first row, 3 on second.
     final firstRow = areas.take(4).toList();
     final secondRow = areas.skip(4).toList();
 
     return Column(
       children: [
-        _buildRow(firstRow, heatmap, scoreMap),
+        _buildRow(firstRow, windowStats, allocations),
         const SizedBox(height: SpacingTokens.sm),
-        _buildRow(secondRow, heatmap, scoreMap),
+        _buildRow(secondRow, windowStats, allocations),
       ],
     );
   }
 
   Widget _buildRow(
     List<SkillArea> areas,
-    Map<SkillArea, double> heatmap,
-    Map<SkillArea, MaterialisedSkillAreaScore> scoreMap,
+    Map<SkillArea, ({double totalPoints, double average})> windowStats,
+    Map<SkillArea, int> allocations,
   ) {
     return Row(
       children: areas.map((area) {
-        final normalised = heatmap[area] ?? 0.0;
-        final score = scoreMap[area];
-        final allocation = score?.allocation ?? 0;
-        // Use allocation as flex; minimum 1 to avoid zero-flex.
+        final avg = windowStats[area]?.average ?? 0.0;
+        final normalised = avg > 0 ? (avg / 5.0).clamp(0.0, 1.0) : 0.0;
+        final allocation = allocations[area] ?? 1;
         final flex = allocation > 0 ? allocation : 1;
         return Expanded(
           flex: flex,
@@ -118,7 +113,8 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
             child: SkillAreaTile(
               skillArea: area,
               normalisedScore: normalised,
-              rawScore: score?.skillAreaScore ?? 0,
+              totalPoints: windowStats[area]?.totalPoints ?? 0.0,
+              average: windowStats[area]?.average ?? 0.0,
               allocation: allocation,
               isExpanded: _expandedArea == area,
               onTap: () {

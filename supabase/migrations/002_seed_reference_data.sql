@@ -36,33 +36,33 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 
 INSERT INTO "SubskillRef" ("SubskillID", "SkillArea", "Name", "Allocation") VALUES
-  -- Irons (280 total)
-  ('irons_distance_control',    'Irons',    'Distance Control',   110),
-  ('irons_direction_control',   'Irons',    'Direction Control',  110),
+  -- Irons (350 total)
+  ('irons_distance_control',    'Irons',    'Distance Control',   145),
+  ('irons_direction_control',   'Irons',    'Direction Control',  145),
   ('irons_shape_control',       'Irons',    'Shape Control',       60),
   -- Driving (240 total)
-  ('driving_distance_maximum',  'Driving',  'Distance Maximum',    95),
-  ('driving_direction_control', 'Driving',  'Direction Control',   95),
-  ('driving_shape_control',     'Driving',  'Shape Control',       50),
-  -- Putting (200 total)
-  ('putting_distance_control',  'Putting',  'Distance Control',   100),
-  ('putting_direction_control', 'Putting',  'Direction Control',  100),
-  -- Pitching (100 total)
-  ('pitching_distance_control', 'Pitching', 'Distance Control',    40),
-  ('pitching_direction_control','Pitching', 'Direction Control',   40),
-  ('pitching_flight_control',   'Pitching', 'Flight Control',      20),
-  -- Chipping (100 total)
-  ('chipping_distance_control', 'Chipping', 'Distance Control',    40),
-  ('chipping_direction_control','Chipping', 'Direction Control',   40),
-  ('chipping_flight_control',   'Chipping', 'Flight Control',      20),
-  -- Woods (50 total)
-  ('woods_distance_control',    'Woods',    'Distance Control',    20),
-  ('woods_direction_control',   'Woods',    'Direction Control',   20),
-  ('woods_shape_control',       'Woods',    'Shape Control',       10),
-  -- Bunkers (30 total)
-  ('bunkers_distance_control',  'Bunkers',  'Distance Control',    15),
-  ('bunkers_direction_control', 'Bunkers',  'Direction Control',   15)
-ON CONFLICT DO NOTHING;
+  ('driving_distance_maximum',  'Driving',  'Distance Maximum',   100),
+  ('driving_direction_control', 'Driving',  'Direction Control',  100),
+  ('driving_shape_control',     'Driving',  'Shape Control',       40),
+  -- Putting (240 total)
+  ('putting_distance_control',  'Putting',  'Distance Control',   120),
+  ('putting_direction_control', 'Putting',  'Direction Control',  120),
+  -- Pitching (60 total)
+  ('pitching_distance_control', 'Pitching', 'Distance Control',    25),
+  ('pitching_direction_control','Pitching', 'Direction Control',   25),
+  ('pitching_flight_control',   'Pitching', 'Flight Control',      10),
+  -- Chipping (60 total)
+  ('chipping_distance_control', 'Chipping', 'Distance Control',    25),
+  ('chipping_direction_control','Chipping', 'Direction Control',   25),
+  ('chipping_flight_control',   'Chipping', 'Flight Control',      10),
+  -- Woods (30 total)
+  ('woods_distance_control',    'Woods',    'Distance Control',    13),
+  ('woods_direction_control',   'Woods',    'Direction Control',   13),
+  ('woods_shape_control',       'Woods',    'Shape Control',        4),
+  -- Bunkers (20 total)
+  ('bunkers_distance_control',  'Bunkers',  'Distance Control',    10),
+  ('bunkers_direction_control', 'Bunkers',  'Direction Control',   10)
+ON CONFLICT ("SubskillID") DO UPDATE SET "Allocation" = EXCLUDED."Allocation";
 
 -- ============================================================
 -- 3. MetricSchema (Section 4, §4.3 / Section 14)

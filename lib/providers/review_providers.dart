@@ -113,6 +113,50 @@ final skillAreaHeatmapProvider = Provider.family<
 });
 
 // ---------------------------------------------------------------------------
+// Skill area reference allocations — from SubskillRefs (always available)
+// ---------------------------------------------------------------------------
+
+/// Sum of subskill allocations per SkillArea from reference data.
+final skillAreaAllocationsProvider =
+    FutureProvider<Map<SkillArea, int>>((ref) async {
+  final refs = await ref.watch(scoringRepositoryProvider).getAllSubskillRefs();
+  final map = <SkillArea, int>{};
+  for (final r in refs) {
+    map[r.skillArea] = (map[r.skillArea] ?? 0) + r.allocation;
+  }
+  return map;
+});
+
+// ---------------------------------------------------------------------------
+// Skill area raw average — total points / saturation from window states
+// ---------------------------------------------------------------------------
+
+/// Per-area stats from window states: raw total points and average.
+final skillAreaWindowStatsProvider = Provider.family<
+    AsyncValue<Map<SkillArea, ({double totalPoints, double average})>>,
+    String>((ref, userId) {
+  final windowsAsync = ref.watch(windowStatesProvider(userId));
+  return windowsAsync.whenData((windows) {
+    final sums = <SkillArea, double>{};
+    final occupancies = <SkillArea, double>{};
+    for (final w in windows) {
+      sums[w.skillArea] = (sums[w.skillArea] ?? 0) + w.weightedSum;
+      occupancies[w.skillArea] =
+          (occupancies[w.skillArea] ?? 0) + w.totalOccupancy;
+    }
+    final map = <SkillArea, ({double totalPoints, double average})>{};
+    for (final area in sums.keys) {
+      final occ = occupancies[area] ?? 0;
+      map[area] = (
+        totalPoints: sums[area]!,
+        average: occ > 0 ? sums[area]! / occ : 0.0,
+      );
+    }
+    return map;
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Subskills by area — filtered view
 // ---------------------------------------------------------------------------
 

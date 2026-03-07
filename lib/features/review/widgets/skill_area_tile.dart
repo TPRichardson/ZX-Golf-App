@@ -8,7 +8,8 @@ import 'package:zx_golf_app/data/enums.dart';
 class SkillAreaTile extends StatelessWidget {
   final SkillArea skillArea;
   final double normalisedScore;
-  final double rawScore;
+  final double totalPoints;
+  final double average;
   final int allocation;
   final bool isExpanded;
   final VoidCallback onTap;
@@ -17,7 +18,8 @@ class SkillAreaTile extends StatelessWidget {
     super.key,
     required this.skillArea,
     required this.normalisedScore,
-    required this.rawScore,
+    required this.totalPoints,
+    required this.average,
     required this.allocation,
     required this.isExpanded,
     required this.onTap,
@@ -44,10 +46,7 @@ class SkillAreaTile extends StatelessWidget {
       )!.withValues(alpha: 0.25);
     }
 
-    // skillAreaScore IS already the earned points (sum of subskillPoints).
-    final earnedPoints = rawScore.round();
-    // Reverse: average = earnedPoints / allocation * 5.0.
-    final average = allocation > 0 ? rawScore / allocation * 5.0 : 0.0;
+    final earnedPoints = totalPoints.round();
 
     return GestureDetector(
       onTap: onTap,
