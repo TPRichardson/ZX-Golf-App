@@ -18,6 +18,23 @@ import 'widgets/drill_card.dart';
 /// 5E — Persistent filter state for Practice Pool (survives navigation).
 final practicePoolFilterProvider = StateProvider<SkillArea?>((ref) => null);
 
+/// Toggle between grouped (by skill area) and flat list display.
+final practicePoolGroupedProvider = StateProvider<bool>((ref) => false);
+
+/// Display order: driver at top → putter at bottom.
+const _skillAreaDisplayOrder = [
+  SkillArea.driving,
+  SkillArea.woods,
+  SkillArea.irons,
+  SkillArea.bunkers,
+  SkillArea.pitching,
+  SkillArea.chipping,
+  SkillArea.putting,
+];
+
+int _skillAreaSortKey(SkillArea area) =>
+    _skillAreaDisplayOrder.indexOf(area);
+
 // Phase 3 — Practice Pool: user's active drill collection.
 // Adopted system drills + active custom drills.
 // S12 §12.3 — Track tab primary view.
@@ -49,6 +66,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
   Widget _buildBody(BuildContext context) {
     final selectedFilter = ref.watch(practicePoolFilterProvider);
+    final isGrouped = ref.watch(practicePoolGroupedProvider);
     final poolAsync = ref.watch(practicePoolProvider(_userId));
 
     return Column(
@@ -111,6 +129,13 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ),
               ),
               const Spacer(),
+              // Grouped/flat toggle.
+              _GroupToggle(
+                isGrouped: isGrouped,
+                onChanged: (v) =>
+                    ref.read(practicePoolGroupedProvider.notifier).state = v,
+              ),
+              const SizedBox(width: SpacingTokens.xs),
               // 5E — Skill area filter persisted across navigation.
               _FilterButton(
                 selected: selectedFilter,
@@ -164,33 +189,15 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 );
               }
 
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.md,
-                ),
-                itemCount: filtered.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: SpacingTokens.sm),
-                itemBuilder: (context, index) {
-                  final dwa = filtered[index];
-                  return DrillCard(
-                    drill: dwa.drill,
-                    onTap: () {
-                      if (widget.pickMode) {
-                        Navigator.of(context).pop(dwa.drill.drillId);
-                        return;
-                      }
-                      _openDrillDetail(dwa);
-                    },
-                    trailing: widget.pickMode
-                        ? null
-                        : _PlayDrillButton(
-                            drillId: dwa.drill.drillId,
-                            userId: _userId,
-                          ),
-                  );
-                },
-              );
+              // Sort: driver at top → putter at bottom.
+              final sorted = List.of(filtered)
+                ..sort((a, b) => _skillAreaSortKey(a.drill.skillArea)
+                    .compareTo(_skillAreaSortKey(b.drill.skillArea)));
+
+              if (isGrouped) {
+                return _buildGroupedList(context, sorted);
+              }
+              return _buildFlatList(context, sorted);
             },
             loading: () => const Center(
               child: CircularProgressIndicator(),
@@ -207,6 +214,66 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFlatList(BuildContext context, List<DrillWithAdoption> drills) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md,
+      ),
+      itemCount: drills.length,
+      separatorBuilder: (_, _) =>
+          const SizedBox(height: SpacingTokens.sm),
+      itemBuilder: (context, index) {
+        final dwa = drills[index];
+        return _buildDrillCard(context, dwa);
+      },
+    );
+  }
+
+  Widget _buildGroupedList(
+      BuildContext context, List<DrillWithAdoption> drills) {
+    // Group by skill area, preserving display order.
+    final groups = <SkillArea, List<DrillWithAdoption>>{};
+    for (final dwa in drills) {
+      groups.putIfAbsent(dwa.drill.skillArea, () => []).add(dwa);
+    }
+    final orderedAreas = _skillAreaDisplayOrder
+        .where((a) => groups.containsKey(a))
+        .toList();
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.md),
+      itemCount: orderedAreas.length,
+      itemBuilder: (context, index) {
+        final area = orderedAreas[index];
+        final areaDrills = groups[area]!;
+        return _SkillAreaGroup(
+          area: area,
+          drills: areaDrills,
+          cardBuilder: (dwa) => _buildDrillCard(context, dwa),
+        );
+      },
+    );
+  }
+
+  Widget _buildDrillCard(BuildContext context, DrillWithAdoption dwa) {
+    return DrillCard(
+      drill: dwa.drill,
+      onTap: () {
+        if (widget.pickMode) {
+          Navigator.of(context).pop(dwa.drill.drillId);
+          return;
+        }
+        _openDrillDetail(dwa);
+      },
+      trailing: widget.pickMode
+          ? null
+          : _PlayDrillButton(
+              drillId: dwa.drill.drillId,
+              userId: _userId,
+            ),
     );
   }
 
@@ -412,6 +479,120 @@ class _FilterButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Toggle button: list vs grouped view.
+class _GroupToggle extends StatelessWidget {
+  final bool isGrouped;
+  final ValueChanged<bool> onChanged;
+
+  const _GroupToggle({required this.isGrouped, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!isGrouped),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.sm,
+          vertical: SpacingTokens.xs,
+        ),
+        decoration: BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+          border: Border.all(color: ColorTokens.surfaceBorder),
+        ),
+        child: Icon(
+          isGrouped ? Icons.list : Icons.view_agenda_outlined,
+          size: 16,
+          color: ColorTokens.primaryDefault,
+        ),
+      ),
+    );
+  }
+}
+
+/// Expandable skill area group header with drill cards.
+class _SkillAreaGroup extends StatefulWidget {
+  final SkillArea area;
+  final List<DrillWithAdoption> drills;
+  final Widget Function(DrillWithAdoption) cardBuilder;
+
+  const _SkillAreaGroup({
+    required this.area,
+    required this.drills,
+    required this.cardBuilder,
+  });
+
+  @override
+  State<_SkillAreaGroup> createState() => _SkillAreaGroupState();
+}
+
+class _SkillAreaGroupState extends State<_SkillAreaGroup> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ColorTokens.skillArea(widget.area);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Group header.
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: SpacingTokens.md,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(
+                          ShapeTokens.radiusMicro),
+                    ),
+                  ),
+                  const SizedBox(width: SpacingTokens.sm),
+                  Text(
+                    widget.area.dbValue,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: ColorTokens.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(width: SpacingTokens.xs),
+                  Text(
+                    '(${widget.drills.length})',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: ColorTokens.textTertiary,
+                        ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20,
+                    color: ColorTokens.textTertiary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Drill cards.
+          if (_expanded)
+            ...widget.drills.map((dwa) => Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: SpacingTokens.sm),
+                  child: widget.cardBuilder(dwa),
+                )),
+        ],
       ),
     );
   }
