@@ -89,7 +89,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.add_circle_outline,
+                        Icons.add,
                         size: 16,
                         color: ColorTokens.primaryDefault,
                       ),
