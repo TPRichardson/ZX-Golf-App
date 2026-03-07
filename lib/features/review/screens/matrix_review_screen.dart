@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -319,7 +320,5 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
     }
   }
 
-  String _formatDate(DateTime dt) {
-    return '${dt.month}/${dt.day}/${dt.year}';
-  }
+  String _formatDate(DateTime dt) => formatDateNumeric(dt);
 }

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:zx_golf_app/core/formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
@@ -127,11 +128,8 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
     );
   }
 
-  String _formatDuration(int totalSeconds) {
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
+  String _formatDuration(int totalSeconds) =>
+      formatDuration(totalSeconds, padMinutes: true);
 
   @override
   Widget build(BuildContext context) {

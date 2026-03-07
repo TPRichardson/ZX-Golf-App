@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:zx_golf_app/core/formatters.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -431,9 +432,5 @@ class _RawDataEntryScreenState extends ConsumerState<RawDataEntryScreen> {
     );
   }
 
-  Color _scoreColor(double score) {
-    if (score >= 3.5) return ColorTokens.successDefault;
-    if (score >= 2.0) return ColorTokens.primaryDefault;
-    return ColorTokens.warningIntegrity;
-  }
+  Color _scoreColor(double score) => scoreColor(score);
 }

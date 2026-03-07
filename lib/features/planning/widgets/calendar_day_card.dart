@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
@@ -85,14 +86,8 @@ class CalendarDayCard extends StatelessWidget {
   }
 }
 
-const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const _months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
 String _formatDate(DateTime date) =>
-    '${_weekdays[date.weekday - 1]}, ${_months[date.month - 1]} ${date.day}';
+    formatDate(date, includeWeekday: true);
 
 class _SlotDot extends StatelessWidget {
   final Slot slot;
