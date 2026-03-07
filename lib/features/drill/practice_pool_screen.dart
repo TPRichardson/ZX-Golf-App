@@ -5,7 +5,10 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 
 import '../bag/bag_screen.dart';
 import 'add_drills_screen.dart';
@@ -143,7 +146,27 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     );
   }
 
+  Future<void> _startCleanPractice() async {
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !mounted) return;
+
+    final actions = ref.read(practiceActionsProvider);
+    final pb = await actions.startPracticeBlock(_userId, surfaceType: surface);
+
+    if (mounted) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PracticeQueueScreen(
+          practiceBlockId: pb.practiceBlockId,
+          userId: _userId,
+        ),
+      ));
+    }
+  }
+
   Widget _buildBottomBar() {
+    final activePb = ref.watch(activePracticeBlockProvider(_userId));
+    final hasActivePb = activePb.valueOrNull != null;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         SpacingTokens.md,
@@ -151,26 +174,52 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         SpacingTokens.md,
         SpacingTokens.md,
       ),
-      child: SizedBox(
-        width: double.infinity,
-        child: FilledButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => const AddDrillsScreen(),
-            ));
-          },
-          icon: const Icon(Icons.add, color: Colors.white, size: 18),
-          label: const Text(
-            'Add drills to your library',
-            style: TextStyle(color: Colors.white),
-          ),
-          style: FilledButton.styleFrom(
-            backgroundColor: ColorTokens.primaryDefault,
-            padding: const EdgeInsets.symmetric(
-              vertical: SpacingTokens.sm,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!hasActivePb)
+            Padding(
+              padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _startCleanPractice,
+                  icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+                  label: const Text(
+                    'Start Clean Practice',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ColorTokens.successDefault,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: SpacingTokens.sm,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const AddDrillsScreen(),
+                ));
+              },
+              icon: const Icon(Icons.add, color: Colors.white, size: 18),
+              label: const Text(
+                'Add drills to your library',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: ColorTokens.primaryDefault,
+                padding: const EdgeInsets.symmetric(
+                  vertical: SpacingTokens.sm,
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

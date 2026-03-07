@@ -79,6 +79,15 @@ class BagScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(SpacingTokens.md),
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+                child: Text(
+                  '${clubs.length} ${clubs.length == 1 ? 'club' : 'clubs'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: ColorTokens.textSecondary,
+                      ),
+                ),
+              ),
               for (final entry in grouped.entries) ...[
                 Padding(
                   padding: const EdgeInsets.only(

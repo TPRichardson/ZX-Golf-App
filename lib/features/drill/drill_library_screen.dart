@@ -6,7 +6,10 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
@@ -82,61 +85,70 @@ class DrillLibraryScreen extends ConsumerWidget {
                             ),
                           ));
                         },
-                        trailing: _AdoptToggle(
-                          isAdopted: adoptedIds.contains(drill.drillId),
-                          onToggle: () async {
-                            final drillRepo =
-                                ref.read(drillRepositoryProvider);
-                            if (adoptedIds.contains(drill.drillId)) {
-                              await drillRepo.retireAdoption(
-                                  _userId, drill.drillId);
-                            } else {
-                              try {
-                                await drillRepo.adoptDrill(
-                                    _userId, drill.drillId);
-                              } on ValidationException catch (e) {
-                                if (!context.mounted) return;
-                                showDialog(
-                                  context: context,
-                                  builder: (dialogCtx) => AlertDialog(
-                                    backgroundColor: ColorTokens.surfaceModal,
-                                    title: const Text('Missing Clubs',
-                                        style: TextStyle(
-                                            color: ColorTokens.textPrimary)),
-                                    content: Text(
-                                      e.message,
-                                      style: const TextStyle(
-                                          color: ColorTokens.textSecondary),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogCtx),
-                                        child: const Text('Return to Drills'),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () {
-                                          Navigator.pop(dialogCtx);
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  const BagScreen(),
-                                            ),
-                                          );
-                                        },
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor:
-                                              ColorTokens.primaryDefault,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _StartDrillButton(
+                              drillId: drill.drillId,
+                              userId: _userId,
+                            ),
+                            _AdoptToggle(
+                              isAdopted: adoptedIds.contains(drill.drillId),
+                              onToggle: () async {
+                                final drillRepo =
+                                    ref.read(drillRepositoryProvider);
+                                if (adoptedIds.contains(drill.drillId)) {
+                                  await drillRepo.retireAdoption(
+                                      _userId, drill.drillId);
+                                } else {
+                                  try {
+                                    await drillRepo.adoptDrill(
+                                        _userId, drill.drillId);
+                                  } on ValidationException catch (e) {
+                                    if (!context.mounted) return;
+                                    showDialog(
+                                      context: context,
+                                      builder: (dialogCtx) => AlertDialog(
+                                        backgroundColor: ColorTokens.surfaceModal,
+                                        title: const Text('Missing Clubs',
+                                            style: TextStyle(
+                                                color: ColorTokens.textPrimary)),
+                                        content: Text(
+                                          e.message,
+                                          style: const TextStyle(
+                                              color: ColorTokens.textSecondary),
                                         ),
-                                        child:
-                                            const Text('Customise Golf Bag'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(dialogCtx),
+                                            child: const Text('Return to Drills'),
+                                          ),
+                                          FilledButton(
+                                            onPressed: () {
+                                              Navigator.pop(dialogCtx);
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      const BagScreen(),
+                                                ),
+                                              );
+                                            },
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor:
+                                                  ColorTokens.primaryDefault,
+                                            ),
+                                            child:
+                                                const Text('Customise Golf Bag'),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                );
-                              }
-                            }
-                          },
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -155,6 +167,44 @@ class DrillLibraryScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _StartDrillButton extends ConsumerWidget {
+  final String drillId;
+  final String userId;
+
+  const _StartDrillButton({required this.drillId, required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return IconButton(
+      icon: Icon(
+        Icons.play_circle_outline,
+        color: ColorTokens.successDefault,
+      ),
+      onPressed: () async {
+        final surface = await showSurfacePicker(context);
+        if (surface == null || !context.mounted) return;
+
+        final actions = ref.read(practiceActionsProvider);
+        final pb = await actions.startPracticeBlock(
+          userId,
+          initialDrillIds: [drillId],
+          surfaceType: surface,
+        );
+
+        if (context.mounted) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => PracticeQueueScreen(
+              practiceBlockId: pb.practiceBlockId,
+              userId: userId,
+            ),
+          ));
+        }
+      },
+      tooltip: 'Start practice with this drill',
     );
   }
 }

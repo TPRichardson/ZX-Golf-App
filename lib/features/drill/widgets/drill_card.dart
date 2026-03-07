@@ -5,7 +5,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 
 // S15 §15.8 — Drill card for list display.
-// Shows drill name, skill area badge, drill type, and input mode.
+// Shows drill name, skill area badge, drill type, origin icon, and input mode.
 
 class DrillCard extends StatelessWidget {
   final Drill drill;
@@ -39,12 +39,29 @@ class DrillCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  drill.name,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: ColorTokens.textPrimary,
-                        fontWeight: FontWeight.w500,
+                Row(
+                  children: [
+                    // Origin icon: system vs custom.
+                    Icon(
+                      drill.origin == DrillOrigin.system
+                          ? Icons.verified_outlined
+                          : Icons.person_outline,
+                      size: 16,
+                      color: drill.origin == DrillOrigin.system
+                          ? ColorTokens.primaryDefault
+                          : ColorTokens.textTertiary,
+                    ),
+                    const SizedBox(width: SpacingTokens.xs),
+                    Expanded(
+                      child: Text(
+                        drill.name,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: ColorTokens.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: SpacingTokens.xs),
                 Row(

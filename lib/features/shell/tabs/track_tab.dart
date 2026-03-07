@@ -24,7 +24,7 @@ class TrackTab extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: const Text('Start Training'),
+          title: const Text('Train'),
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
