@@ -9,6 +9,8 @@ import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
+import 'package:zx_golf_app/features/bag/bag_screen.dart';
+
 import 'drill_detail_screen.dart';
 import 'widgets/drill_card.dart';
 
@@ -96,7 +98,7 @@ class DrillLibraryScreen extends ConsumerWidget {
                                 if (!context.mounted) return;
                                 showDialog(
                                   context: context,
-                                  builder: (_) => AlertDialog(
+                                  builder: (dialogCtx) => AlertDialog(
                                     backgroundColor: ColorTokens.surfaceModal,
                                     title: const Text('Missing Clubs',
                                         style: TextStyle(
@@ -107,14 +109,27 @@ class DrillLibraryScreen extends ConsumerWidget {
                                           color: ColorTokens.textSecondary),
                                     ),
                                     actions: [
-                                      FilledButton(
+                                      TextButton(
                                         onPressed: () =>
-                                            Navigator.pop(context),
+                                            Navigator.pop(dialogCtx),
+                                        child: const Text('Return to Drills'),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () {
+                                          Navigator.pop(dialogCtx);
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const BagScreen(),
+                                            ),
+                                          );
+                                        },
                                         style: FilledButton.styleFrom(
                                           backgroundColor:
                                               ColorTokens.primaryDefault,
                                         ),
-                                        child: const Text('OK'),
+                                        child:
+                                            const Text('Customise Golf Bag'),
                                       ),
                                     ],
                                   ),
