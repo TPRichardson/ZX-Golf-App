@@ -192,97 +192,157 @@ class BagScreen extends ConsumerWidget {
   void _showAddClubDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Add Club',
-            style: TextStyle(color: ColorTokens.textPrimary)),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              for (final entry in _clubGroups.entries)
-                _ClubGroupTile(
-                  category: entry.key,
-                  clubs: entry.value,
-                  onClubSelected: (type) async {
-                    Navigator.pop(ctx);
-                    await ref.read(clubRepositoryProvider).addClub(
-                          _userId,
-                          UserClubsCompanion(
-                            clubType: drift.Value(type),
-                          ),
-                        );
-                  },
-                ),
-            ],
-          ),
-        ),
+      builder: (ctx) => _AddClubsDialog(
+        clubGroups: _clubGroups,
+        onAdd: (selected) async {
+          Navigator.pop(ctx);
+          final clubRepo = ref.read(clubRepositoryProvider);
+          for (final type in selected) {
+            await clubRepo.addClub(
+              _userId,
+              UserClubsCompanion(clubType: drift.Value(type)),
+            );
+          }
+        },
       ),
     );
   }
 }
 
-/// A category row in the add-club picker. Single-item categories (Driver,
-/// Putter) select immediately on tap. Multi-item categories expand to show
-/// individual clubs.
-class _ClubGroupTile extends StatefulWidget {
-  final String category;
-  final List<ClubType> clubs;
-  final ValueChanged<ClubType> onClubSelected;
+/// Multi-select dialog with grouped club categories.
+class _AddClubsDialog extends StatefulWidget {
+  final Map<String, List<ClubType>> clubGroups;
+  final ValueChanged<Set<ClubType>> onAdd;
 
-  const _ClubGroupTile({
-    required this.category,
-    required this.clubs,
-    required this.onClubSelected,
-  });
+  const _AddClubsDialog({required this.clubGroups, required this.onAdd});
 
   @override
-  State<_ClubGroupTile> createState() => _ClubGroupTileState();
+  State<_AddClubsDialog> createState() => _AddClubsDialogState();
 }
 
-class _ClubGroupTileState extends State<_ClubGroupTile> {
-  bool _expanded = false;
+class _AddClubsDialogState extends State<_AddClubsDialog> {
+  final _selected = <ClubType>{};
+  final _expanded = <String>{};
+
+  void _toggle(ClubType type) {
+    setState(() {
+      if (_selected.contains(type)) {
+        _selected.remove(type);
+      } else {
+        _selected.add(type);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Single-club categories — tap selects directly.
-    if (widget.clubs.length == 1) {
-      return ListTile(
-        title: Text(widget.category,
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      title: const Text('Add Clubs',
+          style: TextStyle(color: ColorTokens.textPrimary)),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final entry in widget.clubGroups.entries)
+              _buildGroup(entry.key, entry.value),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed:
+              _selected.isEmpty ? null : () => widget.onAdd(_selected),
+          style: FilledButton.styleFrom(
+            backgroundColor: ColorTokens.primaryDefault,
+          ),
+          child: Text('Add${_selected.isEmpty ? '' : ' (${_selected.length})'}'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroup(String category, List<ClubType> clubs) {
+    // Single-club categories — checkbox directly.
+    if (clubs.length == 1) {
+      final type = clubs.first;
+      return CheckboxListTile(
+        title: Text(category,
             style: const TextStyle(color: ColorTokens.textPrimary)),
-        leading: const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
-        onTap: () => widget.onClubSelected(widget.clubs.first),
+        value: _selected.contains(type),
+        onChanged: (_) => _toggle(type),
+        activeColor: ColorTokens.primaryDefault,
+        controlAffinity: ListTileControlAffinity.trailing,
+        secondary: const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
       );
     }
 
-    // Multi-club categories — expand to show children.
+    // Multi-club categories — expand/collapse with children.
+    final isExpanded = _expanded.contains(category);
+    final selectedInGroup =
+        clubs.where((c) => _selected.contains(c)).length;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          title: Text(widget.category,
+          title: Text(category,
               style: const TextStyle(color: ColorTokens.textPrimary)),
           leading:
               const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
-          trailing: Icon(
-            _expanded ? Icons.expand_less : Icons.expand_more,
-            color: ColorTokens.textTertiary,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selectedInGroup > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.xs + 2, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.primaryDefault.withValues(alpha: 0.3),
+                    borderRadius:
+                        BorderRadius.circular(ShapeTokens.radiusSegmented),
+                  ),
+                  child: Text('$selectedInGroup',
+                      style: const TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.textPrimary,
+                      )),
+                ),
+              const SizedBox(width: SpacingTokens.xs),
+              Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
+                color: ColorTokens.textTertiary,
+              ),
+            ],
           ),
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: () => setState(() {
+            if (isExpanded) {
+              _expanded.remove(category);
+            } else {
+              _expanded.add(category);
+            }
+          }),
         ),
-        if (_expanded)
+        if (isExpanded)
           Padding(
             padding: const EdgeInsets.only(left: SpacingTokens.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: widget.clubs
-                  .map((club) => ListTile(
+              children: clubs
+                  .map((club) => CheckboxListTile(
                         dense: true,
                         title: Text(club.dbValue,
                             style: const TextStyle(
                                 color: ColorTokens.textSecondary)),
-                        onTap: () => widget.onClubSelected(club),
+                        value: _selected.contains(club),
+                        onChanged: (_) => _toggle(club),
+                        activeColor: ColorTokens.primaryDefault,
+                        controlAffinity: ListTileControlAffinity.trailing,
                       ))
                   .toList(),
             ),
