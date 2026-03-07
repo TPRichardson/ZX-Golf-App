@@ -12,6 +12,7 @@ import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_entry_card.dart';
+import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
@@ -71,6 +72,19 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   }
 
   Future<void> _startSession(PracticeEntryWithDrill entryWithDrill) async {
+    final drill = entryWithDrill.drill;
+
+    // Check if drill requires clubs the user doesn't have in their bag.
+    if (drill.clubSelectionMode != null) {
+      final clubs = await ref
+          .read(clubsForSkillAreaProvider((widget.userId, drill.skillArea))
+              .future);
+      if (clubs.isEmpty && mounted) {
+        final proceed = await _showNoClubsWarning(drill.skillArea);
+        if (proceed != true || !mounted) return;
+      }
+    }
+
     final actions = ref.read(practiceActionsProvider);
 
     // S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
@@ -174,6 +188,37 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     );
     controller.dispose();
     return result;
+  }
+
+  /// Warning when drill requires clubs but user has none for that skill area.
+  Future<bool?> _showNoClubsWarning(SkillArea skillArea) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('No Clubs Configured',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: Text(
+          'This drill requires clubs for ${skillArea.dbValue}, '
+          'but you have none in your bag. '
+          'Add clubs in Settings → Golf Bag before starting this drill.',
+          style: const TextStyle(color: ColorTokens.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.warningIntegrity,
+            ),
+            child: const Text('Start Anyway'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
