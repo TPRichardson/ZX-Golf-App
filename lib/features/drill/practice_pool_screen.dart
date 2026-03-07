@@ -286,6 +286,7 @@ class _PlayDrillButton extends ConsumerWidget {
     return IconButton(
       icon: Icon(
         Icons.play_circle_outline,
+        size: 32,
         color: ColorTokens.successDefault,
       ),
       onPressed: () async {
