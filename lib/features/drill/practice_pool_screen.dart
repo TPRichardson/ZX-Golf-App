@@ -54,6 +54,21 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     return Column(
       children: [
+        // Page header.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+          ),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Your Drills',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: ColorTokens.textPrimary,
+                  ),
+            ),
+          ),
+        ),
         // 5E — Skill area filter persisted across navigation.
         Padding(
           padding: const EdgeInsets.all(SpacingTokens.md),
