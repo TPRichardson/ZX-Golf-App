@@ -9,8 +9,6 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
-import 'widgets/anchor_editor.dart';
-
 // Phase 3 — Drill detail screen. View drill properties and anchors (read-only).
 // Anchors are system-defined and not user-editable.
 
@@ -149,26 +147,24 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
               value: drill.targetDistanceMode!.dbValue,
             ),
 
-          // Anchors section — system drills, read-only.
+          // Anchors section — system drills, read-only display.
           if (isSystem && isScored) ...[
             const SizedBox(height: SpacingTokens.lg),
             Text(
-              'Anchors',
+              'Scoring Anchors',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: ColorTokens.textPrimary,
                   ),
             ),
             const SizedBox(height: SpacingTokens.sm),
             for (final entry in _anchors.entries) ...[
-              AnchorEditor(
-                subskillId: entry.key,
-                subskillLabel: _formatSubskillId(entry.key),
-                minValue: entry.value.min,
-                scratchValue: entry.value.scratch,
-                proValue: entry.value.pro,
-                enabled: false,
+              _AnchorDisplay(
+                label: _formatSubskillId(entry.key),
+                min: entry.value.min,
+                scratch: entry.value.scratch,
+                pro: entry.value.pro,
               ),
-              const SizedBox(height: SpacingTokens.md),
+              const SizedBox(height: SpacingTokens.sm),
             ],
           ],
           // Target section — custom drills only.
@@ -298,6 +294,84 @@ class _DetailRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Read-only anchor display — shows Min / Scratch / Pro values with % suffix.
+class _AnchorDisplay extends StatelessWidget {
+  final String label;
+  final double min;
+  final double scratch;
+  final double pro;
+
+  const _AnchorDisplay({
+    required this.label,
+    required this.min,
+    required this.scratch,
+    required this.pro,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(SpacingTokens.sm),
+      decoration: BoxDecoration(
+        color: ColorTokens.surfaceRaised,
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+        border: Border.all(color: ColorTokens.surfaceBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: ColorTokens.textPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Row(
+            children: [
+              _AnchorValue(label: 'Min', value: min),
+              const SizedBox(width: SpacingTokens.lg),
+              _AnchorValue(label: 'Scratch', value: scratch),
+              const SizedBox(width: SpacingTokens.lg),
+              _AnchorValue(label: 'Pro', value: pro),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnchorValue extends StatelessWidget {
+  final String label;
+  final double value;
+
+  const _AnchorValue({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: ColorTokens.textTertiary,
+              ),
+        ),
+        Text(
+          '${value.toStringAsFixed(0)}%',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: ColorTokens.textSecondary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+        ),
+      ],
     );
   }
 }
