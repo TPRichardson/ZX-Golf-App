@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -88,8 +89,37 @@ class DrillLibraryScreen extends ConsumerWidget {
                               await drillRepo.retireAdoption(
                                   _userId, drill.drillId);
                             } else {
-                              await drillRepo.adoptDrill(
-                                  _userId, drill.drillId);
+                              try {
+                                await drillRepo.adoptDrill(
+                                    _userId, drill.drillId);
+                              } on ValidationException catch (e) {
+                                if (!context.mounted) return;
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    backgroundColor: ColorTokens.surfaceModal,
+                                    title: const Text('Missing Clubs',
+                                        style: TextStyle(
+                                            color: ColorTokens.textPrimary)),
+                                    content: Text(
+                                      e.message,
+                                      style: const TextStyle(
+                                          color: ColorTokens.textSecondary),
+                                    ),
+                                    actions: [
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor:
+                                              ColorTokens.primaryDefault,
+                                        ),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
                             }
                           },
                         ),
