@@ -5,7 +5,6 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/scoring/scoring_types.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -96,17 +95,17 @@ final sessionScoreMapProvider =
 // ---------------------------------------------------------------------------
 
 /// S15 §15.3.3 — Normalised 0–1 opacity for each SkillArea heatmap tile.
-/// Computed from skillAreaScore / maxPossibleScore (kMaxScore * allocation weight).
+/// skillAreaScore is already earned points; allocation is max possible points.
+/// Normalised = earnedPoints / allocation (0–1 range).
 final skillAreaHeatmapProvider = Provider.family<
     AsyncValue<Map<SkillArea, double>>, String>((ref, userId) {
   final scoresAsync = ref.watch(skillAreaScoresProvider(userId));
   return scoresAsync.whenData((scores) {
     final map = <SkillArea, double>{};
     for (final score in scores) {
-      // Max possible = kMaxScore (5.0) for the skill area weighted average.
-      // Normalise to 0–1 range.
-      final normalised =
-          score.skillAreaScore > 0 ? (score.skillAreaScore / kMaxScore).clamp(0.0, 1.0) : 0.0;
+      final normalised = score.allocation > 0 && score.skillAreaScore > 0
+          ? (score.skillAreaScore / score.allocation).clamp(0.0, 1.0)
+          : 0.0;
       map[score.skillArea] = normalised;
     }
     return map;

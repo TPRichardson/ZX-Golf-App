@@ -44,10 +44,10 @@ class SkillAreaTile extends StatelessWidget {
       )!.withValues(alpha: 0.25);
     }
 
-    // Earned points = (average / 5.0) * allocation.
-    final earnedPoints = allocation > 0
-        ? (rawScore / 5.0 * allocation).round()
-        : 0;
+    // skillAreaScore IS already the earned points (sum of subskillPoints).
+    final earnedPoints = rawScore.round();
+    // Reverse: average = earnedPoints / allocation * 5.0.
+    final average = allocation > 0 ? rawScore / allocation * 5.0 : 0.0;
 
     return GestureDetector(
       onTap: onTap,
@@ -81,7 +81,7 @@ class SkillAreaTile extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '$earnedPoints / $allocation',
+              '$earnedPoints / $allocation pts',
               style: TextStyle(
                 fontSize: TypographyTokens.microSize,
                 color: ColorTokens.textSecondary,
@@ -89,7 +89,7 @@ class SkillAreaTile extends StatelessWidget {
               ),
             ),
             Text(
-              'avg ${rawScore.toStringAsFixed(1)}',
+              'avg ${average.toStringAsFixed(1)}',
               style: TextStyle(
                 fontSize: TypographyTokens.microSize,
                 color: ColorTokens.textTertiary,
