@@ -18,7 +18,7 @@ class ReviewTab extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: const Text('Review Past Training'),
+          title: const Text('Review Training'),
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
