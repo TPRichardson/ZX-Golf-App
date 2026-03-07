@@ -18,6 +18,7 @@ import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -51,6 +52,7 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
   int _missCount = 0;
   String _selectedClub = 'Putter';
   List<String> _availableClubs = [];
+  late SurfaceType? _surfaceType = widget.session.surfaceType;
   final _random = Random();
 
   @override
@@ -329,6 +331,15 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
     }
   }
 
+  Future<void> _changeSurface() async {
+    final newSurface = await showSurfacePicker(context);
+    if (newSurface != null && mounted) {
+      await ref.read(practiceRepositoryProvider).updateSessionSurface(
+          widget.session.sessionId, newSurface);
+      setState(() => _surfaceType = newSurface);
+    }
+  }
+
   /// S14 §14.10 — Undo the last logged instance.
   Future<void> _undoLast() async {
     final deleted = await _controller.undoLastInstance();
@@ -354,35 +365,48 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
           top: BorderSide(color: ColorTokens.surfaceBorder),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // S14 §14.10 — Undo last instance.
-          if (_controller.canUndo)
-            TextButton.icon(
-              onPressed: _undoLast,
-              icon: const Icon(Icons.undo, size: 16),
-              label: const Text('Undo'),
-            ),
-          // Fix 4 — Bulk add buttons.
-          TextButton.icon(
-            onPressed: () => _bulkAdd(true),
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Bulk Hits'),
-          ),
-          TextButton.icon(
-            onPressed: () => _bulkAdd(false),
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Bulk Misses'),
-          ),
-          const Spacer(),
-          if (!_controller.isStructured)
-            FilledButton(
-              onPressed: _endSession,
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.primaryDefault,
+          Row(
+            children: [
+              // S14 §14.10 — Undo last instance.
+              if (_controller.canUndo)
+                TextButton.icon(
+                  onPressed: _undoLast,
+                  icon: const Icon(Icons.undo, size: 16),
+                  label: const Text('Undo'),
+                ),
+              // Fix 4 — Bulk add buttons.
+              TextButton.icon(
+                onPressed: () => _bulkAdd(true),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Bulk Hits'),
               ),
-              child: const Text('End Drill'),
+              TextButton.icon(
+                onPressed: () => _bulkAdd(false),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Bulk Misses'),
+              ),
+              const Spacer(),
+              if (!_controller.isStructured)
+                FilledButton(
+                  onPressed: _endSession,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ColorTokens.primaryDefault,
+                  ),
+                  child: const Text('End Drill'),
+                ),
+            ],
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SurfaceBadge(
+              surfaceType: _surfaceType,
+              onTap: _changeSurface,
             ),
+          ),
         ],
       ),
     );

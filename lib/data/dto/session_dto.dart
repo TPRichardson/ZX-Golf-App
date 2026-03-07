@@ -14,6 +14,7 @@ extension SessionSyncDto on Session {
         'Status': status.dbValue,
         'IntegrityFlag': integrityFlag,
         'IntegritySuppressed': integritySuppressed,
+        'SurfaceType': surfaceType?.dbValue,
         'UserDeclaration': userDeclaration,
         'SessionDuration': sessionDuration,
         'IsDeleted': isDeleted,
@@ -34,6 +35,9 @@ SessionsCompanion sessionFromSyncDto(Map<String, dynamic> json) =>
           Value(SessionStatus.fromString(json['Status'] as String)),
       integrityFlag: Value(json['IntegrityFlag'] as bool),
       integritySuppressed: Value(json['IntegritySuppressed'] as bool),
+      surfaceType: Value(json['SurfaceType'] != null
+          ? SurfaceType.fromString(json['SurfaceType'] as String)
+          : null),
       userDeclaration: Value(json['UserDeclaration'] as String?),
       sessionDuration: Value(json['SessionDuration'] as int?),
       isDeleted: Value(json['IsDeleted'] as bool),

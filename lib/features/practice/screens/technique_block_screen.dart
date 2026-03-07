@@ -9,8 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
@@ -39,6 +41,7 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
   bool _ending = false;
   int _elapsedSeconds = 0;
   Timer? _timer;
+  late SurfaceType? _surfaceType = widget.session.surfaceType;
 
   @override
   void initState() {
@@ -72,6 +75,15 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
   void _stopTimer() {
     _timer?.cancel();
     setState(() => _running = false);
+  }
+
+  Future<void> _changeSurface() async {
+    final newSurface = await showSurfacePicker(context);
+    if (newSurface != null && mounted) {
+      await ref.read(practiceRepositoryProvider).updateSessionSurface(
+          widget.session.sessionId, newSurface);
+      setState(() => _surfaceType = newSurface);
+    }
   }
 
   Future<void> _finishBlock() async {
@@ -210,73 +222,86 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
             // Controls.
             Container(
               padding: const EdgeInsets.all(SpacingTokens.lg),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!_running && _elapsedSeconds == 0)
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _startTimer,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ColorTokens.successDefault,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: SpacingTokens.md),
+                  Row(
+                    children: [
+                      if (!_running && _elapsedSeconds == 0)
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: _startTimer,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: ColorTokens.successDefault,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: SpacingTokens.md),
+                            ),
+                            child: const Text('Start'),
+                          ),
+                        )
+                      else if (_running) ...[
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _stopTimer,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: ColorTokens.warningIntegrity,
+                              side: const BorderSide(
+                                  color: ColorTokens.warningIntegrity),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: SpacingTokens.md),
+                            ),
+                            child: const Text('Pause'),
+                          ),
                         ),
-                        child: const Text('Start'),
-                      ),
-                    )
-                  else if (_running) ...[
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _stopTimer,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ColorTokens.warningIntegrity,
-                          side: const BorderSide(
-                              color: ColorTokens.warningIntegrity),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: SpacingTokens.md),
+                        const SizedBox(width: SpacingTokens.md),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: _finishBlock,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: ColorTokens.primaryDefault,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: SpacingTokens.md),
+                            ),
+                            child: const Text('Finish'),
+                          ),
                         ),
-                        child: const Text('Pause'),
-                      ),
+                      ] else ...[
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _startTimer,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: ColorTokens.successDefault,
+                              side: const BorderSide(
+                                  color: ColorTokens.successDefault),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: SpacingTokens.md),
+                            ),
+                            child: const Text('Resume'),
+                          ),
+                        ),
+                        const SizedBox(width: SpacingTokens.md),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: _finishBlock,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: ColorTokens.primaryDefault,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: SpacingTokens.md),
+                            ),
+                            child: const Text('Finish'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: SpacingTokens.xs),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SurfaceBadge(
+                      surfaceType: _surfaceType,
+                      onTap: _changeSurface,
                     ),
-                    const SizedBox(width: SpacingTokens.md),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _finishBlock,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ColorTokens.primaryDefault,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: SpacingTokens.md),
-                        ),
-                        child: const Text('Finish'),
-                      ),
-                    ),
-                  ] else ...[
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _startTimer,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ColorTokens.successDefault,
-                          side: const BorderSide(
-                              color: ColorTokens.successDefault),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: SpacingTokens.md),
-                        ),
-                        child: const Text('Resume'),
-                      ),
-                    ),
-                    const SizedBox(width: SpacingTokens.md),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _finishBlock,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ColorTokens.primaryDefault,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: SpacingTokens.md),
-                        ),
-                        child: const Text('Finish'),
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
               ),
             ),

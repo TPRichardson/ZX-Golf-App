@@ -3082,6 +3082,15 @@ class $PracticeBlocksTable extends PracticeBlocks
     requiredDuringInsert: false,
   );
   @override
+  late final GeneratedColumnWithTypeConverter<SurfaceType?, String>
+  surfaceType = GeneratedColumn<String>(
+    'SurfaceType',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<SurfaceType?>($PracticeBlocksTable.$convertersurfaceTypen);
+  @override
   late final GeneratedColumnWithTypeConverter<ClosureType?, String>
   closureType = GeneratedColumn<String>(
     'ClosureType',
@@ -3137,6 +3146,7 @@ class $PracticeBlocksTable extends PracticeBlocks
     drillOrder,
     startTimestamp,
     endTimestamp,
+    surfaceType,
     closureType,
     isDeleted,
     createdAt,
@@ -3257,6 +3267,12 @@ class $PracticeBlocksTable extends PracticeBlocks
         DriftSqlType.dateTime,
         data['${effectivePrefix}EndTimestamp'],
       ),
+      surfaceType: $PracticeBlocksTable.$convertersurfaceTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}SurfaceType'],
+        ),
+      ),
       closureType: $PracticeBlocksTable.$converterclosureTypen.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -3283,6 +3299,10 @@ class $PracticeBlocksTable extends PracticeBlocks
     return $PracticeBlocksTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<SurfaceType, String> $convertersurfaceType =
+      const SurfaceTypeConverter();
+  static TypeConverter<SurfaceType?, String?> $convertersurfaceTypen =
+      NullAwareTypeConverter.wrap($convertersurfaceType);
   static TypeConverter<ClosureType, String> $converterclosureType =
       const ClosureTypeConverter();
   static TypeConverter<ClosureType?, String?> $converterclosureTypen =
@@ -3296,6 +3316,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
   final String drillOrder;
   final DateTime startTimestamp;
   final DateTime? endTimestamp;
+  final SurfaceType? surfaceType;
   final ClosureType? closureType;
   final bool isDeleted;
   final DateTime createdAt;
@@ -3307,6 +3328,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     required this.drillOrder,
     required this.startTimestamp,
     this.endTimestamp,
+    this.surfaceType,
     this.closureType,
     required this.isDeleted,
     required this.createdAt,
@@ -3324,6 +3346,11 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     map['StartTimestamp'] = Variable<DateTime>(startTimestamp);
     if (!nullToAbsent || endTimestamp != null) {
       map['EndTimestamp'] = Variable<DateTime>(endTimestamp);
+    }
+    if (!nullToAbsent || surfaceType != null) {
+      map['SurfaceType'] = Variable<String>(
+        $PracticeBlocksTable.$convertersurfaceTypen.toSql(surfaceType),
+      );
     }
     if (!nullToAbsent || closureType != null) {
       map['ClosureType'] = Variable<String>(
@@ -3348,6 +3375,9 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       endTimestamp: endTimestamp == null && nullToAbsent
           ? const Value.absent()
           : Value(endTimestamp),
+      surfaceType: surfaceType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(surfaceType),
       closureType: closureType == null && nullToAbsent
           ? const Value.absent()
           : Value(closureType),
@@ -3369,6 +3399,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       drillOrder: serializer.fromJson<String>(json['drillOrder']),
       startTimestamp: serializer.fromJson<DateTime>(json['startTimestamp']),
       endTimestamp: serializer.fromJson<DateTime?>(json['endTimestamp']),
+      surfaceType: serializer.fromJson<SurfaceType?>(json['surfaceType']),
       closureType: serializer.fromJson<ClosureType?>(json['closureType']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -3385,6 +3416,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       'drillOrder': serializer.toJson<String>(drillOrder),
       'startTimestamp': serializer.toJson<DateTime>(startTimestamp),
       'endTimestamp': serializer.toJson<DateTime?>(endTimestamp),
+      'surfaceType': serializer.toJson<SurfaceType?>(surfaceType),
       'closureType': serializer.toJson<ClosureType?>(closureType),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -3399,6 +3431,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     String? drillOrder,
     DateTime? startTimestamp,
     Value<DateTime?> endTimestamp = const Value.absent(),
+    Value<SurfaceType?> surfaceType = const Value.absent(),
     Value<ClosureType?> closureType = const Value.absent(),
     bool? isDeleted,
     DateTime? createdAt,
@@ -3412,6 +3445,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     drillOrder: drillOrder ?? this.drillOrder,
     startTimestamp: startTimestamp ?? this.startTimestamp,
     endTimestamp: endTimestamp.present ? endTimestamp.value : this.endTimestamp,
+    surfaceType: surfaceType.present ? surfaceType.value : this.surfaceType,
     closureType: closureType.present ? closureType.value : this.closureType,
     isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
@@ -3435,6 +3469,9 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       endTimestamp: data.endTimestamp.present
           ? data.endTimestamp.value
           : this.endTimestamp,
+      surfaceType: data.surfaceType.present
+          ? data.surfaceType.value
+          : this.surfaceType,
       closureType: data.closureType.present
           ? data.closureType.value
           : this.closureType,
@@ -3453,6 +3490,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
           ..write('drillOrder: $drillOrder, ')
           ..write('startTimestamp: $startTimestamp, ')
           ..write('endTimestamp: $endTimestamp, ')
+          ..write('surfaceType: $surfaceType, ')
           ..write('closureType: $closureType, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
@@ -3469,6 +3507,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     drillOrder,
     startTimestamp,
     endTimestamp,
+    surfaceType,
     closureType,
     isDeleted,
     createdAt,
@@ -3484,6 +3523,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
           other.drillOrder == this.drillOrder &&
           other.startTimestamp == this.startTimestamp &&
           other.endTimestamp == this.endTimestamp &&
+          other.surfaceType == this.surfaceType &&
           other.closureType == this.closureType &&
           other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
@@ -3497,6 +3537,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
   final Value<String> drillOrder;
   final Value<DateTime> startTimestamp;
   final Value<DateTime?> endTimestamp;
+  final Value<SurfaceType?> surfaceType;
   final Value<ClosureType?> closureType;
   final Value<bool> isDeleted;
   final Value<DateTime> createdAt;
@@ -3509,6 +3550,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     this.drillOrder = const Value.absent(),
     this.startTimestamp = const Value.absent(),
     this.endTimestamp = const Value.absent(),
+    this.surfaceType = const Value.absent(),
     this.closureType = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3522,6 +3564,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     this.drillOrder = const Value.absent(),
     this.startTimestamp = const Value.absent(),
     this.endTimestamp = const Value.absent(),
+    this.surfaceType = const Value.absent(),
     this.closureType = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -3536,6 +3579,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     Expression<String>? drillOrder,
     Expression<DateTime>? startTimestamp,
     Expression<DateTime>? endTimestamp,
+    Expression<String>? surfaceType,
     Expression<String>? closureType,
     Expression<bool>? isDeleted,
     Expression<DateTime>? createdAt,
@@ -3549,6 +3593,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
       if (drillOrder != null) 'DrillOrder': drillOrder,
       if (startTimestamp != null) 'StartTimestamp': startTimestamp,
       if (endTimestamp != null) 'EndTimestamp': endTimestamp,
+      if (surfaceType != null) 'SurfaceType': surfaceType,
       if (closureType != null) 'ClosureType': closureType,
       if (isDeleted != null) 'IsDeleted': isDeleted,
       if (createdAt != null) 'CreatedAt': createdAt,
@@ -3564,6 +3609,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     Value<String>? drillOrder,
     Value<DateTime>? startTimestamp,
     Value<DateTime?>? endTimestamp,
+    Value<SurfaceType?>? surfaceType,
     Value<ClosureType?>? closureType,
     Value<bool>? isDeleted,
     Value<DateTime>? createdAt,
@@ -3577,6 +3623,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
       drillOrder: drillOrder ?? this.drillOrder,
       startTimestamp: startTimestamp ?? this.startTimestamp,
       endTimestamp: endTimestamp ?? this.endTimestamp,
+      surfaceType: surfaceType ?? this.surfaceType,
       closureType: closureType ?? this.closureType,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
@@ -3605,6 +3652,11 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     }
     if (endTimestamp.present) {
       map['EndTimestamp'] = Variable<DateTime>(endTimestamp.value);
+    }
+    if (surfaceType.present) {
+      map['SurfaceType'] = Variable<String>(
+        $PracticeBlocksTable.$convertersurfaceTypen.toSql(surfaceType.value),
+      );
     }
     if (closureType.present) {
       map['ClosureType'] = Variable<String>(
@@ -3635,6 +3687,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
           ..write('drillOrder: $drillOrder, ')
           ..write('startTimestamp: $startTimestamp, ')
           ..write('endTimestamp: $endTimestamp, ')
+          ..write('surfaceType: $surfaceType, ')
           ..write('closureType: $closureType, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
@@ -3733,6 +3786,15 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     ),
     defaultValue: const Constant(false),
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<SurfaceType?, String>
+  surfaceType = GeneratedColumn<String>(
+    'SurfaceType',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<SurfaceType?>($SessionsTable.$convertersurfaceTypen);
   static const VerificationMeta _userDeclarationMeta = const VerificationMeta(
     'userDeclaration',
   );
@@ -3803,6 +3865,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     status,
     integrityFlag,
     integritySuppressed,
+    surfaceType,
     userDeclaration,
     sessionDuration,
     isDeleted,
@@ -3950,6 +4013,12 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.bool,
         data['${effectivePrefix}IntegritySuppressed'],
       )!,
+      surfaceType: $SessionsTable.$convertersurfaceTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}SurfaceType'],
+        ),
+      ),
       userDeclaration: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}UserDeclaration'],
@@ -3980,6 +4049,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
 
   static TypeConverter<SessionStatus, String> $converterstatus =
       const SessionStatusConverter();
+  static TypeConverter<SurfaceType, String> $convertersurfaceType =
+      const SurfaceTypeConverter();
+  static TypeConverter<SurfaceType?, String?> $convertersurfaceTypen =
+      NullAwareTypeConverter.wrap($convertersurfaceType);
 }
 
 class Session extends DataClass implements Insertable<Session> {
@@ -3990,6 +4063,7 @@ class Session extends DataClass implements Insertable<Session> {
   final SessionStatus status;
   final bool integrityFlag;
   final bool integritySuppressed;
+  final SurfaceType? surfaceType;
   final String? userDeclaration;
   final int? sessionDuration;
   final bool isDeleted;
@@ -4003,6 +4077,7 @@ class Session extends DataClass implements Insertable<Session> {
     required this.status,
     required this.integrityFlag,
     required this.integritySuppressed,
+    this.surfaceType,
     this.userDeclaration,
     this.sessionDuration,
     required this.isDeleted,
@@ -4025,6 +4100,11 @@ class Session extends DataClass implements Insertable<Session> {
     }
     map['IntegrityFlag'] = Variable<bool>(integrityFlag);
     map['IntegritySuppressed'] = Variable<bool>(integritySuppressed);
+    if (!nullToAbsent || surfaceType != null) {
+      map['SurfaceType'] = Variable<String>(
+        $SessionsTable.$convertersurfaceTypen.toSql(surfaceType),
+      );
+    }
     if (!nullToAbsent || userDeclaration != null) {
       map['UserDeclaration'] = Variable<String>(userDeclaration);
     }
@@ -4048,6 +4128,9 @@ class Session extends DataClass implements Insertable<Session> {
       status: Value(status),
       integrityFlag: Value(integrityFlag),
       integritySuppressed: Value(integritySuppressed),
+      surfaceType: surfaceType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(surfaceType),
       userDeclaration: userDeclaration == null && nullToAbsent
           ? const Value.absent()
           : Value(userDeclaration),
@@ -4077,6 +4160,7 @@ class Session extends DataClass implements Insertable<Session> {
       integritySuppressed: serializer.fromJson<bool>(
         json['integritySuppressed'],
       ),
+      surfaceType: serializer.fromJson<SurfaceType?>(json['surfaceType']),
       userDeclaration: serializer.fromJson<String?>(json['userDeclaration']),
       sessionDuration: serializer.fromJson<int?>(json['sessionDuration']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
@@ -4095,6 +4179,7 @@ class Session extends DataClass implements Insertable<Session> {
       'status': serializer.toJson<SessionStatus>(status),
       'integrityFlag': serializer.toJson<bool>(integrityFlag),
       'integritySuppressed': serializer.toJson<bool>(integritySuppressed),
+      'surfaceType': serializer.toJson<SurfaceType?>(surfaceType),
       'userDeclaration': serializer.toJson<String?>(userDeclaration),
       'sessionDuration': serializer.toJson<int?>(sessionDuration),
       'isDeleted': serializer.toJson<bool>(isDeleted),
@@ -4111,6 +4196,7 @@ class Session extends DataClass implements Insertable<Session> {
     SessionStatus? status,
     bool? integrityFlag,
     bool? integritySuppressed,
+    Value<SurfaceType?> surfaceType = const Value.absent(),
     Value<String?> userDeclaration = const Value.absent(),
     Value<int?> sessionDuration = const Value.absent(),
     bool? isDeleted,
@@ -4126,6 +4212,7 @@ class Session extends DataClass implements Insertable<Session> {
     status: status ?? this.status,
     integrityFlag: integrityFlag ?? this.integrityFlag,
     integritySuppressed: integritySuppressed ?? this.integritySuppressed,
+    surfaceType: surfaceType.present ? surfaceType.value : this.surfaceType,
     userDeclaration: userDeclaration.present
         ? userDeclaration.value
         : this.userDeclaration,
@@ -4153,6 +4240,9 @@ class Session extends DataClass implements Insertable<Session> {
       integritySuppressed: data.integritySuppressed.present
           ? data.integritySuppressed.value
           : this.integritySuppressed,
+      surfaceType: data.surfaceType.present
+          ? data.surfaceType.value
+          : this.surfaceType,
       userDeclaration: data.userDeclaration.present
           ? data.userDeclaration.value
           : this.userDeclaration,
@@ -4175,6 +4265,7 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('status: $status, ')
           ..write('integrityFlag: $integrityFlag, ')
           ..write('integritySuppressed: $integritySuppressed, ')
+          ..write('surfaceType: $surfaceType, ')
           ..write('userDeclaration: $userDeclaration, ')
           ..write('sessionDuration: $sessionDuration, ')
           ..write('isDeleted: $isDeleted, ')
@@ -4193,6 +4284,7 @@ class Session extends DataClass implements Insertable<Session> {
     status,
     integrityFlag,
     integritySuppressed,
+    surfaceType,
     userDeclaration,
     sessionDuration,
     isDeleted,
@@ -4210,6 +4302,7 @@ class Session extends DataClass implements Insertable<Session> {
           other.status == this.status &&
           other.integrityFlag == this.integrityFlag &&
           other.integritySuppressed == this.integritySuppressed &&
+          other.surfaceType == this.surfaceType &&
           other.userDeclaration == this.userDeclaration &&
           other.sessionDuration == this.sessionDuration &&
           other.isDeleted == this.isDeleted &&
@@ -4225,6 +4318,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<SessionStatus> status;
   final Value<bool> integrityFlag;
   final Value<bool> integritySuppressed;
+  final Value<SurfaceType?> surfaceType;
   final Value<String?> userDeclaration;
   final Value<int?> sessionDuration;
   final Value<bool> isDeleted;
@@ -4239,6 +4333,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.status = const Value.absent(),
     this.integrityFlag = const Value.absent(),
     this.integritySuppressed = const Value.absent(),
+    this.surfaceType = const Value.absent(),
     this.userDeclaration = const Value.absent(),
     this.sessionDuration = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -4254,6 +4349,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.status = const Value.absent(),
     this.integrityFlag = const Value.absent(),
     this.integritySuppressed = const Value.absent(),
+    this.surfaceType = const Value.absent(),
     this.userDeclaration = const Value.absent(),
     this.sessionDuration = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -4271,6 +4367,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<String>? status,
     Expression<bool>? integrityFlag,
     Expression<bool>? integritySuppressed,
+    Expression<String>? surfaceType,
     Expression<String>? userDeclaration,
     Expression<int>? sessionDuration,
     Expression<bool>? isDeleted,
@@ -4288,6 +4385,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (integrityFlag != null) 'IntegrityFlag': integrityFlag,
       if (integritySuppressed != null)
         'IntegritySuppressed': integritySuppressed,
+      if (surfaceType != null) 'SurfaceType': surfaceType,
       if (userDeclaration != null) 'UserDeclaration': userDeclaration,
       if (sessionDuration != null) 'SessionDuration': sessionDuration,
       if (isDeleted != null) 'IsDeleted': isDeleted,
@@ -4305,6 +4403,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Value<SessionStatus>? status,
     Value<bool>? integrityFlag,
     Value<bool>? integritySuppressed,
+    Value<SurfaceType?>? surfaceType,
     Value<String?>? userDeclaration,
     Value<int?>? sessionDuration,
     Value<bool>? isDeleted,
@@ -4320,6 +4419,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       status: status ?? this.status,
       integrityFlag: integrityFlag ?? this.integrityFlag,
       integritySuppressed: integritySuppressed ?? this.integritySuppressed,
+      surfaceType: surfaceType ?? this.surfaceType,
       userDeclaration: userDeclaration ?? this.userDeclaration,
       sessionDuration: sessionDuration ?? this.sessionDuration,
       isDeleted: isDeleted ?? this.isDeleted,
@@ -4357,6 +4457,11 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (integritySuppressed.present) {
       map['IntegritySuppressed'] = Variable<bool>(integritySuppressed.value);
     }
+    if (surfaceType.present) {
+      map['SurfaceType'] = Variable<String>(
+        $SessionsTable.$convertersurfaceTypen.toSql(surfaceType.value),
+      );
+    }
     if (userDeclaration.present) {
       map['UserDeclaration'] = Variable<String>(userDeclaration.value);
     }
@@ -4388,6 +4493,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('status: $status, ')
           ..write('integrityFlag: $integrityFlag, ')
           ..write('integritySuppressed: $integritySuppressed, ')
+          ..write('surfaceType: $surfaceType, ')
           ..write('userDeclaration: $userDeclaration, ')
           ..write('sessionDuration: $sessionDuration, ')
           ..write('isDeleted: $isDeleted, ')
@@ -20104,6 +20210,7 @@ typedef $$PracticeBlocksTableCreateCompanionBuilder =
       Value<String> drillOrder,
       Value<DateTime> startTimestamp,
       Value<DateTime?> endTimestamp,
+      Value<SurfaceType?> surfaceType,
       Value<ClosureType?> closureType,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
@@ -20118,6 +20225,7 @@ typedef $$PracticeBlocksTableUpdateCompanionBuilder =
       Value<String> drillOrder,
       Value<DateTime> startTimestamp,
       Value<DateTime?> endTimestamp,
+      Value<SurfaceType?> surfaceType,
       Value<ClosureType?> closureType,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
@@ -20162,6 +20270,12 @@ class $$PracticeBlocksTableFilterComposer
   ColumnFilters<DateTime> get endTimestamp => $composableBuilder(
     column: $table.endTimestamp,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SurfaceType?, SurfaceType, String>
+  get surfaceType => $composableBuilder(
+    column: $table.surfaceType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnWithTypeConverterFilters<ClosureType?, ClosureType, String>
@@ -20225,6 +20339,11 @@ class $$PracticeBlocksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get surfaceType => $composableBuilder(
+    column: $table.surfaceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get closureType => $composableBuilder(
     column: $table.closureType,
     builder: (column) => ColumnOrderings(column),
@@ -20283,6 +20402,12 @@ class $$PracticeBlocksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumnWithTypeConverter<SurfaceType?, String> get surfaceType =>
+      $composableBuilder(
+        column: $table.surfaceType,
+        builder: (column) => column,
+      );
+
   GeneratedColumnWithTypeConverter<ClosureType?, String> get closureType =>
       $composableBuilder(
         column: $table.closureType,
@@ -20338,6 +20463,7 @@ class $$PracticeBlocksTableTableManager
                 Value<String> drillOrder = const Value.absent(),
                 Value<DateTime> startTimestamp = const Value.absent(),
                 Value<DateTime?> endTimestamp = const Value.absent(),
+                Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<ClosureType?> closureType = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -20350,6 +20476,7 @@ class $$PracticeBlocksTableTableManager
                 drillOrder: drillOrder,
                 startTimestamp: startTimestamp,
                 endTimestamp: endTimestamp,
+                surfaceType: surfaceType,
                 closureType: closureType,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
@@ -20364,6 +20491,7 @@ class $$PracticeBlocksTableTableManager
                 Value<String> drillOrder = const Value.absent(),
                 Value<DateTime> startTimestamp = const Value.absent(),
                 Value<DateTime?> endTimestamp = const Value.absent(),
+                Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<ClosureType?> closureType = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -20376,6 +20504,7 @@ class $$PracticeBlocksTableTableManager
                 drillOrder: drillOrder,
                 startTimestamp: startTimestamp,
                 endTimestamp: endTimestamp,
+                surfaceType: surfaceType,
                 closureType: closureType,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
@@ -20416,6 +20545,7 @@ typedef $$SessionsTableCreateCompanionBuilder =
       Value<SessionStatus> status,
       Value<bool> integrityFlag,
       Value<bool> integritySuppressed,
+      Value<SurfaceType?> surfaceType,
       Value<String?> userDeclaration,
       Value<int?> sessionDuration,
       Value<bool> isDeleted,
@@ -20432,6 +20562,7 @@ typedef $$SessionsTableUpdateCompanionBuilder =
       Value<SessionStatus> status,
       Value<bool> integrityFlag,
       Value<bool> integritySuppressed,
+      Value<SurfaceType?> surfaceType,
       Value<String?> userDeclaration,
       Value<int?> sessionDuration,
       Value<bool> isDeleted,
@@ -20483,6 +20614,12 @@ class $$SessionsTableFilterComposer
   ColumnFilters<bool> get integritySuppressed => $composableBuilder(
     column: $table.integritySuppressed,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SurfaceType?, SurfaceType, String>
+  get surfaceType => $composableBuilder(
+    column: $table.surfaceType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<String> get userDeclaration => $composableBuilder(
@@ -20555,6 +20692,11 @@ class $$SessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get surfaceType => $composableBuilder(
+    column: $table.surfaceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get userDeclaration => $composableBuilder(
     column: $table.userDeclaration,
     builder: (column) => ColumnOrderings(column),
@@ -20619,6 +20761,12 @@ class $$SessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumnWithTypeConverter<SurfaceType?, String> get surfaceType =>
+      $composableBuilder(
+        column: $table.surfaceType,
+        builder: (column) => column,
+      );
+
   GeneratedColumn<String> get userDeclaration => $composableBuilder(
     column: $table.userDeclaration,
     builder: (column) => column,
@@ -20674,6 +20822,7 @@ class $$SessionsTableTableManager
                 Value<SessionStatus> status = const Value.absent(),
                 Value<bool> integrityFlag = const Value.absent(),
                 Value<bool> integritySuppressed = const Value.absent(),
+                Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<String?> userDeclaration = const Value.absent(),
                 Value<int?> sessionDuration = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20688,6 +20837,7 @@ class $$SessionsTableTableManager
                 status: status,
                 integrityFlag: integrityFlag,
                 integritySuppressed: integritySuppressed,
+                surfaceType: surfaceType,
                 userDeclaration: userDeclaration,
                 sessionDuration: sessionDuration,
                 isDeleted: isDeleted,
@@ -20704,6 +20854,7 @@ class $$SessionsTableTableManager
                 Value<SessionStatus> status = const Value.absent(),
                 Value<bool> integrityFlag = const Value.absent(),
                 Value<bool> integritySuppressed = const Value.absent(),
+                Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<String?> userDeclaration = const Value.absent(),
                 Value<int?> sessionDuration = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20718,6 +20869,7 @@ class $$SessionsTableTableManager
                 status: status,
                 integrityFlag: integrityFlag,
                 integritySuppressed: integritySuppressed,
+                surfaceType: surfaceType,
                 userDeclaration: userDeclaration,
                 sessionDuration: sessionDuration,
                 isDeleted: isDeleted,

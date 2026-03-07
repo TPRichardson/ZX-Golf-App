@@ -15,6 +15,7 @@ class AnalysisFilters extends ConsumerWidget {
   final String? selectedSubskillId;
   final String? selectedDrillId;
   final DrillType? drillTypeFilter;
+  final SurfaceType? surfaceFilter;
   final TimeResolution resolution;
   final DateRangePreset dateRange;
   final ChartMode chartMode;
@@ -23,6 +24,7 @@ class AnalysisFilters extends ConsumerWidget {
   final ValueChanged<String?> onSubskillChanged;
   final ValueChanged<String?> onDrillIdChanged;
   final ValueChanged<DrillType?> onDrillTypeChanged;
+  final ValueChanged<SurfaceType?> onSurfaceChanged;
   final ValueChanged<TimeResolution> onResolutionChanged;
   final ValueChanged<DateRangePreset> onDateRangeChanged;
   final ValueChanged<ChartMode> onChartModeChanged;
@@ -34,6 +36,7 @@ class AnalysisFilters extends ConsumerWidget {
     required this.selectedSubskillId,
     required this.selectedDrillId,
     required this.drillTypeFilter,
+    required this.surfaceFilter,
     required this.resolution,
     required this.dateRange,
     required this.chartMode,
@@ -42,6 +45,7 @@ class AnalysisFilters extends ConsumerWidget {
     required this.onSubskillChanged,
     required this.onDrillIdChanged,
     required this.onDrillTypeChanged,
+    required this.onSurfaceChanged,
     required this.onResolutionChanged,
     required this.onDateRangeChanged,
     required this.onChartModeChanged,
@@ -73,6 +77,14 @@ class AnalysisFilters extends ConsumerWidget {
                   children: [
                     _filterLabel('Type'),
                     _buildDrillTypeChips(),
+                  ],
+                ),
+                const SizedBox(width: SpacingTokens.md),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _filterLabel('Surface'),
+                    _buildSurfaceChips(),
                   ],
                 ),
               ],
@@ -191,6 +203,55 @@ class AnalysisFilters extends ConsumerWidget {
                   onDrillTypeChanged(selected ? null : dt),
               selectedColor: ColorTokens.primaryDefault
                   .withValues(alpha: 0.3),
+              labelStyle: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                color: selected
+                    ? ColorTokens.textPrimary
+                    : ColorTokens.textSecondary,
+              ),
+              backgroundColor: ColorTokens.surfaceModal,
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(ShapeTokens.radiusSegmented),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildSurfaceChips() {
+    return Row(
+      children: [
+        FilterChip(
+          label: const Text('All'),
+          selected: surfaceFilter == null,
+          onSelected: (_) => onSurfaceChanged(null),
+          selectedColor: ColorTokens.primaryDefault.withValues(alpha: 0.3),
+          labelStyle: TextStyle(
+            fontSize: TypographyTokens.microSize,
+            color: surfaceFilter == null
+                ? ColorTokens.textPrimary
+                : ColorTokens.textSecondary,
+          ),
+          backgroundColor: ColorTokens.surfaceModal,
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+          ),
+        ),
+        const SizedBox(width: SpacingTokens.xs),
+        ...SurfaceType.values.map((st) {
+          final selected = surfaceFilter == st;
+          return Padding(
+            padding: const EdgeInsets.only(right: SpacingTokens.xs),
+            child: FilterChip(
+              label: Text(st.dbValue),
+              selected: selected,
+              onSelected: (_) => onSurfaceChanged(selected ? null : st),
+              selectedColor: ColorTokens.primaryDefault.withValues(alpha: 0.3),
               labelStyle: TextStyle(
                 fontSize: TypographyTokens.microSize,
                 color: selected

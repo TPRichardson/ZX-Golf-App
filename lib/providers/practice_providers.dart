@@ -71,10 +71,12 @@ class PracticeActions {
   Future<PracticeBlock> startPracticeBlock(
     String userId, {
     List<String>? initialDrillIds,
+    SurfaceType? surfaceType,
   }) async {
     final pb = await _repo.createPracticeBlock(
       userId,
       initialDrillIds: initialDrillIds,
+      surfaceType: surfaceType,
     );
 
     // S13 §13.10.2 — Start 4-hour auto-end timer.
@@ -89,9 +91,9 @@ class PracticeActions {
 
   /// S13 §13.5 — Start a session for a practice entry.
   Future<Session> startSession(String entryId, String userId,
-      {String? userDeclaration}) async {
+      {String? userDeclaration, SurfaceType? surfaceType}) async {
     final session = await _repo.startSession(entryId, userId,
-        userDeclaration: userDeclaration);
+        userDeclaration: userDeclaration, surfaceType: surfaceType);
 
     // S13 §13.5.3 — Start 2-hour inactivity timer.
     _timerService.startSessionInactivityTimer(

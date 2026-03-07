@@ -603,6 +603,7 @@ class PracticeRepository {
     String userId, {
     List<String>? initialDrillIds,
     String? sourceRoutineId,
+    SurfaceType? surfaceType,
   }) async {
     await _gate.awaitGateRelease();
     // Guard: no active practice block for user.
@@ -624,6 +625,7 @@ class PracticeRepository {
       practiceBlockId: pbId,
       userId: userId,
       sourceRoutineId: Value(sourceRoutineId),
+      surfaceType: Value(surfaceType),
       drillOrder: Value(jsonEncode(initialDrillIds ?? [])),
     ));
 
@@ -904,7 +906,7 @@ class PracticeRepository {
   /// TD-03 §3.3.3 #9 — Start a session for a practice entry.
   /// Guard: no other ActiveSession in block, drill not deleted, entry is PendingDrill.
   Future<Session> startSession(String entryId, String userId,
-      {String? userDeclaration}) async {
+      {String? userDeclaration, SurfaceType? surfaceType}) async {
     await _gate.awaitGateRelease();
     final entry = await _requireEntry(entryId);
 
@@ -949,11 +951,15 @@ class PracticeRepository {
     final sessionId = _uuid.v4();
     final pb = await getPracticeBlockById(entry.practiceBlockId);
 
+    // Resolve surface: explicit override > block default.
+    final resolvedSurface = surfaceType ?? pb!.surfaceType;
+
     // Create Session. S04 §4.3 — Persist UserDeclaration when provided.
     final session = await createSession(SessionsCompanion.insert(
       sessionId: sessionId,
       drillId: entry.drillId,
       practiceBlockId: pb!.practiceBlockId,
+      surfaceType: Value(resolvedSurface),
       userDeclaration: userDeclaration != null
           ? Value(userDeclaration)
           : const Value.absent(),
@@ -978,6 +984,20 @@ class PracticeRepository {
     );
 
     return session;
+  }
+
+  // ---------------------------------------------------------------------------
+  // #9b: updateSessionSurface — Change surface for a session
+  // ---------------------------------------------------------------------------
+
+  /// Update the surface type for a session.
+  Future<void> updateSessionSurface(
+      String sessionId, SurfaceType surfaceType) async {
+    await _gate.awaitGateRelease();
+    await updateSession(sessionId, SessionsCompanion(
+      surfaceType: Value(surfaceType),
+      updatedAt: Value(DateTime.now()),
+    ));
   }
 
   // ---------------------------------------------------------------------------

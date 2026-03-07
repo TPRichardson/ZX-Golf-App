@@ -8,6 +8,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -913,10 +914,14 @@ class _StartTodayButton extends ConsumerWidget {
     WidgetRef ref,
     List<String> drillIds,
   ) async {
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !context.mounted) return;
+
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
+      surfaceType: surface,
     );
 
     if (context.mounted) {

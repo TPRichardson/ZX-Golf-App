@@ -41,6 +41,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   String? _selectedSubskillId;
   String? _selectedDrillId;
   DrillType? _drillTypeFilter;
+  SurfaceType? _surfaceFilter;
   TimeResolution _resolution = TimeResolution.weekly;
   DateRangePreset _dateRange = DateRangePreset.threeMonths;
   ChartMode _chartMode = ChartMode.performance;
@@ -75,6 +76,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           selectedSubskillId: _selectedSubskillId,
           selectedDrillId: _selectedDrillId,
           drillTypeFilter: _drillTypeFilter,
+          surfaceFilter: _surfaceFilter,
           resolution: _resolution,
           dateRange: _dateRange,
           chartMode: _chartMode,
@@ -87,6 +89,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               _updateFilter(() => _selectedDrillId = d),
           onDrillTypeChanged: (dt) =>
               _updateFilter(() => _drillTypeFilter = dt),
+          onSurfaceChanged: (st) =>
+              _updateFilter(() => _surfaceFilter = st),
           onResolutionChanged: (r) =>
               _updateFilter(() => _resolution = r),
           onDateRangeChanged: (dr) =>
@@ -221,6 +225,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   List<SessionWithDrill> _filterSessions(
       List<SessionWithDrill> sessions) {
     return sessions.where((s) {
+      // Surface filter.
+      if (_surfaceFilter != null &&
+          s.session.surfaceType != _surfaceFilter) {
+        return false;
+      }
+
       // Drill type filter.
       if (_drillTypeFilter != null &&
           s.drill.drillType != _drillTypeFilter) {

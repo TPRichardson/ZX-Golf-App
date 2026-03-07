@@ -13,6 +13,7 @@ extension PracticeBlockSyncDto on PracticeBlock {
         'DrillOrder': jsonDecode(drillOrder),
         'StartTimestamp': startTimestamp.toUtc().toIso8601String(),
         'EndTimestamp': endTimestamp?.toUtc().toIso8601String(),
+        'SurfaceType': surfaceType?.dbValue,
         'ClosureType': closureType?.dbValue,
         'IsDeleted': isDeleted,
         'CreatedAt': createdAt.toUtc().toIso8601String(),
@@ -33,6 +34,9 @@ PracticeBlocksCompanion practiceBlockFromSyncDto(Map<String, dynamic> json) =>
       startTimestamp: Value(DateTime.parse(json['StartTimestamp'] as String)),
       endTimestamp: Value(json['EndTimestamp'] != null
           ? DateTime.parse(json['EndTimestamp'] as String)
+          : null),
+      surfaceType: Value(json['SurfaceType'] != null
+          ? SurfaceType.fromString(json['SurfaceType'] as String)
           : null),
       closureType: Value(json['ClosureType'] != null
           ? ClosureType.fromString(json['ClosureType'] as String)

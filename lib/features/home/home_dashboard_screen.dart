@@ -13,6 +13,7 @@ import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart
 import 'package:zx_golf_app/features/matrix/screens/wedge_setup_screen.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/features/review/widgets/overall_score_display.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -396,10 +397,14 @@ class _ActionZone extends ConsumerWidget {
     WidgetRef ref,
     List<String> drillIds,
   ) async {
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !context.mounted) return;
+
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
+      surfaceType: surface,
     );
 
     if (context.mounted) {
@@ -416,8 +421,11 @@ class _ActionZone extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !context.mounted) return;
+
     final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(userId);
+    final pb = await actions.startPracticeBlock(userId, surfaceType: surface);
 
     if (context.mounted) {
       Navigator.of(context).push(MaterialPageRoute(

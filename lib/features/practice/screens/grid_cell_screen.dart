@@ -21,6 +21,7 @@ import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -52,6 +53,7 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
   bool _lastHit = false;
   bool _showFlash = false;
   bool _ending = false;
+  late SurfaceType? _surfaceType = widget.session.surfaceType;
   String _selectedClub = 'Putter';
   List<String> _availableClubs = [];
   final _random = Random();
@@ -182,6 +184,15 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
         await _controller.advanceSet();
         if (mounted) setState(() {});
       }
+    }
+  }
+
+  Future<void> _changeSurface() async {
+    final newSurface = await showSurfacePicker(context);
+    if (newSurface != null && mounted) {
+      await ref.read(practiceRepositoryProvider).updateSessionSurface(
+          widget.session.sessionId, newSurface);
+      setState(() => _surfaceType = newSurface);
     }
   }
 
@@ -439,30 +450,43 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
           top: BorderSide(color: ColorTokens.surfaceBorder),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // S14 §14.10 — Undo last instance.
-          if (_controller.canUndo)
-            TextButton.icon(
-              onPressed: _undoLast,
-              icon: const Icon(Icons.undo, size: 16),
-              label: const Text('Undo'),
-            ),
-          // Fix 4 — Bulk add button.
-          TextButton.icon(
-            onPressed: _bulkAddHits,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Bulk Add'),
-          ),
-          const Spacer(),
-          if (!_controller.isStructured)
-            FilledButton(
-              onPressed: _endSession,
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.primaryDefault,
+          Row(
+            children: [
+              // S14 §14.10 — Undo last instance.
+              if (_controller.canUndo)
+                TextButton.icon(
+                  onPressed: _undoLast,
+                  icon: const Icon(Icons.undo, size: 16),
+                  label: const Text('Undo'),
+                ),
+              // Fix 4 — Bulk add button.
+              TextButton.icon(
+                onPressed: _bulkAddHits,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Bulk Add'),
               ),
-              child: const Text('End Drill'),
+              const Spacer(),
+              if (!_controller.isStructured)
+                FilledButton(
+                  onPressed: _endSession,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ColorTokens.primaryDefault,
+                  ),
+                  child: const Text('End Drill'),
+                ),
+            ],
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SurfaceBadge(
+              surfaceType: _surfaceType,
+              onTap: _changeSurface,
             ),
+          ),
         ],
       ),
     );
