@@ -2,19 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' as drift;
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
-import 'package:zx_golf_app/core/widgets/zx_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'widgets/anchor_editor.dart';
 
-// Phase 3 — Drill detail screen. View/edit drill properties and anchors.
-// S04 §4.2, TD-04 §2.4 — Immutable fields read-only, anchors editable on custom drills.
+// Phase 3 — Drill detail screen. View drill properties and anchors (read-only).
+// Anchors are system-defined and not user-editable.
 
 class DrillDetailScreen extends ConsumerStatefulWidget {
   final String drillId;
@@ -34,7 +32,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   static const _userId = kDevUserId;
   Drill? _drill;
   bool _isLoading = true;
-  final Map<String, ({double min, double scratch, double pro})> _editedAnchors = {};
+  Map<String, ({double min, double scratch, double pro})> _anchors = {};
 
   @override
   void initState() {
@@ -50,23 +48,26 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
         _drill = drill;
         _isLoading = false;
         if (drill != null) {
-          _parseExistingAnchors(drill.anchors);
+          _anchors = _parseAnchors(drill.anchors);
         }
       });
     }
   }
 
-  void _parseExistingAnchors(String anchorsJson) {
-    if (anchorsJson == '{}' || anchorsJson.isEmpty) return;
+  static Map<String, ({double min, double scratch, double pro})> _parseAnchors(
+      String anchorsJson) {
+    if (anchorsJson == '{}' || anchorsJson.isEmpty) return {};
     final map = jsonDecode(anchorsJson) as Map<String, dynamic>;
+    final result = <String, ({double min, double scratch, double pro})>{};
     for (final entry in map.entries) {
       final a = entry.value as Map<String, dynamic>;
-      _editedAnchors[entry.key] = (
+      result[entry.key] = (
         min: (a['Min'] as num).toDouble(),
         scratch: (a['Scratch'] as num).toDouble(),
         pro: (a['Pro'] as num).toDouble(),
       );
     }
+    return result;
   }
 
   @override
@@ -88,8 +89,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     final drill = _drill!;
     final isSystem = drill.origin == DrillOrigin.system;
     final isScored = drill.drillType != DrillType.techniqueBlock;
-    final canEditAnchors =
-        isSystem && widget.isCustom && drill.status == DrillStatus.active && isScored;
 
     return Scaffold(
       appBar: ZxAppBar(
@@ -150,7 +149,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
               value: drill.targetDistanceMode!.dbValue,
             ),
 
-          // Anchors section — system drills only.
+          // Anchors section — system drills, read-only.
           if (isSystem && isScored) ...[
             const SizedBox(height: SpacingTokens.lg),
             Text(
@@ -160,30 +159,16 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
                   ),
             ),
             const SizedBox(height: SpacingTokens.sm),
-            for (final entry in _editedAnchors.entries) ...[
+            for (final entry in _anchors.entries) ...[
               AnchorEditor(
                 subskillId: entry.key,
                 subskillLabel: _formatSubskillId(entry.key),
                 minValue: entry.value.min,
                 scratchValue: entry.value.scratch,
                 proValue: entry.value.pro,
-                enabled: canEditAnchors,
-                onChanged: canEditAnchors
-                    ? (values) {
-                        setState(() {
-                          _editedAnchors[entry.key] = values;
-                        });
-                      }
-                    : null,
+                enabled: false,
               ),
               const SizedBox(height: SpacingTokens.md),
-            ],
-            if (canEditAnchors) ...[
-              const SizedBox(height: SpacingTokens.sm),
-              ZxButton(
-                label: 'Save Anchors',
-                onPressed: _saveAnchors,
-              ),
             ],
           ],
           // Target section — custom drills only.
@@ -259,39 +244,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           await drillRepo.deleteDrill(_userId, drill.drillId);
           if (mounted) Navigator.pop(context);
         }
-    }
-  }
-
-  Future<void> _saveAnchors() async {
-    final anchorsMap = <String, Map<String, double>>{};
-    for (final entry in _editedAnchors.entries) {
-      anchorsMap[entry.key] = {
-        'Min': entry.value.min,
-        'Scratch': entry.value.scratch,
-        'Pro': entry.value.pro,
-      };
-    }
-
-    try {
-      await ref.read(drillRepositoryProvider).updateDrill(
-            _userId,
-            widget.drillId,
-            DrillsCompanion(
-              anchors: drift.Value(jsonEncode(anchorsMap)),
-            ),
-          );
-      await _loadDrill();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Anchors saved')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
     }
   }
 
