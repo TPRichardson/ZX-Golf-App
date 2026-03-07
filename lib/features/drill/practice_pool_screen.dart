@@ -129,18 +129,14 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ),
               ),
               const Spacer(),
-              // Grouped/flat toggle.
-              _GroupToggle(
-                isGrouped: isGrouped,
-                onChanged: (v) =>
-                    ref.read(practicePoolGroupedProvider.notifier).state = v,
-              ),
-              const SizedBox(width: SpacingTokens.xs),
-              // 5E — Skill area filter persisted across navigation.
+              // 5E — Skill area filter + grouped/flat toggle.
               _FilterButton(
                 selected: selectedFilter,
                 onChanged: (area) =>
                     ref.read(practicePoolFilterProvider.notifier).state = area,
+                isGrouped: isGrouped,
+                onGroupToggle: (v) =>
+                    ref.read(practicePoolGroupedProvider.notifier).state = v,
               ),
             ],
           ),
@@ -418,98 +414,105 @@ class _PlayDrillButton extends ConsumerWidget {
   }
 }
 
-/// Filter button that shows current selection and opens a popup menu.
+/// Filter button with inline group toggle.
 /// Uses a manual showMenu to support null (All) as a selectable value.
 class _FilterButton extends StatelessWidget {
   final SkillArea? selected;
   final ValueChanged<SkillArea?> onChanged;
-
-  const _FilterButton({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (details) async {
-        final result = await showMenu<String>(
-          context: context,
-          position: RelativeRect.fromLTRB(
-            details.globalPosition.dx,
-            details.globalPosition.dy,
-            details.globalPosition.dx,
-            details.globalPosition.dy,
-          ),
-          items: [
-            const PopupMenuItem(value: 'all', child: Text('All')),
-            for (final area in SkillArea.values)
-              PopupMenuItem(value: area.dbValue, child: Text(area.dbValue)),
-          ],
-        );
-        if (result == null) return; // dismissed
-        if (result == 'all') {
-          onChanged(null);
-        } else {
-          onChanged(SkillArea.values.firstWhere((a) => a.dbValue == result));
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.sm,
-          vertical: SpacingTokens.xs,
-        ),
-        decoration: BoxDecoration(
-          color: ColorTokens.surfaceRaised,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
-          border: Border.all(color: ColorTokens.surfaceBorder),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selected?.dbValue ?? 'All',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: ColorTokens.primaryDefault,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-            const SizedBox(width: SpacingTokens.xs),
-            Icon(
-              Icons.filter_list,
-              size: 16,
-              color: ColorTokens.primaryDefault,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Toggle button: list vs grouped view.
-class _GroupToggle extends StatelessWidget {
   final bool isGrouped;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool> onGroupToggle;
 
-  const _GroupToggle({required this.isGrouped, required this.onChanged});
+  const _FilterButton({
+    required this.selected,
+    required this.onChanged,
+    required this.isGrouped,
+    required this.onGroupToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!isGrouped),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.sm,
-          vertical: SpacingTokens.xs,
-        ),
-        decoration: BoxDecoration(
-          color: ColorTokens.surfaceRaised,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
-          border: Border.all(color: ColorTokens.surfaceBorder),
-        ),
-        child: Icon(
-          isGrouped ? Icons.list : Icons.view_agenda_outlined,
-          size: 16,
-          color: ColorTokens.primaryDefault,
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: ColorTokens.surfaceRaised,
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+        border: Border.all(color: ColorTokens.surfaceBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Group toggle.
+          GestureDetector(
+            onTap: () => onGroupToggle(!isGrouped),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingTokens.sm,
+                vertical: SpacingTokens.xs,
+              ),
+              child: Icon(
+                isGrouped ? Icons.list : Icons.view_agenda_outlined,
+                size: 16,
+                color: ColorTokens.primaryDefault,
+              ),
+            ),
+          ),
+          // Divider.
+          Container(
+            width: 1,
+            height: 16,
+            color: ColorTokens.surfaceBorder,
+          ),
+          // Filter menu.
+          GestureDetector(
+            onTapDown: (details) async {
+              final result = await showMenu<String>(
+                context: context,
+                position: RelativeRect.fromLTRB(
+                  details.globalPosition.dx,
+                  details.globalPosition.dy,
+                  details.globalPosition.dx,
+                  details.globalPosition.dy,
+                ),
+                items: [
+                  const PopupMenuItem(value: 'all', child: Text('All')),
+                  for (final area in SkillArea.values)
+                    PopupMenuItem(
+                        value: area.dbValue, child: Text(area.dbValue)),
+                ],
+              );
+              if (result == null) return;
+              if (result == 'all') {
+                onChanged(null);
+              } else {
+                onChanged(
+                    SkillArea.values.firstWhere((a) => a.dbValue == result));
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingTokens.sm,
+                vertical: SpacingTokens.xs,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    selected?.dbValue ?? 'All',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: ColorTokens.primaryDefault,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(width: SpacingTokens.xs),
+                  Icon(
+                    Icons.filter_list,
+                    size: 16,
+                    color: ColorTokens.primaryDefault,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
