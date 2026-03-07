@@ -11,8 +11,8 @@ import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/execution/execution_helpers.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
-import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
@@ -147,28 +147,10 @@ class _ContinuousMeasurementScreenState
   Future<void> _endSession() async {
     if (_ending) return;
     setState(() => _ending = true);
-    final actions = ref.read(practiceActionsProvider);
-    final result =
-        await actions.endSession(widget.session.sessionId, widget.userId);
-
-    if (!mounted) return;
-
-    final closedSession = await ref
-        .read(practiceRepositoryProvider)
-        .getSessionById(widget.session.sessionId);
-
-    if (!mounted) return;
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => PostSessionSummaryScreen(
-          drill: widget.drill,
-          session: closedSession ?? widget.session,
-          sessionScore: result.sessionScore,
-          integrityBreach: result.integrityBreach,
-        ),
-      ),
-    );
+    await endSessionAndNavigate(context, ref,
+        session: widget.session,
+        drill: widget.drill,
+        userId: widget.userId);
   }
 
   @override
@@ -348,10 +330,9 @@ class _ContinuousMeasurementScreenState
   }
 
   Future<void> _changeSurface() async {
-    final newSurface = await showSurfacePicker(context);
+    final newSurface = await changeSurface(context, ref,
+        sessionId: widget.session.sessionId);
     if (newSurface != null && mounted) {
-      await ref.read(practiceRepositoryProvider).updateSessionSurface(
-          widget.session.sessionId, newSurface);
       setState(() => _surfaceType = newSurface);
     }
   }

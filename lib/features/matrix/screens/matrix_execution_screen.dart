@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/matrix_repository.dart';
@@ -174,31 +175,15 @@ class _MatrixExecutionScreenState
   }
 
   Future<void> _discardRun() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Discard Run?'),
-        content: const Text(
-          'This will permanently discard this matrix run and all recorded attempts.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: ColorTokens.errorDestructive,
-            ),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Discard Run?',
+      message: 'This will permanently discard this matrix run and all recorded attempts.',
+      confirmLabel: 'Discard',
+      isDestructive: true,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     try {
       await ref

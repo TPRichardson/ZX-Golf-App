@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -272,29 +273,14 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           );
         }
       case 'delete':
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete Drill'),
-            content: const Text(
-              'This will permanently delete this drill and all associated data. This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: ColorTokens.errorDestructive),
-                ),
-              ),
-            ],
-          ),
+        final confirmed = await showSoftConfirmation(
+          context,
+          title: 'Delete Drill',
+          message: 'This will permanently delete this drill and all associated data. This action cannot be undone.',
+          confirmLabel: 'Delete',
+          isDestructive: true,
         );
-        if (confirmed == true) {
+        if (confirmed) {
           await drillRepo.deleteDrill(_userId, drill.drillId);
           if (mounted) Navigator.pop(context);
         }

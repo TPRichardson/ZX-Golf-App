@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
@@ -283,28 +284,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-        ),
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmLabel: 'Sign Out',
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await ref.read(authServiceProvider).signOut();
       if (context.mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
@@ -314,57 +300,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
     // S10 §10.5 — Strong confirmation: type "DELETE" to confirm.
-    final controller = TextEditingController();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          backgroundColor: ColorTokens.surfaceModal,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-          ),
-          title: const Text('Delete Account'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'This will permanently delete all local data. '
-                'Type DELETE to confirm.',
-              ),
-              const SizedBox(height: SpacingTokens.md),
-              TextField(
-                controller: controller,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: 'Type DELETE',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: controller.text == 'DELETE'
-                  ? () => Navigator.pop(ctx, true)
-                  : null,
-              child: Text(
-                'Delete Account',
-                style: TextStyle(
-                  color: controller.text == 'DELETE'
-                      ? ColorTokens.errorDestructive
-                      : ColorTokens.textTertiary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final confirmed = await showStrongConfirmation(
+      context,
+      title: 'Delete Account',
+      message: 'This will permanently delete all local data. Type DELETE to confirm.',
+      confirmPhrase: 'DELETE',
     );
-    if (confirmed == true) {
+    if (confirmed) {
       // DEVIATION: Server-side cascade deletion deferred to post-V1.
       // See CLAUDE.md Known Deviations.
       await ref.read(authServiceProvider).signOut();

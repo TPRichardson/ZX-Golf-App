@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
@@ -249,26 +250,12 @@ class _CellDetailScreenState extends ConsumerState<CellDetailScreen> {
   }
 
   Future<void> _deleteAttempt(MatrixAttempt attempt) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Delete Attempt'),
-        content: const Text('This attempt will be permanently removed.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: ColorTokens.errorDestructive),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Delete Attempt',
+      message: 'This attempt will be permanently removed.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
     );
 
     if (confirmed == true && mounted) {
