@@ -68,54 +68,10 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ),
               const Spacer(),
               // 5E — Skill area filter persisted across navigation.
-              PopupMenuButton<SkillArea?>(
-                onSelected: (area) =>
+              _FilterButton(
+                selected: selectedFilter,
+                onChanged: (area) =>
                     ref.read(practicePoolFilterProvider.notifier).state = area,
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: null,
-                    child: Text('All'),
-                  ),
-                  for (final area in SkillArea.values)
-                    PopupMenuItem(
-                      value: area,
-                      child: Text(area.dbValue),
-                    ),
-                ],
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.sm,
-                    vertical: SpacingTokens.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.surfaceRaised,
-                    borderRadius:
-                        BorderRadius.circular(ShapeTokens.radiusSegmented),
-                    border: Border.all(color: ColorTokens.surfaceBorder),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        selectedFilter?.dbValue ?? 'All',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: selectedFilter != null
-                                  ? ColorTokens.primaryDefault
-                                  : ColorTokens.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                      const SizedBox(width: SpacingTokens.xs),
-                      Icon(
-                        Icons.filter_list,
-                        size: 16,
-                        color: selectedFilter != null
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.textTertiary,
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),
@@ -254,7 +210,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     style: TextStyle(color: Colors.white),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: ColorTokens.successDefault,
+                    backgroundColor: ColorTokens.primaryDefault,
                     padding: const EdgeInsets.symmetric(
                       vertical: SpacingTokens.sm,
                     ),
@@ -264,19 +220,19 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             ),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: OutlinedButton.icon(
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => const AddDrillsScreen(),
                 ));
               },
-              icon: const Icon(Icons.add, color: Colors.white, size: 18),
-              label: const Text(
+              icon: Icon(Icons.add, color: ColorTokens.primaryDefault, size: 18),
+              label: Text(
                 'Add drills to your library',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: ColorTokens.primaryDefault),
               ),
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.primaryDefault,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: ColorTokens.primaryDefault),
                 padding: const EdgeInsets.symmetric(
                   vertical: SpacingTokens.sm,
                 ),
@@ -345,7 +301,7 @@ class _PlayDrillButton extends ConsumerWidget {
       icon: Icon(
         Icons.play_circle_outline,
         size: 32,
-        color: ColorTokens.successDefault,
+        color: ColorTokens.primaryDefault,
       ),
       onPressed: () async {
         final surface = await showSurfacePicker(context);
@@ -368,6 +324,72 @@ class _PlayDrillButton extends ConsumerWidget {
         }
       },
       tooltip: 'Start practice with this drill',
+    );
+  }
+}
+
+/// Filter button that shows current selection and opens a popup menu.
+/// Uses a manual showMenu to support null (All) as a selectable value.
+class _FilterButton extends StatelessWidget {
+  final SkillArea? selected;
+  final ValueChanged<SkillArea?> onChanged;
+
+  const _FilterButton({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (details) async {
+        final result = await showMenu<String>(
+          context: context,
+          position: RelativeRect.fromLTRB(
+            details.globalPosition.dx,
+            details.globalPosition.dy,
+            details.globalPosition.dx,
+            details.globalPosition.dy,
+          ),
+          items: [
+            const PopupMenuItem(value: 'all', child: Text('All')),
+            for (final area in SkillArea.values)
+              PopupMenuItem(value: area.dbValue, child: Text(area.dbValue)),
+          ],
+        );
+        if (result == null) return; // dismissed
+        if (result == 'all') {
+          onChanged(null);
+        } else {
+          onChanged(SkillArea.values.firstWhere((a) => a.dbValue == result));
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.sm,
+          vertical: SpacingTokens.xs,
+        ),
+        decoration: BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+          border: Border.all(color: ColorTokens.surfaceBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              selected?.dbValue ?? 'All',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: ColorTokens.primaryDefault,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+            const SizedBox(width: SpacingTokens.xs),
+            Icon(
+              Icons.filter_list,
+              size: 16,
+              color: ColorTokens.primaryDefault,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

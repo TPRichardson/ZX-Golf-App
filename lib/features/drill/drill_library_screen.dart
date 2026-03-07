@@ -182,7 +182,7 @@ class _StartDrillButton extends ConsumerWidget {
     return IconButton(
       icon: Icon(
         Icons.play_circle_outline,
-        color: ColorTokens.successDefault,
+        color: ColorTokens.primaryDefault,
       ),
       onPressed: () async {
         // Auto-adopt the drill if not already adopted.
