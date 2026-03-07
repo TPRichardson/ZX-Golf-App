@@ -9,6 +9,7 @@ class SlotTile extends StatelessWidget {
   final Slot slot;
   final int index;
   final String? drillName;
+  final SkillArea? skillArea;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -17,6 +18,7 @@ class SlotTile extends StatelessWidget {
     required this.slot,
     required this.index,
     this.drillName,
+    this.skillArea,
     this.onTap,
     this.onLongPress,
   });
@@ -67,24 +69,6 @@ class SlotTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (!slot.planned)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.xs,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: ColorTokens.primaryDefault.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
-                ),
-                child: Text(
-                  'overflow',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
-                    color: ColorTokens.primaryDefault,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -124,6 +108,9 @@ class SlotTile extends StatelessWidget {
   Color get _backgroundColor {
     if (slot.isCompleted) {
       return ColorTokens.successDefault.withValues(alpha: 0.08);
+    }
+    if (slot.isFilled && skillArea != null) {
+      return ColorTokens.skillArea(skillArea!).withValues(alpha: 0.06);
     }
     return ColorTokens.surfaceRaised;
   }

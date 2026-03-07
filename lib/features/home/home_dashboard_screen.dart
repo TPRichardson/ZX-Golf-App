@@ -274,22 +274,6 @@ class _ActionZone extends ConsumerWidget {
           ),
           const SizedBox(height: SpacingTokens.sm),
         ],
-        // "Start Today's Practice" — visible when filled incomplete slots exist and no active PB.
-        if (!hasActivePb && filledDrillIds.isNotEmpty) ...[
-          FilledButton.icon(
-            onPressed: () => _startTodayPractice(context, ref, filledDrillIds),
-            icon: const Icon(Icons.play_arrow, color: Colors.white),
-            label: Text(
-              'Start Today\'s Practice (${filledDrillIds.length} drills)',
-              style: const TextStyle(color: Colors.white),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.successDefault,
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.sm),
-        ],
         // "Start Clean Practice" — always visible when no active PB.
         if (!hasActivePb)
           OutlinedButton.icon(
@@ -304,6 +288,22 @@ class _ActionZone extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
             ),
           ),
+        // "Start Planned Practice" — visible when filled incomplete slots exist and no active PB.
+        if (!hasActivePb && filledDrillIds.isNotEmpty) ...[
+          const SizedBox(height: SpacingTokens.sm),
+          OutlinedButton.icon(
+            onPressed: () => _startTodayPractice(context, ref, filledDrillIds),
+            icon: Icon(Icons.calendar_today, color: ColorTokens.primaryDefault, size: 18),
+            label: Text(
+              'Start Planned Practice (${filledDrillIds.length} drills)',
+              style: TextStyle(color: ColorTokens.primaryDefault),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: ColorTokens.primaryDefault),
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
+            ),
+          ),
+        ],
         // Matrix — Start matrix buttons (gapping, wedge, chipping).
         if (!hasActivePb && activeMatrixRun == null) ...[
           const SizedBox(height: SpacingTokens.md),

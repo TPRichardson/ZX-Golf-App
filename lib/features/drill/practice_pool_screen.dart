@@ -8,7 +8,9 @@ import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
+import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
+import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 
 import '../bag/bag_screen.dart';
@@ -251,6 +253,27 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     );
   }
 
+  Future<void> _startPlannedPractice(List<String> drillIds) async {
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !mounted) return;
+
+    final actions = ref.read(practiceActionsProvider);
+    final pb = await actions.startPracticeBlock(
+      _userId,
+      initialDrillIds: drillIds,
+      surfaceType: envSurface.surface,
+    );
+
+    if (mounted) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PracticeQueueScreen(
+          practiceBlockId: pb.practiceBlockId,
+          userId: _userId,
+        ),
+      ));
+    }
+  }
+
   Future<void> _startCleanPractice() async {
     final envSurface = await showEnvironmentSurfacePicker(context);
     if (envSurface == null || !mounted) return;
@@ -271,6 +294,16 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   Widget _buildBottomBar() {
     final activePb = ref.watch(activePracticeBlockProvider(_userId));
     final hasActivePb = activePb.valueOrNull != null;
+    final todayAsync = ref.watch(todayCalendarDayProvider(_userId));
+
+    // Extract filled drill IDs from today's slots.
+    List<String> filledDrillIds = [];
+    todayAsync.whenData((day) {
+      filledDrillIds = parseSlotsFromJson(day.slots)
+          .where((s) => s.isFilled && !s.isCompleted)
+          .map((s) => s.drillId!)
+          .toList();
+    });
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -282,7 +315,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!hasActivePb)
+          if (!hasActivePb) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
               child: SizedBox(
@@ -303,6 +336,28 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 ),
               ),
             ),
+            if (filledDrillIds.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _startPlannedPractice(filledDrillIds),
+                    icon: Icon(Icons.calendar_today, color: ColorTokens.primaryDefault, size: 18),
+                    label: Text(
+                      'Start Planned Practice (${filledDrillIds.length} drills)',
+                      style: TextStyle(color: ColorTokens.primaryDefault),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: ColorTokens.primaryDefault),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: SpacingTokens.sm,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );

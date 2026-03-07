@@ -25,12 +25,24 @@ class SkillAreaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // S15 §15.3.3 — Continuous grey-to-green interpolation.
-    final tileColor = Color.lerp(
-      ColorTokens.heatmapBase,
-      ColorTokens.heatmapHigh,
-      normalisedScore,
-    )!;
+    // RAG colour: grey (no data) → red (low) → amber (mid) → green (high).
+    // Breakpoints: 0–0.6 (0–3.0) red→amber, 0.6–1.0 (3.0–5.0) amber→green.
+    final Color tileColor;
+    if (normalisedScore == 0.0) {
+      tileColor = ColorTokens.surfaceRaised;
+    } else if (normalisedScore <= 0.6) {
+      tileColor = Color.lerp(
+        const Color(0xFFD64545),
+        const Color(0xFFF5A623),
+        (normalisedScore / 0.6).clamp(0.0, 1.0),
+      )!.withValues(alpha: 0.25);
+    } else {
+      tileColor = Color.lerp(
+        const Color(0xFFF5A623),
+        const Color(0xFF1FA463),
+        ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
+      )!.withValues(alpha: 0.25);
+    }
 
     return GestureDetector(
       onTap: onTap,

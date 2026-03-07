@@ -198,7 +198,7 @@ void main() {
               (ref, userId) => Stream.value(_makeOverallScore(750)),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay(slotsJson),
+              (ref, userId) => Stream.value(_makeCalendarDay(slotsJson)),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(null),
@@ -222,7 +222,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay('[]'),
+              (ref, userId) => Stream.value(_makeCalendarDay('[]')),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(null),
@@ -253,7 +253,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay(slotsJson),
+              (ref, userId) => Stream.value(_makeCalendarDay(slotsJson)),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(null),
@@ -279,7 +279,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay('[]'),
+              (ref, userId) => Stream.value(_makeCalendarDay('[]')),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(null),
@@ -309,7 +309,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay(slotsJson),
+              (ref, userId) => Stream.value(_makeCalendarDay(slotsJson)),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(null),
@@ -334,7 +334,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay('[]'),
+              (ref, userId) => Stream.value(_makeCalendarDay('[]')),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(null),
@@ -357,7 +357,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay('[]'),
+              (ref, userId) => Stream.value(_makeCalendarDay('[]')),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(_makePracticeBlock()),
@@ -382,7 +382,7 @@ void main() {
               (ref, userId) => Stream.value(null),
             ),
             todayCalendarDayProvider.overrideWith(
-              (ref, userId) async => _makeCalendarDay('[]'),
+              (ref, userId) => Stream.value(_makeCalendarDay('[]')),
             ),
             activePracticeBlockProvider.overrideWith(
               (ref, userId) => Stream.value(_makePracticeBlock()),

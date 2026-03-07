@@ -7,6 +7,7 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
+import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -36,6 +37,7 @@ class _CalendarDayDetailScreenState
   CalendarDay? _day;
   List<Slot> _slots = [];
   final Map<String, String> _drillNames = {};
+  final Map<String, SkillArea> _drillSkillAreas = {};
 
   @override
   void initState() {
@@ -70,6 +72,7 @@ class _CalendarDayDetailScreenState
       final drill = await drillRepo.getById(id);
       if (drill != null) {
         _drillNames[id] = drill.name;
+        _drillSkillAreas[id] = drill.skillArea;
       }
     }
   }
@@ -109,6 +112,9 @@ class _CalendarDayDetailScreenState
             index: index,
             drillName: slot.drillId != null
                 ? _drillNames[slot.drillId]
+                : null,
+            skillArea: slot.drillId != null
+                ? _drillSkillAreas[slot.drillId]
                 : null,
             onTap: () => _onSlotTap(index),
             onLongPress: () => _onSlotLongPress(index),
@@ -181,28 +187,9 @@ class _CalendarDayDetailScreenState
   }
 
   Future<void> _showDrillAssignDialog(int index) async {
-    final controller = TextEditingController();
-    final drillId = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Assign drill'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter drill ID',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Assign'),
-          ),
-        ],
+    final drillId = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => const PracticePoolScreen(pickMode: true),
       ),
     );
 

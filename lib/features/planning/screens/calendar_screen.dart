@@ -7,6 +7,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
+import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -40,14 +41,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
 
   bool _showTwoWeeks = true;
 
+  // 2-week grid: week offset from current week (0 = this week).
+  int _weekOffset = 0;
+
   // 2-week grid: selected day for inline slot panel.
   DateTime? _selectedDay;
 
   // Heat scale ceiling, computed from surrounding data.
   int _maxSlots = 1;
 
-  // Drill name cache for inline slot panel.
+  // Drill info cache for inline slot panel.
   final Map<String, String> _drillNames = {};
+  final Map<String, SkillArea> _drillSkillAreas = {};
 
   DateTime get _today {
     final now = DateTime.now();
@@ -56,9 +61,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
 
   DateTime _rangeStartFor(int weekStartDay) {
     if (_showTwoWeeks) {
-      // Start from the configured week start day.
+      // Start from the configured week start day, shifted by _weekOffset weeks.
       final diff = (_today.weekday - weekStartDay + 7) % 7;
-      return _today.subtract(Duration(days: diff));
+      return _today.subtract(Duration(days: diff)).add(Duration(days: _weekOffset * 7));
     }
     return _today;
   }
@@ -77,7 +82,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     _computeHeatRange();
   }
 
-  /// Fetch 60-day window to determine max filled slots for heat colouring.
+  /// Fetch 60-day window to determine max slot count for heat colouring.
   Future<void> _computeHeatRange() async {
     final repo = ref.read(planningRepositoryProvider);
     final days = await repo.getCalendarDaysByUser(
@@ -86,16 +91,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       to: _today.add(const Duration(days: 30)),
     );
     if (!mounted) return;
-    int maxFilled = 1;
+    int maxCount = 1;
     for (final day in days) {
-      final filled =
-          parseSlotsFromJson(day.slots).where((s) => s.isFilled).length;
-      maxFilled = max(maxFilled, filled);
+      final count = parseSlotsFromJson(day.slots).length;
+      maxCount = max(maxCount, count);
     }
-    setState(() => _maxSlots = maxFilled);
+    setState(() => _maxSlots = maxCount);
   }
 
-  /// Resolve drill names for slots on the selected day.
+  /// Resolve drill names and skill areas for slots on the selected day.
   Future<void> _resolveDrillNames(List<Slot> slots) async {
     final drillRepo = ref.read(drillRepositoryProvider);
     final ids = slots
@@ -107,6 +111,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       final drill = await drillRepo.getById(id);
       if (drill != null) {
         _drillNames[id] = drill.name;
+        _drillSkillAreas[id] = drill.skillArea;
       }
     }
     if (mounted && ids.isNotEmpty) setState(() {});
@@ -148,15 +153,66 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                 error: (_, _) => const SizedBox.shrink(),
               ),
               const Spacer(),
+              if (_showTwoWeeks) ...[
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    iconSize: 20,
+                    icon: const Icon(Icons.chevron_left,
+                        color: ColorTokens.textSecondary),
+                    onPressed: () => setState(() {
+                      _weekOffset -= 1;
+                      _selectedDay = null;
+                    }),
+                  ),
+                ),
+                if (_weekOffset != 0)
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      iconSize: 18,
+                      icon: const Icon(Icons.today,
+                          color: ColorTokens.primaryDefault),
+                      tooltip: 'Back to this week',
+                      onPressed: () => setState(() {
+                        _weekOffset = 0;
+                        _selectedDay = _today;
+                      }),
+                    ),
+                  ),
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    iconSize: 20,
+                    icon: const Icon(Icons.chevron_right,
+                        color: ColorTokens.textSecondary),
+                    onPressed: () => setState(() {
+                      _weekOffset += 1;
+                      _selectedDay = null;
+                    }),
+                  ),
+                ),
+                const SizedBox(width: SpacingTokens.sm),
+              ],
               _ViewToggle(
                 showTwoWeeks: _showTwoWeeks,
-                onChanged: (v) => setState(() => _showTwoWeeks = v),
+                onChanged: (v) => setState(() {
+                  _showTwoWeeks = v;
+                  if (v) {
+                    _weekOffset = 0;
+                    _selectedDay = _today;
+                  }
+                }),
               ),
             ],
           ),
         ),
-        // Fix 12 — "Start Today's Practice" button.
-        _StartTodayButton(userId: _userId, today: _today),
         // Calendar day list.
         Expanded(
           child: daysAsync.when(
@@ -304,54 +360,49 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         date.year == _selectedDay!.year &&
         date.month == _selectedDay!.month &&
         date.day == _selectedDay!.day;
-    final filledCount = day != null
-        ? parseSlotsFromJson(day.slots).where((s) => s.isFilled).length
-        : 0;
+    final slots = day != null ? parseSlotsFromJson(day.slots) : <Slot>[];
+    final totalSlots = slots.length;
+    final completedCount = slots.where((s) => s.isCompleted).length;
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDay = date),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          clipBehavior: Clip.hardEdge,
-          decoration: BoxDecoration(
-            color: _heatColor(filledCount),
-            borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-            border: Border.all(
-              color: isSelected
-                  ? ColorTokens.primaryHover
-                  : isToday
-                      ? ColorTokens.primaryDefault
-                      : ColorTokens.surfaceBorder,
-              width: isSelected ? 2.5 : (isToday ? 2 : 1),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: _heatColor(totalSlots),
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+          border: Border.all(
+            color: isSelected
+                ? ColorTokens.primaryHover
+                : isToday
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.surfaceBorder,
+            width: isSelected ? 2.5 : (isToday ? 2 : 1),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _ordinalDay(date.day),
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
+                color: isToday
+                    ? ColorTokens.textPrimary
+                    : ColorTokens.textSecondary,
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
+            if (totalSlots > 0)
               Text(
-                _ordinalDay(date.day),
-                style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
-                  fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
-                  color: isToday
-                      ? ColorTokens.textPrimary
-                      : ColorTokens.textSecondary,
-                ),
-              ),
-              Text(
-                '$filledCount',
-                style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
+                '$completedCount/$totalSlots',
+                style: const TextStyle(
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: filledCount > 0
-                      ? ColorTokens.primaryDefault
-                      : ColorTokens.textTertiary,
+                  color: ColorTokens.primaryDefault,
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -389,6 +440,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                 color: ColorTokens.textPrimary,
               ),
             ),
+            if (slots.any((s) => s.isFilled)) ...[
+              const SizedBox(width: SpacingTokens.sm),
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  iconSize: 22,
+                  icon: const Icon(Icons.play_circle_filled,
+                      color: ColorTokens.successDefault),
+                  tooltip: _selectedDay == _today
+                      ? 'Start today\'s practice'
+                      : 'Start practice based on this day',
+                  onPressed: () => _startDayPractice(slots),
+                ),
+              ),
+            ],
             if (_selectedDay == _today) ...[
               const SizedBox(width: SpacingTokens.sm),
               Container(
@@ -411,8 +479,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               ),
             ],
             const Spacer(),
-            // Remove slot button.
-            if (slots.isNotEmpty)
+            // Remove slot button — only when there are empty slots.
+            if (slots.any((s) => s.isEmpty))
               SizedBox(
                 width: 32,
                 height: 32,
@@ -421,7 +489,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                   iconSize: 20,
                   icon: const Icon(Icons.remove_circle_outline,
                       color: ColorTokens.textTertiary),
-                  tooltip: 'Remove slot',
+                  tooltip: 'Remove empty slot',
                   onPressed: () => _removeSlotForDate(_selectedDay!, slots.length),
                 ),
               ),
@@ -451,55 +519,57 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         // Slot list.
         if (slots.isEmpty)
           Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'No slots planned',
-                    style: TextStyle(color: ColorTokens.textTertiary),
-                  ),
-                  const SizedBox(height: SpacingTokens.sm),
-                  OutlinedButton.icon(
-                    onPressed: () => _addSlotForDate(_selectedDay!),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add slot'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: ColorTokens.primaryDefault,
-                      side:
-                          const BorderSide(color: ColorTokens.primaryDefault),
+            child: SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'No slots planned',
+                      style: TextStyle(color: ColorTokens.textTertiary),
                     ),
-                  ),
-                  const SizedBox(height: SpacingTokens.sm),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () =>
-                            _showRoutinePicker(_selectedDay!),
-                        icon: const Icon(Icons.playlist_add, size: 18),
-                        label: const Text('Routine'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ColorTokens.primaryDefault,
-                          side: const BorderSide(
-                              color: ColorTokens.primaryDefault),
-                        ),
+                    const SizedBox(height: SpacingTokens.sm),
+                    OutlinedButton.icon(
+                      onPressed: () => _addSlotForDate(_selectedDay!),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add slot'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorTokens.primaryDefault,
+                        side:
+                            const BorderSide(color: ColorTokens.primaryDefault),
                       ),
-                      const SizedBox(width: SpacingTokens.sm),
-                      OutlinedButton.icon(
-                        onPressed: () =>
-                            _showSchedulePicker(_selectedDay!),
-                        icon: const Icon(Icons.date_range, size: 18),
-                        label: const Text('Schedule'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ColorTokens.primaryDefault,
-                          side: const BorderSide(
-                              color: ColorTokens.primaryDefault),
+                    ),
+                    const SizedBox(height: SpacingTokens.sm),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              _showRoutinePicker(_selectedDay!),
+                          icon: const Icon(Icons.playlist_add, size: 18),
+                          label: const Text('Routine'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorTokens.primaryDefault,
+                            side: const BorderSide(
+                                color: ColorTokens.primaryDefault),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: SpacingTokens.sm),
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              _showSchedulePicker(_selectedDay!),
+                          icon: const Icon(Icons.date_range, size: 18),
+                          label: const Text('Schedule'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorTokens.primaryDefault,
+                            side: const BorderSide(
+                                color: ColorTokens.primaryDefault),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           )
@@ -517,6 +587,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     index: index,
                     drillName: slot.drillId != null
                         ? _drillNames[slot.drillId]
+                        : null,
+                    skillArea: slot.drillId != null
+                        ? _drillSkillAreas[slot.drillId]
                         : null,
                     onTap: () => _onInlineSlotTap(day!, slots, index),
                   );
@@ -584,13 +657,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         _userId, day.date, currentSlots.length + 1);
   }
 
-  /// Add a slot to a day that may not exist yet (creates CalendarDay first).
+  /// Add a single slot to a day. If the day doesn't exist yet, creates it with 1 slot
+  /// (bypasses default capacity pattern so user gets exactly what they asked for).
   Future<void> _addSlotForDate(DateTime date) async {
     final repo = ref.read(planningRepositoryProvider);
-    final day = await repo.getOrCreateCalendarDay(_userId, date);
-    final actions = ref.read(planningActionsProvider);
-    final currentSlots = parseSlotsFromJson(day.slots);
-    await actions.updateSlotCapacity(_userId, date, currentSlots.length + 1);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final existing = await repo.getCalendarDayByDate(_userId, dateOnly);
+    if (existing != null) {
+      final currentSlots = parseSlotsFromJson(existing.slots);
+      final actions = ref.read(planningActionsProvider);
+      await actions.updateSlotCapacity(_userId, dateOnly, currentSlots.length + 1);
+    } else {
+      final actions = ref.read(planningActionsProvider);
+      await actions.updateSlotCapacity(_userId, dateOnly, 1);
+    }
   }
 
   /// Remove the last slot from a day (reduce capacity by 1).
@@ -733,28 +813,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   }
 
   Future<void> _showDrillAssignDialog(CalendarDay day, int index) async {
-    final controller = TextEditingController();
-    final drillId = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Assign drill'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter drill ID',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Assign'),
-          ),
-        ],
+    final drillId = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => const PracticePoolScreen(pickMode: true),
       ),
     );
 
@@ -833,6 +894,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     _computeHeatRange();
   }
 
+  Future<void> _startDayPractice(List<Slot> slots) async {
+    final drillIds = slots
+        .where((s) => s.isFilled && !s.isCompleted)
+        .map((s) => s.drillId!)
+        .toList();
+    if (drillIds.isEmpty) return;
+
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !mounted) return;
+
+    final actions = ref.read(practiceActionsProvider);
+    final pb = await actions.startPracticeBlock(
+      _userId,
+      initialDrillIds: drillIds,
+      surfaceType: envSurface.surface,
+    );
+
+    if (mounted) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PracticeQueueScreen(
+          practiceBlockId: pb.practiceBlockId,
+          userId: _userId,
+        ),
+      ));
+    }
+  }
+
   void _navigateToDetail(CalendarDay day) {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => CalendarDayDetailScreen(calendarDayId: day.calendarDayId),
@@ -868,86 +956,6 @@ const _monthNames = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
-/// Fix 12 — "Start Today's Practice" button.
-/// Visible only when today's CalendarDay has ≥1 filled Slot and no active PB.
-class _StartTodayButton extends ConsumerWidget {
-  final String userId;
-  final DateTime today;
-
-  const _StartTodayButton({required this.userId, required this.today});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final todayDayAsync = ref.watch(todayCalendarDayProvider(userId));
-    final activePb = ref.watch(activePracticeBlockProvider(userId));
-
-    return todayDayAsync.when(
-      data: (day) {
-        final slots = _parseSlotsFromJson(day.slots);
-        final filledDrillIds = slots
-            .where((s) => s.isFilled)
-            .map((s) => s.drillId!)
-            .toList();
-
-        // Hide if no filled slots or active PB exists.
-        if (filledDrillIds.isEmpty) return const SizedBox.shrink();
-        if (activePb.valueOrNull != null) return const SizedBox.shrink();
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpacingTokens.md,
-            vertical: SpacingTokens.sm,
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => _startTodayPractice(context, ref, filledDrillIds),
-              icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: Text(
-                'Start Today\'s Practice (${filledDrillIds.length} drills)',
-                style: const TextStyle(color: Colors.white),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.successDefault,
-                padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
-              ),
-            ),
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-    );
-  }
-
-  Future<void> _startTodayPractice(
-    BuildContext context,
-    WidgetRef ref,
-    List<String> drillIds,
-  ) async {
-    final envSurface = await showEnvironmentSurfacePicker(context);
-    if (envSurface == null || !context.mounted) return;
-
-    final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(
-      userId,
-      initialDrillIds: drillIds,
-      surfaceType: envSurface.surface,
-    );
-
-    if (context.mounted) {
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => PracticeQueueScreen(
-          practiceBlockId: pb.practiceBlockId,
-          userId: userId,
-        ),
-      ));
-    }
-  }
-
-  List<Slot> _parseSlotsFromJson(String slotsJson) =>
-      parseSlotsFromJson(slotsJson);
-}
 
 /// Compact 3D / 2W toggle replacing SegmentedButton for narrow layouts.
 class _ViewToggle extends StatelessWidget {

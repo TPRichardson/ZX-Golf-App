@@ -64,18 +64,7 @@ class _ReviewDashboardScreenState
         ),
         const SizedBox(height: SpacingTokens.md),
 
-        // 2. Plan Adherence badge.
-        PlanAdherenceBadge(userId: kDevUserId),
-        const SizedBox(height: SpacingTokens.md),
-
-        // 3. Trend Snapshot.
-        TrendSnapshot(
-          userId: kDevUserId,
-          skillArea: _expandedSkillArea,
-        ),
-        const SizedBox(height: SpacingTokens.md),
-
-        // 4. Skill Area Heatmap with accordion.
+        // 2. Skill Area Heatmap with accordion.
         _buildSectionHeader('Skill Areas'),
         const SizedBox(height: SpacingTokens.sm),
         SkillAreaHeatmap(
@@ -91,6 +80,17 @@ class _ReviewDashboardScreenState
               ),
             ));
           },
+        ),
+        const SizedBox(height: SpacingTokens.md),
+
+        // 3. Plan Adherence badge.
+        PlanAdherenceBadge(userId: kDevUserId),
+        const SizedBox(height: SpacingTokens.md),
+
+        // 4. Trend Snapshot.
+        TrendSnapshot(
+          userId: kDevUserId,
+          skillArea: _expandedSkillArea,
         ),
         const SizedBox(height: SpacingTokens.lg),
 

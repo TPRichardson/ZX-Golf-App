@@ -71,12 +71,19 @@ final calendarDaysProvider = StreamProvider.family<List<CalendarDay>,
   );
 });
 
-/// S08 §8.13 — Today's CalendarDay for quick access.
+/// S08 §8.13 — Today's CalendarDay for quick access (reactive stream).
 final todayCalendarDayProvider =
-    FutureProvider.family<CalendarDay, String>((ref, userId) {
-  return ref
-      .watch(planningRepositoryProvider)
-      .getOrCreateCalendarDay(userId, DateTime.now());
+    StreamProvider.family<CalendarDay, String>((ref, userId) {
+  final repo = ref.watch(planningRepositoryProvider);
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  return repo.watchCalendarDaysByUser(userId, from: today, to: today).asyncMap(
+    (days) async {
+      if (days.isNotEmpty) return days.first;
+      // Create day if it doesn't exist yet.
+      return repo.getOrCreateCalendarDay(userId, today);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
