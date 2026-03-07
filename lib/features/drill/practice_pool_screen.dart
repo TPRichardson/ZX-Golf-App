@@ -69,7 +69,9 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     ),
               ),
               const SizedBox(width: SpacingTokens.sm),
-              GestureDetector(
+              Transform.translate(
+                offset: const Offset(0, -1),
+                child: GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => const AddDrillsScreen(),
@@ -104,6 +106,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     ],
                   ),
                 ),
+              ),
               ),
               const Spacer(),
               // 5E — Skill area filter persisted across navigation.
