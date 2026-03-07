@@ -82,55 +82,81 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     Map<SkillArea, ({double totalPoints, double average})> windowStats,
     Map<SkillArea, int> allocations,
   ) {
-    final areas = SkillArea.values;
-    final firstRow = areas.take(4).toList();
-    final secondRow = areas.skip(4).toList();
-
     return Column(
       children: [
-        _buildRow(firstRow, windowStats, allocations),
+        // Row 1: Irons (full width).
+        Row(children: [
+          Expanded(
+            child: _buildTileWidget(
+                SkillArea.irons, windowStats, allocations),
+          ),
+        ]),
         const SizedBox(height: SpacingTokens.sm),
-        _buildRow(secondRow, windowStats, allocations),
+        // Row 2: Driving | Pitching | Woods.
+        Row(children: [
+          Expanded(
+            flex: 50,
+            child: _buildTileWidget(
+                SkillArea.driving, windowStats, allocations),
+          ),
+          Expanded(
+            flex: 30,
+            child: _buildTileWidget(
+                SkillArea.pitching, windowStats, allocations),
+          ),
+          Expanded(
+            flex: 20,
+            child: _buildTileWidget(
+                SkillArea.woods, windowStats, allocations),
+          ),
+        ]),
+        const SizedBox(height: SpacingTokens.sm),
+        // Row 3: Putting | Chipping | Bunkers.
+        Row(children: [
+          Expanded(
+            flex: 50,
+            child: _buildTileWidget(
+                SkillArea.putting, windowStats, allocations),
+          ),
+          Expanded(
+            flex: 30,
+            child: _buildTileWidget(
+                SkillArea.chipping, windowStats, allocations),
+          ),
+          Expanded(
+            flex: 20,
+            child: _buildTileWidget(
+                SkillArea.bunkers, windowStats, allocations),
+          ),
+        ]),
       ],
     );
   }
 
-  Widget _buildRow(
-    List<SkillArea> areas,
+  Widget _buildTileWidget(
+    SkillArea area,
     Map<SkillArea, ({double totalPoints, double average})> windowStats,
     Map<SkillArea, int> allocations,
   ) {
-    return Row(
-      children: areas.map((area) {
-        final avg = windowStats[area]?.average ?? 0.0;
-        final normalised = avg > 0 ? (avg / 5.0).clamp(0.0, 1.0) : 0.0;
-        final allocation = allocations[area] ?? 1;
-        final flex = allocation > 0 ? allocation : 1;
-        return Expanded(
-          flex: flex,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: SkillAreaTile(
-              skillArea: area,
-              normalisedScore: normalised,
-              totalPoints: windowStats[area]?.totalPoints ?? 0.0,
-              average: windowStats[area]?.average ?? 0.0,
-              allocation: allocation,
-              isExpanded: _expandedArea == area,
-              onTap: () {
-                setState(() {
-                  if (_expandedArea == area) {
-                    _expandedArea = null;
-                  } else {
-                    _expandedArea = area;
-                  }
-                });
-                widget.onExpandedChanged(_expandedArea);
-              },
-            ),
-          ),
-        );
-      }).toList(),
+    final avg = windowStats[area]?.average ?? 0.0;
+    final normalised = avg > 0 ? (avg / 5.0).clamp(0.0, 1.0) : 0.0;
+    final allocation = allocations[area] ?? 1;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: SkillAreaTile(
+        skillArea: area,
+        normalisedScore: normalised,
+        totalPoints: windowStats[area]?.totalPoints ?? 0.0,
+        average: avg,
+        allocation: allocation,
+        isExpanded: _expandedArea == area,
+        onTap: () {
+          setState(() {
+            _expandedArea = _expandedArea == area ? null : area;
+          });
+          widget.onExpandedChanged(_expandedArea);
+        },
+      ),
     );
   }
 }

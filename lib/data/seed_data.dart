@@ -47,9 +47,9 @@ EventTypeRefsCompanion _eventType(String id, String name, String desc) =>
 
 // 002_seed_reference_data.sql §2 — 19 SubskillRef rows (allocations sum to 1000).
 List<SubskillRefsCompanion> _subskillRefRows() => <SubskillRefsCompanion>[
-    // Irons (350)
-    _subskill('irons_distance_control', SkillArea.irons, 'Distance Control', 145),
-    _subskill('irons_direction_control', SkillArea.irons, 'Direction Control', 145),
+    // Irons (360)
+    _subskill('irons_distance_control', SkillArea.irons, 'Distance Control', 150),
+    _subskill('irons_direction_control', SkillArea.irons, 'Direction Control', 150),
     _subskill('irons_shape_control', SkillArea.irons, 'Shape Control', 60),
     // Driving (240)
     _subskill('driving_distance_maximum', SkillArea.driving, 'Distance Maximum', 100),
@@ -66,9 +66,9 @@ List<SubskillRefsCompanion> _subskillRefRows() => <SubskillRefsCompanion>[
     _subskill('chipping_distance_control', SkillArea.chipping, 'Distance Control', 25),
     _subskill('chipping_direction_control', SkillArea.chipping, 'Direction Control', 25),
     _subskill('chipping_flight_control', SkillArea.chipping, 'Flight Control', 10),
-    // Woods (30)
-    _subskill('woods_distance_control', SkillArea.woods, 'Distance Control', 13),
-    _subskill('woods_direction_control', SkillArea.woods, 'Direction Control', 13),
+    // Woods (20)
+    _subskill('woods_distance_control', SkillArea.woods, 'Distance Control', 8),
+    _subskill('woods_direction_control', SkillArea.woods, 'Direction Control', 8),
     _subskill('woods_shape_control', SkillArea.woods, 'Shape Control', 4),
     // Bunkers (20)
     _subskill('bunkers_distance_control', SkillArea.bunkers, 'Distance Control', 10),

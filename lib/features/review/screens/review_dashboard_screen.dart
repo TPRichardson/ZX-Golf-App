@@ -10,7 +10,6 @@ import 'package:zx_golf_app/features/review/widgets/plan_adherence_badge.dart';
 import 'package:zx_golf_app/features/review/widgets/skill_area_heatmap.dart';
 import 'package:zx_golf_app/features/review/widgets/trend_snapshot.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
-import 'package:zx_golf_app/providers/scoring_providers.dart';
 
 // S12 §12.6.1 — Dashboard screen: Overall Score + Heatmap + Trend + CTA.
 // S15 §15.2 — Neutral score presentation.
@@ -33,12 +32,15 @@ class _ReviewDashboardScreenState
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin
-    final overallAsync = ref.watch(overallScoreProvider(kDevUserId));
+    final windowStatsAsync =
+        ref.watch(skillAreaWindowStatsProvider(kDevUserId));
 
-    return overallAsync.when(
-      data: (overall) {
-        if (overall == null) return _buildZeroState();
-        return _buildDashboard(overall.overallScore);
+    return windowStatsAsync.when(
+      data: (windowStats) {
+        if (windowStats.isEmpty) return _buildZeroState();
+        final overallScore = windowStats.values
+            .fold<double>(0.0, (sum, s) => sum + s.totalPoints);
+        return _buildDashboard(overallScore);
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(

@@ -36,9 +36,9 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 
 INSERT INTO "SubskillRef" ("SubskillID", "SkillArea", "Name", "Allocation") VALUES
-  -- Irons (350 total)
-  ('irons_distance_control',    'Irons',    'Distance Control',   145),
-  ('irons_direction_control',   'Irons',    'Direction Control',  145),
+  -- Irons (360 total)
+  ('irons_distance_control',    'Irons',    'Distance Control',   150),
+  ('irons_direction_control',   'Irons',    'Direction Control',  150),
   ('irons_shape_control',       'Irons',    'Shape Control',       60),
   -- Driving (240 total)
   ('driving_distance_maximum',  'Driving',  'Distance Maximum',   100),
@@ -55,9 +55,9 @@ INSERT INTO "SubskillRef" ("SubskillID", "SkillArea", "Name", "Allocation") VALU
   ('chipping_distance_control', 'Chipping', 'Distance Control',    25),
   ('chipping_direction_control','Chipping', 'Direction Control',   25),
   ('chipping_flight_control',   'Chipping', 'Flight Control',      10),
-  -- Woods (30 total)
-  ('woods_distance_control',    'Woods',    'Distance Control',    13),
-  ('woods_direction_control',   'Woods',    'Direction Control',   13),
+  -- Woods (20 total)
+  ('woods_distance_control',    'Woods',    'Distance Control',     8),
+  ('woods_direction_control',   'Woods',    'Direction Control',    8),
   ('woods_shape_control',       'Woods',    'Shape Control',        4),
   -- Bunkers (20 total)
   ('bunkers_distance_control',  'Bunkers',  'Distance Control',    10),
