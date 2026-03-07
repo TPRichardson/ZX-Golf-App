@@ -124,6 +124,12 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                       }
                       _openDrillDetail(dwa);
                     },
+                    trailing: widget.pickMode
+                        ? null
+                        : _PlayDrillButton(
+                            drillId: dwa.drill.drillId,
+                            userId: _userId,
+                          ),
                   );
                 },
               );
@@ -266,6 +272,44 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         isCustom: dwa.drill.origin == DrillOrigin.userCustom,
       ),
     ));
+  }
+}
+
+class _PlayDrillButton extends ConsumerWidget {
+  final String drillId;
+  final String userId;
+
+  const _PlayDrillButton({required this.drillId, required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return IconButton(
+      icon: Icon(
+        Icons.play_circle_outline,
+        color: ColorTokens.successDefault,
+      ),
+      onPressed: () async {
+        final surface = await showSurfacePicker(context);
+        if (surface == null || !context.mounted) return;
+
+        final actions = ref.read(practiceActionsProvider);
+        final pb = await actions.startPracticeBlock(
+          userId,
+          initialDrillIds: [drillId],
+          surfaceType: surface,
+        );
+
+        if (context.mounted) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => PracticeQueueScreen(
+              practiceBlockId: pb.practiceBlockId,
+              userId: userId,
+            ),
+          ));
+        }
+      },
+      tooltip: 'Start practice with this drill',
+    );
   }
 }
 

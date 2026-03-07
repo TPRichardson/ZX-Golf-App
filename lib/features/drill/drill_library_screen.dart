@@ -185,6 +185,17 @@ class _StartDrillButton extends ConsumerWidget {
         color: ColorTokens.successDefault,
       ),
       onPressed: () async {
+        // Auto-adopt the drill if not already adopted.
+        final drillRepo = ref.read(drillRepositoryProvider);
+        try {
+          await drillRepo.adoptDrill(userId, drillId);
+        } on ValidationException {
+          // Missing clubs — proceed anyway, user can still practice.
+        } catch (_) {
+          // Already adopted or other non-fatal error.
+        }
+
+        if (!context.mounted) return;
         final surface = await showSurfacePicker(context);
         if (surface == null || !context.mounted) return;
 
