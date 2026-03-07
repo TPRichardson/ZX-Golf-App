@@ -46,6 +46,7 @@ class Drills extends Table {
       integer().named('RequiredAttemptsPerSet').nullable()();
   TextColumn get anchors =>
       text().named('Anchors').withDefault(const Constant('{}'))();
+  RealColumn get target => real().named('Target').nullable()();
   TextColumn get origin =>
       text().named('Origin').map(const DrillOriginConverter())();
   TextColumn get status => text()

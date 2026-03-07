@@ -1,11 +1,15 @@
 // Phase 4 — Post-Session Summary Screen.
 // S13 §13.13 — Summary after session close: score, delta, integrity.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
+import 'package:zx_golf_app/providers/repository_providers.dart';
 
 /// S13 §13.13 — Post-session summary showing score and performance data.
 class PostSessionSummaryScreen extends ConsumerWidget {
@@ -24,7 +28,8 @@ class PostSessionSummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final score = sessionScore;
+    final isCustom = drill.origin == DrillOrigin.userCustom;
+    final score = isCustom ? null : sessionScore;
     final hasIntegrityFlag = integrityBreach;
 
     return Scaffold(
@@ -92,7 +97,8 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: SpacingTokens.xxl),
-                    // Score display.
+                    // Score display — system drills show /5 score,
+                    // custom drills show raw metrics.
                     if (score != null) ...[
                       Text(
                         score.toStringAsFixed(1),
@@ -111,7 +117,13 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                           color: ColorTokens.textSecondary,
                         ),
                       ),
-                    ] else
+                    ] else if (isCustom)
+                      _CustomDrillMetrics(
+                        sessionId: session.sessionId,
+                        drill: drill,
+                        ref: ref,
+                      )
+                    else
                       Text(
                         'No Score',
                         style: TextStyle(
@@ -253,5 +265,103 @@ class _DetailRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Raw metric summary for custom drills (no /5 score).
+class _CustomDrillMetrics extends StatelessWidget {
+  final String sessionId;
+  final Drill drill;
+  final WidgetRef ref;
+
+  const _CustomDrillMetrics({
+    required this.sessionId,
+    required this.drill,
+    required this.ref,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Instance>>(
+      future: ref
+          .read(scoringRepositoryProvider)
+          .getInstancesForSession(sessionId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text(
+            'Custom Drill',
+            style: TextStyle(
+              fontSize: TypographyTokens.displayLgSize,
+              fontWeight: TypographyTokens.displayLgWeight,
+              color: ColorTokens.textTertiary,
+            ),
+          );
+        }
+
+        final instances = snapshot.data!;
+        final metrics = _computeMetrics(instances);
+
+        return Column(
+          children: [
+            Text(
+              'Custom Drill',
+              style: TextStyle(
+                fontSize: TypographyTokens.bodyLgSize,
+                color: ColorTokens.textTertiary,
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.md),
+            // Show computed metrics.
+            for (final entry in metrics.entries)
+              _DetailRow(label: entry.key, value: entry.value),
+            if (drill.target != null) ...[
+              const SizedBox(height: SpacingTokens.sm),
+              _DetailRow(
+                label: 'Target',
+                value: drill.target!.toStringAsFixed(1),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Map<String, String> _computeMetrics(List<Instance> instances) {
+    final metrics = <String, String>{};
+    metrics['Attempts'] = '${instances.length}';
+
+    // Try to compute hit rate from rawMetrics.
+    int hits = 0;
+    bool hasHitData = false;
+    final numericValues = <double>[];
+
+    for (final instance in instances) {
+      try {
+        final raw = jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
+        if (raw.containsKey('hit')) {
+          hasHitData = true;
+          if (raw['hit'] == true) hits++;
+        }
+        if (raw.containsKey('value')) {
+          final v = (raw['value'] as num).toDouble();
+          numericValues.add(v);
+        }
+      } catch (_) {}
+    }
+
+    if (hasHitData) {
+      final rate = (hits / instances.length * 100).toStringAsFixed(1);
+      metrics['Hits'] = '$hits / ${instances.length}';
+      metrics['Hit Rate'] = '$rate%';
+    }
+
+    if (numericValues.isNotEmpty) {
+      final avg = numericValues.reduce((a, b) => a + b) / numericValues.length;
+      metrics['Average'] = avg.toStringAsFixed(1);
+      metrics['Best'] = numericValues.reduce((a, b) => a > b ? a : b).toStringAsFixed(1);
+    }
+
+    return metrics;
   }
 }

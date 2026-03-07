@@ -86,9 +86,10 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     }
 
     final drill = _drill!;
+    final isSystem = drill.origin == DrillOrigin.system;
     final isScored = drill.drillType != DrillType.techniqueBlock;
     final canEditAnchors =
-        widget.isCustom && drill.status == DrillStatus.active && isScored;
+        isSystem && widget.isCustom && drill.status == DrillStatus.active && isScored;
 
     return Scaffold(
       appBar: ZxAppBar(
@@ -149,8 +150,8 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
               value: drill.targetDistanceMode!.dbValue,
             ),
 
-          // Anchors section.
-          if (isScored) ...[
+          // Anchors section — system drills only.
+          if (isSystem && isScored) ...[
             const SizedBox(height: SpacingTokens.lg),
             Text(
               'Anchors',
@@ -184,6 +185,29 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
                 onPressed: _saveAnchors,
               ),
             ],
+          ],
+          // Target section — custom drills only.
+          if (!isSystem && isScored) ...[
+            const SizedBox(height: SpacingTokens.lg),
+            Text(
+              'Target',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: ColorTokens.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: SpacingTokens.sm),
+            if (drill.target != null)
+              _DetailRow(
+                label: 'Personal Target',
+                value: drill.target!.toStringAsFixed(1),
+              )
+            else
+              Text(
+                'No target set',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ColorTokens.textTertiary,
+                    ),
+              ),
           ],
         ],
       ),

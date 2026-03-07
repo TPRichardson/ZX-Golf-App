@@ -26,6 +26,7 @@ extension DrillSyncDto on Drill {
         'RequiredSetCount': requiredSetCount,
         'RequiredAttemptsPerSet': requiredAttemptsPerSet,
         'Anchors': jsonDecode(anchors),
+        'Target': target,
         'Origin': origin.dbValue,
         'Status': status.dbValue,
         'IsDeleted': isDeleted,
@@ -82,6 +83,9 @@ DrillsCompanion drillFromSyncDto(Map<String, dynamic> json) => DrillsCompanion(
             ? json['Anchors'] as String
             : jsonEncode(json['Anchors']),
       ),
+      target: Value(json['Target'] != null
+          ? (json['Target'] as num).toDouble()
+          : null),
       origin: Value(DrillOrigin.fromString(json['Origin'] as String)),
       status: Value(DrillStatus.fromString(json['Status'] as String)),
       isDeleted: Value(json['IsDeleted'] as bool),

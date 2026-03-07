@@ -83,6 +83,7 @@ class SessionScoringResult {
   final Set<String> subskillIds;
   final String drillType;
   final bool isDualMapped;
+  final bool isCustomDrill;
 
   const SessionScoringResult({
     required this.sessionId,
@@ -92,5 +93,6 @@ class SessionScoringResult {
     required this.subskillIds,
     required this.drillType,
     required this.isDualMapped,
+    this.isCustomDrill = false,
   });
 }

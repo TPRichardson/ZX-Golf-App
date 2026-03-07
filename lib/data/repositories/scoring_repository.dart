@@ -212,12 +212,14 @@ class ScoringRepository {
       ),
     ]);
 
+    // Only system drills contribute to the 1000 score / windows.
     query.where(
       _db.practiceBlocks.userId.equals(userId) &
           _db.sessions.status.equalsValue(SessionStatus.closed) &
           _db.sessions.isDeleted.equals(false) &
           _db.drills.isDeleted.equals(false) &
           _db.drills.drillType.equalsValue(drillType) &
+          _db.drills.origin.equalsValue(DrillOrigin.system) &
           _db.drills.subskillMapping.like('%$subskillId%'),
     );
 

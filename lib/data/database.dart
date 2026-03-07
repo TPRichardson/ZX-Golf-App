@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,6 +120,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV4ToV5(m);
               case 5:
                 await _migrateV5ToV6(m);
+              case 6:
+                await _migrateV6ToV7(m);
             }
           }
         },
@@ -138,6 +140,11 @@ class AppDatabase extends _$AppDatabase {
   // 8A — Partial indexes on IsDeleted=false for high-traffic queries.
   Future<void> _migrateV3ToV4(Migrator m) async {
     await _createPartialIndexes();
+  }
+
+  // Add Target column to Drill table for custom drill targets.
+  Future<void> _migrateV6ToV7(Migrator m) async {
+    await customStatement('ALTER TABLE Drill ADD COLUMN Target REAL');
   }
 
   // Add SurfaceType column to PracticeBlock and Session tables.

@@ -1829,6 +1829,15 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
     requiredDuringInsert: false,
     defaultValue: const Constant('{}'),
   );
+  static const VerificationMeta _targetMeta = const VerificationMeta('target');
+  @override
+  late final GeneratedColumn<double> target = GeneratedColumn<double>(
+    'Target',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<DrillOrigin, String> origin =
       GeneratedColumn<String>(
@@ -1908,6 +1917,7 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
     requiredSetCount,
     requiredAttemptsPerSet,
     anchors,
+    target,
     origin,
     status,
     isDeleted,
@@ -2017,6 +2027,12 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
       context.handle(
         _anchorsMeta,
         anchors.isAcceptableOrUnknown(data['Anchors']!, _anchorsMeta),
+      );
+    }
+    if (data.containsKey('Target')) {
+      context.handle(
+        _targetMeta,
+        target.isAcceptableOrUnknown(data['Target']!, _targetMeta),
       );
     }
     if (data.containsKey('IsDeleted')) {
@@ -2138,6 +2154,10 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
         DriftSqlType.string,
         data['${effectivePrefix}Anchors'],
       )!,
+      target: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}Target'],
+      ),
       origin: $DrillsTable.$converterorigin.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -2226,6 +2246,7 @@ class Drill extends DataClass implements Insertable<Drill> {
   final int requiredSetCount;
   final int? requiredAttemptsPerSet;
   final String anchors;
+  final double? target;
   final DrillOrigin origin;
   final DrillStatus status;
   final bool isDeleted;
@@ -2251,6 +2272,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     required this.requiredSetCount,
     this.requiredAttemptsPerSet,
     required this.anchors,
+    this.target,
     required this.origin,
     required this.status,
     required this.isDeleted,
@@ -2321,6 +2343,9 @@ class Drill extends DataClass implements Insertable<Drill> {
       map['RequiredAttemptsPerSet'] = Variable<int>(requiredAttemptsPerSet);
     }
     map['Anchors'] = Variable<String>(anchors);
+    if (!nullToAbsent || target != null) {
+      map['Target'] = Variable<double>(target);
+    }
     {
       map['Origin'] = Variable<String>(
         $DrillsTable.$converterorigin.toSql(origin),
@@ -2378,6 +2403,9 @@ class Drill extends DataClass implements Insertable<Drill> {
           ? const Value.absent()
           : Value(requiredAttemptsPerSet),
       anchors: Value(anchors),
+      target: target == null && nullToAbsent
+          ? const Value.absent()
+          : Value(target),
       origin: Value(origin),
       status: Value(status),
       isDeleted: Value(isDeleted),
@@ -2421,6 +2449,7 @@ class Drill extends DataClass implements Insertable<Drill> {
         json['requiredAttemptsPerSet'],
       ),
       anchors: serializer.fromJson<String>(json['anchors']),
+      target: serializer.fromJson<double?>(json['target']),
       origin: serializer.fromJson<DrillOrigin>(json['origin']),
       status: serializer.fromJson<DrillStatus>(json['status']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
@@ -2455,6 +2484,7 @@ class Drill extends DataClass implements Insertable<Drill> {
       'requiredSetCount': serializer.toJson<int>(requiredSetCount),
       'requiredAttemptsPerSet': serializer.toJson<int?>(requiredAttemptsPerSet),
       'anchors': serializer.toJson<String>(anchors),
+      'target': serializer.toJson<double?>(target),
       'origin': serializer.toJson<DrillOrigin>(origin),
       'status': serializer.toJson<DrillStatus>(status),
       'isDeleted': serializer.toJson<bool>(isDeleted),
@@ -2483,6 +2513,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     int? requiredSetCount,
     Value<int?> requiredAttemptsPerSet = const Value.absent(),
     String? anchors,
+    Value<double?> target = const Value.absent(),
     DrillOrigin? origin,
     DrillStatus? status,
     bool? isDeleted,
@@ -2522,6 +2553,7 @@ class Drill extends DataClass implements Insertable<Drill> {
         ? requiredAttemptsPerSet.value
         : this.requiredAttemptsPerSet,
     anchors: anchors ?? this.anchors,
+    target: target.present ? target.value : this.target,
     origin: origin ?? this.origin,
     status: status ?? this.status,
     isDeleted: isDeleted ?? this.isDeleted,
@@ -2571,6 +2603,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           ? data.requiredAttemptsPerSet.value
           : this.requiredAttemptsPerSet,
       anchors: data.anchors.present ? data.anchors.value : this.anchors,
+      target: data.target.present ? data.target.value : this.target,
       origin: data.origin.present ? data.origin.value : this.origin,
       status: data.status.present ? data.status.value : this.status,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
@@ -2601,6 +2634,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           ..write('requiredSetCount: $requiredSetCount, ')
           ..write('requiredAttemptsPerSet: $requiredAttemptsPerSet, ')
           ..write('anchors: $anchors, ')
+          ..write('target: $target, ')
           ..write('origin: $origin, ')
           ..write('status: $status, ')
           ..write('isDeleted: $isDeleted, ')
@@ -2631,6 +2665,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     requiredSetCount,
     requiredAttemptsPerSet,
     anchors,
+    target,
     origin,
     status,
     isDeleted,
@@ -2660,6 +2695,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           other.requiredSetCount == this.requiredSetCount &&
           other.requiredAttemptsPerSet == this.requiredAttemptsPerSet &&
           other.anchors == this.anchors &&
+          other.target == this.target &&
           other.origin == this.origin &&
           other.status == this.status &&
           other.isDeleted == this.isDeleted &&
@@ -2687,6 +2723,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
   final Value<int> requiredSetCount;
   final Value<int?> requiredAttemptsPerSet;
   final Value<String> anchors;
+  final Value<double?> target;
   final Value<DrillOrigin> origin;
   final Value<DrillStatus> status;
   final Value<bool> isDeleted;
@@ -2713,6 +2750,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     this.requiredSetCount = const Value.absent(),
     this.requiredAttemptsPerSet = const Value.absent(),
     this.anchors = const Value.absent(),
+    this.target = const Value.absent(),
     this.origin = const Value.absent(),
     this.status = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -2740,6 +2778,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     this.requiredSetCount = const Value.absent(),
     this.requiredAttemptsPerSet = const Value.absent(),
     this.anchors = const Value.absent(),
+    this.target = const Value.absent(),
     required DrillOrigin origin,
     this.status = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -2773,6 +2812,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     Expression<int>? requiredSetCount,
     Expression<int>? requiredAttemptsPerSet,
     Expression<String>? anchors,
+    Expression<double>? target,
     Expression<String>? origin,
     Expression<String>? status,
     Expression<bool>? isDeleted,
@@ -2802,6 +2842,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
       if (requiredAttemptsPerSet != null)
         'RequiredAttemptsPerSet': requiredAttemptsPerSet,
       if (anchors != null) 'Anchors': anchors,
+      if (target != null) 'Target': target,
       if (origin != null) 'Origin': origin,
       if (status != null) 'Status': status,
       if (isDeleted != null) 'IsDeleted': isDeleted,
@@ -2831,6 +2872,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     Value<int>? requiredSetCount,
     Value<int?>? requiredAttemptsPerSet,
     Value<String>? anchors,
+    Value<double?>? target,
     Value<DrillOrigin>? origin,
     Value<DrillStatus>? status,
     Value<bool>? isDeleted,
@@ -2859,6 +2901,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
       requiredAttemptsPerSet:
           requiredAttemptsPerSet ?? this.requiredAttemptsPerSet,
       anchors: anchors ?? this.anchors,
+      target: target ?? this.target,
       origin: origin ?? this.origin,
       status: status ?? this.status,
       isDeleted: isDeleted ?? this.isDeleted,
@@ -2950,6 +2993,9 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     if (anchors.present) {
       map['Anchors'] = Variable<String>(anchors.value);
     }
+    if (target.present) {
+      map['Target'] = Variable<double>(target.value);
+    }
     if (origin.present) {
       map['Origin'] = Variable<String>(
         $DrillsTable.$converterorigin.toSql(origin.value),
@@ -2997,6 +3043,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
           ..write('requiredSetCount: $requiredSetCount, ')
           ..write('requiredAttemptsPerSet: $requiredAttemptsPerSet, ')
           ..write('anchors: $anchors, ')
+          ..write('target: $target, ')
           ..write('origin: $origin, ')
           ..write('status: $status, ')
           ..write('isDeleted: $isDeleted, ')
@@ -19624,6 +19671,7 @@ typedef $$DrillsTableCreateCompanionBuilder =
       Value<int> requiredSetCount,
       Value<int?> requiredAttemptsPerSet,
       Value<String> anchors,
+      Value<double?> target,
       required DrillOrigin origin,
       Value<DrillStatus> status,
       Value<bool> isDeleted,
@@ -19652,6 +19700,7 @@ typedef $$DrillsTableUpdateCompanionBuilder =
       Value<int> requiredSetCount,
       Value<int?> requiredAttemptsPerSet,
       Value<String> anchors,
+      Value<double?> target,
       Value<DrillOrigin> origin,
       Value<DrillStatus> status,
       Value<bool> isDeleted,
@@ -19773,6 +19822,11 @@ class $$DrillsTableFilterComposer
 
   ColumnFilters<String> get anchors => $composableBuilder(
     column: $table.anchors,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get target => $composableBuilder(
+    column: $table.target,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19908,6 +19962,11 @@ class $$DrillsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get target => $composableBuilder(
+    column: $table.target,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get origin => $composableBuilder(
     column: $table.origin,
     builder: (column) => ColumnOrderings(column),
@@ -20026,6 +20085,9 @@ class $$DrillsTableAnnotationComposer
   GeneratedColumn<String> get anchors =>
       $composableBuilder(column: $table.anchors, builder: (column) => column);
 
+  GeneratedColumn<double> get target =>
+      $composableBuilder(column: $table.target, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<DrillOrigin, String> get origin =>
       $composableBuilder(column: $table.origin, builder: (column) => column);
 
@@ -20091,6 +20153,7 @@ class $$DrillsTableTableManager
                 Value<int> requiredSetCount = const Value.absent(),
                 Value<int?> requiredAttemptsPerSet = const Value.absent(),
                 Value<String> anchors = const Value.absent(),
+                Value<double?> target = const Value.absent(),
                 Value<DrillOrigin> origin = const Value.absent(),
                 Value<DrillStatus> status = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20117,6 +20180,7 @@ class $$DrillsTableTableManager
                 requiredSetCount: requiredSetCount,
                 requiredAttemptsPerSet: requiredAttemptsPerSet,
                 anchors: anchors,
+                target: target,
                 origin: origin,
                 status: status,
                 isDeleted: isDeleted,
@@ -20147,6 +20211,7 @@ class $$DrillsTableTableManager
                 Value<int> requiredSetCount = const Value.absent(),
                 Value<int?> requiredAttemptsPerSet = const Value.absent(),
                 Value<String> anchors = const Value.absent(),
+                Value<double?> target = const Value.absent(),
                 required DrillOrigin origin,
                 Value<DrillStatus> status = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20173,6 +20238,7 @@ class $$DrillsTableTableManager
                 requiredSetCount: requiredSetCount,
                 requiredAttemptsPerSet: requiredAttemptsPerSet,
                 anchors: anchors,
+                target: target,
                 origin: origin,
                 status: status,
                 isDeleted: isDeleted,

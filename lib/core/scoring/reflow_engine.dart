@@ -970,12 +970,13 @@ class ReflowEngine {
     final adapterType = parseScoringAdapterBinding(schema.scoringAdapterBinding);
     final subskillMapping = _parseSubskillMapping(drill.subskillMapping);
     final isDualMapped = subskillMapping.length > 1;
+    final isCustomDrill = drill.origin == DrillOrigin.userCustom;
 
-    // Score instances.
+    // Score instances — only for system drills.
     double sessionScore = 0.0;
     bool integrityBreach = false;
 
-    if (adapterType != ScoringAdapterType.none) {
+    if (!isCustomDrill && adapterType != ScoringAdapterType.none) {
       final instances =
           await _scoringRepo.getInstancesForSession(sessionId);
 
@@ -1012,7 +1013,9 @@ class ReflowEngine {
     // Fix 8 — Session close pipeline: update materialised tables directly
     // instead of routing through executeReflow(). Per TD-03 §4.4, session close
     // is the primary scoring pipeline, not a reflow.
-    if (adapterType != ScoringAdapterType.none &&
+    // Custom drills are excluded — they don't contribute to the 1000 score.
+    if (!isCustomDrill &&
+        adapterType != ScoringAdapterType.none &&
         drill.drillType != DrillType.techniqueBlock &&
         subskillMapping.isNotEmpty) {
       final trigger = ReflowTrigger(
@@ -1036,17 +1039,19 @@ class ReflowEngine {
         'sessionScore': sessionScore,
         'integrityBreach': integrityBreach,
         'drillType': drill.drillType.dbValue,
+        'isCustomDrill': isCustomDrill,
       })),
     ));
 
     return SessionScoringResult(
       sessionId: sessionId,
       drillId: drill.drillId,
-      sessionScore: sessionScore,
+      sessionScore: isCustomDrill ? 0.0 : sessionScore,
       integrityBreach: integrityBreach,
       subskillIds: subskillMapping,
       drillType: drill.drillType.dbValue,
       isDualMapped: isDualMapped,
+      isCustomDrill: isCustomDrill,
     );
   }
 

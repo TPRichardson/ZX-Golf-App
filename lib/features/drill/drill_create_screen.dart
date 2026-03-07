@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
@@ -36,17 +34,12 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
   SkillArea? _skillArea;
   // Step 2: Drill Type.
   DrillType? _drillType;
-  // Step 3 (scored only): Subskill(s) — max 2.
-  final Set<String> _selectedSubskills = {};
-  List<SubskillRef> _availableSubskills = [];
   // Metric Schema.
   String? _metricSchemaId;
   List<MetricSchema> _schemas = [];
   // Set structure (scored only).
   int _requiredSetCount = 1;
   int? _requiredAttemptsPerSet = 10;
-  // Anchors (scored only).
-  final Map<String, ({double min, double scratch, double pro})> _anchors = {};
 
   // Controllers for set structure step — must be class-level to survive rebuilds.
   late final TextEditingController _setCountCtrl;
@@ -75,12 +68,18 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
     _nameController.dispose();
     _setCountCtrl.dispose();
     _attemptsCtrl.dispose();
+    _targetCtrl.dispose();
     super.dispose();
   }
 
+  // Optional target value for custom drills (replaces anchors).
+  double? _target;
+  late final TextEditingController _targetCtrl =
+      TextEditingController(text: '');
+
   // Technique: Name→SkillArea→DrillType→MetricSchema (4 steps).
-  // Scored: Name→SkillArea→DrillType→Subskills→MetricSchema→SetStructure→Anchors (7 steps).
-  int get _totalSteps => _drillType == DrillType.techniqueBlock ? 4 : 7;
+  // Scored: Name→SkillArea→DrillType→MetricSchema→SetStructure→Target (6 steps).
+  int get _totalSteps => _drillType == DrillType.techniqueBlock ? 4 : 6;
 
   @override
   Widget build(BuildContext context) {
@@ -139,14 +138,12 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
       0 => _buildNameStep(),
       1 => _buildSkillAreaStep(),
       2 => _buildDrillTypeStep(),
-      // Technique skips subskills and goes straight to MetricSchema at step 3.
-      3 => _drillType == DrillType.techniqueBlock
-          ? _buildMetricSchemaStep()
-          : _buildSubskillStep(),
-      4 => _buildMetricSchemaStep(),
-      5 => _buildSetStructureStep(),
-      6 => _buildAnchorsStep(),
-      _ => _buildAnchorsStep(),
+      // Technique: MetricSchema at step 3 (last step).
+      // Scored: MetricSchema→SetStructure→Target.
+      3 => _buildMetricSchemaStep(),
+      4 => _buildSetStructureStep(),
+      5 => _buildTargetStep(),
+      _ => _buildTargetStep(),
     };
   }
 
@@ -196,92 +193,6 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSubskillStep() {
-    return FutureBuilder<List<SubskillRef>>(
-      future: _loadSubskillsForArea(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        _availableSubskills = snapshot.data!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Select Subskill(s)',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: ColorTokens.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: SpacingTokens.sm),
-            Text(
-              'Choose up to 2 subskills this drill targets',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: ColorTokens.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: SpacingTokens.md),
-            Expanded(
-              child: ListView(
-                children: [
-                  for (final sub in _availableSubskills)
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: SpacingTokens.sm),
-                      child: ZxCard(
-                        onTap: () {
-                          final isSelected = _selectedSubskills
-                              .contains(sub.subskillId);
-                          if (isSelected) {
-                            setState(() =>
-                                _selectedSubskills.remove(sub.subskillId));
-                          } else if (_selectedSubskills.length < 2) {
-                            setState(() =>
-                                _selectedSubskills.add(sub.subskillId));
-                          }
-                        },
-                        child: Row(
-                          children: [
-                            Icon(
-                              _selectedSubskills.contains(sub.subskillId)
-                                  ? Icons.check_box
-                                  : Icons.check_box_outline_blank,
-                              color: _selectedSubskills
-                                      .contains(sub.subskillId)
-                                  ? ColorTokens.primaryDefault
-                                  : (_selectedSubskills.length >= 2
-                                      ? ColorTokens.textTertiary
-                                          .withAlpha(100)
-                                      : ColorTokens.textTertiary),
-                            ),
-                            const SizedBox(width: SpacingTokens.sm),
-                            Text(
-                              sub.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: _selectedSubskills
-                                                .contains(sub.subskillId) ||
-                                            _selectedSubskills.length < 2
-                                        ? ColorTokens.textPrimary
-                                        : ColorTokens.textTertiary,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -448,43 +359,35 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
     );
   }
 
-  Widget _buildAnchorsStep() {
-    // Ensure all selected subskills have anchor entries.
-    for (final subId in _selectedSubskills) {
-      _anchors.putIfAbsent(subId, () => (min: 30, scratch: 70, pro: 90));
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Set Anchors',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: ColorTokens.textPrimary,
-                ),
-          ),
-          const SizedBox(height: SpacingTokens.sm),
-          Text(
-            'Define Min, Scratch, and Pro benchmark values',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: ColorTokens.textSecondary,
-                ),
-          ),
-          const SizedBox(height: SpacingTokens.md),
-          for (final subId in _selectedSubskills) ...[
-            _AnchorFields(
-              subskillId: subId,
-              label: _formatSubskillId(subId),
-              initial: _anchors[subId]!,
-              onChanged: (values) {
-                _anchors[subId] = values;
-              },
-            ),
-            const SizedBox(height: SpacingTokens.lg),
-          ],
-        ],
-      ),
+  Widget _buildTargetStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Set Target (Optional)',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: ColorTokens.textPrimary,
+              ),
+        ),
+        const SizedBox(height: SpacingTokens.sm),
+        Text(
+          'Set a personal target for this drill. '
+          'This is for your reference only and does not affect scoring.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: ColorTokens.textSecondary,
+              ),
+        ),
+        const SizedBox(height: SpacingTokens.md),
+        ZxInputField(
+          label: 'Target (e.g. hit rate %, distance)',
+          controller: _targetCtrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          hintText: 'Leave empty for no target',
+          onChanged: (val) {
+            _target = double.tryParse(val);
+          },
+        ),
+      ],
     );
   }
 
@@ -572,23 +475,8 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
         if (_drillType == DrillType.techniqueBlock) {
           _requiredSetCount = 1;
           _requiredAttemptsPerSet = null;
-          _selectedSubskills.clear();
         }
-      case 3: // Technique→MetricSchema, Scored→Subskills.
-        if (_drillType == DrillType.techniqueBlock) {
-          // MetricSchema validation.
-          if (_metricSchemaId == null) {
-            setState(() => _errorMessage = 'Select a metric schema');
-            return;
-          }
-        } else {
-          // Subskill validation — at least 1 required for scored drills.
-          if (_selectedSubskills.isEmpty) {
-            setState(() => _errorMessage = 'Select at least one subskill');
-            return;
-          }
-        }
-      case 4: // MetricSchema (scored only).
+      case 3: // MetricSchema.
         if (_metricSchemaId == null) {
           setState(() => _errorMessage = 'Select a metric schema');
           return;
@@ -600,16 +488,6 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
 
   Future<void> _createDrill() async {
     setState(() => _isCreating = true);
-
-    // Build anchors JSON.
-    final anchorsMap = <String, Map<String, double>>{};
-    for (final entry in _anchors.entries) {
-      anchorsMap[entry.key] = {
-        'Min': entry.value.min,
-        'Scratch': entry.value.scratch,
-        'Pro': entry.value.pro,
-      };
-    }
 
     final inputMode = _schemas
             .where((s) => s.metricSchemaId == _metricSchemaId)
@@ -626,9 +504,9 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
               drillType: drift.Value(_drillType!),
               inputMode: drift.Value(inputMode),
               metricSchemaId: drift.Value(_metricSchemaId!),
-              subskillMapping: drift.Value(
-                  jsonEncode(_selectedSubskills.toList())),
-              anchors: drift.Value(jsonEncode(anchorsMap)),
+              subskillMapping: const drift.Value('[]'),
+              anchors: const drift.Value('{}'),
+              target: drift.Value(_target),
               requiredSetCount: drift.Value(_requiredSetCount),
               requiredAttemptsPerSet:
                   drift.Value(_requiredAttemptsPerSet),
@@ -648,15 +526,6 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
   Future<void> _saveAndPractice() async {
     setState(() => _isCreating = true);
 
-    final anchorsMap = <String, Map<String, double>>{};
-    for (final entry in _anchors.entries) {
-      anchorsMap[entry.key] = {
-        'Min': entry.value.min,
-        'Scratch': entry.value.scratch,
-        'Pro': entry.value.pro,
-      };
-    }
-
     final inputMode = _schemas
             .where((s) => s.metricSchemaId == _metricSchemaId)
             .firstOrNull
@@ -672,9 +541,9 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
               drillType: drift.Value(_drillType!),
               inputMode: drift.Value(inputMode),
               metricSchemaId: drift.Value(_metricSchemaId!),
-              subskillMapping:
-                  drift.Value(jsonEncode(_selectedSubskills.toList())),
-              anchors: drift.Value(jsonEncode(anchorsMap)),
+              subskillMapping: const drift.Value('[]'),
+              anchors: const drift.Value('{}'),
+              target: drift.Value(_target),
               requiredSetCount: drift.Value(_requiredSetCount),
               requiredAttemptsPerSet: drift.Value(_requiredAttemptsPerSet),
             ),
@@ -708,14 +577,6 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
     }
   }
 
-  Future<List<SubskillRef>> _loadSubskillsForArea() async {
-    if (_skillArea == null) return [];
-    return (await ref
-            .read(referenceRepositoryProvider)
-            .watchSubskillsBySkillArea(_skillArea!)
-            .first);
-  }
-
   String _drillTypeLabel(DrillType type) {
     return switch (type) {
       DrillType.techniqueBlock => 'Technique Block',
@@ -732,110 +593,5 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
     };
   }
 
-  String _formatSubskillId(String id) {
-    return id
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((w) => w.isNotEmpty
-            ? '${w[0].toUpperCase()}${w.substring(1)}'
-            : '')
-        .join(' ');
-  }
-}
-
-class _AnchorFields extends StatefulWidget {
-  final String subskillId;
-  final String label;
-  final ({double min, double scratch, double pro}) initial;
-  final ValueChanged<({double min, double scratch, double pro})> onChanged;
-
-  const _AnchorFields({
-    required this.subskillId,
-    required this.label,
-    required this.initial,
-    required this.onChanged,
-  });
-
-  @override
-  State<_AnchorFields> createState() => _AnchorFieldsState();
-}
-
-class _AnchorFieldsState extends State<_AnchorFields> {
-  late TextEditingController _minCtrl;
-  late TextEditingController _scratchCtrl;
-  late TextEditingController _proCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _minCtrl =
-        TextEditingController(text: widget.initial.min.toStringAsFixed(0));
-    _scratchCtrl = TextEditingController(
-        text: widget.initial.scratch.toStringAsFixed(0));
-    _proCtrl =
-        TextEditingController(text: widget.initial.pro.toStringAsFixed(0));
-  }
-
-  @override
-  void dispose() {
-    _minCtrl.dispose();
-    _scratchCtrl.dispose();
-    _proCtrl.dispose();
-    super.dispose();
-  }
-
-  void _notify() {
-    final min = double.tryParse(_minCtrl.text) ?? 0;
-    final scratch = double.tryParse(_scratchCtrl.text) ?? 0;
-    final pro = double.tryParse(_proCtrl.text) ?? 0;
-    widget.onChanged((min: min, scratch: scratch, pro: pro));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.label,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: ColorTokens.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        const SizedBox(height: SpacingTokens.sm),
-        Row(
-          children: [
-            Expanded(
-              child: ZxInputField(
-                label: 'Min',
-                controller: _minCtrl,
-                keyboardType: TextInputType.number,
-                onChanged: (_) => _notify(),
-              ),
-            ),
-            const SizedBox(width: SpacingTokens.sm),
-            Expanded(
-              child: ZxInputField(
-                label: 'Scratch',
-                controller: _scratchCtrl,
-                keyboardType: TextInputType.number,
-                onChanged: (_) => _notify(),
-              ),
-            ),
-            const SizedBox(width: SpacingTokens.sm),
-            Expanded(
-              child: ZxInputField(
-                label: 'Pro',
-                controller: _proCtrl,
-                keyboardType: TextInputType.number,
-                onChanged: (_) => _notify(),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
