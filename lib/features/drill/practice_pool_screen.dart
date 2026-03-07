@@ -78,9 +78,11 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                   ));
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.sm,
-                    vertical: SpacingTokens.xs,
+                  padding: const EdgeInsets.only(
+                    left: SpacingTokens.xs,
+                    right: SpacingTokens.sm,
+                    top: SpacingTokens.xs,
+                    bottom: SpacingTokens.xs,
                   ),
                   decoration: BoxDecoration(
                     borderRadius:
