@@ -166,20 +166,46 @@ class BagScreen extends ConsumerWidget {
     return 'Wedges';
   }
 
+  // Club categories for the grouped picker.
+  static const _clubGroups = <String, List<ClubType>>{
+    'Driver': [ClubType.driver],
+    'Woods': [
+      ClubType.w1, ClubType.w2, ClubType.w3, ClubType.w4, ClubType.w5,
+      ClubType.w6, ClubType.w7, ClubType.w8, ClubType.w9,
+    ],
+    'Hybrids': [
+      ClubType.h1, ClubType.h2, ClubType.h3, ClubType.h4, ClubType.h5,
+      ClubType.h6, ClubType.h7, ClubType.h8, ClubType.h9,
+    ],
+    'Irons': [
+      ClubType.i1, ClubType.i2, ClubType.i3, ClubType.i4, ClubType.i5,
+      ClubType.i6, ClubType.i7, ClubType.i8, ClubType.i9,
+    ],
+    'Wedges': [
+      ClubType.pw, ClubType.aw, ClubType.gw, ClubType.sw, ClubType.uw,
+      ClubType.lw,
+    ],
+    'Putter': [ClubType.putter],
+    'Specialty': [ClubType.chipper],
+  };
+
   void _showAddClubDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Club'),
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Add Club',
+            style: TextStyle(color: ColorTokens.textPrimary)),
         content: SizedBox(
           width: double.maxFinite,
-          height: 400,
           child: ListView(
+            shrinkWrap: true,
             children: [
-              for (final type in ClubType.values)
-                ListTile(
-                  title: Text(type.dbValue),
-                  onTap: () async {
+              for (final entry in _clubGroups.entries)
+                _ClubGroupTile(
+                  category: entry.key,
+                  clubs: entry.value,
+                  onClubSelected: (type) async {
                     Navigator.pop(ctx);
                     await ref.read(clubRepositoryProvider).addClub(
                           _userId,
@@ -193,6 +219,75 @@ class BagScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A category row in the add-club picker. Single-item categories (Driver,
+/// Putter) select immediately on tap. Multi-item categories expand to show
+/// individual clubs.
+class _ClubGroupTile extends StatefulWidget {
+  final String category;
+  final List<ClubType> clubs;
+  final ValueChanged<ClubType> onClubSelected;
+
+  const _ClubGroupTile({
+    required this.category,
+    required this.clubs,
+    required this.onClubSelected,
+  });
+
+  @override
+  State<_ClubGroupTile> createState() => _ClubGroupTileState();
+}
+
+class _ClubGroupTileState extends State<_ClubGroupTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Single-club categories — tap selects directly.
+    if (widget.clubs.length == 1) {
+      return ListTile(
+        title: Text(widget.category,
+            style: const TextStyle(color: ColorTokens.textPrimary)),
+        leading: const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
+        onTap: () => widget.onClubSelected(widget.clubs.first),
+      );
+    }
+
+    // Multi-club categories — expand to show children.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          title: Text(widget.category,
+              style: const TextStyle(color: ColorTokens.textPrimary)),
+          leading:
+              const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
+          trailing: Icon(
+            _expanded ? Icons.expand_less : Icons.expand_more,
+            color: ColorTokens.textTertiary,
+          ),
+          onTap: () => setState(() => _expanded = !_expanded),
+        ),
+        if (_expanded)
+          Padding(
+            padding: const EdgeInsets.only(left: SpacingTokens.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: widget.clubs
+                  .map((club) => ListTile(
+                        dense: true,
+                        title: Text(club.dbValue,
+                            style: const TextStyle(
+                                color: ColorTokens.textSecondary)),
+                        onTap: () => widget.onClubSelected(club),
+                      ))
+                  .toList(),
+            ),
+          ),
+      ],
     );
   }
 }
