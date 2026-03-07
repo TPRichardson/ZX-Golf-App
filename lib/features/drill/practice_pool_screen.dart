@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
@@ -154,34 +155,11 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                       .toList();
 
               if (filtered.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.sports_golf,
-                        size: 48,
-                        color: ColorTokens.textTertiary,
-                      ),
-                      const SizedBox(height: SpacingTokens.md),
-                      Text(
-                        'No drills in your drill library',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: ColorTokens.textSecondary),
-                      ),
-                      const SizedBox(height: SpacingTokens.sm),
-                      Text(
-                        'Adopt drills from the System Library\nor create your own',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: ColorTokens.textTertiary),
-                      ),
-                    ],
-                  ),
+                return const EmptyState(
+                  icon: Icons.sports_golf,
+                  message: 'No drills in your drill library',
+                  subtitle:
+                      'Adopt drills from the System Library\nor create your own',
                 );
               }
 

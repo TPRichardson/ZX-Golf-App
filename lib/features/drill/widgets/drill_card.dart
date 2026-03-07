@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_badge.dart';
 import 'package:zx_golf_app/core/widgets/zx_card.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -70,12 +71,12 @@ class DrillCard extends StatelessWidget {
                 const SizedBox(height: SpacingTokens.xs),
                 Row(
                   children: [
-                    _Badge(
+                    ZxBadge(
                       label: drill.skillArea.dbValue,
                       color: _skillAreaColor(drill.skillArea),
                     ),
                     const SizedBox(width: SpacingTokens.xs),
-                    _Badge(
+                    ZxBadge(
                       label: _drillTypeLabel(drill.drillType),
                       color: _drillTypeColor(drill.drillType),
                     ),
@@ -108,33 +109,5 @@ class DrillCard extends StatelessWidget {
       DrillType.transition => ColorTokens.primaryDefault,
       DrillType.pressure => ColorTokens.warningIntegrity,
     };
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.sm,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
-      ),
-    );
   }
 }

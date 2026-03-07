@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -125,27 +126,27 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
         padding: const EdgeInsets.all(SpacingTokens.md),
         children: [
           // Status badge.
-          _DetailRow(label: 'Status', value: drill.status.dbValue),
-          _DetailRow(label: 'Skill Area', value: drill.skillArea.dbValue),
-          _DetailRow(label: 'Drill Type', value: _drillTypeLabel(drill.drillType)),
-          _DetailRow(label: 'Input Mode', value: drill.inputMode.dbValue),
-          _DetailRow(label: 'Origin', value: drill.origin.dbValue),
+          DetailRow(label: 'Status', value: drill.status.dbValue),
+          DetailRow(label: 'Skill Area', value: drill.skillArea.dbValue),
+          DetailRow(label: 'Drill Type', value: _drillTypeLabel(drill.drillType)),
+          DetailRow(label: 'Input Mode', value: drill.inputMode.dbValue),
+          DetailRow(label: 'Origin', value: drill.origin.dbValue),
           if (drill.requiredAttemptsPerSet != null)
-            _DetailRow(
+            DetailRow(
               label: 'Attempts/Set',
               value: '${drill.requiredAttemptsPerSet}',
             ),
-          _DetailRow(
+          DetailRow(
             label: 'Set Count',
             value: '${drill.requiredSetCount}',
           ),
           if (drill.clubSelectionMode != null)
-            _DetailRow(
+            DetailRow(
               label: 'Club Selection',
               value: drill.clubSelectionMode!.dbValue,
             ),
           if (drill.targetDistanceMode != null)
-            _DetailRow(
+            DetailRow(
               label: 'Target Distance',
               value: drill.targetDistanceMode!.dbValue,
             ),
@@ -181,7 +182,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
             ),
             const SizedBox(height: SpacingTokens.sm),
             if (drill.target != null)
-              _DetailRow(
+              DetailRow(
                 label: 'Personal Target',
                 value: drill.target!.toStringAsFixed(1),
               )
@@ -316,42 +317,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
             ? '${w[0].toUpperCase()}${w.substring(1)}'
             : '')
         .join(' ');
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: SpacingTokens.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: ColorTokens.textSecondary,
-                  ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: ColorTokens.textPrimary,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

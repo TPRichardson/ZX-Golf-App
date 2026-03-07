@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -27,15 +28,8 @@ class WeaknessRankingScreen extends ConsumerWidget {
       body: rankingAsync.when(
         data: (ranking) {
           if (ranking.isEmpty) {
-            return Center(
-              child: Text(
-                'No subskill data available',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodyLgSize,
-                  color: ColorTokens.textTertiary,
-                ),
-              ),
-            );
+            return const EmptyState(
+                message: 'No subskill data available');
           }
 
           final nameMap = refsAsync.whenOrNull(

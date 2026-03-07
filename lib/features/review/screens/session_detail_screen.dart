@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/formatters.dart';
+import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -66,21 +67,21 @@ class SessionDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: SpacingTokens.sm),
-                    _InfoRow(
+                    DetailRow(labelWidth: 100,
                         label: 'Score',
                         value: detail.sessionScore
                             .toStringAsFixed(2)),
-                    _InfoRow(
+                    DetailRow(labelWidth: 100,
                         label: 'Date',
                         value: _formatDate(detail.completionTimestamp)),
-                    _InfoRow(
+                    DetailRow(labelWidth: 100,
                         label: 'Skill Area',
                         value: detail.skillArea),
-                    _InfoRow(
+                    DetailRow(labelWidth: 100,
                         label: 'Drill Type',
                         value: detail.drillType),
                     if (detail.sessionDuration != null)
-                      _InfoRow(
+                      DetailRow(labelWidth: 100,
                           label: 'Duration',
                           value: _formatDuration(detail.sessionDuration!)),
                     // S11 §11.6 — Integrity flag display and suppression toggle.
@@ -181,42 +182,6 @@ class SessionDetailScreen extends ConsumerWidget {
 
   String _formatDate(DateTime? dt) =>
       formatDate(dt, includeTime: true);
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SpacingTokens.xs),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                color: ColorTokens.textTertiary,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              color: ColorTokens.textPrimary,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Lightweight session detail data.

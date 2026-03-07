@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/formatters.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -73,15 +74,7 @@ class GappingReviewScreen extends ConsumerWidget {
 
           final entries = _buildEntries(details);
           if (entries.isEmpty) {
-            return const Center(
-              child: Text(
-                'No data recorded',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
-                  color: ColorTokens.textSecondary,
-                ),
-              ),
-            );
+            return const EmptyState(message: 'No data recorded');
           }
 
           // §7.4.2 — Order by carry distance.
