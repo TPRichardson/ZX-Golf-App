@@ -12,6 +12,7 @@ import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_entry_card.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -85,6 +86,10 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       }
     }
 
+    // Prompt for environment/surface before starting.
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !mounted) return;
+
     final actions = ref.read(practiceActionsProvider);
 
     // S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
@@ -100,6 +105,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       entryWithDrill.entry.practiceEntryId,
       widget.userId,
       userDeclaration: userDeclaration,
+      surfaceType: envSurface.surface,
     );
 
     if (!mounted) return;

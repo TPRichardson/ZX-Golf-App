@@ -41,18 +41,18 @@ Future<void> endSessionAndNavigate(
   );
 }
 
-/// Show surface picker and update the session surface.
+/// Show environment/surface picker and update the session surface.
 /// Returns the new surface type, or null if cancelled.
 Future<SurfaceType?> changeSurface(
   BuildContext context,
   WidgetRef ref, {
   required String sessionId,
 }) async {
-  final newSurface = await showSurfacePicker(context);
-  if (newSurface != null && context.mounted) {
+  final result = await showEnvironmentSurfacePicker(context);
+  if (result != null && context.mounted) {
     await ref
         .read(practiceRepositoryProvider)
-        .updateSessionSurface(sessionId, newSurface);
+        .updateSessionSurface(sessionId, result.surface);
   }
-  return newSurface;
+  return result?.surface;
 }

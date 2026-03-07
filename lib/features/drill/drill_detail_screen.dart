@@ -234,14 +234,14 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     }
 
     if (!mounted) return;
-    final surface = await showSurfacePicker(context);
-    if (surface == null || !mounted) return;
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
       _userId,
       initialDrillIds: [drill.drillId],
-      surfaceType: surface,
+      surfaceType: envSurface.surface,
     );
 
     if (mounted) {

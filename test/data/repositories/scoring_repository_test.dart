@@ -282,7 +282,7 @@ void main() {
             inputMode: InputMode.gridCell,
             metricSchemaId: metricSchemaId,
             subskillMapping: Value(subskillMapping),
-            origin: DrillOrigin.userCustom,
+            origin: DrillOrigin.system,
             isDeleted: Value(drillIsDeleted),
             anchors:
                 const Value('{"irons_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),

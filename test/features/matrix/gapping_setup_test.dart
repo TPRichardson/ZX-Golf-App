@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/matrix/screens/gapping_setup_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/matrix_setup_screen.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 
 // Phase M5 — GappingSetupScreen widget tests.
@@ -39,7 +39,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingSetupScreen(userId: 'test-user'),
+            home: MatrixSetupScreen(userId: 'test-user', matrixType: MatrixType.gappingChart),
           ),
         ),
       );
@@ -63,7 +63,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingSetupScreen(userId: 'test-user'),
+            home: MatrixSetupScreen(userId: 'test-user', matrixType: MatrixType.gappingChart),
           ),
         ),
       );
@@ -90,7 +90,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingSetupScreen(userId: 'test-user'),
+            home: MatrixSetupScreen(userId: 'test-user', matrixType: MatrixType.gappingChart),
           ),
         ),
       );
@@ -112,7 +112,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingSetupScreen(userId: 'test-user'),
+            home: MatrixSetupScreen(userId: 'test-user', matrixType: MatrixType.gappingChart),
           ),
         ),
       );
@@ -130,7 +130,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingSetupScreen(userId: 'test-user'),
+            home: MatrixSetupScreen(userId: 'test-user', matrixType: MatrixType.gappingChart),
           ),
         ),
       );
@@ -141,7 +141,7 @@ void main() {
       expect(find.text('5'), findsOneWidget);
     });
 
-    testWidgets('shows environment dropdowns', (tester) async {
+    testWidgets('shows environment picker', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -150,13 +150,14 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingSetupScreen(userId: 'test-user'),
+            home: MatrixSetupScreen(userId: 'test-user', matrixType: MatrixType.gappingChart),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Environment (Optional)'), findsOneWidget);
+      expect(find.text('Environment'), findsOneWidget);
+      expect(find.text('Not set'), findsOneWidget);
     });
   });
 }

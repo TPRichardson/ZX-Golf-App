@@ -79,11 +79,11 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
   }
 
   Future<void> _changeSurface() async {
-    final newSurface = await showSurfacePicker(context);
-    if (newSurface != null && mounted) {
+    final result = await showEnvironmentSurfacePicker(context);
+    if (result != null && mounted) {
       await ref.read(practiceRepositoryProvider).updateSessionSurface(
-          widget.session.sessionId, newSurface);
-      setState(() => _surfaceType = newSurface);
+          widget.session.sessionId, result.surface);
+      setState(() => _surfaceType = result.surface);
     }
   }
 

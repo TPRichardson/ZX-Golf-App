@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/matrix_repository.dart';
-import 'package:zx_golf_app/features/matrix/screens/gapping_execution_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
 import 'package:zx_golf_app/features/matrix/widgets/matrix_execution_header.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
 
-// Phase M5 — GappingExecutionScreen widget tests.
+// Phase M5 — MatrixExecutionScreen widget tests.
 
 final _ts = DateTime.utc(2026, 3, 1, 12, 0, 0);
 
@@ -99,7 +99,7 @@ MatrixAttempt _makeAttempt(int index, {double carry = 150.0}) => MatrixAttempt(
     );
 
 void main() {
-  group('GappingExecutionScreen', () {
+  group('MatrixExecutionScreen', () {
     testWidgets('renders header with run info', (tester) async {
       final details = _makeRunDetails();
 
@@ -111,7 +111,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -136,7 +136,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -165,7 +165,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -194,7 +194,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -218,7 +218,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -245,7 +245,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -268,7 +268,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),
@@ -297,7 +297,7 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            home: GappingExecutionScreen(
+            home: MatrixExecutionScreen(
               matrixRunId: 'mr-test',
               userId: 'test-user',
             ),

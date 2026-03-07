@@ -2,10 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 
-/// Prompt user to select practice surface type (Grass/Mat).
+/// Result of the environment/surface picker flow.
+class EnvironmentSurfaceResult {
+  final EnvironmentType environment;
+  final SurfaceType surface;
+
+  const EnvironmentSurfaceResult({
+    required this.environment,
+    required this.surface,
+  });
+}
+
+/// Two-step picker: Indoor/Outdoor → (if Outdoor) Grass/Mat.
+/// Indoor auto-assigns Mat.
 /// Returns null if dismissed.
-Future<SurfaceType?> showSurfacePicker(BuildContext context) async {
-  return showDialog<SurfaceType>(
+Future<EnvironmentSurfaceResult?> showEnvironmentSurfacePicker(
+  BuildContext context,
+) async {
+  // Step 1: Indoor or Outdoor?
+  final environment = await showDialog<EnvironmentType>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: const Text(
+        'Practice Environment',
+        style: TextStyle(color: ColorTokens.textPrimary),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PickerOption(
+            label: 'Indoor',
+            icon: Icons.home,
+            color: ColorTokens.primaryDefault,
+            onTap: () => Navigator.pop(ctx, EnvironmentType.indoor),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          _PickerOption(
+            label: 'Outdoor',
+            icon: Icons.wb_sunny,
+            color: ColorTokens.successDefault,
+            onTap: () => Navigator.pop(ctx, EnvironmentType.outdoor),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (environment == null) return null;
+
+  // Step 2: Indoor → auto-assign Mat.
+  if (environment == EnvironmentType.indoor) {
+    return EnvironmentSurfaceResult(
+      environment: environment,
+      surface: SurfaceType.mat,
+    );
+  }
+
+  // Step 2: Outdoor → ask Grass or Mat.
+  if (!context.mounted) return null;
+  final surface = await showDialog<SurfaceType>(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: ColorTokens.surfaceModal,
@@ -19,14 +78,14 @@ Future<SurfaceType?> showSurfacePicker(BuildContext context) async {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _SurfaceOption(
+          _PickerOption(
             label: 'Grass',
             icon: Icons.grass,
             color: ColorTokens.successDefault,
             onTap: () => Navigator.pop(ctx, SurfaceType.grass),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          _SurfaceOption(
+          _PickerOption(
             label: 'Mat',
             icon: Icons.rectangle_outlined,
             color: ColorTokens.primaryDefault,
@@ -36,15 +95,22 @@ Future<SurfaceType?> showSurfacePicker(BuildContext context) async {
       ),
     ),
   );
+
+  if (surface == null) return null;
+
+  return EnvironmentSurfaceResult(
+    environment: environment,
+    surface: surface,
+  );
 }
 
-class _SurfaceOption extends StatelessWidget {
+class _PickerOption extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
-  const _SurfaceOption({
+  const _PickerOption({
     required this.label,
     required this.icon,
     required this.color,
@@ -85,7 +151,7 @@ class _SurfaceOption extends StatelessWidget {
   }
 }
 
-/// Small tappable badge showing current surface type.
+/// Small tappable badge showing current environment + surface.
 class SurfaceBadge extends StatelessWidget {
   final SurfaceType? surfaceType;
   final VoidCallback onTap;

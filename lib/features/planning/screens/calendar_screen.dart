@@ -914,14 +914,14 @@ class _StartTodayButton extends ConsumerWidget {
     WidgetRef ref,
     List<String> drillIds,
   ) async {
-    final surface = await showSurfacePicker(context);
-    if (surface == null || !context.mounted) return;
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !context.mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
-      surfaceType: surface,
+      surfaceType: envSurface.surface,
     );
 
     if (context.mounted) {

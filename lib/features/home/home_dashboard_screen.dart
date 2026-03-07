@@ -6,11 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/matrix/screens/chipping_setup_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/gapping_execution_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/gapping_setup_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/wedge_setup_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/matrix_setup_screen.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
@@ -258,17 +255,10 @@ class _ActionZone extends ConsumerWidget {
         if (activeMatrixRun != null && !hasActivePb) ...[
           FilledButton.icon(
             onPressed: () {
-              // Route to appropriate execution screen.
-              final Widget screen =
-                  activeMatrixRun.matrixType == MatrixType.gappingChart
-                      ? GappingExecutionScreen(
-                          matrixRunId: activeMatrixRun.matrixRunId,
-                          userId: userId,
-                        )
-                      : MatrixExecutionScreen(
-                          matrixRunId: activeMatrixRun.matrixRunId,
-                          userId: userId,
-                        );
+              final Widget screen = MatrixExecutionScreen(
+                matrixRunId: activeMatrixRun.matrixRunId,
+                userId: userId,
+              );
               Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => screen));
             },
@@ -329,7 +319,7 @@ class _ActionZone extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => GappingSetupScreen(userId: userId),
+                builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.gappingChart),
               ));
             },
             icon: Icon(Icons.grid_on, color: ColorTokens.primaryDefault),
@@ -346,7 +336,7 @@ class _ActionZone extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => WedgeSetupScreen(userId: userId),
+                builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.wedgeMatrix),
               ));
             },
             icon: Icon(Icons.grid_view, color: ColorTokens.primaryDefault),
@@ -363,7 +353,7 @@ class _ActionZone extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => ChippingSetupScreen(userId: userId),
+                builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.chippingMatrix),
               ));
             },
             icon: Icon(Icons.grid_3x3, color: ColorTokens.primaryDefault),
@@ -397,14 +387,14 @@ class _ActionZone extends ConsumerWidget {
     WidgetRef ref,
     List<String> drillIds,
   ) async {
-    final surface = await showSurfacePicker(context);
-    if (surface == null || !context.mounted) return;
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !context.mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
-      surfaceType: surface,
+      surfaceType: envSurface.surface,
     );
 
     if (context.mounted) {
@@ -421,11 +411,11 @@ class _ActionZone extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final surface = await showSurfacePicker(context);
-    if (surface == null || !context.mounted) return;
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !context.mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(userId, surfaceType: surface);
+    final pb = await actions.startPracticeBlock(userId, surfaceType: envSurface.surface);
 
     if (context.mounted) {
       Navigator.of(context).push(MaterialPageRoute(

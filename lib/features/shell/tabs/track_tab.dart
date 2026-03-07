@@ -5,11 +5,8 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/gapping_execution_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/gapping_setup_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/chipping_setup_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
-import 'package:zx_golf_app/features/matrix/screens/wedge_setup_screen.dart';
+import 'package:zx_golf_app/features/matrix/screens/matrix_setup_screen.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
 
 // S12 §12.3 — Track tab: Track Drills | Matrix dual-tab layout.
@@ -107,16 +104,10 @@ class _MatrixTab extends ConsumerWidget {
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: () {
-                        final screen =
-                            run.matrixType == MatrixType.gappingChart
-                                ? GappingExecutionScreen(
-                                    matrixRunId: run.matrixRunId,
-                                    userId: userId,
-                                  ) as Widget
-                                : MatrixExecutionScreen(
-                                    matrixRunId: run.matrixRunId,
-                                    userId: userId,
-                                  );
+                        final screen = MatrixExecutionScreen(
+                          matrixRunId: run.matrixRunId,
+                          userId: userId,
+                        );
                         Navigator.of(context)
                             .push(MaterialPageRoute(builder: (_) => screen));
                       },
@@ -163,7 +154,7 @@ class _MatrixTab extends ConsumerWidget {
                 title: 'Gapping Chart',
                 subtitle: 'One club at a time — measure carry and total.',
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => GappingSetupScreen(userId: userId),
+                  builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.gappingChart),
                 )),
               ),
               const SizedBox(height: SpacingTokens.md),
@@ -172,7 +163,7 @@ class _MatrixTab extends ConsumerWidget {
                 title: 'Wedge Matrix',
                 subtitle: 'Map your wedges.',
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => WedgeSetupScreen(userId: userId),
+                  builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.wedgeMatrix),
                 )),
               ),
               const SizedBox(height: SpacingTokens.md),
@@ -181,7 +172,7 @@ class _MatrixTab extends ConsumerWidget {
                 title: 'Chipping Matrix',
                 subtitle: 'Dial in short game accuracy.',
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => ChippingSetupScreen(userId: userId),
+                  builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.chippingMatrix),
                 )),
               ),
             ],

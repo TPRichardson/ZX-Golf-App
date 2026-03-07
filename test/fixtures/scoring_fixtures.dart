@@ -170,6 +170,7 @@ Future<String> seedTestDrill(
   required List<String> subskillMapping,
   required Map<String, Map<String, double>> anchors,
   InputMode inputMode = InputMode.gridCell,
+  DrillOrigin origin = DrillOrigin.system,
 }) async {
   await db.into(db.drills).insertOnConflictUpdate(DrillsCompanion.insert(
     drillId: drillId,
@@ -179,7 +180,7 @@ Future<String> seedTestDrill(
     inputMode: inputMode,
     metricSchemaId: metricSchemaId,
     subskillMapping: Value(jsonEncode(subskillMapping)),
-    origin: DrillOrigin.userCustom,
+    origin: origin,
     anchors: Value(jsonEncode(anchors)),
   ));
   return drillId;

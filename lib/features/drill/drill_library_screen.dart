@@ -196,14 +196,14 @@ class _StartDrillButton extends ConsumerWidget {
         }
 
         if (!context.mounted) return;
-        final surface = await showSurfacePicker(context);
-        if (surface == null || !context.mounted) return;
+        final envSurface = await showEnvironmentSurfacePicker(context);
+        if (envSurface == null || !context.mounted) return;
 
         final actions = ref.read(practiceActionsProvider);
         final pb = await actions.startPracticeBlock(
           userId,
           initialDrillIds: [drillId],
-          surfaceType: surface,
+          surfaceType: envSurface.surface,
         );
 
         if (context.mounted) {

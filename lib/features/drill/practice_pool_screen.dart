@@ -252,11 +252,11 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Future<void> _startCleanPractice() async {
-    final surface = await showSurfacePicker(context);
-    if (surface == null || !mounted) return;
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(_userId, surfaceType: surface);
+    final pb = await actions.startPracticeBlock(_userId, surfaceType: envSurface.surface);
 
     if (mounted) {
       Navigator.of(context).push(MaterialPageRoute(
@@ -368,14 +368,14 @@ class _PlayDrillButton extends ConsumerWidget {
         color: ColorTokens.successDefault,
       ),
       onPressed: () async {
-        final surface = await showSurfacePicker(context);
-        if (surface == null || !context.mounted) return;
+        final envSurface = await showEnvironmentSurfacePicker(context);
+        if (envSurface == null || !context.mounted) return;
 
         final actions = ref.read(practiceActionsProvider);
         final pb = await actions.startPracticeBlock(
           userId,
           initialDrillIds: [drillId],
-          surfaceType: surface,
+          surfaceType: envSurface.surface,
         );
 
         if (context.mounted) {
