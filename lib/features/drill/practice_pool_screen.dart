@@ -59,6 +59,8 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm, 0,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
                 'Your Drills',
@@ -73,12 +75,34 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     builder: (_) => const AddDrillsScreen(),
                   ));
                 },
-                child: Text(
-                  '+ Add',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpacingTokens.sm,
+                    vertical: SpacingTokens.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(ShapeTokens.radiusSegmented),
+                    border: Border.all(color: ColorTokens.primaryDefault),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline,
+                        size: 16,
                         color: ColorTokens.primaryDefault,
-                        fontWeight: FontWeight.w500,
                       ),
+                      const SizedBox(width: SpacingTokens.xs),
+                      Text(
+                        'Add',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: ColorTokens.primaryDefault,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const Spacer(),
