@@ -23,6 +23,10 @@ class DrillCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ZxCard(
       onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md,
+        vertical: SpacingTokens.sm,
+      ),
       child: Row(
         children: [
           // Skill area colour indicator.
