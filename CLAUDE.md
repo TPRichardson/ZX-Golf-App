@@ -81,6 +81,7 @@ When documents conflict, higher precedence wins:
 - **No invented architecture.** Do not introduce new architectural layers, abstraction tiers, service wrappers, or structural patterns not explicitly defined in a TD document. Flag as an open issue if you believe one is needed (TD-08 §4.2 Rule 5).
 - **CLAUDE.md scope restriction.** This file may only summarise existing spec/TD rules or record deviations. It must not create new behavioural rules or undocumented conventions (TD-08 §4.2 Rule 6).
 - **SyncWriteGate awareness.** All Repository writes must be structured for gate compatibility from Phase 1 onward: writes through transactions, no long-held write locks, no assumptions about uninterrupted write access (TD-03 §2.1.1).
+- **Cross-screen deduplication.** When implementing 3+ screens with the same parent concept (e.g. execution screens for different input modes), extract shared scaffolding into a single host widget with swappable content. Do not duplicate controller init, state management, navigation, or chrome across sibling screens. After completing a group of related screens, perform a structural review pass to identify and extract shared logic.
 
 ---
 
@@ -218,14 +219,18 @@ lib/
 │   ├── practice/                   # [Phase 4] Live practice workflow
 │   │   ├── practice_router.dart        # InputMode → execution screen routing
 │   │   ├── execution/
-│   │   │   └── session_execution_controller.dart  # Structured/unstructured/technique completion
+│   │   │   ├── session_execution_controller.dart  # Structured/unstructured/technique completion
+│   │   │   ├── execution_helpers.dart             # Shared endSession/changeSurface helpers
+│   │   │   ├── execution_input_delegate.dart      # Abstract delegate interface + ExecutionContext
+│   │   │   └── input_delegates/                   # Per-InputMode swappable input widgets
+│   │   │       ├── grid_cell_delegate.dart        # 1×3/3×1/3×3 grid tap
+│   │   │       ├── binary_hit_miss_delegate.dart  # Hit/Miss buttons + counters
+│   │   │       ├── continuous_measurement_delegate.dart  # Numeric distance/deviation
+│   │   │       └── raw_data_entry_delegate.dart   # General numeric + real-time score
 │   │   ├── screens/
 │   │   │   ├── practice_queue_screen.dart          # Queue: add/remove/reorder drills
-│   │   │   ├── grid_cell_screen.dart               # 1×3/3×1/3×3 grid tap
-│   │   │   ├── continuous_measurement_screen.dart   # Numeric distance/deviation
-│   │   │   ├── raw_data_entry_screen.dart          # General numeric + real-time score
-│   │   │   ├── binary_hit_miss_screen.dart         # Hit/Miss toggle
-│   │   │   ├── technique_block_screen.dart         # Timer only
+│   │   │   ├── execution_screen.dart               # Unified host for all input modes
+│   │   │   ├── technique_block_screen.dart         # Timer only (separate — no per-instance recording)
 │   │   │   └── post_session_summary_screen.dart    # Score + integrity summary
 │   │   └── widgets/
 │   │       ├── execution_header.dart               # Drill name, set/instance progress
