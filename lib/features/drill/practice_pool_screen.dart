@@ -14,7 +14,6 @@ import '../bag/bag_screen.dart';
 import 'add_drills_screen.dart';
 import 'drill_detail_screen.dart';
 import 'widgets/drill_card.dart';
-import 'widgets/skill_area_picker.dart';
 
 /// 5E — Persistent filter state for Practice Pool (survives navigation).
 final practicePoolFilterProvider = StateProvider<SkillArea?>((ref) => null);
@@ -54,30 +53,74 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     return Column(
       children: [
-        // Page header.
+        // Page header + filter button.
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+            SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm, 0,
           ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Your Drills',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: ColorTokens.textPrimary,
+          child: Row(
+            children: [
+              Text(
+                'Your Drills',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: ColorTokens.textPrimary,
+                    ),
+              ),
+              const Spacer(),
+              // 5E — Skill area filter persisted across navigation.
+              PopupMenuButton<SkillArea?>(
+                onSelected: (area) =>
+                    ref.read(practicePoolFilterProvider.notifier).state = area,
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: null,
+                    child: Text('All'),
                   ),
-            ),
+                  for (final area in SkillArea.values)
+                    PopupMenuItem(
+                      value: area,
+                      child: Text(area.dbValue),
+                    ),
+                ],
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpacingTokens.sm,
+                    vertical: SpacingTokens.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.surfaceRaised,
+                    borderRadius:
+                        BorderRadius.circular(ShapeTokens.radiusSegmented),
+                    border: Border.all(color: ColorTokens.surfaceBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        selectedFilter?.dbValue ?? 'All',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: selectedFilter != null
+                                  ? ColorTokens.primaryDefault
+                                  : ColorTokens.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      const SizedBox(width: SpacingTokens.xs),
+                      Icon(
+                        Icons.filter_list,
+                        size: 16,
+                        color: selectedFilter != null
+                            ? ColorTokens.primaryDefault
+                            : ColorTokens.textTertiary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        // 5E — Skill area filter persisted across navigation.
-        Padding(
-          padding: const EdgeInsets.all(SpacingTokens.md),
-          child: SkillAreaPicker(
-            selected: selectedFilter,
-            onChanged: (area) =>
-                ref.read(practicePoolFilterProvider.notifier).state = area,
-          ),
-        ),
+        const SizedBox(height: SpacingTokens.sm),
         // Drill list.
         Expanded(
           child: poolAsync.when(
