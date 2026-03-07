@@ -66,6 +66,21 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                       color: ColorTokens.textPrimary,
                     ),
               ),
+              const SizedBox(width: SpacingTokens.sm),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const AddDrillsScreen(),
+                  ));
+                },
+                child: Text(
+                  '+ Add',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: ColorTokens.primaryDefault,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
               const Spacer(),
               // 5E — Skill area filter persisted across navigation.
               _FilterButton(
@@ -218,27 +233,6 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 ),
               ),
             ),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const AddDrillsScreen(),
-                ));
-              },
-              icon: Icon(Icons.add, color: ColorTokens.primaryDefault, size: 18),
-              label: Text(
-                'Add drills to your library',
-                style: TextStyle(color: ColorTokens.primaryDefault),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: ColorTokens.primaryDefault),
-                padding: const EdgeInsets.symmetric(
-                  vertical: SpacingTokens.sm,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
