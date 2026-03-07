@@ -212,7 +212,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
               style: TextStyle(color: Colors.white),
             ),
             style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.primaryDefault,
+              backgroundColor: ColorTokens.successDefault,
               padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
             ),
           ),

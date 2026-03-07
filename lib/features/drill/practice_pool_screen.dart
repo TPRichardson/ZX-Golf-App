@@ -210,7 +210,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     style: TextStyle(color: Colors.white),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: ColorTokens.primaryDefault,
+                    backgroundColor: ColorTokens.successDefault,
                     padding: const EdgeInsets.symmetric(
                       vertical: SpacingTokens.sm,
                     ),
@@ -301,7 +301,7 @@ class _PlayDrillButton extends ConsumerWidget {
       icon: Icon(
         Icons.play_circle_outline,
         size: 32,
-        color: ColorTokens.primaryDefault,
+        color: ColorTokens.successDefault,
       ),
       onPressed: () async {
         final surface = await showSurfacePicker(context);
