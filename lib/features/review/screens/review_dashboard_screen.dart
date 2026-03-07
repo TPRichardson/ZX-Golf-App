@@ -57,15 +57,11 @@ class _ReviewDashboardScreenState
     return ListView(
       padding: const EdgeInsets.all(SpacingTokens.md),
       children: [
-        // 1. Overall Score — dimmed if materialised data is stale.
+        // 1. Overall Score + Skill Areas — single section.
         Opacity(
           opacity: isStale ? 0.5 : 1.0,
           child: OverallScoreDisplay(score: overallScore),
         ),
-        const SizedBox(height: SpacingTokens.md),
-
-        // 2. Skill Area Heatmap with accordion.
-        _buildSectionHeader('Skill Areas'),
         const SizedBox(height: SpacingTokens.sm),
         SkillAreaHeatmap(
           userId: kDevUserId,
@@ -152,17 +148,6 @@ class _ReviewDashboardScreenState
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: TypographyTokens.headerSize,
-        fontWeight: TypographyTokens.headerWeight,
-        color: ColorTokens.textPrimary,
       ),
     );
   }

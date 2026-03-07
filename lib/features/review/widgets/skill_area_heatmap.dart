@@ -9,9 +9,8 @@ import 'package:zx_golf_app/providers/scoring_providers.dart';
 import 'skill_area_tile.dart';
 import 'subskill_breakdown.dart';
 
-// S15 §15.3.3 — Skill Area heatmap: 7 tiles, continuous grey-to-green opacity.
+// S15 §15.3.3 — Skill Area heatmap: 7 tiles sized proportionally to allocation.
 // Tap → accordion expand inline showing subskills.
-// S12 §12.6.1 — Dashboard heatmap section.
 
 class SkillAreaHeatmap extends ConsumerStatefulWidget {
   final String userId;
@@ -47,7 +46,6 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Heatmap grid — 7 tiles in a 4+3 layout.
             _buildGrid(heatmap, scoreMap),
             // Accordion content when expanded.
             if (_expandedArea != null)
@@ -110,14 +108,18 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
       children: areas.map((area) {
         final normalised = heatmap[area] ?? 0.0;
         final score = scoreMap[area];
+        final allocation = score?.allocation ?? 0;
+        // Use allocation as flex; minimum 1 to avoid zero-flex.
+        final flex = allocation > 0 ? allocation : 1;
         return Expanded(
+          flex: flex,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: SkillAreaTile(
               skillArea: area,
               normalisedScore: normalised,
               rawScore: score?.skillAreaScore ?? 0,
-              allocation: score?.allocation ?? 0,
+              allocation: allocation,
               isExpanded: _expandedArea == area,
               onTap: () {
                 setState(() {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 
-// S15 §15.3.3 — Single heatmap tile with continuous grey-to-green opacity.
-// Tap toggles accordion expand/collapse for subskill breakdown.
+// S15 §15.3.3 — Single heatmap tile with RAG colour and proportional sizing.
+// Shows earned points / allocation and average score.
 
 class SkillAreaTile extends StatelessWidget {
   final SkillArea skillArea;
@@ -44,12 +44,20 @@ class SkillAreaTile extends StatelessWidget {
       )!.withValues(alpha: 0.25);
     }
 
+    // Earned points = (average / 5.0) * allocation.
+    final earnedPoints = allocation > 0
+        ? (rawScore / 5.0 * allocation).round()
+        : 0;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: MotionTokens.standard,
         curve: MotionTokens.curve,
-        padding: const EdgeInsets.all(SpacingTokens.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.sm,
+          vertical: SpacingTokens.sm - 2,
+        ),
         decoration: BoxDecoration(
           color: tileColor,
           borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
@@ -68,13 +76,23 @@ class SkillAreaTile extends StatelessWidget {
                 fontWeight: TypographyTokens.headerWeight,
                 color: ColorTokens.textPrimary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: SpacingTokens.xs),
+            const SizedBox(height: 2),
             Text(
-              rawScore.toStringAsFixed(1),
+              '$earnedPoints / $allocation',
               style: TextStyle(
                 fontSize: TypographyTokens.microSize,
                 color: ColorTokens.textSecondary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            Text(
+              'avg ${rawScore.toStringAsFixed(1)}',
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                color: ColorTokens.textTertiary,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
