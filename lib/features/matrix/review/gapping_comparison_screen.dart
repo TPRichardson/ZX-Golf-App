@@ -260,7 +260,7 @@ class GappingComparisonScreen extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color: _runColors[
                                       runIdx % _runColors.length],
-                                  borderRadius: BorderRadius.circular(2),
+                                  borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
                                 ),
                               ),
                               const SizedBox(width: SpacingTokens.xs),

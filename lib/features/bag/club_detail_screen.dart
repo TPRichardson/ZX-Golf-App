@@ -135,7 +135,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
               color: club.status == UserClubStatus.active
                   ? ColorTokens.successDefault.withAlpha(30)
                   : ColorTokens.textTertiary.withAlpha(30),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
             ),
             child: Text(
               club.status.dbValue,

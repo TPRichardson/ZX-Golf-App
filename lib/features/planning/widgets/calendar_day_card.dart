@@ -73,7 +73,7 @@ class CalendarDayCard extends StatelessWidget {
             Row(
               children: [
                 for (var i = 0; i < slots.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 4),
+                  if (i > 0) const SizedBox(width: SpacingTokens.xs),
                   _SlotDot(slot: slots[i]),
                 ],
               ],

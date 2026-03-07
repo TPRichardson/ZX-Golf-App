@@ -75,7 +75,7 @@ class SlotTile extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: ColorTokens.primaryDefault.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
                 ),
                 child: Text(
                   'overflow',

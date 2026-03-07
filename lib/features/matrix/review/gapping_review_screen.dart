@@ -252,7 +252,7 @@ class GappingReviewScreen extends ConsumerWidget {
                                 color: gap != null && gap.hasWarning
                                     ? ColorTokens.warningIntegrity
                                     : ColorTokens.primaryDefault,
-                                borderRadius: BorderRadius.circular(3),
+                                borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
                               ),
                             ),
                             const SizedBox(width: SpacingTokens.xs),
@@ -267,7 +267,7 @@ class GappingReviewScreen extends ConsumerWidget {
                               ),
                             ),
                             if (gap != null && gap.hasWarning) ...[
-                              const SizedBox(width: 4),
+                              const SizedBox(width: SpacingTokens.xs),
                               Icon(
                                 Icons.warning_amber,
                                 size: 12,
@@ -461,7 +461,7 @@ class GappingReviewScreen extends ConsumerWidget {
             children: [
               Icon(Icons.warning_amber,
                   size: 12, color: ColorTokens.warningIntegrity),
-              const SizedBox(width: 4),
+              const SizedBox(width: SpacingTokens.xs),
               Text(
                 'Gap < ${_defaultMinGap.toStringAsFixed(0)} or > ${_defaultMaxGap.toStringAsFixed(0)}',
                 style: const TextStyle(

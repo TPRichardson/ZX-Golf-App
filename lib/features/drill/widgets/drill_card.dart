@@ -35,7 +35,7 @@ class DrillCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: _skillAreaColor(drill.skillArea),
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
             ),
           ),
           const SizedBox(width: SpacingTokens.sm),
@@ -126,7 +126,7 @@ class _Badge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
       ),
       child: Text(
         label,

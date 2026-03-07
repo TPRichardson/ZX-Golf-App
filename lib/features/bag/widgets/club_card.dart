@@ -72,7 +72,7 @@ class ClubCard extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: ColorTokens.textTertiary.withAlpha(30),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
               ),
               child: Text(
                 'Retired',

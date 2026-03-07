@@ -31,7 +31,7 @@ class ReviewTab extends StatelessWidget {
               Tab(text: 'Analysis'),
               Tab(text: 'Gapping'),
             ]),
-            SizedBox(height: 8),
+            SizedBox(height: SpacingTokens.sm),
             Expanded(
               child: TabBarView(
                 children: [

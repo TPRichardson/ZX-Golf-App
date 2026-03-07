@@ -175,7 +175,7 @@ class _SlotSummary extends StatelessWidget {
           ),
           const SizedBox(height: SpacingTokens.sm),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: ColorTokens.surfaceBase,

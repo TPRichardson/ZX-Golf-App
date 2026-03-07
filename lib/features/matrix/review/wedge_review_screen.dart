@@ -54,9 +54,9 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
 
   // §7.7.3 — Flight colour map.
   static const _flightColors = <int, Color>{
-    0: Color(0xFF4A90D9), // Blue — Low
-    1: Color(0xFF1FA463), // Green — Standard
-    2: Color(0xFFF5A623), // Orange — High
+    0: ColorTokens.flightLow,
+    1: ColorTokens.flightStandard,
+    2: ColorTokens.flightHigh,
   };
 
   @override

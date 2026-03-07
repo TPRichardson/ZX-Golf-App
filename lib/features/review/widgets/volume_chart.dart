@@ -145,7 +145,7 @@ class VolumeChart extends StatelessWidget {
                 height: 10,
                 decoration: BoxDecoration(
                   color: _colorForArea(area),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
                 ),
               ),
               const SizedBox(width: SpacingTokens.xs),

@@ -36,6 +36,11 @@ abstract final class ColorTokens {
   static const heatmapMid = Color(0xFF145A3A);
   static const heatmapHigh = Color(0xFF1FA463);
 
+  // Flight trajectory (wedge matrix visualisation)
+  static const flightLow = Color(0xFF4A90D9);
+  static const flightStandard = successDefault;
+  static const flightHigh = warningIntegrity;
+
   // Surface (dark-first, tonal elevation only)
   static const surfaceBase = Color(0xFF0F1115);
   static const surfacePrimary = Color(0xFF171A1F);
@@ -158,11 +163,13 @@ abstract final class SpacingTokens {
 
 // S15 §15.7 — Shape tokens.
 abstract final class ShapeTokens {
-  static const radiusCard = 8.0;
+  static const radiusMicro = 2.0;
+  static const radiusBadge = 4.0;
   static const radiusGrid = 6.0;
-  static const radiusModal = 10.0;
+  static const radiusCard = 8.0;
   static const radiusInput = 8.0;
   static const radiusSegmented = 8.0;
+  static const radiusModal = 10.0;
 }
 
 // S15 §15.10 — Motion tokens.

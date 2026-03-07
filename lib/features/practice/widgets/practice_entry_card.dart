@@ -35,7 +35,7 @@ class PracticeEntryCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: _skillAreaColor(drill.skillArea),
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
             ),
           ),
           const SizedBox(width: SpacingTokens.sm),

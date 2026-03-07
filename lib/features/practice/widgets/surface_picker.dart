@@ -119,7 +119,7 @@ class SurfaceBadge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
+            const SizedBox(width: SpacingTokens.xs),
             Text(
               label,
               style: TextStyle(
