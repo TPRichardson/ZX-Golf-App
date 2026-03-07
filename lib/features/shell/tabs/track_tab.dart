@@ -34,7 +34,7 @@ class TrackTab extends StatelessWidget {
         body: const Column(
           children: [
             ZxTabBar(tabs: [
-              Tab(text: 'Track Drills'),
+              Tab(text: 'Drills'),
               Tab(text: 'Gapping'),
             ]),
             Expanded(
