@@ -16,7 +16,6 @@ import 'package:zx_golf_app/features/practice/screens/post_session_summary_scree
 import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
-import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
@@ -45,8 +44,6 @@ class BinaryHitMissScreen extends ConsumerStatefulWidget {
 class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
   late SessionExecutionController _controller;
   bool _initialized = false;
-  bool _lastHit = false;
-  bool _showFlash = false;
   bool _ending = false;
   int _hitCount = 0;
   int _missCount = 0;
@@ -120,17 +117,11 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
         );
 
     setState(() {
-      _lastHit = isHit;
-      _showFlash = true;
       if (isHit) {
         _hitCount++;
       } else {
         _missCount++;
       }
-    });
-
-    Future.delayed(MotionTokens.fast, () {
-      if (mounted) setState(() => _showFlash = false);
     });
 
     if (_controller.isCurrentSetComplete()) {
@@ -193,10 +184,7 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
       body: SafeArea(
-        child: ScoreFlash(
-          isHit: _lastHit,
-          key: ValueKey(_showFlash ? DateTime.now().microsecondsSinceEpoch : 0),
-          child: Column(
+        child: Column(
             children: [
               ExecutionHeader(
                 drill: widget.drill,
@@ -283,8 +271,7 @@ class _BinaryHitMissScreenState extends ConsumerState<BinaryHitMissScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   // Fix 4 — Bulk add hits or misses.

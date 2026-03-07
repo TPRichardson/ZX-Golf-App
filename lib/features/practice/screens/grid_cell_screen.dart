@@ -19,7 +19,6 @@ import 'package:zx_golf_app/features/practice/screens/post_session_summary_scree
 import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
-import 'package:zx_golf_app/features/practice/widgets/score_flash.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
@@ -50,8 +49,6 @@ class GridCellScreen extends ConsumerStatefulWidget {
 class _GridCellScreenState extends ConsumerState<GridCellScreen> {
   late SessionExecutionController _controller;
   bool _initialized = false;
-  bool _lastHit = false;
-  bool _showFlash = false;
   bool _ending = false;
   late SurfaceType? _surfaceType = widget.session.surfaceType;
   String _selectedClub = 'Putter';
@@ -162,15 +159,7 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
           const Duration(hours: 2),
         );
 
-    setState(() {
-      _lastHit = cell.isHit;
-      _showFlash = true;
-    });
-
-    // Clear flash after animation completes.
-    Future.delayed(MotionTokens.fast, () {
-      if (mounted) setState(() => _showFlash = false);
-    });
+    setState(() {});
 
     // S13 §13.7 — Auto-advance set if structured.
     if (_controller.isCurrentSetComplete()) {
@@ -242,11 +231,7 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
       body: SafeArea(
-        child: ScoreFlash(
-          isHit: _lastHit,
-          key: ValueKey(
-              _showFlash ? DateTime.now().microsecondsSinceEpoch : 0),
-          child: Column(
+        child: Column(
             children: [
               ExecutionHeader(
                 drill: widget.drill,
@@ -296,8 +281,7 @@ class _GridCellScreenState extends ConsumerState<GridCellScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   /// 1×3 (horizontal row) or 3×1 (vertical column) with 3 labeled cells.
