@@ -7,6 +7,9 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 // Phase 3 — Drill detail screen. View drill properties and anchors (read-only).
@@ -192,7 +195,61 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           ],
         ],
       ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SpacingTokens.md,
+          SpacingTokens.sm,
+          SpacingTokens.md,
+          SpacingTokens.md,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () => _startPractice(drill),
+            icon: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
+            label: const Text(
+              'Start Practice',
+              style: TextStyle(color: Colors.white),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.successDefault,
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  Future<void> _startPractice(Drill drill) async {
+    // Auto-adopt system drills if not already adopted.
+    if (drill.origin == DrillOrigin.system) {
+      try {
+        await ref.read(drillRepositoryProvider).adoptDrill(_userId, drill.drillId);
+      } catch (_) {
+        // Already adopted or validation error — proceed anyway.
+      }
+    }
+
+    if (!mounted) return;
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !mounted) return;
+
+    final actions = ref.read(practiceActionsProvider);
+    final pb = await actions.startPracticeBlock(
+      _userId,
+      initialDrillIds: [drill.drillId],
+      surfaceType: surface,
+    );
+
+    if (mounted) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PracticeQueueScreen(
+          practiceBlockId: pb.practiceBlockId,
+          userId: _userId,
+        ),
+      ));
+    }
   }
 
   Future<void> _handleAction(String action) async {
