@@ -547,6 +547,7 @@ class _SkillAreaGroupState extends State<_SkillAreaGroup> {
         children: [
           // Group header.
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => setState(() => _expanded = !_expanded),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
