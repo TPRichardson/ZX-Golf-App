@@ -330,23 +330,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (filledCount > 0)
-                Text(
-                  '$filledCount',
-                  style: const TextStyle(
-                    fontSize: TypographyTokens.microSize,
-                    fontWeight: FontWeight.w600,
-                    color: ColorTokens.primaryDefault,
-                  ),
-                ),
               Text(
-                '${date.day}',
+                _ordinalDay(date.day),
                 style: TextStyle(
                   fontSize: TypographyTokens.microSize,
                   fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
                   color: isToday
                       ? ColorTokens.textPrimary
                       : ColorTokens.textSecondary,
+                ),
+              ),
+              Text(
+                '$filledCount',
+                style: TextStyle(
+                  fontSize: TypographyTokens.microSize,
+                  fontWeight: FontWeight.w600,
+                  color: filledCount > 0
+                      ? ColorTokens.primaryDefault
+                      : ColorTokens.textTertiary,
                 ),
               ),
             ],
@@ -849,6 +850,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       ));
     }
   }
+}
+
+String _ordinalDay(int day) {
+  if (day >= 11 && day <= 13) return '${day}th';
+  return switch (day % 10) {
+    1 => '${day}st',
+    2 => '${day}nd',
+    3 => '${day}rd',
+    _ => '${day}th',
+  };
 }
 
 const _weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
