@@ -535,7 +535,7 @@ class _SkillAreaGroup extends StatefulWidget {
 }
 
 class _SkillAreaGroupState extends State<_SkillAreaGroup> {
-  bool _expanded = true;
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
