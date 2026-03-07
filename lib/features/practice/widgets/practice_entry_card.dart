@@ -124,14 +124,6 @@ class PracticeEntryCard extends StatelessWidget {
   }
 
   Color _skillAreaColor(SkillArea area) {
-    return switch (area) {
-      SkillArea.driving => ColorTokens.primaryDefault,
-      SkillArea.irons => ColorTokens.successDefault,
-      SkillArea.putting => const Color(0xFF9B59B6),
-      SkillArea.pitching => const Color(0xFFE67E22),
-      SkillArea.chipping => const Color(0xFF3498DB),
-      SkillArea.woods => const Color(0xFF1ABC9C),
-      SkillArea.bunkers => const Color(0xFFF39C12),
-    };
+    return ColorTokens.skillArea(area);
   }
 }

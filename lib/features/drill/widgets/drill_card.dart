@@ -91,15 +91,7 @@ class DrillCard extends StatelessWidget {
   }
 
   static Color _skillAreaColor(SkillArea area) {
-    return switch (area) {
-      SkillArea.driving => const Color(0xFF00B3C6),
-      SkillArea.irons => const Color(0xFF1FA463),
-      SkillArea.putting => const Color(0xFFF5A623),
-      SkillArea.pitching => const Color(0xFF9B59B6),
-      SkillArea.chipping => const Color(0xFFE67E22),
-      SkillArea.woods => const Color(0xFF3498DB),
-      SkillArea.bunkers => const Color(0xFFD64545),
-    };
+    return ColorTokens.skillArea(area);
   }
 
   static String _drillTypeLabel(DrillType type) {

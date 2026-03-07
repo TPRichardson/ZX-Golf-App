@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zx_golf_app/data/enums.dart';
 
 // S15 — Design token architecture. All values from canonical branding spec.
 // Token names are product-name agnostic per S15 §15.14.
@@ -47,6 +48,71 @@ abstract final class ColorTokens {
   static const textPrimary = Color(0xFFFFFFFF);
   static const textSecondary = Color(0xB3FFFFFF); // 70% white
   static const textTertiary = Color(0x80FFFFFF); // 50% white
+
+  // Skill area colours — warm-to-cool gradient (putter → driver).
+  static const skillPutting = Color(0xFFD4A535);
+  static const skillChipping = Color(0xFFE67E22);
+  static const skillPitching = Color(0xFFE05858);
+  static const skillBunkers = Color(0xFFC74882);
+  static const skillIrons = Color(0xFF8E5BB5);
+  static const skillWoods = Color(0xFF5B6ABF);
+  static const skillDriving = Color(0xFF3A7BD5);
+
+  // Club category colours — aligned with skill area gradient.
+  static const clubPutter = skillPutting;
+  static const clubWedge = skillPitching;
+  static const clubIron = skillIrons;
+  static const clubHybrid = skillChipping;
+  static const clubWood = skillWoods;
+  static const clubDriver = skillDriving;
+
+  /// Resolve club type to its category colour token.
+  static Color clubCategory(ClubType type) {
+    if (type == ClubType.driver) {
+      return clubDriver;
+    }
+    if (type == ClubType.putter || type == ClubType.chipper) {
+      return clubPutter;
+    }
+    if (const {
+      ClubType.pw, ClubType.aw, ClubType.gw,
+      ClubType.sw, ClubType.uw, ClubType.lw,
+    }.contains(type)) {
+      return clubWedge;
+    }
+    if (const {
+      ClubType.i1, ClubType.i2, ClubType.i3, ClubType.i4,
+      ClubType.i5, ClubType.i6, ClubType.i7, ClubType.i8, ClubType.i9,
+    }.contains(type)) {
+      return clubIron;
+    }
+    if (const {
+      ClubType.h1, ClubType.h2, ClubType.h3, ClubType.h4,
+      ClubType.h5, ClubType.h6, ClubType.h7, ClubType.h8, ClubType.h9,
+    }.contains(type)) {
+      return clubHybrid;
+    }
+    if (const {
+      ClubType.w1, ClubType.w2, ClubType.w3, ClubType.w4,
+      ClubType.w5, ClubType.w6, ClubType.w7, ClubType.w8, ClubType.w9,
+    }.contains(type)) {
+      return clubWood;
+    }
+    return textSecondary;
+  }
+
+  /// Resolve skill area to its colour token.
+  static Color skillArea(SkillArea area) {
+    return switch (area) {
+      SkillArea.putting => skillPutting,
+      SkillArea.chipping => skillChipping,
+      SkillArea.pitching => skillPitching,
+      SkillArea.bunkers => skillBunkers,
+      SkillArea.irons => skillIrons,
+      SkillArea.woods => skillWoods,
+      SkillArea.driving => skillDriving,
+    };
+  }
 }
 
 // S15 §15.5 — Typography tokens.

@@ -101,40 +101,6 @@ class ClubCard extends StatelessWidget {
   }
 
   static Color _categoryColor(ClubType type) {
-    if (type == ClubType.driver) return const Color(0xFF00B3C6);
-    if (type == ClubType.putter) return const Color(0xFFF5A623);
-    if (_isIron(type)) return const Color(0xFF1FA463);
-    if (_isWedge(type)) return const Color(0xFF9B59B6);
-    if (_isWood(type)) return const Color(0xFF3498DB);
-    if (_isHybrid(type)) return const Color(0xFFE67E22);
-    return ColorTokens.textSecondary;
-  }
-
-  static bool _isIron(ClubType type) {
-    return const {
-      ClubType.i1, ClubType.i2, ClubType.i3, ClubType.i4,
-      ClubType.i5, ClubType.i6, ClubType.i7, ClubType.i8, ClubType.i9,
-    }.contains(type);
-  }
-
-  static bool _isWedge(ClubType type) {
-    return const {
-      ClubType.pw, ClubType.aw, ClubType.gw,
-      ClubType.sw, ClubType.uw, ClubType.lw,
-    }.contains(type);
-  }
-
-  static bool _isWood(ClubType type) {
-    return const {
-      ClubType.w1, ClubType.w2, ClubType.w3, ClubType.w4,
-      ClubType.w5, ClubType.w6, ClubType.w7, ClubType.w8, ClubType.w9,
-    }.contains(type);
-  }
-
-  static bool _isHybrid(ClubType type) {
-    return const {
-      ClubType.h1, ClubType.h2, ClubType.h3, ClubType.h4,
-      ClubType.h5, ClubType.h6, ClubType.h7, ClubType.h8, ClubType.h9,
-    }.contains(type);
+    return ColorTokens.clubCategory(type);
   }
 }

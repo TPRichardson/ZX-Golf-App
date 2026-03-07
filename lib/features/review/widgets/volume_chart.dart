@@ -201,15 +201,7 @@ class VolumeChart extends StatelessWidget {
 
   // S15 — Base colour per SkillArea for volume chart segmentation.
   Color _colorForArea(SkillArea area) {
-    return switch (area) {
-      SkillArea.driving => const Color(0xFF00B3C6),
-      SkillArea.irons => const Color(0xFF1FA463),
-      SkillArea.putting => const Color(0xFFF5A623),
-      SkillArea.pitching => const Color(0xFF7C4DFF),
-      SkillArea.chipping => const Color(0xFFFF6B6B),
-      SkillArea.woods => const Color(0xFF4ECDC4),
-      SkillArea.bunkers => const Color(0xFFC88719),
-    };
+    return ColorTokens.skillArea(area);
   }
 }
 
