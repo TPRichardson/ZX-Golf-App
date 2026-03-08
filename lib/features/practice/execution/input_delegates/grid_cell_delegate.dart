@@ -79,7 +79,9 @@ class GridCellDelegate extends ExecutionInputDelegate {
               children: [
                 for (var i = 0; i < cells.length; i++) ...[
                   if (i > 0) const SizedBox(height: SpacingTokens.sm),
-                  _buildLabeledCell(cells[i], isVert, ctx, onLogInstance),
+                  Flexible(
+                      child: _buildLabeledCell(
+                          cells[i], isVert, ctx, onLogInstance)),
                 ],
               ],
             )
@@ -137,9 +139,7 @@ class GridCellDelegate extends ExecutionInputDelegate {
             ? ColorTokens.successActive.withValues(alpha: 0.3)
             : ColorTokens.missActive.withValues(alpha: 0.3),
         child: Container(
-          height: isVertical ? 100 : null,
-          constraints:
-              isVertical ? null : const BoxConstraints(minHeight: 120),
+          constraints: const BoxConstraints(minHeight: 60),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
             border: Border.all(color: borderColor),

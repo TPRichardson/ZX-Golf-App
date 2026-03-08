@@ -151,7 +151,7 @@ class _PickerOption extends StatelessWidget {
   }
 }
 
-/// Small tappable badge showing current environment + surface.
+/// Small tappable badges showing environment + surface.
 class SurfaceBadge extends StatelessWidget {
   final SurfaceType? surfaceType;
   final VoidCallback onTap;
@@ -165,37 +165,65 @@ class SurfaceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isGrass = surfaceType == SurfaceType.grass;
-    final label = surfaceType?.dbValue ?? 'Surface';
-    final icon = isGrass ? Icons.grass : Icons.rectangle_outlined;
-    final color = isGrass ? ColorTokens.successDefault : ColorTokens.primaryDefault;
+    // Derive environment from surface: grass → outdoor, mat → indoor.
+    final envLabel = isGrass ? 'Outdoor' : 'Indoor';
+    final envIcon = isGrass ? Icons.wb_sunny : Icons.home;
+    final envColor = isGrass ? const Color(0xFFF5A623) : ColorTokens.primaryDefault;
+    final surfaceLabel = surfaceType?.dbValue ?? 'Surface';
+    final surfaceIcon = isGrass ? Icons.grass : Icons.rectangle_outlined;
+    final surfaceColor = isGrass ? ColorTokens.successDefault : ColorTokens.primaryDefault;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.sm,
-          vertical: SpacingTokens.xs,
-        ),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: SpacingTokens.xs),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: TypographyTokens.microSize,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _BadgePill(label: envLabel, icon: envIcon, color: envColor),
+          const SizedBox(width: SpacingTokens.xs),
+          _BadgePill(label: surfaceLabel, icon: surfaceIcon, color: surfaceColor),
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgePill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _BadgePill({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.sm,
+        vertical: SpacingTokens.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: SpacingTokens.xs),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: TypographyTokens.microSize,
+              fontWeight: FontWeight.w500,
+              color: color,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
