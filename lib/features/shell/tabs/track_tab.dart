@@ -248,8 +248,9 @@ class _MatrixLaunchCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_right,
-                color: ColorTokens.textTertiary,
+                Icons.play_circle_filled,
+                size: 28,
+                color: ColorTokens.successDefault,
               ),
             ],
           ),

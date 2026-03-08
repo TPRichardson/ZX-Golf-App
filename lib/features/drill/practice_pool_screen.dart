@@ -324,7 +324,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                   onPressed: _startCleanPractice,
                   icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
                   label: const Text(
-                    'Start Clean Practice',
+                    'Practice Drills',
                     style: TextStyle(color: Colors.white),
                   ),
                   style: FilledButton.styleFrom(

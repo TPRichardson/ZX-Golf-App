@@ -274,34 +274,18 @@ class _ActionZone extends ConsumerWidget {
           ),
           const SizedBox(height: SpacingTokens.sm),
         ],
-        // "Start Clean Practice" — always visible when no active PB.
+        // Practice Drills — always visible when no active PB.
         if (!hasActivePb)
-          OutlinedButton.icon(
+          _ActionButton(
+            label: 'Practice Drills',
             onPressed: () => _startCleanPractice(context, ref),
-            icon: Icon(Icons.sports_golf, color: ColorTokens.primaryDefault),
-            label: Text(
-              'Start Clean Practice',
-              style: TextStyle(color: ColorTokens.primaryDefault),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: ColorTokens.primaryDefault),
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
-            ),
           ),
-        // "Start Planned Practice" — visible when filled incomplete slots exist and no active PB.
+        // Planned Practice — visible when filled incomplete slots exist and no active PB.
         if (!hasActivePb && filledDrillIds.isNotEmpty) ...[
           const SizedBox(height: SpacingTokens.sm),
-          OutlinedButton.icon(
+          _ActionButton(
+            label: 'Start Planned Practice (${filledDrillIds.length} drills)',
             onPressed: () => _startTodayPractice(context, ref, filledDrillIds),
-            icon: Icon(Icons.calendar_today, color: ColorTokens.primaryDefault, size: 18),
-            label: Text(
-              'Start Planned Practice (${filledDrillIds.length} drills)',
-              style: TextStyle(color: ColorTokens.primaryDefault),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: ColorTokens.primaryDefault),
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
-            ),
           ),
         ],
         // Matrix — Start matrix buttons (gapping, wedge, chipping).
@@ -316,55 +300,31 @@ class _ActionZone extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          OutlinedButton.icon(
+          _ActionButton(
+            label: 'Build Gapping Chart',
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.gappingChart),
               ));
             },
-            icon: Icon(Icons.grid_on, color: ColorTokens.primaryDefault),
-            label: Text(
-              'Gapping Chart',
-              style: TextStyle(color: ColorTokens.primaryDefault),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: ColorTokens.primaryDefault),
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
-            ),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          OutlinedButton.icon(
+          _ActionButton(
+            label: 'Build Wedge Matrix',
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.wedgeMatrix),
               ));
             },
-            icon: Icon(Icons.grid_view, color: ColorTokens.primaryDefault),
-            label: Text(
-              'Wedge Matrix',
-              style: TextStyle(color: ColorTokens.primaryDefault),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: ColorTokens.primaryDefault),
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
-            ),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          OutlinedButton.icon(
+          _ActionButton(
+            label: 'Build Chipping Matrix',
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.chippingMatrix),
               ));
             },
-            icon: Icon(Icons.grid_3x3, color: ColorTokens.primaryDefault),
-            label: Text(
-              'Chipping Matrix',
-              style: TextStyle(color: ColorTokens.primaryDefault),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: ColorTokens.primaryDefault),
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
-            ),
           ),
         ],
       ],
@@ -425,5 +385,39 @@ class _ActionZone extends ConsumerWidget {
         ),
       ));
     }
+  }
+}
+
+/// Outlined button with left-aligned text and right-aligned green play icon.
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _ActionButton({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: ColorTokens.primaryDefault),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.md,
+          vertical: SpacingTokens.sm,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: ColorTokens.primaryDefault),
+          ),
+          const SizedBox(width: SpacingTokens.sm),
+          Icon(Icons.play_circle_filled, size: 24, color: ColorTokens.successDefault),
+        ],
+      ),
+    );
   }
 }

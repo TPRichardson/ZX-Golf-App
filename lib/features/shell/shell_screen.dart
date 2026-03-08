@@ -196,16 +196,20 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         toolbarHeight: 68,
         title: const SizedBox.shrink(),
         backgroundColor: ColorTokens.surfaceBase,
-        leading: IconButton(
-          icon: Icon(
-            Icons.home,
-            size: 32,
-            color: showHome
-                ? ColorTokens.primaryDefault
-                : ColorTokens.textSecondary,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: SpacingTokens.xs),
+          child: IconButton(
+            icon: Icon(
+              Icons.home,
+              size: 40,
+              color: showHome
+                  ? ColorTokens.primaryDefault
+                  : ColorTokens.textSecondary,
+            ),
+            onPressed: _goHome,
           ),
-          onPressed: _goHome,
         ),
+        leadingWidth: 60,
         actions: [
           // Golf Bag button.
           IconButton(
@@ -378,7 +382,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.sports_golf),
-                  label: 'Track',
+                  label: 'Practice',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.analytics_outlined),
