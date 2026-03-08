@@ -36,7 +36,9 @@ class SubskillBreakdown extends ConsumerWidget {
 
         final stats = subskillStatsAsync.valueOrNull ?? {};
 
-        return Column(
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Column(
           children: areaRefs.map((subRef) {
             final s = stats[subRef.subskillId];
             final totalPoints = s?.totalPoints ?? 0.0;
@@ -53,7 +55,7 @@ class SubskillBreakdown extends ConsumerWidget {
               onTap: () => onSubskillTap(subRef.subskillId),
             );
           }).toList(),
-        );
+        ));
       },
       loading: () => const Padding(
         padding: EdgeInsets.all(SpacingTokens.md),
@@ -89,37 +91,43 @@ class _SubskillTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Same RAG colour logic as SkillAreaTile.
-    final Color tileColor;
+    // RAG pill colour.
+    final Color pillColor;
     if (normalisedScore == 0.0) {
-      tileColor = ColorTokens.surfaceRaised;
+      pillColor = ColorTokens.textTertiary.withValues(alpha: 0.3);
     } else if (normalisedScore <= 0.6) {
-      tileColor = Color.lerp(
-        const Color(0xFFD64545),
-        const Color(0xFFF5A623),
+      pillColor = Color.lerp(
+        const Color(0xFFE05252),
+        const Color(0xFFE8A830),
         (normalisedScore / 0.6).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.25);
+      )!.withValues(alpha: 0.6);
     } else {
-      tileColor = Color.lerp(
-        const Color(0xFFF5A623),
-        const Color(0xFF1FA463),
+      pillColor = Color.lerp(
+        const Color(0xFFE8A830),
+        const Color(0xFF22C55E),
         ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.25);
+      )!.withValues(alpha: 0.6);
     }
 
     return InkWell(
       onTap: onTap,
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: SpacingTokens.sm,
-          vertical: SpacingTokens.sm - 2,
-        ),
-        decoration: BoxDecoration(
-          color: tileColor,
+          vertical: 3,
         ),
         child: Row(
           children: [
-            Expanded(
+            // RAG pill behind subskill name.
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingTokens.sm,
+                vertical: 3,
+              ),
+              decoration: BoxDecoration(
+                color: pillColor,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+              ),
               child: Text(
                 name,
                 style: TextStyle(
@@ -129,6 +137,7 @@ class _SubskillTile extends StatelessWidget {
                 ),
               ),
             ),
+            const Spacer(),
             Text(
               '$earnedPoints / $allocation pts',
               style: TextStyle(

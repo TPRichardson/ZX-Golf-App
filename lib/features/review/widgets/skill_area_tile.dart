@@ -40,16 +40,16 @@ class SkillAreaTile extends StatelessWidget {
       tileColor = ColorTokens.surfaceRaised;
     } else if (normalisedScore <= 0.6) {
       tileColor = Color.lerp(
-        const Color(0xFFD64545),
-        const Color(0xFFF5A623),
+        const Color(0xFFE05252),
+        const Color(0xFFE8A830),
         (normalisedScore / 0.6).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.25);
+      )!.withValues(alpha: 0.6);
     } else {
       tileColor = Color.lerp(
-        const Color(0xFFF5A623),
-        const Color(0xFF1FA463),
+        const Color(0xFFE8A830),
+        const Color(0xFF22C55E),
         ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.25);
+      )!.withValues(alpha: 0.6);
     }
 
     final earnedPoints = totalPoints.round();
@@ -69,8 +69,6 @@ class SkillAreaTile extends StatelessWidget {
               ? BorderRadius.only(
                   topLeft: Radius.circular(ShapeTokens.radiusCard),
                   topRight: Radius.circular(ShapeTokens.radiusCard),
-                  // Round bottom corner where the border turns into the
-                  // horizontal top-border of the subskill panel.
                   bottomLeft: hasLeft
                       ? Radius.circular(ShapeTokens.radiusCard)
                       : Radius.zero,

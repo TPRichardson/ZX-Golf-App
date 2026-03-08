@@ -131,9 +131,7 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
           child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Column(children: [
-        // Top border segments: covers the edges where non-selected tiles
-        // sit above. The gap under the selected tile has no top border
-        // (the tile's side borders flow straight down).
+        // Top border segments with rounded outer corners.
         Row(
           children: [
             if (leftFlex > 0)
@@ -230,3 +228,4 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     );
   }
 }
+
