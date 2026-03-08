@@ -12,6 +12,10 @@ class SkillAreaTile extends StatelessWidget {
   final double average;
   final int allocation;
   final bool isExpanded;
+  /// Whether tiles exist to the left/right of this one in its row.
+  /// Controls bottom corner rounding when expanded.
+  final bool hasLeft;
+  final bool hasRight;
   final VoidCallback onTap;
 
   const SkillAreaTile({
@@ -22,6 +26,8 @@ class SkillAreaTile extends StatelessWidget {
     required this.average,
     required this.allocation,
     required this.isExpanded,
+    this.hasLeft = false,
+    this.hasRight = false,
     required this.onTap,
   });
 
@@ -59,9 +65,29 @@ class SkillAreaTile extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: tileColor,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          borderRadius: isExpanded
+              ? BorderRadius.only(
+                  topLeft: Radius.circular(ShapeTokens.radiusCard),
+                  topRight: Radius.circular(ShapeTokens.radiusCard),
+                  // Round bottom corner where the border turns into the
+                  // horizontal top-border of the subskill panel.
+                  bottomLeft: hasLeft
+                      ? Radius.circular(ShapeTokens.radiusCard)
+                      : Radius.zero,
+                  bottomRight: hasRight
+                      ? Radius.circular(ShapeTokens.radiusCard)
+                      : Radius.zero,
+                )
+              : BorderRadius.circular(ShapeTokens.radiusCard),
           border: isExpanded
-              ? Border.all(color: ColorTokens.primaryDefault, width: 1.5)
+              ? Border(
+                  top: BorderSide(
+                      color: ColorTokens.primaryDefault, width: 1.5),
+                  left: BorderSide(
+                      color: ColorTokens.primaryDefault, width: 1.5),
+                  right: BorderSide(
+                      color: ColorTokens.primaryDefault, width: 1.5),
+                )
               : null,
         ),
         child: Column(

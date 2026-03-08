@@ -173,6 +173,36 @@ final subskillsByAreaProvider = Provider.family<
 });
 
 // ---------------------------------------------------------------------------
+// Subskill window stats — per-subskill totalPoints + average from windows
+// ---------------------------------------------------------------------------
+
+/// Per-subskill stats from window states: raw total points and average.
+/// Keyed by subskillId. Includes all subskills with window data.
+final subskillWindowStatsProvider = Provider.family<
+    AsyncValue<Map<String, ({double totalPoints, double average})>>,
+    String>((ref, userId) {
+  final windowsAsync = ref.watch(windowStatesProvider(userId));
+  return windowsAsync.whenData((windows) {
+    final sums = <String, double>{};
+    final occupancies = <String, double>{};
+    for (final w in windows) {
+      sums[w.subskill] = (sums[w.subskill] ?? 0) + w.weightedSum;
+      occupancies[w.subskill] =
+          (occupancies[w.subskill] ?? 0) + w.totalOccupancy;
+    }
+    final map = <String, ({double totalPoints, double average})>{};
+    for (final id in sums.keys) {
+      final occ = occupancies[id] ?? 0;
+      map[id] = (
+        totalPoints: sums[id]!,
+        average: occ > 0 ? sums[id]! / occ : 0.0,
+      );
+    }
+    return map;
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Window detail — parsed entries for a specific window
 // ---------------------------------------------------------------------------
 

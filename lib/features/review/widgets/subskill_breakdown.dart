@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
 
 // S05 §5.1 — Subskill breakdown within a SkillArea accordion.
-// Shows weighted average, transition/pressure split, allocation.
+// Shows earned points / allocation + average with RAG colouring,
+// matching the skill area tile visual language.
 // Tap subskill → navigate to subskill detail screen.
 
 class SubskillBreakdown extends ConsumerWidget {
@@ -23,41 +23,34 @@ class SubskillBreakdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scoresAsync = ref.watch(subskillsByAreaProvider(
-      (userId: userId, skillArea: skillArea),
-    ));
     final refsAsync = ref.watch(allSubskillRefsProvider);
+    final subskillStatsAsync =
+        ref.watch(subskillWindowStatsProvider(userId));
 
-    return scoresAsync.when(
-      data: (scores) {
-        if (scores.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(SpacingTokens.md),
-            child: Text(
-              'No data yet',
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                color: ColorTokens.textTertiary,
-              ),
-            ),
-          );
-        }
+    return refsAsync.when(
+      data: (allRefs) {
+        // Always show all subskills for this area from reference data.
+        final areaRefs =
+            allRefs.where((r) => r.skillArea == skillArea).toList();
+        if (areaRefs.isEmpty) return const SizedBox.shrink();
 
-        // Build name lookup from refs.
-        final nameMap = refsAsync.whenOrNull(
-          data: (refs) => {for (final r in refs) r.subskillId: r.name},
-        ) ?? <String, String>{};
+        final stats = subskillStatsAsync.valueOrNull ?? {};
 
         return Column(
-          children: scores.map((score) {
-            return _SubskillRow(
-              subskillId: score.subskill,
-              name: nameMap[score.subskill] ?? score.subskill,
-              weightedAverage: score.weightedAverage,
-              transitionAverage: score.transitionAverage,
-              pressureAverage: score.pressureAverage,
-              allocation: score.allocation,
-              onTap: () => onSubskillTap(score.subskill),
+          children: areaRefs.map((subRef) {
+            final s = stats[subRef.subskillId];
+            final totalPoints = s?.totalPoints ?? 0.0;
+            final average = s?.average ?? 0.0;
+            final normalised =
+                average > 0 ? (average / 5.0).clamp(0.0, 1.0) : 0.0;
+
+            return _SubskillTile(
+              name: subRef.name,
+              earnedPoints: totalPoints.round(),
+              allocation: subRef.allocation,
+              average: average,
+              normalisedScore: normalised,
+              onTap: () => onSubskillTap(subRef.subskillId),
             );
           }).toList(),
         );
@@ -77,94 +70,86 @@ class SubskillBreakdown extends ConsumerWidget {
   }
 }
 
-class _SubskillRow extends StatelessWidget {
-  final String subskillId;
+class _SubskillTile extends StatelessWidget {
   final String name;
-  final double weightedAverage;
-  final double transitionAverage;
-  final double pressureAverage;
+  final int earnedPoints;
   final int allocation;
+  final double average;
+  final double normalisedScore;
   final VoidCallback onTap;
 
-  const _SubskillRow({
-    required this.subskillId,
+  const _SubskillTile({
     required this.name,
-    required this.weightedAverage,
-    required this.transitionAverage,
-    required this.pressureAverage,
+    required this.earnedPoints,
     required this.allocation,
+    required this.average,
+    required this.normalisedScore,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Same RAG colour logic as SkillAreaTile.
+    final Color tileColor;
+    if (normalisedScore == 0.0) {
+      tileColor = ColorTokens.surfaceRaised;
+    } else if (normalisedScore <= 0.6) {
+      tileColor = Color.lerp(
+        const Color(0xFFD64545),
+        const Color(0xFFF5A623),
+        (normalisedScore / 0.6).clamp(0.0, 1.0),
+      )!.withValues(alpha: 0.25);
+    } else {
+      tileColor = Color.lerp(
+        const Color(0xFFF5A623),
+        const Color(0xFF1FA463),
+        ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
+      )!.withValues(alpha: 0.25);
+    }
+
     return InkWell(
       onTap: onTap,
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md,
-          vertical: SpacingTokens.sm,
+          horizontal: SpacingTokens.sm,
+          vertical: SpacingTokens.sm - 2,
+        ),
+        decoration: BoxDecoration(
+          color: tileColor,
         ),
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: TypographyTokens.bodySize,
-                      fontWeight: TypographyTokens.bodyWeight,
-                      color: ColorTokens.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: SpacingTokens.xs),
-                  Text(
-                    'T: ${transitionAverage.toStringAsFixed(2)}  '
-                    'P: ${pressureAverage.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: TypographyTokens.microSize,
-                      color: ColorTokens.textTertiary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySize,
+                  fontWeight: TypographyTokens.bodyWeight,
+                  color: ColorTokens.textPrimary,
+                ),
               ),
             ),
-            // Weighted average.
             Text(
-              weightedAverage.toStringAsFixed(2),
+              '$earnedPoints / $allocation pts',
               style: TextStyle(
-                fontSize: TypographyTokens.headerSize,
-                fontWeight: TypographyTokens.headerWeight,
-                color: ColorTokens.textPrimary,
+                fontSize: TypographyTokens.microSize,
+                color: ColorTokens.textSecondary,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
             const SizedBox(width: SpacingTokens.sm),
-            // Allocation badge.
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpacingTokens.sm,
-                vertical: SpacingTokens.xs,
-              ),
-              decoration: BoxDecoration(
-                color: ColorTokens.surfaceModal,
-                borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-              ),
-              child: Text(
-                '$allocation/$kTotalAllocation',
-                style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
-                  color: ColorTokens.textTertiary,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+            Text(
+              'avg ${average.toStringAsFixed(1)}',
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                color: ColorTokens.textTertiary,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
             const SizedBox(width: SpacingTokens.xs),
             Icon(
               Icons.chevron_right,
-              size: 16,
+              size: 14,
               color: ColorTokens.textTertiary,
             ),
           ],
