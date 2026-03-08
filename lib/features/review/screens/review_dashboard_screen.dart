@@ -32,14 +32,11 @@ class _ReviewDashboardScreenState
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin
-    final windowStatsAsync =
-        ref.watch(skillAreaWindowStatsProvider(kDevUserId));
+    final overallAsync = ref.watch(overallWindowScoreProvider(kDevUserId));
 
-    return windowStatsAsync.when(
-      data: (windowStats) {
-        if (windowStats.isEmpty) return _buildZeroState();
-        final overallScore = windowStats.values
-            .fold<double>(0.0, (sum, s) => sum + s.totalPoints);
+    return overallAsync.when(
+      data: (overallScore) {
+        if (overallScore == 0.0) return _buildZeroState();
         return _buildDashboard(overallScore);
       },
       loading: () => const Center(child: CircularProgressIndicator()),

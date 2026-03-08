@@ -15,7 +15,7 @@ import 'package:zx_golf_app/features/review/widgets/overall_score_display.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
-import 'package:zx_golf_app/providers/scoring_providers.dart';
+import 'package:zx_golf_app/providers/review_providers.dart';
 
 class HomeDashboardScreen extends ConsumerWidget {
   final ValueChanged<int>? onGoToTab;
@@ -26,7 +26,7 @@ class HomeDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final overallAsync = ref.watch(overallScoreProvider(_userId));
+    final overallAsync = ref.watch(overallWindowScoreProvider(_userId));
     final todayAsync = ref.watch(todayCalendarDayProvider(_userId));
     final activePb = ref.watch(activePracticeBlockProvider(_userId));
 
@@ -37,8 +37,8 @@ class HomeDashboardScreen extends ConsumerWidget {
         children: [
           // S05 §5.1 — Overall SkillScore display.
           overallAsync.when(
-            data: (overall) => overall != null
-                ? OverallScoreDisplay(score: overall.overallScore)
+            data: (score) => score > 0
+                ? OverallScoreDisplay(score: score)
                 : const _ZeroStateScore(),
             loading: () => const _ZeroStateScore(),
             error: (_, _) => const _ZeroStateScore(),

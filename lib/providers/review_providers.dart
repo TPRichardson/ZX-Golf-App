@@ -157,6 +157,19 @@ final skillAreaWindowStatsProvider = Provider.family<
 });
 
 // ---------------------------------------------------------------------------
+// Overall score from window stats — sum of all skill area totalPoints
+// ---------------------------------------------------------------------------
+
+/// Overall SkillScore derived from raw window stats (sum of totalPoints).
+/// Used by both Home Dashboard and Review Dashboard for a single source of truth.
+final overallWindowScoreProvider =
+    Provider.family<AsyncValue<double>, String>((ref, userId) {
+  final statsAsync = ref.watch(skillAreaWindowStatsProvider(userId));
+  return statsAsync.whenData((stats) =>
+      stats.values.fold<double>(0.0, (sum, s) => sum + s.totalPoints));
+});
+
+// ---------------------------------------------------------------------------
 // Subskills by area — filtered view
 // ---------------------------------------------------------------------------
 

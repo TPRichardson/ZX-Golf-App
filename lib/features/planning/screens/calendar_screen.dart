@@ -479,8 +479,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
               ),
             ],
             const Spacer(),
-            // Remove slot button — only when there are empty slots.
-            if (slots.any((s) => s.isEmpty))
+            // Remove slot button — only when there are removable empty slots.
+            if (slots.any((s) => s.isEmpty && !s.isCompleted && !s.isMatrixSlot))
               SizedBox(
                 width: 32,
                 height: 32,

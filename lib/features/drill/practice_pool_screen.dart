@@ -320,18 +320,26 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
               child: SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
+                child: FilledButton(
                   onPressed: _startCleanPractice,
-                  icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
-                  label: const Text(
-                    'Practice Drills',
-                    style: TextStyle(color: Colors.white),
-                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: ColorTokens.successDefault,
                     padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.md,
                       vertical: SpacingTokens.sm,
                     ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        'Practice Drills',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(width: SpacingTokens.sm),
+                      Icon(Icons.play_circle_filled, color: Colors.white, size: 24),
+                    ],
                   ),
                 ),
               ),

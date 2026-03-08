@@ -231,7 +231,7 @@ class PlanningRepository {
   }
 
   // S08 §8.13.1 — Update slot capacity.
-  // Guard: capacity >= filled slot count.
+  // Guard: never remove planned, filled, or completed slots.
   Future<CalendarDay> updateSlotCapacity(
     String userId,
     DateTime date,
@@ -242,13 +242,18 @@ class PlanningRepository {
       return await _db.transaction(() async {
         final day = await getOrCreateCalendarDay(userId, date);
         final slots = parseSlots(day.slots);
-        final filledCount = slots.where((s) => s.isFilled).length;
+        // Count slots that must be preserved: filled, completed, or matrix.
+        final protectedCount =
+            slots.where((s) => s.isFilled || s.isCompleted || s.isMatrixSlot).length;
 
-        if (newCapacity < filledCount) {
+        if (newCapacity < protectedCount) {
           throw ValidationException(
             code: ValidationException.stateTransition,
-            message: 'Cannot reduce capacity below filled slot count',
-            context: {'newCapacity': newCapacity, 'filledCount': filledCount},
+            message: 'Cannot reduce capacity below protected slot count',
+            context: {
+              'newCapacity': newCapacity,
+              'protectedCount': protectedCount,
+            },
           );
         }
 
@@ -260,14 +265,18 @@ class PlanningRepository {
           );
         }
 
-        // Adjust slots list: add empty slots or trim empty from end.
-        final newSlots = <Slot>[];
-        for (var i = 0; i < newCapacity; i++) {
-          if (i < slots.length) {
-            newSlots.add(slots[i]);
-          } else {
-            newSlots.add(const Slot());
-          }
+        // Adjust slots list: remove empty removable slots to reach target.
+        final newSlots = List<Slot>.from(slots);
+        while (newSlots.length > newCapacity) {
+          // Find the last removable (empty, not completed, not matrix) slot.
+          final idx = newSlots.lastIndexWhere(
+              (s) => s.isEmpty && !s.isCompleted && !s.isMatrixSlot);
+          if (idx < 0) break; // No removable slots left.
+          newSlots.removeAt(idx);
+        }
+        // Pad with empty slots if growing.
+        while (newSlots.length < newCapacity) {
+          newSlots.add(const Slot());
         }
 
         return await updateCalendarDay(day.calendarDayId, CalendarDaysCompanion(
