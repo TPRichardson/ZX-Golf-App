@@ -15,7 +15,6 @@ import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 
-import '../widgets/adherence_badge.dart';
 import '../widgets/calendar_day_card.dart';
 import '../widgets/slot_tile.dart';
 import 'calendar_day_detail_screen.dart';
@@ -130,76 +129,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final prefs = ref.watch(userPreferencesProvider);
     final rangeStart = _rangeStartFor(prefs.weekStartDay);
     final rangeEnd = _rangeEndFor(rangeStart);
+    // Fetch a wide window (90 days back, 180 days ahead) so week shifts
+    // reuse the same provider instance and avoid loading-state blinks.
+    final queryStart = _today.subtract(const Duration(days: 90));
+    final queryEnd = _today.add(const Duration(days: 180));
     final daysAsync = ref.watch(calendarDaysProvider((
       userId: _userId,
-      start: rangeStart,
-      end: rangeEnd,
+      start: queryStart,
+      end: queryEnd,
     )));
-    final repo = ref.watch(planningRepositoryProvider);
-
     return Column(
       children: [
-        // Toggle + adherence header.
+        // Toggle + week control header.
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpacingTokens.md,
-            vertical: SpacingTokens.sm,
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.md, 12, SpacingTokens.md, 0,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              daysAsync.when(
-                data: (days) => AdherenceBadge(recentDays: days, repo: repo),
-                loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
-              ),
-              const Spacer(),
-              if (_showTwoWeeks) ...[
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    iconSize: 20,
-                    icon: const Icon(Icons.chevron_left,
-                        color: ColorTokens.textSecondary),
-                    onPressed: () => setState(() {
-                      _weekOffset -= 1;
-                      _selectedDay = null;
-                    }),
-                  ),
-                ),
-                if (_weekOffset != 0)
-                  SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      iconSize: 18,
-                      icon: const Icon(Icons.today,
-                          color: ColorTokens.primaryDefault),
-                      tooltip: 'Back to this week',
-                      onPressed: () => setState(() {
-                        _weekOffset = 0;
-                        _selectedDay = _today;
-                      }),
-                    ),
-                  ),
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    iconSize: 20,
-                    icon: const Icon(Icons.chevron_right,
-                        color: ColorTokens.textSecondary),
-                    onPressed: () => setState(() {
-                      _weekOffset += 1;
-                      _selectedDay = null;
-                    }),
-                  ),
-                ),
-                const SizedBox(width: SpacingTokens.sm),
-              ],
               _ViewToggle(
                 showTwoWeeks: _showTwoWeeks,
                 onChanged: (v) => setState(() {
@@ -210,6 +158,71 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                   }
                 }),
               ),
+              const Spacer(),
+              if (_showTwoWeeks) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
+                    border: Border.all(color: ColorTokens.primaryDefault),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Left arrow — solid background.
+                      GestureDetector(
+                        onTap: () => setState(() => _weekOffset -= 1),
+                        child: Container(
+                          padding: const EdgeInsets.all(SpacingTokens.xs),
+                          decoration: BoxDecoration(
+                            color: ColorTokens.primaryDefault,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(ShapeTokens.radiusSegmented - 1),
+                              bottomLeft: Radius.circular(ShapeTokens.radiusSegmented - 1),
+                            ),
+                          ),
+                          child: const Icon(Icons.chevron_left, size: 18, color: Colors.white),
+                        ),
+                      ),
+                      // Today label.
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          _weekOffset = 0;
+                          _selectedDay = _today;
+                        }),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SpacingTokens.sm,
+                            vertical: SpacingTokens.xs,
+                          ),
+                          child: Text(
+                            'Today',
+                            style: TextStyle(
+                              fontSize: TypographyTokens.microSize,
+                              fontWeight: FontWeight.w600,
+                              color: ColorTokens.primaryDefault,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Right arrow — solid background.
+                      GestureDetector(
+                        onTap: () => setState(() => _weekOffset += 1),
+                        child: Container(
+                          padding: const EdgeInsets.all(SpacingTokens.xs),
+                          decoration: BoxDecoration(
+                            color: ColorTokens.primaryDefault,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(ShapeTokens.radiusSegmented - 1),
+                              bottomRight: Radius.circular(ShapeTokens.radiusSegmented - 1),
+                            ),
+                          ),
+                          child: const Icon(Icons.chevron_right, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -309,17 +322,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       padding: const EdgeInsets.all(SpacingTokens.md),
       child: Column(
         children: [
-          // Header row.
+          // Header row — highlight column matching selected day.
           Row(
             children: [
-              for (final h in headers)
+              for (int i = 0; i < headers.length; i++)
                 Expanded(
                   child: Center(
                     child: Text(
-                      h,
-                      style: const TextStyle(
+                      headers[i],
+                      style: TextStyle(
                         fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.textTertiary,
+                        fontWeight: _selectedDay != null &&
+                                (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: _selectedDay != null &&
+                                (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
+                            ? ColorTokens.primaryDefault
+                            : ColorTokens.textTertiary,
                       ),
                     ),
                   ),
@@ -364,6 +384,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final totalSlots = slots.length;
     final completedCount = slots.where((s) => s.isCompleted).length;
 
+    // Use consistent border width to prevent layout shift on selection.
+    const double borderWidth = 2.5;
+    final Color borderColor = isSelected
+        ? ColorTokens.primaryDefault
+        : Colors.transparent;
+
     return GestureDetector(
       onTap: () => setState(() => _selectedDay = date),
       child: Container(
@@ -372,12 +398,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           color: _heatColor(totalSlots),
           borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
           border: Border.all(
-            color: isSelected
-                ? ColorTokens.primaryHover
-                : isToday
-                    ? ColorTokens.primaryDefault
-                    : ColorTokens.surfaceBorder,
-            width: isSelected ? 2.5 : (isToday ? 2 : 1),
+            color: borderColor,
+            width: borderWidth,
           ),
         ),
         child: Column(
