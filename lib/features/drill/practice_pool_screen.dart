@@ -265,7 +265,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     );
 
     if (mounted) {
-      Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
           userId: _userId,
@@ -282,7 +282,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     final pb = await actions.startPracticeBlock(_userId, surfaceType: envSurface.surface);
 
     if (mounted) {
-      Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
           userId: _userId,
@@ -442,7 +442,7 @@ class _PlayDrillButton extends ConsumerWidget {
         );
 
         if (context.mounted) {
-          Navigator.of(context).push(MaterialPageRoute(
+          Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
             builder: (_) => PracticeQueueScreen(
               practiceBlockId: pb.practiceBlockId,
               userId: userId,

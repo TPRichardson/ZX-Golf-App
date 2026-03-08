@@ -121,10 +121,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   void _goToTab(int index) {
     ref.read(showHomeProvider.notifier).state = false;
-    if (index == _currentIndex) {
-      // Tapping active tab pops nested navigator to root.
-      _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
-    } else {
+    // Always pop nested navigator to root when selecting a tab.
+    _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+    if (index != _currentIndex) {
       setState(() => _currentIndex = index);
     }
   }

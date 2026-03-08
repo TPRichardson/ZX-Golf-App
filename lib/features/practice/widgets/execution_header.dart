@@ -25,9 +25,11 @@ class ExecutionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md,
-        vertical: SpacingTokens.sm,
+      padding: const EdgeInsets.only(
+        left: SpacingTokens.xs,
+        right: SpacingTokens.md,
+        top: SpacingTokens.sm,
+        bottom: SpacingTokens.sm,
       ),
       decoration: const BoxDecoration(
         color: ColorTokens.surfaceRaised,
@@ -38,16 +40,30 @@ class ExecutionHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            drill.name,
-            style: TextStyle(
-              fontSize: TypographyTokens.headerSize,
-              fontWeight: TypographyTokens.headerWeight,
-              color: ColorTokens.textPrimary,
-            ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: ColorTokens.textSecondary),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              ),
+              Expanded(
+                child: Text(
+                  drill.name,
+                  style: TextStyle(
+                    fontSize: TypographyTokens.headerSize,
+                    fontWeight: TypographyTokens.headerWeight,
+                    color: ColorTokens.textPrimary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: SpacingTokens.xs),
-          Row(
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: Row(
             children: [
               Text(
                 'Set ${currentSetIndex + 1}/$requiredSetCount',
@@ -74,6 +90,7 @@ class ExecutionHeader extends StatelessWidget {
                   ),
                 ),
             ],
+          ),
           ),
         ],
       ),

@@ -26,10 +26,6 @@ class ExecutionContext {
 typedef LogInstanceCallback = Future<InstanceResult> Function(
     InstancesCompanion data);
 
-/// Callback to log bulk instances. Host handles set auto-advance after.
-typedef BulkAddCallback = Future<void> Function(
-    int count, InstancesCompanion Function(int index) builder);
-
 /// Abstract interface for input-mode-specific widgets.
 abstract class ExecutionInputDelegate {
   /// Build the center input area.
@@ -38,13 +34,6 @@ abstract class ExecutionInputDelegate {
     required ExecutionContext executionContext,
     required LogInstanceCallback onLogInstance,
     required VoidCallback requestRebuild,
-  });
-
-  /// Build extra action buttons for the bottom bar (bulk add variants).
-  List<Widget> buildBottomBarActions({
-    required BuildContext context,
-    required ExecutionContext executionContext,
-    required BulkAddCallback onBulkAdd,
   });
 
   /// Called after the host logs an instance. Update local display state.

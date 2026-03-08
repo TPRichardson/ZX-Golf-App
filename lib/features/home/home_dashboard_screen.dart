@@ -234,7 +234,7 @@ class _ActionZone extends ConsumerWidget {
         if (hasActivePb && activePbData != null)
           FilledButton.icon(
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => PracticeQueueScreen(
                   practiceBlockId: activePbData.practiceBlockId,
                   userId: userId,
@@ -259,7 +259,7 @@ class _ActionZone extends ConsumerWidget {
                 matrixRunId: activeMatrixRun.matrixRunId,
                 userId: userId,
               );
-              Navigator.of(context)
+              Navigator.of(context, rootNavigator: true)
                   .push(MaterialPageRoute(builder: (_) => screen));
             },
             icon: const Icon(Icons.grid_on, color: Colors.white),
@@ -303,7 +303,7 @@ class _ActionZone extends ConsumerWidget {
           _ActionButton(
             label: 'Build Gapping Chart',
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.gappingChart),
               ));
             },
@@ -312,7 +312,7 @@ class _ActionZone extends ConsumerWidget {
           _ActionButton(
             label: 'Build Wedge Matrix',
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.wedgeMatrix),
               ));
             },
@@ -321,7 +321,7 @@ class _ActionZone extends ConsumerWidget {
           _ActionButton(
             label: 'Build Chipping Matrix',
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.chippingMatrix),
               ));
             },
@@ -358,7 +358,7 @@ class _ActionZone extends ConsumerWidget {
     );
 
     if (context.mounted) {
-      Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
           userId: userId,
@@ -378,7 +378,7 @@ class _ActionZone extends ConsumerWidget {
     final pb = await actions.startPracticeBlock(userId, surfaceType: envSurface.surface);
 
     if (context.mounted) {
-      Navigator.of(context).push(MaterialPageRoute(
+      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
           userId: userId,

@@ -18,7 +18,6 @@ import 'package:zx_golf_app/features/practice/execution/input_delegates/continuo
 import 'package:zx_golf_app/features/practice/execution/input_delegates/grid_cell_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/raw_data_entry_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
-import 'package:zx_golf_app/features/practice/widgets/bulk_entry_dialog.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
@@ -155,49 +154,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     return result;
   }
 
-  /// Unified bulk-add pipeline. The `requestedCount` param from the delegate
-  /// is ignored — we show the bulk entry dialog here.
-  Future<void> _onBulkAdd(
-    int _,
-    InstancesCompanion Function(int index) builder,
-  ) async {
-    if (!_initialized || _ending) return;
-
-    final count = await showBulkEntryDialog(
-      context,
-      maxCount: _controller.remainingSetCapacity,
-    );
-    if (count == null || count <= 0) return;
-
-    final added = await _controller.logBulkInstances(count, builder);
-
-    // Notify delegate about each bulk instance for counter updates.
-    for (var i = 0; i < added; i++) {
-      final sampleData = builder(i);
-      final now = DateTime.now();
-      _delegate.onInstanceLogged(
-        InstanceResult(
-          instance: Instance(
-            instanceId: '',
-            setId: '',
-            selectedClub: '',
-            rawMetrics: sampleData.rawMetrics.value,
-            timestamp: now,
-            isDeleted: false,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        ),
-        sampleData,
-      );
-    }
-
-    if (!mounted) return;
-    setState(() {});
-
-    await _handlePostInstanceAdvance();
-  }
-
   /// S13 §13.7 — Check and handle set/session auto-completion.
   Future<void> _handlePostInstanceAdvance() async {
     if (_controller.isCurrentSetComplete()) {
@@ -311,7 +267,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   Widget _buildBottomBar(ExecutionContext executionContext) {
     return Container(
-      padding: const EdgeInsets.all(SpacingTokens.md),
+      padding: const EdgeInsets.fromLTRB(
+        SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm,
+      ),
       decoration: const BoxDecoration(
         color: ColorTokens.surfaceRaised,
         border: Border(
@@ -330,12 +288,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                   icon: const Icon(Icons.undo, size: 16),
                   label: const Text('Undo'),
                 ),
-              // Delegate-specific bulk add buttons.
-              ..._delegate.buildBottomBarActions(
-                context: context,
-                executionContext: executionContext,
-                onBulkAdd: _onBulkAdd,
-              ),
               const Spacer(),
               if (!_controller.isStructured)
                 FilledButton(
@@ -347,7 +299,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: SpacingTokens.xs),
+          const SizedBox(height: SpacingTokens.sm),
           Align(
             alignment: Alignment.centerLeft,
             child: SurfaceBadge(

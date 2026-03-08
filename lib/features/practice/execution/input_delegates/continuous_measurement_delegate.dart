@@ -131,39 +131,6 @@ class ContinuousMeasurementDelegate extends ExecutionInputDelegate {
   }
 
   @override
-  List<Widget> buildBottomBarActions({
-    required BuildContext context,
-    required ExecutionContext executionContext,
-    required BulkAddCallback onBulkAdd,
-  }) {
-    return [
-      TextButton.icon(
-        onPressed: () => _bulkAdd(executionContext, onBulkAdd),
-        icon: const Icon(Icons.add, size: 16),
-        label: const Text('Bulk Add'),
-      ),
-    ];
-  }
-
-  Future<void> _bulkAdd(
-      ExecutionContext ctx, BulkAddCallback onBulkAdd) async {
-    final text = _valueController.text.trim();
-    if (text.isEmpty) return;
-    final value = double.tryParse(text);
-    if (value == null) return;
-
-    await onBulkAdd(0, (i) {
-      return InstancesCompanion.insert(
-        instanceId: const Uuid().v4(),
-        setId: ctx.currentSetId!,
-        selectedClub: ctx.selectedClub,
-        rawMetrics: jsonEncode({'value': value}),
-      );
-    });
-    _valueController.clear();
-  }
-
-  @override
   void dispose() {
     _valueController.dispose();
   }

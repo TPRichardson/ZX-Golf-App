@@ -108,7 +108,7 @@ class _MatrixTab extends ConsumerWidget {
                           matrixRunId: run.matrixRunId,
                           userId: userId,
                         );
-                        Navigator.of(context)
+                        Navigator.of(context, rootNavigator: true)
                             .push(MaterialPageRoute(builder: (_) => screen));
                       },
                       icon: const Icon(Icons.play_arrow),
@@ -153,7 +153,7 @@ class _MatrixTab extends ConsumerWidget {
                 icon: Icons.grid_on,
                 title: 'Gapping Chart',
                 subtitle: 'One club at a time — measure carry and total.',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                onTap: () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                   builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.gappingChart),
                 )),
               ),
@@ -162,7 +162,7 @@ class _MatrixTab extends ConsumerWidget {
                 icon: Icons.grid_view,
                 title: 'Wedge Matrix',
                 subtitle: 'Map your wedges.',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                onTap: () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                   builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.wedgeMatrix),
                 )),
               ),
@@ -171,7 +171,7 @@ class _MatrixTab extends ConsumerWidget {
                 icon: Icons.grid_3x3,
                 title: 'Chipping Matrix',
                 subtitle: 'Dial in short game accuracy.',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                onTap: () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                   builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.chippingMatrix),
                 )),
               ),
