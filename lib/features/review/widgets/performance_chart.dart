@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
 import 'package:zx_golf_app/features/review/screens/analysis_screen.dart';
@@ -38,7 +38,7 @@ class PerformanceChart extends StatelessWidget {
 
     final spots = <FlSpot>[];
     for (var i = 0; i < buckets.length; i++) {
-      spots.add(FlSpot(i.toDouble(), buckets[i].averageScore));
+      spots.add(FlSpot(i.toDouble(), scoreToStars(buckets[i].averageScore)));
     }
 
     // Rolling average overlay.
@@ -54,8 +54,8 @@ class PerformanceChart extends StatelessWidget {
         ),
         child: LineChart(
         LineChartData(
-          minY: 0,
-          maxY: kMaxScore,
+          minY: 1,
+          maxY: 5,
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -72,9 +72,11 @@ class PerformanceChart extends StatelessWidget {
                 reservedSize: 28,
                 interval: 1,
                 getTitlesWidget: (value, meta) {
-                  if (value == value.roundToDouble()) {
+                  if (value == value.roundToDouble() &&
+                      value >= 1 &&
+                      value <= 5) {
                     return Text(
-                      value.toInt().toString(),
+                      '${value.toInt()}\u2605',
                       style: TextStyle(
                         fontSize: TypographyTokens.microSize,
                         color: ColorTokens.textTertiary,
@@ -178,7 +180,7 @@ class PerformanceChart extends StatelessWidget {
       for (var j = i - window + 1; j <= i; j++) {
         sum += buckets[j].averageScore;
       }
-      spots.add(FlSpot(i.toDouble(), sum / window));
+      spots.add(FlSpot(i.toDouble(), scoreToStars(sum / window)));
     }
     return spots;
   }

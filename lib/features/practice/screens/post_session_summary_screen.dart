@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/star_rating.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -101,21 +102,18 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                     // Score display — system drills show /5 score,
                     // custom drills show raw metrics.
                     if (score != null) ...[
-                      Text(
-                        score.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: 72,
-                          fontWeight: FontWeight.w600,
-                          color: _scoreColor(score),
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                      StarRating(
+                        stars: scoreToStars(score),
+                        size: 48,
+                        color: _scoreColor(score),
                       ),
-                      const SizedBox(height: SpacingTokens.xs),
+                      const SizedBox(height: SpacingTokens.sm),
                       Text(
-                        'out of 5.0',
+                        '${scoreToStars(score).toStringAsFixed(1)} / 5',
                         style: TextStyle(
                           fontSize: TypographyTokens.bodyLgSize,
                           color: ColorTokens.textSecondary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
                     ] else if (isCustom)

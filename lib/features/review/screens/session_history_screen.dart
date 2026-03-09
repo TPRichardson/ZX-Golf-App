@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/empty_state.dart';
+import 'package:zx_golf_app/core/widgets/star_rating.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
@@ -148,18 +149,10 @@ class SessionHistoryScreen extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            Text(
-                              score.toStringAsFixed(2),
-                              style: TextStyle(
-                                fontSize:
-                                    TypographyTokens.headerSize,
-                                fontWeight:
-                                    TypographyTokens.headerWeight,
-                                color: ColorTokens.textPrimary,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures()
-                                ],
-                              ),
+                            StarRating(
+                              stars: scoreToStars(score),
+                              size: 16,
+                              color: scoreColor(score),
                             ),
                             const SizedBox(width: SpacingTokens.sm),
                             Icon(
