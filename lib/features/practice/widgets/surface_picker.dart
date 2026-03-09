@@ -100,17 +100,17 @@ Future<EnvironmentType?> showEnvironmentPicker(BuildContext context) {
         mainAxisSize: MainAxisSize.min,
         children: [
           _PickerOption(
-            label: indoor.label,
-            icon: indoor.icon,
-            color: indoor.color,
-            onTap: () => Navigator.pop(ctx, EnvironmentType.indoor),
-          ),
-          const SizedBox(height: SpacingTokens.sm),
-          _PickerOption(
             label: outdoor.label,
             icon: outdoor.icon,
             color: outdoor.color,
             onTap: () => Navigator.pop(ctx, EnvironmentType.outdoor),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          _PickerOption(
+            label: indoor.label,
+            icon: indoor.icon,
+            color: indoor.color,
+            onTap: () => Navigator.pop(ctx, EnvironmentType.indoor),
           ),
         ],
       ),

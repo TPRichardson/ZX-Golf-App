@@ -12,6 +12,7 @@ import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_entry_card.dart';
+import 'package:zx_golf_app/features/practice/widgets/practice_stats_bar.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -65,7 +66,6 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   }
 
   Future<void> _addDrill() async {
-    // Navigate to practice pool to pick a drill.
     final drillId = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => const PracticePoolScreen(pickMode: true),
@@ -80,6 +80,42 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
   Future<void> _removePendingEntry(String entryId) async {
     await ref.read(practiceRepositoryProvider).removePendingEntry(entryId);
+  }
+
+  /// Remove a completed session entry (discard the session).
+  Future<void> _removeCompletedEntry(PracticeEntryWithDrill ewd) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Remove Completed Drill?',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: const Text(
+          'This will remove the completed drill from this practice block.',
+          style: TextStyle(color: ColorTokens.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.errorDestructive,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      if (ewd.session != null) {
+        await ref
+            .read(practiceActionsProvider)
+            .discardSession(ewd.entry.practiceEntryId, ewd.session!.sessionId);
+      }
+    }
   }
 
   /// S13 §13.12 — Save current queue as a Routine.
@@ -114,8 +150,6 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       }
     }
 
-    // Session inherits environment+surface from the practice block.
-    // No per-drill picker needed.
     final actions = ref.read(practiceActionsProvider);
 
     // S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
@@ -135,10 +169,24 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
     if (!mounted) return;
 
-    // Route to execution screen.
     final screen = PracticeRouter.routeToExecutionScreen(
       drill: entryWithDrill.drill,
       session: session,
+      userId: widget.userId,
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  /// Resume an active session that's already in progress.
+  Future<void> _resumeSession(PracticeEntryWithDrill ewd) async {
+    if (ewd.session == null) return;
+
+    final screen = PracticeRouter.routeToExecutionScreen(
+      drill: ewd.drill,
+      session: ewd.session!,
       userId: widget.userId,
     );
 
@@ -154,7 +202,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('End Practice?',
+        title: const Text('Finish Practice?',
             style: TextStyle(color: ColorTokens.textPrimary)),
         content: const Text(
           'This will close the practice block. Pending drills will be removed.',
@@ -170,7 +218,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: ColorTokens.primaryDefault,
             ),
-            child: const Text('End Practice'),
+            child: const Text('Finish'),
           ),
         ],
       ),
@@ -184,7 +232,41 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  /// S04 §4.3 — Prompt user for their intention (e.g. "Hit fairway", "Draw").
+  Future<void> _discardPracticeBlock() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Discard Practice?',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: const Text(
+          'This will discard the entire practice block and all sessions.',
+          style: TextStyle(color: ColorTokens.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.errorDestructive,
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await ref
+          .read(practiceActionsProvider)
+          .discardPracticeBlock(widget.practiceBlockId, widget.userId);
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  /// S04 §4.3 — Prompt user for their intention.
   Future<String?> _promptForDeclaration() async {
     final controller = TextEditingController();
     final result = await showDialog<String?>(
@@ -221,7 +303,6 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     return result;
   }
 
-  /// Warning when drill requires clubs but user has none for that skill area.
   Future<bool?> _showNoClubsWarning(SkillArea skillArea) {
     return showDialog<bool>(
       context: context,
@@ -262,32 +343,45 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       appBar: ZxAppBar(
         title: 'Practice',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Add Drill',
-            onPressed: _addDrill,
-          ),
-          // S13 §13.12 — Save queue as Routine (overflow menu).
-          pbStream.when(
-            data: (pb) {
-              final hasEntries = pb != null && pb.entries.isNotEmpty;
-              if (!hasEntries) return const SizedBox.shrink();
-              return PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'saveAsRoutine') {
-                    _saveAsRoutine(pb.entries);
-                  }
-                },
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'saveAsRoutine',
-                    child: Text('Save as Routine'),
+          // Routines dropdown.
+          PopupMenuButton<String>(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.sm),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Routines',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      color: ColorTokens.textSecondary,
+                    ),
                   ),
+                  const Icon(Icons.arrow_drop_down,
+                      color: ColorTokens.textSecondary),
                 ],
-              );
+              ),
+            ),
+            onSelected: (value) {
+              if (value == 'saveAsRoutine') {
+                final entries = pbStream.valueOrNull?.entries ?? [];
+                _saveAsRoutine(entries);
+              } else if (value == 'importRoutine') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Import routine coming soon')),
+                );
+              }
             },
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'importRoutine',
+                child: Text('Import Routine'),
+              ),
+              PopupMenuItem(
+                value: 'saveAsRoutine',
+                child: Text('Save as Routine'),
+              ),
+            ],
           ),
         ],
       ),
@@ -303,104 +397,40 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
           }
 
           final entries = pbWithEntries.entries;
-
-          if (entries.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.playlist_add,
-                    size: 48,
-                    color: ColorTokens.textTertiary,
-                  ),
-                  const SizedBox(height: SpacingTokens.md),
-                  Text(
-                    'No drills in queue',
-                    style: TextStyle(
-                      fontSize: TypographyTokens.bodyLgSize,
-                      color: ColorTokens.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: SpacingTokens.sm),
-                  FilledButton.icon(
-                    onPressed: _addDrill,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Drill'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: ColorTokens.primaryDefault,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
           final pb = pbWithEntries.practiceBlock;
+
+          // Partition entries: completed first, then pending/active.
+          final completed = entries
+              .where(
+                  (e) => e.entry.entryType == PracticeEntryType.completedSession)
+              .toList();
+          final pending = entries
+              .where(
+                  (e) => e.entry.entryType != PracticeEntryType.completedSession)
+              .toList();
 
           return Column(
             children: [
-              // Block-level environment + surface tiles.
+              // Environment + surface tiles — always visible.
               _EnvironmentSurfaceBar(
                 environmentType: pb.environmentType,
                 surfaceType: pb.surfaceType,
                 onEnvironmentTap: () => _changeEnvironment(pb.surfaceType),
                 onSurfaceTap: () => _changeSurface(pb.environmentType),
               ),
+              // Stats bar — clock, weather, location.
+              PracticeStatsBar(
+                startTimestamp: pb.startTimestamp,
+                environmentType: pb.environmentType,
+              ),
+              // Entry list or empty state.
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(SpacingTokens.md),
-                  itemCount: entries.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: SpacingTokens.sm),
-                  itemBuilder: (context, index) {
-                    final ewd = entries[index];
-                    return PracticeEntryCard(
-                      entryWithDrill: ewd,
-                      onTap: ewd.entry.entryType ==
-                              PracticeEntryType.pendingDrill
-                          ? () => _startSession(ewd)
-                          : null,
-                      onRemove:
-                          ewd.entry.entryType == PracticeEntryType.pendingDrill
-                              ? () => _removePendingEntry(
-                                  ewd.entry.practiceEntryId)
-                              : null,
-                    );
-                  },
-                ),
+                child: entries.isEmpty
+                    ? _buildEmptyState()
+                    : _buildEntryList(completed, pending),
               ),
-              // Bottom actions bar.
-              Container(
-                padding: const EdgeInsets.all(SpacingTokens.md),
-                decoration: const BoxDecoration(
-                  color: ColorTokens.surfaceRaised,
-                  border: Border(
-                    top: BorderSide(color: ColorTokens.surfaceBorder),
-                  ),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _endingBlock ? null : _endPracticeBlock,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: ColorTokens.primaryDefault,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: SpacingTokens.sm),
-                    ),
-                    child: _endingBlock
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('End Practice'),
-                  ),
-                ),
-              ),
+              // Bottom action bar — always visible.
+              _buildBottomBar(entries.isNotEmpty),
             ],
           );
         },
@@ -411,6 +441,185 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             style: const TextStyle(color: ColorTokens.errorDestructive),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SpacingTokens.xl),
+        child: Text(
+          'Add a drill to start practice.',
+          style: TextStyle(
+            fontSize: TypographyTokens.bodyLgSize,
+            color: ColorTokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEntryList(
+    List<PracticeEntryWithDrill> completed,
+    List<PracticeEntryWithDrill> pending,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.all(SpacingTokens.md),
+      children: [
+        // Completed section.
+        if (completed.isNotEmpty) ...[
+          for (final ewd in completed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+              child: PracticeEntryCard(
+                entryWithDrill: ewd,
+                sessionScore: ewd.session != null ? null : null,
+                // TODO: fetch session scores for completed entries.
+                onRemove: () => _removeCompletedEntry(ewd),
+              ),
+            ),
+          // Styled separator between completed and pending.
+          if (pending.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: ColorTokens.successDefault.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.sm),
+                    child: Text(
+                      'UP NEXT',
+                      style: TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        fontWeight: FontWeight.w600,
+                        color: ColorTokens.textTertiary,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: ColorTokens.surfaceBorder,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        // Pending / active section.
+        for (final ewd in pending)
+          Padding(
+            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+            child: PracticeEntryCard(
+              entryWithDrill: ewd,
+              onTap: ewd.entry.entryType == PracticeEntryType.pendingDrill
+                  ? () => _startSession(ewd)
+                  : ewd.entry.entryType == PracticeEntryType.activeSession
+                      ? () => _resumeSession(ewd)
+                      : null,
+              onRemove: ewd.entry.entryType == PracticeEntryType.pendingDrill
+                  ? () => _removePendingEntry(ewd.entry.practiceEntryId)
+                  : null,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBottomBar(bool hasEntries) {
+    return Container(
+      padding: const EdgeInsets.all(SpacingTokens.md),
+      decoration: const BoxDecoration(
+        color: ColorTokens.surfaceRaised,
+        border: Border(
+          top: BorderSide(color: ColorTokens.surfaceBorder),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Add Drill button — primary solid cyan, chunky.
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _addDrill,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Drill'),
+              style: FilledButton.styleFrom(
+                backgroundColor: ColorTokens.primaryDefault,
+                padding: const EdgeInsets.symmetric(
+                  vertical: SpacingTokens.sm + 4,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          // Finish Practice — secondary reversed-out, double horizontal padding.
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _endingBlock ? null : _endPracticeBlock,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColorTokens.primaryDefault,
+                side: const BorderSide(color: ColorTokens.primaryDefault),
+                padding: const EdgeInsets.symmetric(
+                  vertical: SpacingTokens.sm + 4,
+                  horizontal: SpacingTokens.xl,
+                ),
+              ),
+              child: _endingBlock
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Finish Practice'),
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          // Practice Settings + Discard row.
+          Row(
+            children: [
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Practice settings coming soon')),
+                  );
+                },
+                child: Text(
+                  'Practice Settings',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.microSize,
+                    color: ColorTokens.textTertiary,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _discardPracticeBlock,
+                icon: Icon(Icons.delete_outline,
+                    size: 16, color: ColorTokens.errorDestructive),
+                label: Text(
+                  'Discard',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.microSize,
+                    color: ColorTokens.errorDestructive,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -507,7 +716,8 @@ class _BlockTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: fillColor ?? color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-          border: Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
+          border:
+              Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

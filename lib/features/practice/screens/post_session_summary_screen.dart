@@ -8,10 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/star_rating.dart';
+import 'package:zx_golf_app/core/widgets/zx_badge.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/widgets/anchor_score_bar.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+
+const _goldStar = Color(0xFFFFD700);
 
 /// S13 §13.13 — Post-session summary showing score and performance data.
 class PostSessionSummaryScreen extends ConsumerWidget {
@@ -19,6 +23,8 @@ class PostSessionSummaryScreen extends ConsumerWidget {
   final Session session;
   final double? sessionScore;
   final bool integrityBreach;
+  final String? practiceBlockId;
+  final String? userId;
 
   const PostSessionSummaryScreen({
     super.key,
@@ -26,13 +32,14 @@ class PostSessionSummaryScreen extends ConsumerWidget {
     required this.session,
     this.sessionScore,
     this.integrityBreach = false,
+    this.practiceBlockId,
+    this.userId,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCustom = drill.origin == DrillOrigin.userCustom;
     final score = isCustom ? null : sessionScore;
-    final hasIntegrityFlag = integrityBreach;
 
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
@@ -63,13 +70,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.close),
                     color: ColorTokens.textSecondary,
-                    // Fix 11 — Route back to Home, not just pop one screen.
-                    // S12 §12.2 — Set showHome before pop so ShellScreen shows Home Dashboard.
-                    onPressed: () {
-                      ref.read(showHomeProvider.notifier).state = true;
-                      Navigator.of(context)
-                          .popUntil((route) => route.isFirst);
-                    },
+                    onPressed: () => _navigateHome(context, ref),
                   ),
                 ],
               ),
@@ -91,21 +92,34 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: SpacingTokens.sm),
-                    Text(
-                      drill.skillArea.dbValue,
-                      style: TextStyle(
-                        fontSize: TypographyTokens.bodySize,
-                        color: ColorTokens.textSecondary,
-                      ),
+                    // Skill area + drill type pills.
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ZxBadge(
+                          label: drill.skillArea.dbValue,
+                          color: ColorTokens.skillArea(drill.skillArea),
+                        ),
+                        const SizedBox(width: SpacingTokens.xs),
+                        ZxBadge(
+                          label: _drillTypeLabel(drill.drillType),
+                          color: _drillTypeColor(drill.drillType),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: SpacingTokens.xxl),
-                    // Score display — system drills show /5 score,
+                    // Score display — system drills show stars,
                     // custom drills show raw metrics.
                     if (score != null) ...[
                       StarRating(
                         stars: scoreToStars(score),
                         size: 48,
-                        color: _scoreColor(score),
+                        color: _goldStar,
+                      ),
+                      // Anchor bar — Min/Scratch/Pro with user score.
+                      AnchorScoreBar(
+                        userScore: score,
+                        anchorsJson: drill.anchors,
                       ),
                     ] else if (isCustom)
                       _CustomDrillMetrics(
@@ -122,9 +136,19 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                           color: ColorTokens.textTertiary,
                         ),
                       ),
+                    const SizedBox(height: SpacingTokens.lg),
+                    // Duration.
+                    if (session.sessionDuration != null)
+                      Text(
+                        'Drill completed in ${formatDuration(session.sessionDuration!)}',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodySize,
+                          color: ColorTokens.textSecondary,
+                        ),
+                      ),
                     const SizedBox(height: SpacingTokens.xl),
                     // Integrity flag warning.
-                    if (hasIntegrityFlag)
+                    if (integrityBreach)
                       Container(
                         padding: const EdgeInsets.all(SpacingTokens.md),
                         decoration: BoxDecoration(
@@ -156,92 +180,136 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                    const SizedBox(height: SpacingTokens.xl),
-                    // Session details.
-                    _DetailRow(
-                      label: 'Drill Type',
-                      value: drill.drillType.dbValue,
-                    ),
-                    _DetailRow(
-                      label: 'Input Mode',
-                      value: drill.inputMode.dbValue,
-                    ),
-                    _DetailRow(
-                      label: 'Status',
-                      value: session.status.dbValue,
-                    ),
-                    if (session.sessionDuration != null)
-                      _DetailRow(
-                        label: 'Duration',
-                        value: _formatDuration(session.sessionDuration!),
-                      ),
                   ],
                 ),
               ),
             ),
-            // Done button.
-            Container(
-              padding: const EdgeInsets.all(SpacingTokens.md),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  // Fix 11 — Route back to Home, not just pop one screen.
-                  // S12 §12.2 — Set showHome before pop so ShellScreen shows Home Dashboard.
-                  onPressed: () {
-                    ref.read(showHomeProvider.notifier).state = true;
-                    Navigator.of(context)
-                        .popUntil((route) => route.isFirst);
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: ColorTokens.primaryDefault,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: SpacingTokens.md),
-                  ),
-                  child: const Text('Done'),
-                ),
-              ),
-            ),
+            // Bottom buttons.
+            _buildBottomButtons(context, ref),
           ],
         ),
       ),
     );
   }
 
-  Color _scoreColor(double score) => scoreColor(score);
+  Widget _buildBottomButtons(BuildContext context, WidgetRef ref) {
+    // Check if there's a next pending drill.
+    final hasNextDrill = practiceBlockId != null;
 
-  String _formatDuration(int seconds) => formatDuration(seconds);
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+    return Container(
+      padding: const EdgeInsets.all(SpacingTokens.md),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              color: ColorTokens.textSecondary,
+          // Practice Overview button.
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => _navigateToPracticeOverview(context),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColorTokens.primaryDefault,
+                side: const BorderSide(color: ColorTokens.primaryDefault),
+                padding: const EdgeInsets.symmetric(
+                  vertical: SpacingTokens.sm + 4,
+                ),
+              ),
+              child: const Text('Practice Overview'),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              fontWeight: FontWeight.w500,
-              color: ColorTokens.textPrimary,
+          if (hasNextDrill) ...[
+            const SizedBox(width: SpacingTokens.sm),
+            // Next Drill button.
+            Expanded(
+              child: _NextDrillButton(
+                practiceBlockId: practiceBlockId!,
+                userId: userId!,
+              ),
             ),
-          ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _navigateHome(BuildContext context, WidgetRef ref) {
+    ref.read(showHomeProvider.notifier).state = true;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  void _navigateToPracticeOverview(BuildContext context) {
+    // Pop back to the practice queue screen.
+    Navigator.of(context).pop();
+  }
+
+  static String _drillTypeLabel(DrillType type) {
+    return switch (type) {
+      DrillType.techniqueBlock => 'Technique',
+      DrillType.transition => 'Transition',
+      DrillType.pressure => 'Pressure',
+    };
+  }
+
+  static Color _drillTypeColor(DrillType type) {
+    return switch (type) {
+      DrillType.techniqueBlock => ColorTokens.textTertiary,
+      DrillType.transition => ColorTokens.primaryDefault,
+      DrillType.pressure => ColorTokens.warningIntegrity,
+    };
+  }
+}
+
+/// Button that checks for next pending drill and navigates to it.
+class _NextDrillButton extends ConsumerWidget {
+  final String practiceBlockId;
+  final String userId;
+
+  const _NextDrillButton({
+    required this.practiceBlockId,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pbAsync =
+        ref.watch(practiceBlockWithEntriesProvider(practiceBlockId));
+
+    return pbAsync.when(
+      data: (pbWithEntries) {
+        if (pbWithEntries == null) {
+          return const SizedBox.shrink();
+        }
+
+        final nextPending = pbWithEntries.entries
+            .where(
+                (e) => e.entry.entryType == PracticeEntryType.pendingDrill)
+            .toList();
+
+        if (nextPending.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return FilledButton(
+          onPressed: () {
+            // Pop back to queue — user can start from there.
+            Navigator.of(context).pop();
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: ColorTokens.primaryDefault,
+            padding: const EdgeInsets.symmetric(
+              vertical: SpacingTokens.sm + 4,
+            ),
+          ),
+          child: const Text('Next Drill'),
+        );
+      },
+      loading: () => FilledButton(
+        onPressed: null,
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            vertical: SpacingTokens.sm + 4,
+          ),
+        ),
+        child: const Text('Next Drill'),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -289,7 +357,6 @@ class _CustomDrillMetrics extends StatelessWidget {
               ),
             ),
             const SizedBox(height: SpacingTokens.md),
-            // Show computed metrics.
             for (final entry in metrics.entries)
               _DetailRow(label: entry.key, value: entry.value),
             if (drill.target != null) ...[
@@ -309,7 +376,6 @@ class _CustomDrillMetrics extends StatelessWidget {
     final metrics = <String, String>{};
     metrics['Attempts'] = '${instances.length}';
 
-    // Try to compute hit rate from rawMetrics.
     int hits = 0;
     bool hasHitData = false;
     final numericValues = <double>[];
@@ -335,11 +401,47 @@ class _CustomDrillMetrics extends StatelessWidget {
     }
 
     if (numericValues.isNotEmpty) {
-      final avg = numericValues.reduce((a, b) => a + b) / numericValues.length;
+      final avg =
+          numericValues.reduce((a, b) => a + b) / numericValues.length;
       metrics['Average'] = avg.toStringAsFixed(1);
-      metrics['Best'] = numericValues.reduce((a, b) => a > b ? a : b).toStringAsFixed(1);
+      metrics['Best'] =
+          numericValues.reduce((a, b) => a > b ? a : b).toStringAsFixed(1);
     }
 
     return metrics;
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: TypographyTokens.bodySize,
+              color: ColorTokens.textSecondary,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: TypographyTokens.bodySize,
+              fontWeight: FontWeight.w500,
+              color: ColorTokens.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

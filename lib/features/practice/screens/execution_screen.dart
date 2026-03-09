@@ -3,6 +3,7 @@
 // and RawDataEntryScreen with a single host + swappable input delegate.
 // TechniqueBlockScreen remains separate (timer-based, no per-instance recording).
 
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ import 'package:zx_golf_app/features/practice/execution/input_delegates/continuo
 import 'package:zx_golf_app/features/practice/execution/input_delegates/grid_cell_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/raw_data_entry_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
-import 'package:zx_golf_app/features/practice/widgets/club_selector.dart';
+import 'package:zx_golf_app/features/practice/widgets/club_grid_picker.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
@@ -26,6 +27,21 @@ import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/scoring_providers.dart';
+
+/// Tracked shot entry for the shot log.
+class _ShotEntry {
+  final String label;
+  final bool isHit;
+  final String club;
+  final double? score;
+
+  const _ShotEntry({
+    required this.label,
+    required this.isHit,
+    required this.club,
+    this.score,
+  });
+}
 
 /// Unified execution screen for grid, binary, continuous, and raw input modes.
 class ExecutionScreen extends ConsumerStatefulWidget {
@@ -50,9 +66,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   bool _initialized = false;
   bool _ending = false;
   late SurfaceType? _surfaceType = widget.session.surfaceType;
+  EnvironmentType? _environmentType;
   String _selectedClub = 'Putter';
   List<String> _availableClubs = [];
   final _random = Random();
+  final List<_ShotEntry> _shotLog = [];
+  final _shotListController = ScrollController();
 
   @override
   void initState() {
@@ -78,6 +97,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
     await _controller.initialize();
     await _loadClubs();
+    // Load environment type from practice block.
+    final block = await ref
+        .read(practiceRepositoryProvider)
+        .getPracticeBlockById(widget.session.practiceBlockId);
+    _environmentType = block?.environmentType;
     if (mounted) setState(() => _initialized = true);
   }
 
@@ -104,7 +128,41 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   @override
   void dispose() {
     _delegate.dispose();
+    _shotListController.dispose();
     super.dispose();
+  }
+
+  /// Parse a shot entry from instance data for the shot log.
+  _ShotEntry _parseShotEntry(InstancesCompanion data, InstanceResult result) {
+    final metrics =
+        jsonDecode(data.rawMetrics.value) as Map<String, dynamic>;
+    // Grid or binary — has 'hit' field.
+    if (metrics.containsKey('hit')) {
+      final isHit = metrics['hit'] as bool;
+      final label =
+          metrics['label'] as String? ?? (isHit ? 'Hit' : 'Miss');
+      return _ShotEntry(
+        label: label,
+        isHit: isHit,
+        club: data.selectedClub.value,
+        score: result.realtimeScore,
+      );
+    }
+    // Raw/continuous — has 'value' field.
+    if (metrics.containsKey('value')) {
+      final value = (metrics['value'] as num).toDouble();
+      return _ShotEntry(
+        label: value.toStringAsFixed(1),
+        isHit: (result.realtimeScore ?? 0) >= 2.5,
+        club: data.selectedClub.value,
+        score: result.realtimeScore,
+      );
+    }
+    return _ShotEntry(
+      label: '\u2014',
+      isHit: false,
+      club: data.selectedClub.value,
+    );
   }
 
   /// Unified instance-logging pipeline. Delegates call this via the
@@ -139,6 +197,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     final result = await _controller.logInstance(data);
 
+    // Add to shot log.
+    _shotLog.add(_parseShotEntry(data, result));
+
     // Reset inactivity timer.
     ref.read(timerServiceProvider).resetSessionInactivityTimer(
           widget.session.sessionId,
@@ -147,6 +208,17 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     _delegate.onInstanceLogged(result, data);
     setState(() {});
+
+    // Auto-scroll shot list to bottom.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_shotListController.hasClients) {
+        _shotListController.animateTo(
+          _shotListController.position.maxScrollExtent,
+          duration: MotionTokens.fast,
+          curve: Curves.easeInOut,
+        );
+      }
+    });
 
     // S13 §13.7 — Auto-advance set if structured.
     await _handlePostInstanceAdvance();
@@ -165,6 +237,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               completedSetIndex: _controller.currentSetIndex);
         }
         await _controller.advanceSet();
+        // Clear shot log for new set.
+        _shotLog.clear();
         if (mounted) setState(() {});
       }
     }
@@ -174,6 +248,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   Future<void> _undoLast() async {
     final deleted = await _controller.undoLastInstance();
     _delegate.onInstanceUndone(deleted);
+    if (_shotLog.isNotEmpty) _shotLog.removeLast();
     if (mounted) setState(() {});
   }
 
@@ -183,14 +258,46 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await endSessionAndNavigate(context, ref,
         session: widget.session,
         drill: widget.drill,
-        userId: widget.userId);
+        userId: widget.userId,
+        practiceBlockId: widget.session.practiceBlockId);
   }
 
-  Future<void> _changeSurface() async {
-    final newSurface = await changeSurface(context, ref,
-        sessionId: widget.session.sessionId);
-    if (newSurface != null && mounted) {
-      setState(() => _surfaceType = newSurface);
+  /// Change environment type — updates practice block only.
+  Future<void> _changeEnvironment() async {
+    final env = await showEnvironmentPicker(context);
+    if (env == null || !mounted) return;
+    await ref.read(practiceRepositoryProvider).updateBlockEnvironmentAndSurface(
+          widget.session.practiceBlockId,
+          environmentType: env,
+          surfaceType: _surfaceType ?? SurfaceType.mat,
+        );
+    setState(() => _environmentType = env);
+  }
+
+  /// Change surface type — updates both session and practice block.
+  Future<void> _changeSurfaceType() async {
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !mounted) return;
+    await ref.read(practiceRepositoryProvider).updateBlockEnvironmentAndSurface(
+          widget.session.practiceBlockId,
+          environmentType: _environmentType ?? EnvironmentType.indoor,
+          surfaceType: surface,
+        );
+    await ref
+        .read(practiceRepositoryProvider)
+        .updateSessionSurface(widget.session.sessionId, surface);
+    setState(() => _surfaceType = surface);
+  }
+
+  /// Open club grid picker for user-led/guided modes.
+  Future<void> _pickClub() async {
+    final club = await showClubGridPicker(
+      context,
+      clubs: _availableClubs,
+      selectedClub: _selectedClub,
+    );
+    if (club != null && mounted) {
+      setState(() => _selectedClub = club);
     }
   }
 
@@ -226,16 +333,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               currentInstanceCount: _controller.currentSetInstanceCount,
               requiredAttemptsPerSet: _controller.requiredAttemptsPerSet,
             ),
-            // TD-06 §9.1.2 — Club selector (hidden for putting).
-            if (widget.drill.clubSelectionMode != null &&
-                _availableClubs.isNotEmpty)
-              ClubSelector(
-                mode: widget.drill.clubSelectionMode!,
-                availableClubs: _availableClubs,
-                selectedClub: _selectedClub,
-                onClubSelected: (club) =>
-                    setState(() => _selectedClub = club),
-              ),
+            // Shot log + Club square section.
+            _buildShotLogSection(),
             // Gap 42 — Inline lock indicator.
             if (isLocked)
               Padding(
@@ -258,17 +357,200 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 requestRebuild: () => setState(() {}),
               ),
             ),
-            _buildBottomBar(executionContext),
+            _buildBottomBar(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomBar(ExecutionContext executionContext) {
+  /// Shot log (left) + club square (right) section.
+  Widget _buildShotLogSection() {
+    final hasClubs = widget.drill.clubSelectionMode != null &&
+        _availableClubs.isNotEmpty;
+    final hitCount = _shotLog.where((s) => s.isHit).length;
+    final totalCount = _shotLog.length;
+
+    return Container(
+      height: 140,
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: ColorTokens.surfaceBorder),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Shot log (left).
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                // Scrollable shot list.
+                Expanded(
+                  child: _shotLog.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No shots recorded',
+                            style: TextStyle(
+                              fontSize: TypographyTokens.microSize,
+                              color: ColorTokens.textTertiary,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: _shotListController,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SpacingTokens.md,
+                            vertical: SpacingTokens.xs,
+                          ),
+                          itemCount: _shotLog.length,
+                          itemBuilder: (context, index) {
+                            final shot = _shotLog[index];
+                            return _ShotLogRow(
+                              index: index + 1,
+                              shot: shot,
+                            );
+                          },
+                        ),
+                ),
+                // Shot count + undo row.
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpacingTokens.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        '$hitCount/$totalCount',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.microSize,
+                          fontWeight: FontWeight.w500,
+                          color: ColorTokens.textSecondary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      if (totalCount > 0)
+                        Text(
+                          ' hits',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.microSize,
+                            color: ColorTokens.textTertiary,
+                          ),
+                        ),
+                      const Spacer(),
+                      if (_controller.canUndo)
+                        GestureDetector(
+                          onTap: _undoLast,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: SpacingTokens.xs,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.undo, size: 14,
+                                    color: ColorTokens.textTertiary),
+                                const SizedBox(width: SpacingTokens.xs),
+                                Text(
+                                  'Undo',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.microSize,
+                                    color: ColorTokens.textTertiary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.xs),
+              ],
+            ),
+          ),
+          // Club square (right).
+          if (hasClubs) _buildClubSquare(),
+        ],
+      ),
+    );
+  }
+
+  /// Large tappable club square — tap to open grid picker.
+  Widget _buildClubSquare() {
+    final isRandom =
+        widget.drill.clubSelectionMode == ClubSelectionMode.random;
+
+    return GestureDetector(
+      onTap: isRandom ? null : _pickClub,
+      child: Container(
+        width: 100,
+        decoration: const BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          border: Border(
+            left: BorderSide(color: ColorTokens.surfaceBorder),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.sports_golf,
+              size: 24,
+              color: ColorTokens.textTertiary,
+            ),
+            const SizedBox(height: SpacingTokens.xs),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.xs),
+              child: Text(
+                _selectedClub,
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySize,
+                  fontWeight: FontWeight.w600,
+                  color: ColorTokens.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (!isRandom) ...[
+              const SizedBox(height: SpacingTokens.xs),
+              Text(
+                'Tap to change',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: ColorTokens.textTertiary,
+                ),
+              ),
+            ],
+            if (isRandom) ...[
+              const SizedBox(height: SpacingTokens.xs),
+              Text(
+                'Random',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: ColorTokens.primaryDefault,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    final envStyle = EnvironmentSurfaceStyles.environment(_environmentType);
+    final surfStyle = EnvironmentSurfaceStyles.surface(_surfaceType);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm,
+        SpacingTokens.md,
+        SpacingTokens.sm,
+        SpacingTokens.md,
+        SpacingTokens.sm,
       ),
       decoration: const BoxDecoration(
         color: ColorTokens.surfaceRaised,
@@ -276,35 +558,152 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           top: BorderSide(color: ColorTokens.surfaceBorder),
         ),
       ),
-      child: Column(
+      child: Row(
+        children: [
+          // Environment badge (tappable).
+          GestureDetector(
+            onTap: _changeEnvironment,
+            child: _BottomBadge(
+              label: envStyle.label,
+              icon: envStyle.icon,
+              color: envStyle.color,
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.xs),
+          // Surface badge (tappable).
+          GestureDetector(
+            onTap: _changeSurfaceType,
+            child: _BottomBadge(
+              label: surfStyle.label,
+              icon: surfStyle.icon,
+              iconScale: surfStyle.iconScale,
+              color: surfStyle.color,
+              fillColor: surfStyle.fillColor,
+              borderColor: surfStyle.borderColor,
+            ),
+          ),
+          const Spacer(),
+          // End Drill button (unstructured only).
+          if (!_controller.isStructured)
+            FilledButton(
+              onPressed: _endSession,
+              style: FilledButton.styleFrom(
+                backgroundColor: ColorTokens.primaryDefault,
+              ),
+              child: const Text('End Drill'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single row in the shot log.
+class _ShotLogRow extends StatelessWidget {
+  final int index;
+  final _ShotEntry shot;
+
+  const _ShotLogRow({required this.index, required this.shot});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        children: [
+          // Shot number.
+          SizedBox(
+            width: 20,
+            child: Text(
+              '$index',
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                color: ColorTokens.textTertiary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          // Hit/miss indicator dot.
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: shot.isHit
+                  ? ColorTokens.successDefault
+                  : ColorTokens.missDefault,
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.xs),
+          // Result label.
+          Expanded(
+            child: Text(
+              shot.label,
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                color: shot.isHit
+                    ? ColorTokens.successDefault
+                    : ColorTokens.textSecondary,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Club name.
+          Text(
+            shot.club,
+            style: TextStyle(
+              fontSize: 10,
+              color: ColorTokens.textTertiary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small badge pill for the bottom bar.
+class _BottomBadge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final double iconScale;
+  final Color color;
+  final Color? fillColor;
+  final Color? borderColor;
+
+  const _BottomBadge({
+    required this.label,
+    required this.icon,
+    this.iconScale = 1.0,
+    required this.color,
+    this.fillColor,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.sm,
+        vertical: SpacingTokens.xs,
+      ),
+      decoration: BoxDecoration(
+        color: fillColor ?? color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+        border:
+            Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              // S14 §14.10 — Undo last instance.
-              if (_controller.canUndo)
-                TextButton.icon(
-                  onPressed: _undoLast,
-                  icon: const Icon(Icons.undo, size: 16),
-                  label: const Text('Undo'),
-                ),
-              const Spacer(),
-              if (!_controller.isStructured)
-                FilledButton(
-                  onPressed: _endSession,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: ColorTokens.primaryDefault,
-                  ),
-                  child: const Text('End Drill'),
-                ),
-            ],
-          ),
-          const SizedBox(height: SpacingTokens.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SurfaceBadge(
-              surfaceType: _surfaceType,
-              onTap: _changeSurface,
+          Icon(icon, size: 14 * iconScale, color: color),
+          const SizedBox(width: SpacingTokens.xs),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: TypographyTokens.microSize,
+              fontWeight: FontWeight.w500,
+              color: color,
             ),
           ),
         ],

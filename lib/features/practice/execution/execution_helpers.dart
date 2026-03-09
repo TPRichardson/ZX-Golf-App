@@ -7,8 +7,7 @@ import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
-// Shared helpers for the 4 execution screens (grid, continuous, raw, binary).
-// Eliminates identical _endSession / _changeSurface across each screen.
+// Shared helpers for execution screens.
 
 /// End the current session: close via PracticeActions, fetch updated session,
 /// navigate to PostSessionSummaryScreen.
@@ -18,6 +17,7 @@ Future<void> endSessionAndNavigate(
   required Session session,
   required Drill drill,
   required String userId,
+  String? practiceBlockId,
 }) async {
   final actions = ref.read(practiceActionsProvider);
   final result = await actions.endSession(session.sessionId, userId);
@@ -36,6 +36,8 @@ Future<void> endSessionAndNavigate(
         session: closedSession ?? session,
         sessionScore: result.sessionScore,
         integrityBreach: result.integrityBreach,
+        practiceBlockId: practiceBlockId,
+        userId: userId,
       ),
     ),
   );

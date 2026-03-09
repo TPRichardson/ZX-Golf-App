@@ -1,129 +1,171 @@
-// Phase 4 — Practice Entry Card widget.
-// S13 §13.3 — Queue entry card showing drill name, type badge, status.
+// Practice Entry Card — drill tile in the practice queue.
+// Shows drill info, skill area/type badges, and pending vs complete visual styles.
 
 import 'package:flutter/material.dart';
+import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
-import 'package:zx_golf_app/core/widgets/zx_card.dart';
+import 'package:zx_golf_app/core/widgets/star_rating.dart';
+import 'package:zx_golf_app/core/widgets/zx_badge.dart';
+import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 
-/// S13 §13.3 — Card displaying a practice entry in the queue.
+const _goldStar = Color(0xFFFFD700);
+
 class PracticeEntryCard extends StatelessWidget {
   final PracticeEntryWithDrill entryWithDrill;
   final VoidCallback? onTap;
   final VoidCallback? onRemove;
+  final double? sessionScore;
 
   const PracticeEntryCard({
     super.key,
     required this.entryWithDrill,
     this.onTap,
     this.onRemove,
+    this.sessionScore,
   });
 
   @override
   Widget build(BuildContext context) {
     final entry = entryWithDrill.entry;
     final drill = entryWithDrill.drill;
+    final isComplete = entry.entryType == PracticeEntryType.completedSession;
+    final isActive = entry.entryType == PracticeEntryType.activeSession;
 
-    return ZxCard(
+    return GestureDetector(
       onTap: onTap,
-      child: Row(
-        children: [
-          // Skill area color indicator.
-          Container(
-            width: 4,
-            height: 48,
-            decoration: BoxDecoration(
-              color: _skillAreaColor(drill.skillArea),
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
-            ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.md,
+          vertical: SpacingTokens.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isComplete
+              ? ColorTokens.successDefault.withValues(alpha: 0.08)
+              : isActive
+                  ? ColorTokens.primaryDefault.withValues(alpha: 0.08)
+                  : ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          border: Border.all(
+            color: isComplete
+                ? ColorTokens.successDefault.withValues(alpha: 0.3)
+                : isActive
+                    ? ColorTokens.primaryDefault.withValues(alpha: 0.3)
+                    : ColorTokens.surfaceBorder,
           ),
-          const SizedBox(width: SpacingTokens.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  drill.name,
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodyLgSize,
-                    fontWeight: FontWeight.w500,
-                    color: ColorTokens.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: SpacingTokens.xs),
-                Row(
-                  children: [
-                    _buildTypeBadge(drill.drillType),
-                    const SizedBox(width: SpacingTokens.sm),
-                    _buildStatusBadge(entry.entryType),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // Completed indicator.
-          if (entry.entryType == PracticeEntryType.completedSession)
-            const Padding(
-              padding: EdgeInsets.only(right: SpacingTokens.sm),
-              child: Icon(
-                Icons.check_circle,
-                color: ColorTokens.successDefault,
-                size: 24,
+        ),
+        child: Row(
+          children: [
+            // Skill area color indicator.
+            Container(
+              width: 4,
+              height: 48,
+              decoration: BoxDecoration(
+                color: ColorTokens.skillArea(drill.skillArea),
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
               ),
             ),
-          // Remove button for pending entries.
-          if (entry.entryType == PracticeEntryType.pendingDrill &&
-              onRemove != null)
-            IconButton(
-              icon: const Icon(Icons.close, size: 18),
-              color: ColorTokens.textTertiary,
-              onPressed: onRemove,
+            const SizedBox(width: SpacingTokens.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drill name.
+                  Text(
+                    drill.name,
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodyLgSize,
+                      fontWeight: FontWeight.w500,
+                      color: ColorTokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: SpacingTokens.xs),
+                  // Badges row: skill area + drill type.
+                  Row(
+                    children: [
+                      ZxBadge(
+                        label: drill.skillArea.dbValue,
+                        color: ColorTokens.skillArea(drill.skillArea),
+                      ),
+                      const SizedBox(width: SpacingTokens.xs),
+                      ZxBadge(
+                        label: _drillTypeLabel(drill.drillType),
+                        color: _drillTypeColor(drill.drillType),
+                      ),
+                    ],
+                  ),
+                  // Structured drill info (sets/shots).
+                  if (drill.requiredSetCount > 1 ||
+                      drill.requiredAttemptsPerSet != null) ...[
+                    const SizedBox(height: SpacingTokens.xs),
+                    Text(
+                      _structuredInfo(drill),
+                      style: TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.textTertiary,
+                      ),
+                    ),
+                  ],
+                  // Stars for completed drills.
+                  if (isComplete && sessionScore != null) ...[
+                    const SizedBox(height: SpacingTokens.xs),
+                    StarRating(
+                      stars: scoreToStars(sessionScore!),
+                      size: 18,
+                      color: _goldStar,
+                    ),
+                  ],
+                ],
+              ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeBadge(DrillType type) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.sm,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: ColorTokens.surfaceRaised,
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-      ),
-      child: Text(
-        type.name,
-        style: TextStyle(
-          fontSize: TypographyTokens.microSize,
-          color: ColorTokens.textSecondary,
+            // Active indicator.
+            if (isActive)
+              Padding(
+                padding: const EdgeInsets.only(right: SpacingTokens.xs),
+                child: Icon(
+                  Icons.play_circle_filled,
+                  color: ColorTokens.primaryDefault,
+                  size: 24,
+                ),
+              ),
+            // Delete button for pending and completed entries.
+            if (onRemove != null)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: ColorTokens.errorDestructive,
+                onPressed: onRemove,
+              ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusBadge(PracticeEntryType type) {
-    final (label, color) = switch (type) {
-      PracticeEntryType.pendingDrill => ('Pending', ColorTokens.textTertiary),
-      PracticeEntryType.activeSession =>
-        ('Active', ColorTokens.primaryDefault),
-      PracticeEntryType.completedSession =>
-        ('Done', ColorTokens.successDefault),
-    };
-
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: TypographyTokens.microSize,
-        color: color,
-      ),
-    );
+  String _structuredInfo(Drill drill) {
+    final parts = <String>[];
+    if (drill.requiredSetCount > 1) {
+      parts.add('${drill.requiredSetCount} sets');
+    }
+    if (drill.requiredAttemptsPerSet != null) {
+      parts.add('${drill.requiredAttemptsPerSet} shots/set');
+    }
+    return parts.join(', ');
   }
 
-  Color _skillAreaColor(SkillArea area) {
-    return ColorTokens.skillArea(area);
+  static String _drillTypeLabel(DrillType type) {
+    return switch (type) {
+      DrillType.techniqueBlock => 'Technique',
+      DrillType.transition => 'Transition',
+      DrillType.pressure => 'Pressure',
+    };
+  }
+
+  static Color _drillTypeColor(DrillType type) {
+    return switch (type) {
+      DrillType.techniqueBlock => ColorTokens.textTertiary,
+      DrillType.transition => ColorTokens.primaryDefault,
+      DrillType.pressure => ColorTokens.warningIntegrity,
+    };
   }
 }

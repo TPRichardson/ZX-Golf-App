@@ -41,7 +41,7 @@ void main() {
   );
 
   group('Fix 11: Exit routing to Home', () {
-    testWidgets('Done button pops to first route', (tester) async {
+    testWidgets('Practice Overview button pops one route', (tester) async {
       // Build nav stack: Home → Intermediate → PostSessionSummary.
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp(
@@ -86,15 +86,14 @@ void main() {
 
       // Verify we're on the summary screen.
       expect(find.text('Session Complete'), findsOneWidget);
-      expect(find.text('Done'), findsOneWidget);
+      expect(find.text('Practice Overview'), findsOneWidget);
 
-      // Tap Done — should popUntil first route.
-      await tester.tap(find.text('Done'));
+      // Tap Practice Overview — should pop back one route to Intermediate.
+      await tester.tap(find.text('Practice Overview'));
       await tester.pumpAndSettle();
 
-      // Verify we're back at the Home (first route), not the Intermediate.
-      expect(find.text('Go Intermediate'), findsOneWidget);
-      expect(find.text('Push Summary'), findsNothing);
+      // Verify we're at the Intermediate screen (not Home).
+      expect(find.text('Push Summary'), findsOneWidget);
       expect(find.text('Session Complete'), findsNothing);
     });
 

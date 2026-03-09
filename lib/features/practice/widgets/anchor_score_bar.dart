@@ -1,0 +1,168 @@
+// Anchor score bar — horizontal bar showing Min/Scratch/Pro markers
+// with the user's score plotted on it.
+
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:zx_golf_app/core/theme/tokens.dart';
+
+/// Horizontal bar showing Min, Scratch, and Pro anchor positions on a 0–100 scale,
+/// with the user's score marker. The bar gradient goes red → amber → green.
+class AnchorScoreBar extends StatelessWidget {
+  final double userScore;
+  final String? anchorsJson;
+
+  const AnchorScoreBar({
+    super.key,
+    required this.userScore,
+    this.anchorsJson,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Parse anchors from JSON. Format: {"subskillId": {"Min": x, "Scratch": y, "Pro": z}}
+    double? minAnchor;
+    double? scratchAnchor;
+    double? proAnchor;
+
+    if (anchorsJson != null) {
+      try {
+        final anchors = jsonDecode(anchorsJson!) as Map<String, dynamic>;
+        if (anchors.isNotEmpty) {
+          final first = anchors.values.first as Map<String, dynamic>;
+          minAnchor = (first['Min'] as num?)?.toDouble();
+          scratchAnchor = (first['Scratch'] as num?)?.toDouble();
+          proAnchor = (first['Pro'] as num?)?.toDouble();
+        }
+      } catch (_) {}
+    }
+
+    if (minAnchor == null || scratchAnchor == null || proAnchor == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Score is 0-5, anchors are 0-100 (hit rate percentages).
+    // Map user score to the same 0-100 scale: score/5 * 100.
+    final userPct = (userScore / 5.0 * 100).clamp(0.0, 100.0);
+
+    return Column(
+      children: [
+        const SizedBox(height: SpacingTokens.md),
+        SizedBox(
+          height: 56,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final minPos = (minAnchor! / 100.0 * width).clamp(0.0, width);
+              final scratchPos = (scratchAnchor! / 100.0 * width).clamp(0.0, width);
+              final proPos = (proAnchor! / 100.0 * width).clamp(0.0, width);
+              final userPos = (userPct / 100.0 * width).clamp(0.0, width);
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Bar background with gradient.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 20,
+                    child: Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFE05252), // Red
+                            Color(0xFFE8A830), // Amber
+                            Color(0xFF22C55E), // Green
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Min marker.
+                  _AnchorMarker(
+                    position: minPos,
+                    label: 'Min',
+                    color: const Color(0xFFE05252),
+                  ),
+                  // Scratch marker.
+                  _AnchorMarker(
+                    position: scratchPos,
+                    label: 'Scratch',
+                    color: const Color(0xFFE8A830),
+                  ),
+                  // Pro marker.
+                  _AnchorMarker(
+                    position: proPos,
+                    label: 'Pro',
+                    color: const Color(0xFF22C55E),
+                  ),
+                  // User score marker.
+                  Positioned(
+                    left: userPos - 6,
+                    top: 14,
+                    child: Container(
+                      width: 12,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(3),
+                        border: Border.all(color: ColorTokens.surfaceBorder, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AnchorMarker extends StatelessWidget {
+  final double position;
+  final String label;
+  final Color color;
+
+  const _AnchorMarker({
+    required this.position,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: position - 1,
+      top: 16,
+      child: Column(
+        children: [
+          Container(
+            width: 2,
+            height: 16,
+            color: color,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: TypographyTokens.microSize,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
