@@ -65,9 +65,9 @@ class _GolfBagPainter extends CustomPainter {
 
     canvas.drawPath(bagPath, bagFill);
 
-    // --- Collar band: darker parallelogram near opening ---
+    // --- Collar band: subtly dimmed parallelogram near opening ---
     final collarFill = Paint()
-      ..color = clubColor.withValues(alpha: 0.6)
+      ..color = clubColor.withValues(alpha: 0.85)
       ..style = PaintingStyle.fill;
 
     final collarPath = Path()
