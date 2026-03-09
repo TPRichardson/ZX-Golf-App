@@ -41,11 +41,8 @@ class SkillAreaTile extends StatelessWidget {
     required this.onTap,
   });
 
-  // Width thresholds for responsive bar/label display.
-  // On Android phones (~400dp), 50%-flex tiles get ~164dp —
-  // bars show but labels need more room, so they appear only on wide tiles.
+  // Minimum tile width to show progress bars.
   static const _showBarsThreshold = 140.0;
-  static const _showLabelsThreshold = 200.0;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +101,6 @@ class SkillAreaTile extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final showBars = isExpanded && constraints.maxWidth >= _showBarsThreshold;
-            final showLabels = constraints.maxWidth >= _showLabelsThreshold;
 
             final nameStars = Column(
               crossAxisAlignment: isCollapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
@@ -135,6 +131,9 @@ class SkillAreaTile extends StatelessWidget {
             );
 
             return Row(
+              crossAxisAlignment: showBars
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.center,
               children: [
                 // Left — name + stars. Expanded when no bars to prevent overflow.
                 if (showBars)
@@ -142,58 +141,28 @@ class SkillAreaTile extends StatelessWidget {
                 else
                   Expanded(child: nameStars),
                 if (showBars) ...[
-                  const SizedBox(width: SpacingTokens.sm),
-                  // Right — stacked bars.
+                  // Bars centred between right edge of stars and right edge of tile.
+                  // Profile bar bottom-aligns with stars bottom via CrossAxisAlignment.end.
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            if (showLabels)
-                              SizedBox(
-                                width: 56,
-                                child: Text(
-                                  'Score',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: ColorTokens.textTertiary,
-                                  ),
-                                ),
-                              ),
-                            Expanded(
-                              child: _TileFillBar(
-                                value: totalPoints,
-                                max: allocation.toDouble(),
-                                rag: true,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            if (showLabels)
-                              SizedBox(
-                                width: 56,
-                                child: Text(
-                                  'Profile',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: ColorTokens.textTertiary,
-                                  ),
-                                ),
-                              ),
-                            Expanded(
-                              child: _TileFillBar(
-                                value: totalOccupancy,
-                                max: windowCapacity,
-                                rag: false,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: SpacingTokens.md),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _TileFillBar(
+                            value: totalPoints,
+                            max: allocation.toDouble(),
+                            rag: true,
+                          ),
+                          const SizedBox(height: 3),
+                          _TileFillBar(
+                            value: totalOccupancy,
+                            max: windowCapacity,
+                            rag: false,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
