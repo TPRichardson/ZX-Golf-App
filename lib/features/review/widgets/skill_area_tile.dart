@@ -38,8 +38,10 @@ class SkillAreaTile extends StatelessWidget {
   });
 
   // Width thresholds for responsive bar/label display.
+  // On Android phones (~400dp), 50%-flex tiles get ~164dp —
+  // bars show but labels need more room, so they appear only on wide tiles.
   static const _showBarsThreshold = 140.0;
-  static const _showLabelsThreshold = 160.0;
+  static const _showLabelsThreshold = 200.0;
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +124,7 @@ class SkillAreaTile extends StatelessWidget {
                     color: ColorTokens.textSecondary,
                   )
                 else
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 14, width: 70),
               ],
             );
 
