@@ -107,15 +107,6 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                         size: 48,
                         color: _scoreColor(score),
                       ),
-                      const SizedBox(height: SpacingTokens.sm),
-                      Text(
-                        '${scoreToStars(score).toStringAsFixed(1)} / 5',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.bodyLgSize,
-                          color: ColorTokens.textSecondary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
                     ] else if (isCustom)
                       _CustomDrillMetrics(
                         sessionId: session.sessionId,
