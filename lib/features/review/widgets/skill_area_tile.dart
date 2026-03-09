@@ -141,13 +141,11 @@ class SkillAreaTile extends StatelessWidget {
                 else
                   Expanded(child: nameStars),
                 if (showBars) ...[
-                  // Bars centred between right edge of stars and right edge of tile.
+                  const SizedBox(width: SpacingTokens.sm),
+                  // Bars fill from after stars to right edge of tile.
                   // Profile bar bottom-aligns with stars bottom via CrossAxisAlignment.end.
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: SpacingTokens.md),
-                      child: Column(
+                    child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
@@ -195,7 +193,6 @@ class SkillAreaTile extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ),
                   ),
                 ],
               ],
