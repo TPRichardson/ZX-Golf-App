@@ -111,7 +111,7 @@ class SkillAreaTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  skillArea.dbValue,
+                  isCollapsed ? skillArea.dbValue[0] : skillArea.dbValue,
                   style: TextStyle(
                     fontSize: isCollapsed ? TypographyTokens.microSize : TypographyTokens.bodySize,
                     fontWeight: TypographyTokens.headerWeight,
