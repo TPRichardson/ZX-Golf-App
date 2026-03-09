@@ -99,7 +99,7 @@ class SkillAreaTile extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final showBars = constraints.maxWidth >= _showBarsThreshold;
+            final showBars = isExpanded && constraints.maxWidth >= _showBarsThreshold;
             final showLabels = constraints.maxWidth >= _showLabelsThreshold;
 
             final nameStars = Column(
