@@ -131,13 +131,13 @@ final skillAreaAllocationsProvider =
 // Skill area stats — points from materialised scores, average from windows
 // ---------------------------------------------------------------------------
 
-/// Per-area stats: totalPoints from materialised skill area scores (accumulation
-/// formula), average from raw window states (0–5 performance quality metric).
+/// Per-area stats: totalPoints, average, totalOccupancy, windowCapacity.
 final skillAreaWindowStatsProvider = Provider.family<
-    AsyncValue<Map<SkillArea, ({double totalPoints, double average})>>,
+    AsyncValue<Map<SkillArea, ({double totalPoints, double average, double totalOccupancy, double windowCapacity})>>,
     String>((ref, userId) {
   final scoresAsync = ref.watch(skillAreaScoresProvider(userId));
   final windowsAsync = ref.watch(windowStatesProvider(userId));
+  final refsAsync = ref.watch(allSubskillRefsProvider);
   return scoresAsync.whenData((scores) {
     // Build average from window states (raw performance quality).
     final windows = windowsAsync.valueOrNull ?? [];
@@ -149,13 +149,23 @@ final skillAreaWindowStatsProvider = Provider.family<
           (occupancies[w.skillArea] ?? 0) + w.totalOccupancy;
     }
 
-    final map = <SkillArea, ({double totalPoints, double average})>{};
+    // Window capacity per area from SubskillRef (2 windows per subskill).
+    final refs = refsAsync.valueOrNull ?? [];
+    final capacityMap = <SkillArea, double>{};
+    for (final r in refs) {
+      capacityMap[r.skillArea] =
+          (capacityMap[r.skillArea] ?? 0) + r.windowSize * 2;
+    }
+
+    final map = <SkillArea, ({double totalPoints, double average, double totalOccupancy, double windowCapacity})>{};
     for (final score in scores) {
       final occ = occupancies[score.skillArea] ?? 0;
       final rawSum = sums[score.skillArea] ?? 0;
       map[score.skillArea] = (
         totalPoints: score.skillAreaScore,
         average: occ > 0 ? rawSum / occ : 0.0,
+        totalOccupancy: occ,
+        windowCapacity: capacityMap[score.skillArea] ?? 0,
       );
     }
     return map;

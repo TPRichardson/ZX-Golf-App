@@ -83,7 +83,7 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     int rowIndex,
     List<SkillArea> areas,
     List<int> flexValues,
-    Map<SkillArea, ({double totalPoints, double average})> windowStats,
+    Map<SkillArea, ({double totalPoints, double average, double totalOccupancy, double windowCapacity})> windowStats,
     Map<SkillArea, int> allocations,
   ) {
     final isExpanded = _expandedRow == rowIndex;
@@ -199,12 +199,13 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
 
   Widget _buildTileWidget(
     SkillArea area,
-    Map<SkillArea, ({double totalPoints, double average})> windowStats,
+    Map<SkillArea, ({double totalPoints, double average, double totalOccupancy, double windowCapacity})> windowStats,
     Map<SkillArea, int> allocations, {
     bool hasLeft = false,
     bool hasRight = false,
   }) {
-    final avg = windowStats[area]?.average ?? 0.0;
+    final stats = windowStats[area];
+    final avg = stats?.average ?? 0.0;
     final normalised = avg > 0 ? (avg / 5.0).clamp(0.0, 1.0) : 0.0;
     final allocation = allocations[area] ?? 1;
     return Padding(
@@ -212,9 +213,11 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
       child: SkillAreaTile(
         skillArea: area,
         normalisedScore: normalised,
-        totalPoints: windowStats[area]?.totalPoints ?? 0.0,
+        totalPoints: stats?.totalPoints ?? 0.0,
         average: avg,
         allocation: allocation,
+        totalOccupancy: stats?.totalOccupancy ?? 0.0,
+        windowCapacity: stats?.windowCapacity ?? 0.0,
         isExpanded: _expandedArea == area,
         hasLeft: hasLeft,
         hasRight: hasRight,

@@ -39,7 +39,44 @@ class SubskillBreakdown extends ConsumerWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
           child: Column(
-          children: areaRefs.map((subRef) {
+          children: [
+            // Column headers aligned to bar positions.
+            Padding(
+              padding: const EdgeInsets.only(
+                left: SpacingTokens.sm,
+                right: SpacingTokens.sm,
+                top: SpacingTokens.xs,
+                bottom: 0,
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 150 + SpacingTokens.sm),
+                  Expanded(
+                    child: Text(
+                      'SkillScore',
+                      style: TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.textTertiary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: SpacingTokens.sm),
+                  Expanded(
+                    child: Text(
+                      'SkillProfile',
+                      style: TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.textTertiary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: SpacingTokens.sm + 14),
+                ],
+              ),
+            ),
+            ...areaRefs.map((subRef) {
             final s = stats[subRef.subskillId];
             final totalPoints = s?.totalPoints ?? 0.0;
             final average = s?.average ?? 0.0;
@@ -57,8 +94,8 @@ class SubskillBreakdown extends ConsumerWidget {
               windowCapacity: subRef.windowSize * 2.0,
               onTap: () => onSubskillTap(subRef.subskillId),
             );
-          }).toList(),
-        ));
+          }),
+        ]));
       },
       loading: () => const Padding(
         padding: EdgeInsets.all(SpacingTokens.md),
@@ -125,34 +162,39 @@ class _SubskillTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // RAG pill behind subskill name.
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpacingTokens.sm,
-                vertical: 3,
-              ),
-              decoration: BoxDecoration(
-                color: pillColor,
-                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-              ),
-              child: Text(
-                name,
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
-                  fontWeight: TypographyTokens.bodyWeight,
-                  color: ColorTokens.textPrimary,
+            // RAG pill behind subskill name — fixed width for bar alignment.
+            SizedBox(
+              width: 150,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.sm,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: pillColor,
+                  borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                ),
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontWeight: TypographyTokens.bodyWeight,
+                    color: ColorTokens.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
             const SizedBox(width: SpacingTokens.sm),
             Expanded(child: _WindowFillBar(
-              occupancy: totalOccupancy,
-              capacity: windowCapacity,
+              occupancy: earnedPoints.toDouble(),
+              capacity: allocation.toDouble(),
             )),
             const SizedBox(width: SpacingTokens.sm),
             Expanded(child: _WindowFillBar(
-              occupancy: earnedPoints.toDouble(),
-              capacity: allocation.toDouble(),
+              occupancy: totalOccupancy,
+              capacity: windowCapacity,
+              rag: false,
             )),
             const SizedBox(width: SpacingTokens.sm),
             Icon(
@@ -167,12 +209,17 @@ class _SubskillTile extends StatelessWidget {
   }
 }
 
-/// Linear progress bar showing window fill. Red→green gradient; grey when empty.
+/// Linear progress bar. RAG mode: red→green. Profile mode: grey→cyan.
 class _WindowFillBar extends StatelessWidget {
   final double occupancy;
   final double capacity;
+  final bool rag;
 
-  const _WindowFillBar({required this.occupancy, required this.capacity});
+  const _WindowFillBar({
+    required this.occupancy,
+    required this.capacity,
+    this.rag = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -181,10 +228,16 @@ class _WindowFillBar extends StatelessWidget {
     final Color barColor;
     if (occupancy == 0) {
       barColor = ColorTokens.textTertiary.withValues(alpha: 0.3);
-    } else {
+    } else if (rag) {
       barColor = Color.lerp(
         const Color(0xFFE05252),
         const Color(0xFF22C55E),
+        fill,
+      )!;
+    } else {
+      barColor = Color.lerp(
+        ColorTokens.textTertiary,
+        ColorTokens.primaryDefault,
         fill,
       )!;
     }
