@@ -293,43 +293,79 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ),
               child: Row(
                 children: [
-                  // Delete (discard) button.
-                  SizedBox(
-                    height: 40,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _discardPracticeBlock(
-                        activePbData.practiceBlockId,
+                  // Discard pill button.
+                  GestureDetector(
+                    onTap: () => _discardPracticeBlock(
+                      activePbData.practiceBlockId,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.sm + 4,
+                        vertical: SpacingTokens.sm + 2,
                       ),
-                      icon: const Icon(Icons.delete_outline, size: 18),
-                      label: const Text('Discard'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: ColorTokens.errorDestructive,
-                        side: const BorderSide(
-                          color: ColorTokens.errorDestructive,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: SpacingTokens.sm,
-                        ),
+                      decoration: BoxDecoration(
+                        color: ColorTokens.errorDestructive
+                            .withValues(alpha: 0.1),
+                        borderRadius:
+                            BorderRadius.circular(ShapeTokens.radiusGrid),
+                        border: Border.all(
+                            color: ColorTokens.errorDestructive
+                                .withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Discard',
+                            style: TextStyle(
+                              fontSize: TypographyTokens.bodySize,
+                              fontWeight: FontWeight.w500,
+                              color: ColorTokens.errorDestructive,
+                            ),
+                          ),
+                          const SizedBox(width: SpacingTokens.xs),
+                          Icon(Icons.delete_outline,
+                              size: 16, color: ColorTokens.errorDestructive),
+                        ],
                       ),
                     ),
                   ),
                   const SizedBox(width: SpacingTokens.sm),
-                  // Resume button.
+                  // Resume Practice pill button.
                   Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: FilledButton.icon(
-                        onPressed: () => _resumePractice(
-                          activePbData.practiceBlockId,
+                    child: GestureDetector(
+                      onTap: () => _resumePractice(
+                        activePbData.practiceBlockId,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SpacingTokens.sm + 4,
+                          vertical: SpacingTokens.sm + 2,
                         ),
-                        icon: const Icon(Icons.play_arrow,
-                            color: Colors.white, size: 20),
-                        label: const Text(
-                          'Resume Practice',
-                          style: TextStyle(color: Colors.white),
+                        decoration: BoxDecoration(
+                          color: ColorTokens.successDefault
+                              .withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(ShapeTokens.radiusGrid),
+                          border: Border.all(
+                              color: ColorTokens.successDefault
+                                  .withValues(alpha: 0.25)),
                         ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ColorTokens.successDefault,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.play_arrow,
+                                size: 16, color: ColorTokens.successDefault),
+                            const SizedBox(width: SpacingTokens.xs),
+                            Text(
+                              'Resume Practice',
+                              style: TextStyle(
+                                fontSize: TypographyTokens.bodySize,
+                                fontWeight: FontWeight.w500,
+                                color: ColorTokens.successDefault,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

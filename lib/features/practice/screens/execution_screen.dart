@@ -485,9 +485,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       onTap: isRandom ? null : _pickClub,
       child: Container(
         width: 100,
-        decoration: const BoxDecoration(
-          color: ColorTokens.surfaceRaised,
-          border: Border(
+        decoration: BoxDecoration(
+          color: ColorTokens.primaryDefault.withValues(alpha: 0.08),
+          border: const Border(
             left: BorderSide(color: ColorTokens.surfaceBorder),
           ),
         ),
@@ -497,7 +497,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
             Icon(
               Icons.sports_golf,
               size: 24,
-              color: ColorTokens.textTertiary,
+              color: ColorTokens.primaryDefault,
             ),
             const SizedBox(height: SpacingTokens.xs),
             Padding(
@@ -508,7 +508,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 style: TextStyle(
                   fontSize: TypographyTokens.bodySize,
                   fontWeight: FontWeight.w600,
-                  color: ColorTokens.textPrimary,
+                  color: ColorTokens.primaryDefault,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,

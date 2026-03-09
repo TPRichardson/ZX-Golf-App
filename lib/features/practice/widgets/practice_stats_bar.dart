@@ -1,20 +1,27 @@
-// Practice stats bar — live clock, weather placeholder, location placeholder.
-// Shown at the top of the practice queue screen below environment/surface tiles.
+// Practice stats bar — live clock, environment, surface, location.
+// Shown at the top of the practice queue screen.
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 
 class PracticeStatsBar extends StatefulWidget {
   final DateTime startTimestamp;
   final EnvironmentType? environmentType;
+  final SurfaceType? surfaceType;
+  final VoidCallback? onEnvironmentTap;
+  final VoidCallback? onSurfaceTap;
 
   const PracticeStatsBar({
     super.key,
     required this.startTimestamp,
     this.environmentType,
+    this.surfaceType,
+    this.onEnvironmentTap,
+    this.onSurfaceTap,
   });
 
   @override
@@ -56,16 +63,17 @@ class _PracticeStatsBarState extends State<PracticeStatsBar> {
 
   @override
   Widget build(BuildContext context) {
-    final isOutdoor = widget.environmentType == EnvironmentType.outdoor;
+    final envStyle = EnvironmentSurfaceStyles.environment(widget.environmentType);
+    final surfStyle = EnvironmentSurfaceStyles.surface(widget.surfaceType);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        SpacingTokens.md, SpacingTokens.sm, SpacingTokens.md, 0,
+        SpacingTokens.sm, SpacingTokens.sm, SpacingTokens.sm, 0,
       ),
       child: Row(
         children: [
           // Live clock.
-          Icon(Icons.timer_outlined, size: 16, color: ColorTokens.textTertiary),
+          Icon(Icons.timer_outlined, size: 14, color: ColorTokens.textTertiary),
           const SizedBox(width: SpacingTokens.xs),
           Text(
             _formatElapsed(_elapsed),
@@ -76,52 +84,98 @@ class _PracticeStatsBarState extends State<PracticeStatsBar> {
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-          const SizedBox(width: SpacingTokens.lg),
-          // Weather placeholder (outdoor only).
-          if (isOutdoor) ...[
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Weather picker coming soon')),
-                );
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.cloud_outlined, size: 16, color: ColorTokens.textTertiary),
-                  const SizedBox(width: SpacingTokens.xs),
-                  Text(
-                    'Weather',
-                    style: TextStyle(
-                      fontSize: TypographyTokens.microSize,
-                      color: ColorTokens.textTertiary,
-                    ),
-                  ),
-                ],
+          const SizedBox(width: SpacingTokens.sm),
+          // Environment, Surface, Location — equal width.
+          if (widget.onEnvironmentTap != null)
+            Expanded(
+              child: GestureDetector(
+                onTap: widget.onEnvironmentTap,
+                child: _StatsPill(
+                  label: envStyle.label,
+                  icon: envStyle.icon,
+                  color: envStyle.color,
+                ),
               ),
             ),
-            const SizedBox(width: SpacingTokens.lg),
-          ],
-          // Location placeholder.
-          GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Location picker coming soon')),
-              );
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.location_on_outlined, size: 16, color: ColorTokens.textTertiary),
-                const SizedBox(width: SpacingTokens.xs),
-                Text(
-                  'Location',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
-                    color: ColorTokens.textTertiary,
-                  ),
+          const SizedBox(width: SpacingTokens.xs),
+          if (widget.onSurfaceTap != null)
+            Expanded(
+              child: GestureDetector(
+                onTap: widget.onSurfaceTap,
+                child: _StatsPill(
+                  label: surfStyle.label,
+                  icon: surfStyle.icon,
+                  iconScale: surfStyle.iconScale,
+                  color: surfStyle.color,
+                  fillColor: surfStyle.fillColor,
+                  borderColor: surfStyle.borderColor,
                 ),
-              ],
+              ),
+            ),
+          const SizedBox(width: SpacingTokens.xs),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Location picker coming soon')),
+                );
+              },
+              child: _StatsPill(
+                label: 'Location',
+                icon: Icons.location_on_outlined,
+                color: ColorTokens.textTertiary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small pill badge used within the stats bar.
+class _StatsPill extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final double iconScale;
+  final Color color;
+  final Color? fillColor;
+  final Color? borderColor;
+
+  const _StatsPill({
+    required this.label,
+    required this.icon,
+    this.iconScale = 1.0,
+    required this.color,
+    this.fillColor,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.sm,
+        vertical: SpacingTokens.xs,
+      ),
+      decoration: BoxDecoration(
+        color: fillColor ?? color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+        border: Border.all(
+            color: borderColor ?? color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14 * iconScale, color: color),
+          const SizedBox(width: SpacingTokens.xs),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: TypographyTokens.microSize,
+              fontWeight: FontWeight.w500,
+              color: color,
             ),
           ),
         ],

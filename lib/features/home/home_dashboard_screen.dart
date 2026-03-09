@@ -200,8 +200,8 @@ class _ActionZone extends ConsumerWidget {
       children: [
         // Resume active practice block.
         if (hasActivePb && activePbData != null)
-          FilledButton.icon(
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => PracticeQueueScreen(
                   practiceBlockId: activePbData.practiceBlockId,
@@ -209,14 +209,33 @@ class _ActionZone extends ConsumerWidget {
                 ),
               ));
             },
-            icon: const Icon(Icons.play_arrow, color: Colors.white),
-            label: const Text(
-              'Resume Practice',
-              style: TextStyle(color: Colors.white),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.successDefault,
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingTokens.sm + 4,
+                vertical: SpacingTokens.sm + 2,
+              ),
+              decoration: BoxDecoration(
+                color: ColorTokens.successDefault.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+                border: Border.all(
+                    color: ColorTokens.successDefault.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.play_arrow,
+                      size: 16, color: ColorTokens.successDefault),
+                  const SizedBox(width: SpacingTokens.xs),
+                  Text(
+                    'Resume Practice',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      fontWeight: FontWeight.w500,
+                      color: ColorTokens.successDefault,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         // Resume active matrix run.
