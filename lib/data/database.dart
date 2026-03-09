@@ -150,10 +150,18 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // Add WindowSize column to SubskillRef for per-subskill window capacity.
+  // Sets rebuildNeeded flag so startup check triggers a full rebuild with
+  // the new accumulation scoring formula.
   Future<void> _migrateV7ToV8(Migrator m) async {
     await customStatement(
         'ALTER TABLE SubskillRef ADD COLUMN WindowSize INTEGER NOT NULL DEFAULT 25');
     await reseedSubskillRefs(this);
+    await into(syncMetadataEntries).insertOnConflictUpdate(
+      SyncMetadataEntriesCompanion.insert(
+        key: 'rebuildNeeded',
+        value: 'true',
+      ),
+    );
   }
 
   // Add SurfaceType column to PracticeBlock and Session tables.
