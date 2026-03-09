@@ -104,17 +104,21 @@ class SkillAreaTile extends StatelessWidget {
 
             final nameStars = Column(
               crossAxisAlignment: isCollapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: showBars ? MainAxisAlignment.end : MainAxisAlignment.center,
+              mainAxisSize: showBars ? MainAxisSize.min : MainAxisSize.max,
               children: [
-                Text(
-                  isCollapsed ? skillArea.dbValue.substring(0, 2) : skillArea.dbValue,
-                  style: TextStyle(
-                    fontSize: isCollapsed ? TypographyTokens.microSize : TypographyTokens.bodySize,
-                    fontWeight: TypographyTokens.headerWeight,
-                    color: ColorTokens.textPrimary,
+                Padding(
+                  padding: EdgeInsets.only(left: isCollapsed ? 0 : 4),
+                  child: Text(
+                    isCollapsed ? skillArea.dbValue.substring(0, 2) : skillArea.dbValue,
+                    style: TextStyle(
+                      fontSize: isCollapsed ? TypographyTokens.microSize : TypographyTokens.bodySize,
+                      fontWeight: TypographyTokens.headerWeight,
+                      color: ColorTokens.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (!isCollapsed) ...[
                   const SizedBox(height: 2),
@@ -135,29 +139,39 @@ class SkillAreaTile extends StatelessWidget {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.center,
               children: [
-                // Left — name + stars. Expanded when no bars to prevent overflow.
-                if (showBars)
-                  Flexible(child: nameStars)
-                else
+                // Left — name + stars. Non-flex when bars shown so Expanded
+                // gets all remaining space. Expanded when no bars to fill tile.
+                if (showBars) ...[
+                  nameStars,
+                  const SizedBox(width: SpacingTokens.sm),
+                ] else
                   Expanded(child: nameStars),
                 if (showBars) ...[
-                  const SizedBox(width: SpacingTokens.sm),
-                  // Bars fill from after stars to right edge of tile.
+                  // Bars fill remaining space to right edge of tile.
                   // Profile bar bottom-aligns with stars bottom via CrossAxisAlignment.end.
                   Expanded(
-                    child: Column(
+                    child: Transform.translate(
+                      offset: const Offset(0, 2),
+                      child: Padding(
+                      padding: EdgeInsets.only(
+                        left: SpacingTokens.md,
+                        right: (!hasLeft && !hasRight) ? SpacingTokens.xl : SpacingTokens.md,
+                      ),
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
                             children: [
                               SizedBox(
-                                width: 40,
+                                width: 66,
                                 child: Text(
-                                  'Score',
+                                  'SkillScore',
                                   style: TextStyle(
-                                    fontSize: 10,
-                                    color: ColorTokens.textTertiary,
+                                    fontSize: TypographyTokens.microSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: ColorTokens.textPrimary,
                                   ),
+                                  maxLines: 1,
                                 ),
                               ),
                               Expanded(
@@ -167,19 +181,31 @@ class SkillAreaTile extends StatelessWidget {
                                   rag: true,
                                 ),
                               ),
+                              const SizedBox(width: SpacingTokens.xs),
+                              Text(
+                                allocation.toString(),
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.microSize,
+                                  fontWeight: FontWeight.w900,
+                                  color: ColorTokens.textPrimary,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 3),
                           Row(
                             children: [
                               SizedBox(
-                                width: 40,
+                                width: 66,
                                 child: Text(
-                                  'Profile',
+                                  'SkillProfile',
                                   style: TextStyle(
-                                    fontSize: 10,
-                                    color: ColorTokens.textTertiary,
+                                    fontSize: TypographyTokens.microSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: ColorTokens.textPrimary,
                                   ),
+                                  maxLines: 1,
                                 ),
                               ),
                               Expanded(
@@ -189,10 +215,22 @@ class SkillAreaTile extends StatelessWidget {
                                   rag: false,
                                 ),
                               ),
+                              const SizedBox(width: SpacingTokens.xs),
+                              Text(
+                                windowCapacity.toInt().toString(),
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.microSize,
+                                  fontWeight: FontWeight.w900,
+                                  color: ColorTokens.textPrimary,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                              ),
                             ],
                           ),
                         ],
                       ),
+                    ),
+                    ),
                   ),
                 ],
               ],

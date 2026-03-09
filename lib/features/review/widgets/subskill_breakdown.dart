@@ -56,7 +56,8 @@ class SubskillBreakdown extends ConsumerWidget {
                       'SkillScore',
                       style: TextStyle(
                         fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.textTertiary,
+                        fontWeight: FontWeight.w900,
+                        color: ColorTokens.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -67,7 +68,8 @@ class SubskillBreakdown extends ConsumerWidget {
                       'SkillProfile',
                       style: TextStyle(
                         fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.textTertiary,
+                        fontWeight: FontWeight.w900,
+                        color: ColorTokens.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -190,12 +192,32 @@ class _SubskillTile extends StatelessWidget {
               occupancy: earnedPoints.toDouble(),
               capacity: allocation.toDouble(),
             )),
+            const SizedBox(width: SpacingTokens.xs),
+            Text(
+              allocation.toString(),
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                fontWeight: FontWeight.w900,
+                color: ColorTokens.textPrimary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
             const SizedBox(width: SpacingTokens.sm),
             Expanded(child: _WindowFillBar(
               occupancy: totalOccupancy,
               capacity: windowCapacity,
               rag: false,
             )),
+            const SizedBox(width: SpacingTokens.xs),
+            Text(
+              windowCapacity.toInt().toString(),
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                fontWeight: FontWeight.w900,
+                color: ColorTokens.textPrimary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
             const SizedBox(width: SpacingTokens.sm),
             Icon(
               Icons.chevron_right,
