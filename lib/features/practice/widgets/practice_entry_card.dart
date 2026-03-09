@@ -96,8 +96,7 @@ class PracticeEntryCard extends StatelessWidget {
                     ],
                   ),
                   // Structured drill info (sets/shots).
-                  if (drill.requiredSetCount > 1 ||
-                      drill.requiredAttemptsPerSet != null) ...[
+                  if (drill.requiredSetCount > 1) ...[
                     const SizedBox(height: SpacingTokens.xs),
                     Text(
                       _structuredInfo(drill),
@@ -143,14 +142,10 @@ class PracticeEntryCard extends StatelessWidget {
   }
 
   String _structuredInfo(Drill drill) {
-    final parts = <String>[];
-    if (drill.requiredSetCount > 1) {
-      parts.add('${drill.requiredSetCount} sets');
-    }
     if (drill.requiredAttemptsPerSet != null) {
-      parts.add('${drill.requiredAttemptsPerSet} shots/set');
+      return '${drill.requiredSetCount} Sets of ${drill.requiredAttemptsPerSet}';
     }
-    return parts.join(', ');
+    return '${drill.requiredSetCount} Sets';
   }
 
   static String _drillTypeLabel(DrillType type) {

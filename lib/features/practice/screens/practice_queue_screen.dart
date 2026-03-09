@@ -610,7 +610,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                 icon: Icon(Icons.delete_outline,
                     size: 16, color: ColorTokens.errorDestructive),
                 label: Text(
-                  'Discard',
+                  'Discard Practice',
                   style: TextStyle(
                     fontSize: TypographyTokens.microSize,
                     color: ColorTokens.errorDestructive,
