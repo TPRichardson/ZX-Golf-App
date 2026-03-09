@@ -94,7 +94,7 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     final effectiveFlex = <int>[];
     if (isExpanded && areas.length > 1) {
       for (int i = 0; i < areas.length; i++) {
-        effectiveFlex.add(i == expandedIndex ? 80 : 10);
+        effectiveFlex.add(i == expandedIndex ? 70 : 15);
       }
     } else {
       effectiveFlex.addAll(flexValues);
