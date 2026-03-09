@@ -128,15 +128,19 @@ final skillAreaAllocationsProvider =
 });
 
 // ---------------------------------------------------------------------------
-// Skill area raw average — total points / saturation from window states
+// Skill area stats — points from materialised scores, average from windows
 // ---------------------------------------------------------------------------
 
-/// Per-area stats from window states: raw total points and average.
+/// Per-area stats: totalPoints from materialised skill area scores (accumulation
+/// formula), average from raw window states (0–5 performance quality metric).
 final skillAreaWindowStatsProvider = Provider.family<
     AsyncValue<Map<SkillArea, ({double totalPoints, double average})>>,
     String>((ref, userId) {
+  final scoresAsync = ref.watch(skillAreaScoresProvider(userId));
   final windowsAsync = ref.watch(windowStatesProvider(userId));
-  return windowsAsync.whenData((windows) {
+  return scoresAsync.whenData((scores) {
+    // Build average from window states (raw performance quality).
+    final windows = windowsAsync.valueOrNull ?? [];
     final sums = <SkillArea, double>{};
     final occupancies = <SkillArea, double>{};
     for (final w in windows) {
@@ -144,12 +148,14 @@ final skillAreaWindowStatsProvider = Provider.family<
       occupancies[w.skillArea] =
           (occupancies[w.skillArea] ?? 0) + w.totalOccupancy;
     }
+
     final map = <SkillArea, ({double totalPoints, double average})>{};
-    for (final area in sums.keys) {
-      final occ = occupancies[area] ?? 0;
-      map[area] = (
-        totalPoints: sums[area]!,
-        average: occ > 0 ? sums[area]! / occ : 0.0,
+    for (final score in scores) {
+      final occ = occupancies[score.skillArea] ?? 0;
+      final rawSum = sums[score.skillArea] ?? 0;
+      map[score.skillArea] = (
+        totalPoints: score.skillAreaScore,
+        average: occ > 0 ? rawSum / occ : 0.0,
       );
     }
     return map;
@@ -157,16 +163,16 @@ final skillAreaWindowStatsProvider = Provider.family<
 });
 
 // ---------------------------------------------------------------------------
-// Overall score from window stats — sum of all skill area totalPoints
+// Overall score — from materialised skill area scores
 // ---------------------------------------------------------------------------
 
-/// Overall SkillScore derived from raw window stats (sum of totalPoints).
+/// Overall SkillScore from materialised skill area scores (accumulation formula).
 /// Used by both Home Dashboard and Review Dashboard for a single source of truth.
 final overallWindowScoreProvider =
     Provider.family<AsyncValue<double>, String>((ref, userId) {
-  final statsAsync = ref.watch(skillAreaWindowStatsProvider(userId));
-  return statsAsync.whenData((stats) =>
-      stats.values.fold<double>(0.0, (sum, s) => sum + s.totalPoints));
+  final scoresAsync = ref.watch(skillAreaScoresProvider(userId));
+  return scoresAsync.whenData((scores) =>
+      scores.fold<double>(0.0, (sum, s) => sum + s.skillAreaScore));
 });
 
 // ---------------------------------------------------------------------------
@@ -186,16 +192,20 @@ final subskillsByAreaProvider = Provider.family<
 });
 
 // ---------------------------------------------------------------------------
-// Subskill window stats — per-subskill totalPoints + average from windows
+// Subskill stats — points from materialised scores, average from windows
 // ---------------------------------------------------------------------------
 
-/// Per-subskill stats from window states: raw total points and average.
-/// Keyed by subskillId. Includes all subskills with window data.
+/// Per-subskill stats: totalPoints from materialised subskill scores (accumulation
+/// formula), average from raw window states (0–5 performance quality metric).
+/// Keyed by subskillId.
 final subskillWindowStatsProvider = Provider.family<
     AsyncValue<Map<String, ({double totalPoints, double average})>>,
     String>((ref, userId) {
+  final scoresAsync = ref.watch(subskillScoresProvider(userId));
   final windowsAsync = ref.watch(windowStatesProvider(userId));
-  return windowsAsync.whenData((windows) {
+  return scoresAsync.whenData((scores) {
+    // Build average from window states (raw performance quality).
+    final windows = windowsAsync.valueOrNull ?? [];
     final sums = <String, double>{};
     final occupancies = <String, double>{};
     for (final w in windows) {
@@ -203,12 +213,14 @@ final subskillWindowStatsProvider = Provider.family<
       occupancies[w.subskill] =
           (occupancies[w.subskill] ?? 0) + w.totalOccupancy;
     }
+
     final map = <String, ({double totalPoints, double average})>{};
-    for (final id in sums.keys) {
-      final occ = occupancies[id] ?? 0;
-      map[id] = (
-        totalPoints: sums[id]!,
-        average: occ > 0 ? sums[id]! / occ : 0.0,
+    for (final s in scores) {
+      final occ = occupancies[s.subskill] ?? 0;
+      final rawSum = sums[s.subskill] ?? 0;
+      map[s.subskill] = (
+        totalPoints: s.subskillPoints,
+        average: occ > 0 ? rawSum / occ : 0.0,
       );
     }
     return map;
