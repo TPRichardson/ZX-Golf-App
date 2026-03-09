@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// A custom-painted golf bag icon with two clubs and optional "+" badge.
-/// Based on Flaticon #1386676 — golf bag with putter + iron, carry strap.
+/// A custom-painted golf bag icon with three clubs and a "+" badge.
+/// Trapezoidal bag body with three curved club heads protruding from top.
 class GolfClubPlusIcon extends StatelessWidget {
   final double size;
   final Color clubColor;
@@ -37,132 +37,91 @@ class _GolfBagPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // SVG viewBox 200×200, normalise all coordinates to canvas size.
     final s = size.width;
-    final sw = s * 0.085; // stroke width
 
-    final paint = Paint()
+    // --- Bag body: trapezoid with rounded bottom ---
+    final bagFill = Paint()
       ..color = clubColor
-      ..strokeWidth = sw
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    // --- Bag body: rounded rectangle, slightly tapered at bottom ---
-    final bagPath = Path();
-    final bagLeft = s * 0.20;
-    final bagRight = s * 0.72;
-    final bagTop = s * 0.32;
-    final bagBottom = s * 0.92;
-    final bagRadius = s * 0.08;
-
-    // Tapered bottom (narrower).
-    final bottomLeft = bagLeft + s * 0.04;
-    final bottomRight = bagRight - s * 0.04;
-
-    bagPath.moveTo(bagLeft + bagRadius, bagTop);
-    bagPath.lineTo(bagRight - bagRadius, bagTop);
-    bagPath.arcToPoint(
-      Offset(bagRight, bagTop + bagRadius),
-      radius: Radius.circular(bagRadius),
-    );
-    bagPath.lineTo(bottomRight, bagBottom - bagRadius);
-    bagPath.arcToPoint(
-      Offset(bottomRight - bagRadius, bagBottom),
-      radius: Radius.circular(bagRadius),
-    );
-    bagPath.lineTo(bottomLeft + bagRadius, bagBottom);
-    bagPath.arcToPoint(
-      Offset(bottomLeft, bagBottom - bagRadius),
-      radius: Radius.circular(bagRadius),
-    );
-    bagPath.lineTo(bagLeft, bagTop + bagRadius);
-    bagPath.arcToPoint(
-      Offset(bagLeft + bagRadius, bagTop),
-      radius: Radius.circular(bagRadius),
-    );
-
-    canvas.drawPath(bagPath, paint);
-
-    // --- Bag collar: horizontal band near top ---
-    final collarY = bagTop + s * 0.08;
-    canvas.drawLine(
-      Offset(bagLeft, collarY),
-      Offset(bagRight, collarY),
-      paint,
-    );
-
-    // --- Carry strap: diagonal across bag body ---
-    final strapPaint = Paint()
-      ..color = clubColor
-      ..strokeWidth = sw * 0.9
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(bagLeft + s * 0.02, bagTop + s * 0.14),
-      Offset(bagRight - s * 0.02, bagBottom - s * 0.10),
-      strapPaint,
-    );
-
-    // --- Handle on right side ---
-    final handlePath = Path();
-    final handleX = bagRight + s * 0.01;
-    handlePath.moveTo(handleX, bagTop + s * 0.12);
-    handlePath.quadraticBezierTo(
-      handleX + s * 0.10, (bagTop + bagBottom) * 0.5,
-      handleX, bagBottom - s * 0.20,
-    );
-    canvas.drawPath(handlePath, paint);
-
-    // --- Club 1 (left): Putter — flat rectangular head ---
-    // Shaft.
-    final putter1Bottom = Offset(s * 0.34, bagTop + s * 0.02);
-    final putter1Top = Offset(s * 0.26, s * 0.06);
-    canvas.drawLine(putter1Bottom, putter1Top, paint);
-
-    // Putter head: small horizontal rectangle at top.
-    final putterHeadPaint = Paint()
-      ..color = clubColor
-      ..strokeWidth = sw
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    final phLeft = putter1Top.dx - s * 0.08;
-    final phRight = putter1Top.dx + s * 0.02;
-    final phTop = putter1Top.dy - s * 0.06;
-    final phBottom = putter1Top.dy - s * 0.01;
-    final phR = s * 0.02;
-
-    final putterHead = Path()
-      ..addRRect(RRect.fromLTRBR(phLeft, phTop, phRight, phBottom, Radius.circular(phR)));
-    canvas.drawPath(putterHead, putterHeadPaint);
-
-    // --- Club 2 (right): Iron — angled head ---
-    // Shaft.
-    final iron2Bottom = Offset(s * 0.52, bagTop + s * 0.02);
-    final iron2Top = Offset(s * 0.60, s * 0.06);
-    canvas.drawLine(iron2Bottom, iron2Top, paint);
-
-    // Iron head: small hook/angle.
-    final ironHeadPath = Path()
-      ..moveTo(iron2Top.dx, iron2Top.dy)
-      ..lineTo(iron2Top.dx + s * 0.08, iron2Top.dy - s * 0.05)
-      ..lineTo(iron2Top.dx + s * 0.10, iron2Top.dy - s * 0.01);
-    canvas.drawPath(ironHeadPath, paint);
-
-    // --- Plus badge (bottom-right corner) ---
-    final badgeCenter = Offset(s * 0.82, s * 0.82);
-    final badgeRadius = s * 0.15;
-
-    final badgeBg = Paint()
-      ..color = plusColor
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(badgeCenter, badgeRadius, badgeBg);
+
+    final bagPath = Path()
+      ..moveTo(s * 0.35, s * 0.30) // top-left
+      ..lineTo(s * 0.65, s * 0.30) // top-right
+      ..lineTo(s * 0.625, s * 0.85) // right side tapers in
+      ..cubicTo(
+        s * 0.625, s * 0.875,
+        s * 0.60, s * 0.90,
+        s * 0.575, s * 0.90,
+      )
+      ..lineTo(s * 0.425, s * 0.90) // bottom
+      ..cubicTo(
+        s * 0.40, s * 0.90,
+        s * 0.375, s * 0.875,
+        s * 0.375, s * 0.85,
+      )
+      ..close();
+
+    canvas.drawPath(bagPath, bagFill);
+
+    // --- Bag collar band ---
+    final bandFill = Paint()
+      ..color = clubColor.withValues(alpha: 0.7)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromLTWH(s * 0.375, s * 0.325, s * 0.25, s * 0.05),
+      bandFill,
+    );
+
+    // --- Club stems and heads ---
+    final stemPaint = Paint()
+      ..color = clubColor.withValues(alpha: 0.6)
+      ..strokeWidth = s * 0.02
+      ..strokeCap = StrokeCap.round;
+
+    final headPaint = Paint()
+      ..color = clubColor.withValues(alpha: 0.5)
+      ..strokeWidth = s * 0.03
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    // Club 1 (left): angled left.
+    canvas.drawLine(Offset(s * 0.425, s * 0.30), Offset(s * 0.40, s * 0.15), stemPaint);
+    final head1 = Path()
+      ..moveTo(s * 0.39, s * 0.14)
+      ..quadraticBezierTo(s * 0.425, s * 0.10, s * 0.46, s * 0.14);
+    canvas.drawPath(head1, headPaint);
+
+    // Club 2 (centre): straight up.
+    canvas.drawLine(Offset(s * 0.50, s * 0.30), Offset(s * 0.50, s * 0.125), stemPaint);
+    final head2 = Path()
+      ..moveTo(s * 0.49, s * 0.115)
+      ..quadraticBezierTo(s * 0.525, s * 0.075, s * 0.56, s * 0.115);
+    canvas.drawPath(head2, headPaint);
+
+    // Club 3 (right): angled right.
+    canvas.drawLine(Offset(s * 0.575, s * 0.30), Offset(s * 0.60, s * 0.175), stemPaint);
+    final head3 = Path()
+      ..moveTo(s * 0.59, s * 0.165)
+      ..quadraticBezierTo(s * 0.625, s * 0.125, s * 0.66, s * 0.165);
+    canvas.drawPath(head3, headPaint);
+
+    // --- Plus badge (bottom-right) ---
+    final badgeCenter = Offset(s * 0.70, s * 0.70);
+    final badgeRadius = s * 0.125;
+
+    canvas.drawCircle(
+      badgeCenter,
+      badgeRadius,
+      Paint()
+        ..color = plusColor
+        ..style = PaintingStyle.fill,
+    );
 
     final plusPaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = s * 0.055
+      ..strokeWidth = s * 0.05
       ..strokeCap = StrokeCap.round;
 
     final arm = badgeRadius * 0.55;
