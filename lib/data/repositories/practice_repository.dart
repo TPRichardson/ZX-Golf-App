@@ -603,6 +603,7 @@ class PracticeRepository {
     String userId, {
     List<String>? initialDrillIds,
     String? sourceRoutineId,
+    EnvironmentType? environmentType,
     SurfaceType? surfaceType,
   }) async {
     await _gate.awaitGateRelease();
@@ -625,6 +626,7 @@ class PracticeRepository {
       practiceBlockId: pbId,
       userId: userId,
       sourceRoutineId: Value(sourceRoutineId),
+      environmentType: Value(environmentType),
       surfaceType: Value(surfaceType),
       drillOrder: Value(jsonEncode(initialDrillIds ?? [])),
     ));
@@ -995,6 +997,24 @@ class PracticeRepository {
       String sessionId, SurfaceType surfaceType) async {
     await _gate.awaitGateRelease();
     await updateSession(sessionId, SessionsCompanion(
+      surfaceType: Value(surfaceType),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  // ---------------------------------------------------------------------------
+  // #9c: updateBlockEnvironmentAndSurface — Change environment+surface on block
+  // ---------------------------------------------------------------------------
+
+  /// Update the environment and surface types for a practice block.
+  Future<void> updateBlockEnvironmentAndSurface(
+    String practiceBlockId, {
+    required EnvironmentType environmentType,
+    required SurfaceType surfaceType,
+  }) async {
+    await _gate.awaitGateRelease();
+    await updatePracticeBlock(practiceBlockId, PracticeBlocksCompanion(
+      environmentType: Value(environmentType),
       surfaceType: Value(surfaceType),
       updatedAt: Value(DateTime.now()),
     ));

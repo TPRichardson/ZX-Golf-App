@@ -322,6 +322,7 @@ class _ActionZone extends ConsumerWidget {
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
+      environmentType: envSurface.environment,
       surfaceType: envSurface.surface,
     );
 
@@ -343,7 +344,11 @@ class _ActionZone extends ConsumerWidget {
     if (envSurface == null || !context.mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(userId, surfaceType: envSurface.surface);
+    final pb = await actions.startPracticeBlock(
+      userId,
+      environmentType: envSurface.environment,
+      surfaceType: envSurface.surface,
+    );
 
     if (context.mounted) {
       Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(

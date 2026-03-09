@@ -71,11 +71,13 @@ class PracticeActions {
   Future<PracticeBlock> startPracticeBlock(
     String userId, {
     List<String>? initialDrillIds,
+    EnvironmentType? environmentType,
     SurfaceType? surfaceType,
   }) async {
     final pb = await _repo.createPracticeBlock(
       userId,
       initialDrillIds: initialDrillIds,
+      environmentType: environmentType,
       surfaceType: surfaceType,
     );
 

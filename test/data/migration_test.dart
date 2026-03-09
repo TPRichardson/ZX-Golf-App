@@ -6,11 +6,11 @@ import 'package:zx_golf_app/data/database.dart';
 
 void main() {
   group('Migration Infrastructure', () {
-    test('schemaVersion is 8 after window size migration', () {
+    test('schemaVersion is 9 after environment type migration', () {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() => db.close());
 
-      expect(db.schemaVersion, 8);
+      expect(db.schemaVersion, 9);
     });
 
     test('onCreate creates all tables and seeds reference data', () async {

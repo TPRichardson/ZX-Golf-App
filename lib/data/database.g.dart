@@ -3177,6 +3177,18 @@ class $PracticeBlocksTable extends PracticeBlocks
     requiredDuringInsert: false,
   );
   @override
+  late final GeneratedColumnWithTypeConverter<EnvironmentType?, String>
+  environmentType =
+      GeneratedColumn<String>(
+        'EnvironmentType',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<EnvironmentType?>(
+        $PracticeBlocksTable.$converterenvironmentTypen,
+      );
+  @override
   late final GeneratedColumnWithTypeConverter<SurfaceType?, String>
   surfaceType = GeneratedColumn<String>(
     'SurfaceType',
@@ -3241,6 +3253,7 @@ class $PracticeBlocksTable extends PracticeBlocks
     drillOrder,
     startTimestamp,
     endTimestamp,
+    environmentType,
     surfaceType,
     closureType,
     isDeleted,
@@ -3362,6 +3375,12 @@ class $PracticeBlocksTable extends PracticeBlocks
         DriftSqlType.dateTime,
         data['${effectivePrefix}EndTimestamp'],
       ),
+      environmentType: $PracticeBlocksTable.$converterenvironmentTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}EnvironmentType'],
+        ),
+      ),
       surfaceType: $PracticeBlocksTable.$convertersurfaceTypen.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -3394,6 +3413,10 @@ class $PracticeBlocksTable extends PracticeBlocks
     return $PracticeBlocksTable(attachedDatabase, alias);
   }
 
+  static TypeConverter<EnvironmentType, String> $converterenvironmentType =
+      const EnvironmentTypeConverter();
+  static TypeConverter<EnvironmentType?, String?> $converterenvironmentTypen =
+      NullAwareTypeConverter.wrap($converterenvironmentType);
   static TypeConverter<SurfaceType, String> $convertersurfaceType =
       const SurfaceTypeConverter();
   static TypeConverter<SurfaceType?, String?> $convertersurfaceTypen =
@@ -3411,6 +3434,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
   final String drillOrder;
   final DateTime startTimestamp;
   final DateTime? endTimestamp;
+  final EnvironmentType? environmentType;
   final SurfaceType? surfaceType;
   final ClosureType? closureType;
   final bool isDeleted;
@@ -3423,6 +3447,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     required this.drillOrder,
     required this.startTimestamp,
     this.endTimestamp,
+    this.environmentType,
     this.surfaceType,
     this.closureType,
     required this.isDeleted,
@@ -3441,6 +3466,11 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     map['StartTimestamp'] = Variable<DateTime>(startTimestamp);
     if (!nullToAbsent || endTimestamp != null) {
       map['EndTimestamp'] = Variable<DateTime>(endTimestamp);
+    }
+    if (!nullToAbsent || environmentType != null) {
+      map['EnvironmentType'] = Variable<String>(
+        $PracticeBlocksTable.$converterenvironmentTypen.toSql(environmentType),
+      );
     }
     if (!nullToAbsent || surfaceType != null) {
       map['SurfaceType'] = Variable<String>(
@@ -3470,6 +3500,9 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       endTimestamp: endTimestamp == null && nullToAbsent
           ? const Value.absent()
           : Value(endTimestamp),
+      environmentType: environmentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(environmentType),
       surfaceType: surfaceType == null && nullToAbsent
           ? const Value.absent()
           : Value(surfaceType),
@@ -3494,6 +3527,9 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       drillOrder: serializer.fromJson<String>(json['drillOrder']),
       startTimestamp: serializer.fromJson<DateTime>(json['startTimestamp']),
       endTimestamp: serializer.fromJson<DateTime?>(json['endTimestamp']),
+      environmentType: serializer.fromJson<EnvironmentType?>(
+        json['environmentType'],
+      ),
       surfaceType: serializer.fromJson<SurfaceType?>(json['surfaceType']),
       closureType: serializer.fromJson<ClosureType?>(json['closureType']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
@@ -3511,6 +3547,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       'drillOrder': serializer.toJson<String>(drillOrder),
       'startTimestamp': serializer.toJson<DateTime>(startTimestamp),
       'endTimestamp': serializer.toJson<DateTime?>(endTimestamp),
+      'environmentType': serializer.toJson<EnvironmentType?>(environmentType),
       'surfaceType': serializer.toJson<SurfaceType?>(surfaceType),
       'closureType': serializer.toJson<ClosureType?>(closureType),
       'isDeleted': serializer.toJson<bool>(isDeleted),
@@ -3526,6 +3563,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     String? drillOrder,
     DateTime? startTimestamp,
     Value<DateTime?> endTimestamp = const Value.absent(),
+    Value<EnvironmentType?> environmentType = const Value.absent(),
     Value<SurfaceType?> surfaceType = const Value.absent(),
     Value<ClosureType?> closureType = const Value.absent(),
     bool? isDeleted,
@@ -3540,6 +3578,9 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     drillOrder: drillOrder ?? this.drillOrder,
     startTimestamp: startTimestamp ?? this.startTimestamp,
     endTimestamp: endTimestamp.present ? endTimestamp.value : this.endTimestamp,
+    environmentType: environmentType.present
+        ? environmentType.value
+        : this.environmentType,
     surfaceType: surfaceType.present ? surfaceType.value : this.surfaceType,
     closureType: closureType.present ? closureType.value : this.closureType,
     isDeleted: isDeleted ?? this.isDeleted,
@@ -3564,6 +3605,9 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
       endTimestamp: data.endTimestamp.present
           ? data.endTimestamp.value
           : this.endTimestamp,
+      environmentType: data.environmentType.present
+          ? data.environmentType.value
+          : this.environmentType,
       surfaceType: data.surfaceType.present
           ? data.surfaceType.value
           : this.surfaceType,
@@ -3585,6 +3629,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
           ..write('drillOrder: $drillOrder, ')
           ..write('startTimestamp: $startTimestamp, ')
           ..write('endTimestamp: $endTimestamp, ')
+          ..write('environmentType: $environmentType, ')
           ..write('surfaceType: $surfaceType, ')
           ..write('closureType: $closureType, ')
           ..write('isDeleted: $isDeleted, ')
@@ -3602,6 +3647,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
     drillOrder,
     startTimestamp,
     endTimestamp,
+    environmentType,
     surfaceType,
     closureType,
     isDeleted,
@@ -3618,6 +3664,7 @@ class PracticeBlock extends DataClass implements Insertable<PracticeBlock> {
           other.drillOrder == this.drillOrder &&
           other.startTimestamp == this.startTimestamp &&
           other.endTimestamp == this.endTimestamp &&
+          other.environmentType == this.environmentType &&
           other.surfaceType == this.surfaceType &&
           other.closureType == this.closureType &&
           other.isDeleted == this.isDeleted &&
@@ -3632,6 +3679,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
   final Value<String> drillOrder;
   final Value<DateTime> startTimestamp;
   final Value<DateTime?> endTimestamp;
+  final Value<EnvironmentType?> environmentType;
   final Value<SurfaceType?> surfaceType;
   final Value<ClosureType?> closureType;
   final Value<bool> isDeleted;
@@ -3645,6 +3693,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     this.drillOrder = const Value.absent(),
     this.startTimestamp = const Value.absent(),
     this.endTimestamp = const Value.absent(),
+    this.environmentType = const Value.absent(),
     this.surfaceType = const Value.absent(),
     this.closureType = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -3659,6 +3708,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     this.drillOrder = const Value.absent(),
     this.startTimestamp = const Value.absent(),
     this.endTimestamp = const Value.absent(),
+    this.environmentType = const Value.absent(),
     this.surfaceType = const Value.absent(),
     this.closureType = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -3674,6 +3724,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     Expression<String>? drillOrder,
     Expression<DateTime>? startTimestamp,
     Expression<DateTime>? endTimestamp,
+    Expression<String>? environmentType,
     Expression<String>? surfaceType,
     Expression<String>? closureType,
     Expression<bool>? isDeleted,
@@ -3688,6 +3739,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
       if (drillOrder != null) 'DrillOrder': drillOrder,
       if (startTimestamp != null) 'StartTimestamp': startTimestamp,
       if (endTimestamp != null) 'EndTimestamp': endTimestamp,
+      if (environmentType != null) 'EnvironmentType': environmentType,
       if (surfaceType != null) 'SurfaceType': surfaceType,
       if (closureType != null) 'ClosureType': closureType,
       if (isDeleted != null) 'IsDeleted': isDeleted,
@@ -3704,6 +3756,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     Value<String>? drillOrder,
     Value<DateTime>? startTimestamp,
     Value<DateTime?>? endTimestamp,
+    Value<EnvironmentType?>? environmentType,
     Value<SurfaceType?>? surfaceType,
     Value<ClosureType?>? closureType,
     Value<bool>? isDeleted,
@@ -3718,6 +3771,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
       drillOrder: drillOrder ?? this.drillOrder,
       startTimestamp: startTimestamp ?? this.startTimestamp,
       endTimestamp: endTimestamp ?? this.endTimestamp,
+      environmentType: environmentType ?? this.environmentType,
       surfaceType: surfaceType ?? this.surfaceType,
       closureType: closureType ?? this.closureType,
       isDeleted: isDeleted ?? this.isDeleted,
@@ -3747,6 +3801,13 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
     }
     if (endTimestamp.present) {
       map['EndTimestamp'] = Variable<DateTime>(endTimestamp.value);
+    }
+    if (environmentType.present) {
+      map['EnvironmentType'] = Variable<String>(
+        $PracticeBlocksTable.$converterenvironmentTypen.toSql(
+          environmentType.value,
+        ),
+      );
     }
     if (surfaceType.present) {
       map['SurfaceType'] = Variable<String>(
@@ -3782,6 +3843,7 @@ class PracticeBlocksCompanion extends UpdateCompanion<PracticeBlock> {
           ..write('drillOrder: $drillOrder, ')
           ..write('startTimestamp: $startTimestamp, ')
           ..write('endTimestamp: $endTimestamp, ')
+          ..write('environmentType: $environmentType, ')
           ..write('surfaceType: $surfaceType, ')
           ..write('closureType: $closureType, ')
           ..write('isDeleted: $isDeleted, ')
@@ -20345,6 +20407,7 @@ typedef $$PracticeBlocksTableCreateCompanionBuilder =
       Value<String> drillOrder,
       Value<DateTime> startTimestamp,
       Value<DateTime?> endTimestamp,
+      Value<EnvironmentType?> environmentType,
       Value<SurfaceType?> surfaceType,
       Value<ClosureType?> closureType,
       Value<bool> isDeleted,
@@ -20360,6 +20423,7 @@ typedef $$PracticeBlocksTableUpdateCompanionBuilder =
       Value<String> drillOrder,
       Value<DateTime> startTimestamp,
       Value<DateTime?> endTimestamp,
+      Value<EnvironmentType?> environmentType,
       Value<SurfaceType?> surfaceType,
       Value<ClosureType?> closureType,
       Value<bool> isDeleted,
@@ -20405,6 +20469,12 @@ class $$PracticeBlocksTableFilterComposer
   ColumnFilters<DateTime> get endTimestamp => $composableBuilder(
     column: $table.endTimestamp,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<EnvironmentType?, EnvironmentType, String>
+  get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnWithTypeConverterFilters<SurfaceType?, SurfaceType, String>
@@ -20474,6 +20544,11 @@ class $$PracticeBlocksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get surfaceType => $composableBuilder(
     column: $table.surfaceType,
     builder: (column) => ColumnOrderings(column),
@@ -20534,6 +20609,12 @@ class $$PracticeBlocksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get endTimestamp => $composableBuilder(
     column: $table.endTimestamp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<EnvironmentType?, String>
+  get environmentType => $composableBuilder(
+    column: $table.environmentType,
     builder: (column) => column,
   );
 
@@ -20598,6 +20679,7 @@ class $$PracticeBlocksTableTableManager
                 Value<String> drillOrder = const Value.absent(),
                 Value<DateTime> startTimestamp = const Value.absent(),
                 Value<DateTime?> endTimestamp = const Value.absent(),
+                Value<EnvironmentType?> environmentType = const Value.absent(),
                 Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<ClosureType?> closureType = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20611,6 +20693,7 @@ class $$PracticeBlocksTableTableManager
                 drillOrder: drillOrder,
                 startTimestamp: startTimestamp,
                 endTimestamp: endTimestamp,
+                environmentType: environmentType,
                 surfaceType: surfaceType,
                 closureType: closureType,
                 isDeleted: isDeleted,
@@ -20626,6 +20709,7 @@ class $$PracticeBlocksTableTableManager
                 Value<String> drillOrder = const Value.absent(),
                 Value<DateTime> startTimestamp = const Value.absent(),
                 Value<DateTime?> endTimestamp = const Value.absent(),
+                Value<EnvironmentType?> environmentType = const Value.absent(),
                 Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<ClosureType?> closureType = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20639,6 +20723,7 @@ class $$PracticeBlocksTableTableManager
                 drillOrder: drillOrder,
                 startTimestamp: startTimestamp,
                 endTimestamp: endTimestamp,
+                environmentType: environmentType,
                 surfaceType: surfaceType,
                 closureType: closureType,
                 isDeleted: isDeleted,

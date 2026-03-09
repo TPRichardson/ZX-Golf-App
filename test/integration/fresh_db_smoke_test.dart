@@ -25,8 +25,8 @@ void main() {
   tearDown(() => db.close());
 
   group('Fresh database smoke test', () {
-    test('schema version is 8', () {
-      expect(db.schemaVersion, 8);
+    test('schema version is 9', () {
+      expect(db.schemaVersion, 9);
     });
 
     test('34 tables are created', () async {

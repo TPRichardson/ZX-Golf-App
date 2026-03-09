@@ -36,6 +36,34 @@ class PracticeQueueScreen extends ConsumerStatefulWidget {
 class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   bool _endingBlock = false;
 
+  /// Change environment only (Indoor/Outdoor). Surface stays as-is.
+  Future<void> _changeEnvironment(SurfaceType? currentSurface) async {
+    final env = await showEnvironmentPicker(context);
+    if (env == null || !mounted) return;
+    await ref
+        .read(practiceRepositoryProvider)
+        .updateBlockEnvironmentAndSurface(
+          widget.practiceBlockId,
+          environmentType: env,
+          surfaceType: currentSurface ?? SurfaceType.mat,
+        );
+    ref.invalidate(practiceBlockWithEntriesProvider(widget.practiceBlockId));
+  }
+
+  /// Change surface only (Grass/Mat). Environment stays as-is.
+  Future<void> _changeSurface(EnvironmentType? currentEnv) async {
+    final surface = await showSurfacePicker(context);
+    if (surface == null || !mounted) return;
+    await ref
+        .read(practiceRepositoryProvider)
+        .updateBlockEnvironmentAndSurface(
+          widget.practiceBlockId,
+          environmentType: currentEnv ?? EnvironmentType.indoor,
+          surfaceType: surface,
+        );
+    ref.invalidate(practiceBlockWithEntriesProvider(widget.practiceBlockId));
+  }
+
   Future<void> _addDrill() async {
     // Navigate to practice pool to pick a drill.
     final drillId = await Navigator.of(context).push<String>(
@@ -86,11 +114,8 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       }
     }
 
-    // Prompt for environment/surface before starting.
-    if (!mounted) return;
-    final envSurface = await showEnvironmentSurfacePicker(context);
-    if (envSurface == null || !mounted) return;
-
+    // Session inherits environment+surface from the practice block.
+    // No per-drill picker needed.
     final actions = ref.read(practiceActionsProvider);
 
     // S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
@@ -106,7 +131,6 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       entryWithDrill.entry.practiceEntryId,
       widget.userId,
       userDeclaration: userDeclaration,
-      surfaceType: envSurface.surface,
     );
 
     if (!mounted) return;
@@ -312,8 +336,17 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             );
           }
 
+          final pb = pbWithEntries.practiceBlock;
+
           return Column(
             children: [
+              // Block-level environment + surface tiles.
+              _EnvironmentSurfaceBar(
+                environmentType: pb.environmentType,
+                surfaceType: pb.surfaceType,
+                onEnvironmentTap: () => _changeEnvironment(pb.surfaceType),
+                onSurfaceTap: () => _changeSurface(pb.environmentType),
+              ),
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.all(SpacingTokens.md),
@@ -377,6 +410,119 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             'Error: $error',
             style: const TextStyle(color: ColorTokens.errorDestructive),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Large full-width environment + surface tiles for the queue screen header.
+class _EnvironmentSurfaceBar extends StatelessWidget {
+  final EnvironmentType? environmentType;
+  final SurfaceType? surfaceType;
+  final VoidCallback onEnvironmentTap;
+  final VoidCallback onSurfaceTap;
+
+  const _EnvironmentSurfaceBar({
+    required this.environmentType,
+    required this.surfaceType,
+    required this.onEnvironmentTap,
+    required this.onSurfaceTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isOutdoor = environmentType != null
+        ? environmentType == EnvironmentType.outdoor
+        : surfaceType == SurfaceType.grass;
+    final env = EnvironmentSurfaceStyles.environment(
+        isOutdoor ? EnvironmentType.outdoor : EnvironmentType.indoor);
+    final surf = EnvironmentSurfaceStyles.surface(surfaceType);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SpacingTokens.md,
+        SpacingTokens.sm,
+        SpacingTokens.md,
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _BlockTile(
+              label: env.label,
+              icon: env.icon,
+              color: env.color,
+              onTap: onEnvironmentTap,
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.sm),
+          Expanded(
+            child: _BlockTile(
+              label: surf.label,
+              icon: surf.icon,
+              iconScale: surf.iconScale,
+              color: surf.color,
+              fillColor: surf.fillColor,
+              borderColor: surf.borderColor,
+              onTap: onSurfaceTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single large tile for environment or surface display.
+class _BlockTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final double iconScale;
+  final Color color;
+  final Color? fillColor;
+  final Color? borderColor;
+  final VoidCallback onTap;
+
+  const _BlockTile({
+    required this.label,
+    required this.icon,
+    this.iconScale = 1.0,
+    required this.color,
+    this.fillColor,
+    this.borderColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.md,
+          vertical: SpacingTokens.sm + 2,
+        ),
+        decoration: BoxDecoration(
+          color: fillColor ?? color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          border: Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20 * iconScale, color: color),
+            const SizedBox(width: SpacingTokens.sm),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );

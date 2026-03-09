@@ -16,6 +16,10 @@ class PracticeBlocks extends Table {
       dateTime().named('StartTimestamp').clientDefault(() => DateTime.now())();
   DateTimeColumn get endTimestamp =>
       dateTime().named('EndTimestamp').nullable()();
+  TextColumn get environmentType => text()
+      .named('EnvironmentType')
+      .map(const EnvironmentTypeConverter())
+      .nullable()();
   TextColumn get surfaceType => text()
       .named('SurfaceType')
       .map(const SurfaceTypeConverter())

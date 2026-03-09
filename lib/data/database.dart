@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -124,6 +124,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV6ToV7(m);
               case 7:
                 await _migrateV7ToV8(m);
+              case 8:
+                await _migrateV8ToV9(m);
             }
           }
         },
@@ -162,6 +164,12 @@ class AppDatabase extends _$AppDatabase {
         value: 'true',
       ),
     );
+  }
+
+  // Add EnvironmentType column to PracticeBlock table.
+  Future<void> _migrateV8ToV9(Migrator m) async {
+    await customStatement(
+        'ALTER TABLE PracticeBlock ADD COLUMN EnvironmentType TEXT');
   }
 
   // Add SurfaceType column to PracticeBlock and Session tables.
