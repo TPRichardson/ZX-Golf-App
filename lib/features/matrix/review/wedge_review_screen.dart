@@ -182,7 +182,7 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
         }
       }
 
-      final fullLabel = [clubLabel, effortLabel, if (flightLabel != null) flightLabel]
+      final fullLabel = [clubLabel, effortLabel, ?flightLabel]
           .join(' — ');
 
       points.add(_WedgePoint(

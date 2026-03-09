@@ -87,6 +87,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     }
 
     // Prompt for environment/surface before starting.
+    if (!mounted) return;
     final envSurface = await showEnvironmentSurfacePicker(context);
     if (envSurface == null || !mounted) return;
 

@@ -100,65 +100,90 @@ class SkillAreaTile extends StatelessWidget {
             final showBars = constraints.maxWidth >= _showBarsThreshold;
             final showLabels = constraints.maxWidth >= _showLabelsThreshold;
 
+            final nameStars = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  skillArea.dbValue,
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontWeight: TypographyTokens.headerWeight,
+                    color: ColorTokens.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                if (average > 0)
+                  StarRating(
+                    stars: scoreToStars(average),
+                    size: 14,
+                    color: ColorTokens.textSecondary,
+                  )
+                else
+                  const SizedBox(height: 14),
+              ],
+            );
+
             return Row(
               children: [
-                // Left — name + stars.
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      skillArea.dbValue,
-                      style: TextStyle(
-                        fontSize: TypographyTokens.bodySize,
-                        fontWeight: TypographyTokens.headerWeight,
-                        color: ColorTokens.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    StarRating(
-                      stars: scoreToStars(average),
-                      size: 14,
-                      color: scoreColor(average),
-                    ),
-                  ],
-                ),
+                // Left — name + stars. Expanded when no bars to prevent overflow.
+                if (showBars)
+                  Flexible(child: nameStars)
+                else
+                  Expanded(child: nameStars),
                 if (showBars) ...[
                   const SizedBox(width: SpacingTokens.sm),
                   // Right — stacked bars.
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (showLabels)
-                          Text(
-                            'SkillScore',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: ColorTokens.textTertiary,
+                        Row(
+                          children: [
+                            if (showLabels)
+                              SizedBox(
+                                width: 56,
+                                child: Text(
+                                  'Score',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: ColorTokens.textTertiary,
+                                  ),
+                                ),
+                              ),
+                            Expanded(
+                              child: _TileFillBar(
+                                value: totalPoints,
+                                max: allocation.toDouble(),
+                                rag: true,
+                              ),
                             ),
-                          ),
-                        _TileFillBar(
-                          value: totalPoints,
-                          max: allocation.toDouble(),
-                          rag: true,
+                          ],
                         ),
                         const SizedBox(height: 3),
-                        if (showLabels)
-                          Text(
-                            'SkillProfile',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: ColorTokens.textTertiary,
+                        Row(
+                          children: [
+                            if (showLabels)
+                              SizedBox(
+                                width: 56,
+                                child: Text(
+                                  'Profile',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: ColorTokens.textTertiary,
+                                  ),
+                                ),
+                              ),
+                            Expanded(
+                              child: _TileFillBar(
+                                value: totalOccupancy,
+                                max: windowCapacity,
+                                rag: false,
+                              ),
                             ),
-                          ),
-                        _TileFillBar(
-                          value: totalOccupancy,
-                          max: windowCapacity,
-                          rag: false,
+                          ],
                         ),
                       ],
                     ),

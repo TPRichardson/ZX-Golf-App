@@ -50,24 +50,27 @@ class OverallScoreDisplay extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: SpacingTokens.sm),
-                  // S15 §15.5 — Display XL with tabular figures.
-                  Text(
-                    '$displayScore',
-                    style: TextStyle(
-                      fontSize: TypographyTokens.displayXlSize,
-                      fontWeight: TypographyTokens.displayXlWeight,
-                      height: TypographyTokens.displayXlHeight,
-                      color: ColorTokens.textPrimary,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const SizedBox(height: SpacingTokens.xs),
-                  Text(
-                    'out of 1000',
-                    style: TextStyle(
-                      fontSize: TypographyTokens.microSize,
-                      fontWeight: TypographyTokens.microWeight,
-                      color: ColorTokens.textTertiary,
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: CustomPaint(
+                      painter: _CircleProgressPainter(
+                        progress: (score / 1000).clamp(0.0, 1.0),
+                        trackColor: ColorTokens.textTertiary.withValues(alpha: 0.15),
+                        progressColor: _skillScoreColor(score),
+                        strokeWidth: 6,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$displayScore',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.displayLgSize,
+                            fontWeight: TypographyTokens.displayLgWeight,
+                            color: ColorTokens.textPrimary,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -117,6 +120,26 @@ class OverallScoreDisplay extends StatelessWidget {
       ),
     );
   }
+}
+
+/// SkillScore ring colour: 0=grey, low=red, scratch(700)=green, pro(1000)=purple.
+Color _skillScoreColor(double score) {
+  if (score <= 0) return ColorTokens.textTertiary;
+  final f = (score / 1000).clamp(0.0, 1.0);
+  if (f <= 0.7) {
+    // Red → Green (0 → scratch).
+    return Color.lerp(
+      const Color(0xFFE05252),
+      const Color(0xFF22C55E),
+      f / 0.7,
+    )!;
+  }
+  // Green → Purple (scratch → pro).
+  return Color.lerp(
+    const Color(0xFF22C55E),
+    const Color(0xFF9333EA),
+    (f - 0.7) / 0.3,
+  )!;
 }
 
 /// Circular progress arc painter for profile completeness.

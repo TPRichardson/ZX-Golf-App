@@ -119,10 +119,10 @@ class _CellDetailScreenState extends ConsumerState<CellDetailScreen> {
                     const SizedBox(height: SpacingTokens.sm),
                     if (avgCarry != null)
                       _summaryRow(
-                          'Average Carry', '${avgCarry.toStringAsFixed(1)}'),
+                          'Average Carry', avgCarry.toStringAsFixed(1)),
                     if (avgTotal != null)
                       _summaryRow(
-                          'Average Total', '${avgTotal.toStringAsFixed(1)}'),
+                          'Average Total', avgTotal.toStringAsFixed(1)),
                     if (avgRollout != null)
                       _summaryRow('Average Rollout',
                           avgRollout.toStringAsFixed(1)),

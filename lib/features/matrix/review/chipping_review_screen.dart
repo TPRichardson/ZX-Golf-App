@@ -167,7 +167,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
       final fullLabel = [
         clubLabel,
         distanceLabel,
-        if (flightLabel != null) flightLabel,
+        ?flightLabel,
       ].join(' — ');
 
       // Parse target distance from label (e.g. "10" or "10y").

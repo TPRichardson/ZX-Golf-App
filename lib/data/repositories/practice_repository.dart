@@ -1814,7 +1814,9 @@ class PracticeRepository {
   }) async {
     final value = jsonEncode({
       'blockId': blockId,
+      // ignore: use_null_aware_elements
       if (sessionId != null) 'sessionId': sessionId,
+      // ignore: use_null_aware_elements
       if (sessionScore != null) 'sessionScore': sessionScore,
       'integrityBreach': integrityBreach,
     });
