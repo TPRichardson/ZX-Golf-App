@@ -27,6 +27,7 @@ class HomeDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overallAsync = ref.watch(overallWindowScoreProvider(_userId));
+    final profileAsync = ref.watch(profileCompletenessProvider(_userId));
     final todayAsync = ref.watch(todayCalendarDayProvider(_userId));
     final activePb = ref.watch(activePracticeBlockProvider(_userId));
 
@@ -38,8 +39,13 @@ class HomeDashboardScreen extends ConsumerWidget {
           // S05 §5.1 — Overall SkillScore display.
           overallAsync.when(
             data: (score) => score > 0
-                ? OverallScoreDisplay(score: score)
-                : const _ZeroStateScore(),
+                ? OverallScoreDisplay(
+                    score: score,
+                    profileComplete: profileAsync.valueOrNull ?? 0.0,
+                  )
+                : _ZeroStateScore(
+                    profileComplete: profileAsync.valueOrNull ?? 0.0,
+                  ),
             loading: () => const _ZeroStateScore(),
             error: (_, _) => const _ZeroStateScore(),
           ),
@@ -75,51 +81,13 @@ class HomeDashboardScreen extends ConsumerWidget {
 
 /// Zero-state score display when no scoring data exists.
 class _ZeroStateScore extends StatelessWidget {
-  const _ZeroStateScore();
+  final double profileComplete;
+
+  const _ZeroStateScore({this.profileComplete = 0.0});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: SpacingTokens.lg,
-        horizontal: SpacingTokens.md,
-      ),
-      decoration: BoxDecoration(
-        color: ColorTokens.surfaceRaised,
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-        border: Border.all(color: ColorTokens.surfaceBorder),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'SkillScore',
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              fontWeight: TypographyTokens.bodyWeight,
-              color: ColorTokens.textSecondary,
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.sm),
-          Text(
-            '--',
-            style: TextStyle(
-              fontSize: TypographyTokens.displayXlSize,
-              fontWeight: TypographyTokens.displayXlWeight,
-              color: ColorTokens.textTertiary,
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.xs),
-          Text(
-            'Complete a session to see your score',
-            style: TextStyle(
-              fontSize: TypographyTokens.microSize,
-              color: ColorTokens.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    );
+    return OverallScoreDisplay(score: 0, profileComplete: profileComplete);
   }
 }
 

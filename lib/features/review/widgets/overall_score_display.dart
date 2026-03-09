@@ -1,3 +1,5 @@
+import 'dart:math' show pi;
+
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 
@@ -7,8 +9,13 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 
 class OverallScoreDisplay extends StatelessWidget {
   final double score;
+  final double profileComplete;
 
-  const OverallScoreDisplay({super.key, required this.score});
+  const OverallScoreDisplay({
+    super.key,
+    required this.score,
+    this.profileComplete = 0.0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,39 +33,137 @@ class OverallScoreDisplay extends StatelessWidget {
         borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
         border: Border.all(color: ColorTokens.surfaceBorder),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text(
-            'SkillScore',
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              fontWeight: TypographyTokens.bodyWeight,
-              color: ColorTokens.textSecondary,
+          // Left half — SkillScore.
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  'SkillScore',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontWeight: TypographyTokens.bodyWeight,
+                    color: ColorTokens.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.sm),
+                // S15 §15.5 — Display XL with tabular figures.
+                Text(
+                  '$displayScore',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.displayXlSize,
+                    fontWeight: TypographyTokens.displayXlWeight,
+                    height: TypographyTokens.displayXlHeight,
+                    color: ColorTokens.textPrimary,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.xs),
+                Text(
+                  'out of 1000',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.microSize,
+                    fontWeight: TypographyTokens.microWeight,
+                    color: ColorTokens.textTertiary,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: SpacingTokens.sm),
-          // S15 §15.5 — Display XL with tabular figures.
-          Text(
-            '$displayScore',
-            style: TextStyle(
-              fontSize: TypographyTokens.displayXlSize,
-              fontWeight: TypographyTokens.displayXlWeight,
-              height: TypographyTokens.displayXlHeight,
-              color: ColorTokens.textPrimary,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.xs),
-          Text(
-            'out of 1000',
-            style: TextStyle(
-              fontSize: TypographyTokens.microSize,
-              fontWeight: TypographyTokens.microWeight,
-              color: ColorTokens.textTertiary,
+          // Right half — Profile completeness.
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  'Profile',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontWeight: TypographyTokens.bodyWeight,
+                    color: ColorTokens.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.sm),
+                SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: CustomPaint(
+                    painter: _CircleProgressPainter(
+                      progress: profileComplete,
+                      trackColor: ColorTokens.surfaceBorder,
+                      progressColor: ColorTokens.primaryDefault,
+                      strokeWidth: 6,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${(profileComplete * 100).round()}%',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.displayLgSize,
+                          fontWeight: TypographyTokens.displayLgWeight,
+                          color: ColorTokens.textPrimary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+/// Circular progress arc painter for profile completeness.
+class _CircleProgressPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color progressColor;
+  final double strokeWidth;
+
+  _CircleProgressPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.progressColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide - strokeWidth) / 2;
+
+    // Track.
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // Progress arc.
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -pi / 2,
+        2 * pi * progress,
+        false,
+        Paint()
+          ..color = progressColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CircleProgressPainter old) =>
+      old.progress != progress ||
+      old.trackColor != trackColor ||
+      old.progressColor != progressColor;
 }

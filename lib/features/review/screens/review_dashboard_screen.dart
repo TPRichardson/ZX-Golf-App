@@ -52,6 +52,8 @@ class _ReviewDashboardScreenState
   Widget _buildDashboard(double overallScore) {
     // TD-07 §13.5 — Dim scores when rebuild is needed.
     final isStale = ref.watch(rebuildNeededProvider).valueOrNull ?? false;
+    final profileComplete =
+        ref.watch(profileCompletenessProvider(kDevUserId)).valueOrNull ?? 0.0;
 
     return ListView(
       padding: const EdgeInsets.all(SpacingTokens.md),
@@ -59,7 +61,10 @@ class _ReviewDashboardScreenState
         // 1. Overall Score + Skill Areas — single section.
         Opacity(
           opacity: isStale ? 0.5 : 1.0,
-          child: OverallScoreDisplay(score: overallScore),
+          child: OverallScoreDisplay(
+            score: overallScore,
+            profileComplete: profileComplete,
+          ),
         ),
         const SizedBox(height: SpacingTokens.sm),
         SkillAreaHeatmap(

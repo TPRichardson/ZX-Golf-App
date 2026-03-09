@@ -43,6 +43,7 @@ class SubskillBreakdown extends ConsumerWidget {
             final s = stats[subRef.subskillId];
             final totalPoints = s?.totalPoints ?? 0.0;
             final average = s?.average ?? 0.0;
+            final totalOccupancy = s?.totalOccupancy ?? 0.0;
             final normalised =
                 average > 0 ? (average / 5.0).clamp(0.0, 1.0) : 0.0;
 
@@ -52,6 +53,8 @@ class SubskillBreakdown extends ConsumerWidget {
               allocation: subRef.allocation,
               average: average,
               normalisedScore: normalised,
+              totalOccupancy: totalOccupancy,
+              windowCapacity: subRef.windowSize * 2.0,
               onTap: () => onSubskillTap(subRef.subskillId),
             );
           }).toList(),
@@ -78,6 +81,8 @@ class _SubskillTile extends StatelessWidget {
   final int allocation;
   final double average;
   final double normalisedScore;
+  final double totalOccupancy;
+  final double windowCapacity;
   final VoidCallback onTap;
 
   const _SubskillTile({
@@ -86,6 +91,8 @@ class _SubskillTile extends StatelessWidget {
     required this.allocation,
     required this.average,
     required this.normalisedScore,
+    required this.totalOccupancy,
+    required this.windowCapacity,
     required this.onTap,
   });
 
@@ -137,7 +144,12 @@ class _SubskillTile extends StatelessWidget {
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: SpacingTokens.sm),
+            Expanded(child: _WindowFillBar(
+              occupancy: totalOccupancy,
+              capacity: windowCapacity,
+            )),
+            const SizedBox(width: SpacingTokens.sm),
             Text(
               '$earnedPoints / $allocation pts',
               style: TextStyle(
@@ -163,6 +175,40 @@ class _SubskillTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Linear progress bar showing window fill. Red→green gradient; grey when empty.
+class _WindowFillBar extends StatelessWidget {
+  final double occupancy;
+  final double capacity;
+
+  const _WindowFillBar({required this.occupancy, required this.capacity});
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = capacity > 0 ? (occupancy / capacity).clamp(0.0, 1.0) : 0.0;
+
+    final Color barColor;
+    if (occupancy == 0) {
+      barColor = ColorTokens.textTertiary.withValues(alpha: 0.3);
+    } else {
+      barColor = Color.lerp(
+        const Color(0xFFE05252),
+        const Color(0xFF22C55E),
+        fill,
+      )!;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(3),
+      child: LinearProgressIndicator(
+        value: fill,
+        backgroundColor: ColorTokens.surfaceBase,
+        valueColor: AlwaysStoppedAnimation<Color>(barColor),
+        minHeight: 6,
       ),
     );
   }

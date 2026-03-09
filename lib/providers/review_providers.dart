@@ -196,10 +196,11 @@ final subskillsByAreaProvider = Provider.family<
 // ---------------------------------------------------------------------------
 
 /// Per-subskill stats: totalPoints from materialised subskill scores (accumulation
-/// formula), average from raw window states (0–5 performance quality metric).
+/// formula), average from raw window states (0–5 performance quality metric),
+/// and totalOccupancy (combined Transition + Pressure window fill).
 /// Keyed by subskillId.
 final subskillWindowStatsProvider = Provider.family<
-    AsyncValue<Map<String, ({double totalPoints, double average})>>,
+    AsyncValue<Map<String, ({double totalPoints, double average, double totalOccupancy})>>,
     String>((ref, userId) {
   final scoresAsync = ref.watch(subskillScoresProvider(userId));
   final windowsAsync = ref.watch(windowStatesProvider(userId));
@@ -214,13 +215,14 @@ final subskillWindowStatsProvider = Provider.family<
           (occupancies[w.subskill] ?? 0) + w.totalOccupancy;
     }
 
-    final map = <String, ({double totalPoints, double average})>{};
+    final map = <String, ({double totalPoints, double average, double totalOccupancy})>{};
     for (final s in scores) {
       final occ = occupancies[s.subskill] ?? 0;
       final rawSum = sums[s.subskill] ?? 0;
       map[s.subskill] = (
         totalPoints: s.subskillPoints,
         average: occ > 0 ? rawSum / occ : 0.0,
+        totalOccupancy: occ,
       );
     }
     return map;
@@ -434,3 +436,39 @@ class PlanAdherence {
 }
 
 List<Slot> _parseSlotsJson(String json) => parseSlotsFromJson(json);
+
+// ---------------------------------------------------------------------------
+// Profile completeness — window fill percentage across all subskills
+// ---------------------------------------------------------------------------
+
+/// Fraction (0–1) of total window capacity filled across all subskills.
+/// Each subskill has 2 windows (Transition + Pressure), each with capacity
+/// = SubskillRef.windowSize. Unfilled subskills with no materialised rows
+/// count as zero fill against the total capacity.
+final profileCompletenessProvider =
+    Provider.family<AsyncValue<double>, String>((ref, userId) {
+  final windowsAsync = ref.watch(windowStatesProvider(userId));
+  final refsAsync = ref.watch(allSubskillRefsProvider);
+  return windowsAsync.whenData((windows) {
+    final refs = refsAsync.valueOrNull ?? [];
+    if (refs.isEmpty) return 0.0;
+
+    // Full capacity: each subskill contributes 2 × windowSize.
+    double fullCapacity = 0;
+    final windowSizeMap = <String, int>{};
+    for (final r in refs) {
+      windowSizeMap[r.subskillId] = r.windowSize;
+      fullCapacity += r.windowSize * 2;
+    }
+    if (fullCapacity == 0) return 0.0;
+
+    // Filled: sum of occupancies capped at per-window capacity.
+    double totalFilled = 0;
+    for (final w in windows) {
+      final cap = (windowSizeMap[w.subskill] ?? 25).toDouble();
+      totalFilled += w.totalOccupancy.clamp(0, cap);
+    }
+
+    return (totalFilled / fullCapacity).clamp(0.0, 1.0);
+  });
+});
