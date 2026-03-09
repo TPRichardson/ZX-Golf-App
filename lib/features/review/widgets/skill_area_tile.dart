@@ -150,16 +150,48 @@ class SkillAreaTile extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _TileFillBar(
-                            value: totalPoints,
-                            max: allocation.toDouble(),
-                            rag: true,
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 40,
+                                child: Text(
+                                  'Score',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: ColorTokens.textTertiary,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: _TileFillBar(
+                                  value: totalPoints,
+                                  max: allocation.toDouble(),
+                                  rag: true,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 3),
-                          _TileFillBar(
-                            value: totalOccupancy,
-                            max: windowCapacity,
-                            rag: false,
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 40,
+                                child: Text(
+                                  'Profile',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: ColorTokens.textTertiary,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: _TileFillBar(
+                                  value: totalOccupancy,
+                                  max: windowCapacity,
+                                  rag: false,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
