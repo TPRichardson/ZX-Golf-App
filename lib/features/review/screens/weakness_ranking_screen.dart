@@ -36,6 +36,10 @@ class WeaknessRankingScreen extends ConsumerWidget {
             data: (refs) => {for (final r in refs) r.subskillId: r.name},
           ) ?? <String, String>{};
 
+          final windowSizeMap = refsAsync.whenOrNull(
+            data: (refs) => {for (final r in refs) r.subskillId: r.windowSize},
+          ) ?? <String, int>{};
+
           // Build saturation lookup from window states.
           final windowStates = windowsAsync.valueOrNull ?? [];
           final saturationMap =
@@ -98,8 +102,8 @@ class WeaknessRankingScreen extends ConsumerWidget {
                               const SizedBox(width: SpacingTokens.sm),
                               if (saturation != null)
                                 Text(
-                                  'T:${saturation.transitionOccupancy.toStringAsFixed(0)}/$kMaxWindowOccupancyInt '
-                                  'P:${saturation.pressureOccupancy.toStringAsFixed(0)}/$kMaxWindowOccupancyInt',
+                                  'T:${saturation.transitionOccupancy.toStringAsFixed(0)}/${windowSizeMap[r.subskillId] ?? 25} '
+                                  'P:${saturation.pressureOccupancy.toStringAsFixed(0)}/${windowSizeMap[r.subskillId] ?? 25}',
                                   style: TextStyle(
                                     fontSize: TypographyTokens.microSize,
                                     color: ColorTokens.textTertiary,
@@ -202,8 +206,6 @@ class WeaknessRankingScreen extends ConsumerWidget {
     return map;
   }
 }
-
-const kMaxWindowOccupancyInt = 25;
 
 class _SubskillSaturation {
   final double transitionOccupancy;

@@ -11,6 +11,8 @@ class SubskillRefs extends Table {
       text().named('SkillArea').map(const SkillAreaConverter())();
   TextColumn get name => text().named('Name')();
   IntColumn get allocation => integer().named('Allocation')();
+  IntColumn get windowSize =>
+      integer().named('WindowSize').withDefault(const Constant(25))();
 
   @override
   Set<Column> get primaryKey => {subskillId};

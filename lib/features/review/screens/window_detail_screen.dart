@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/empty_state.dart';
@@ -33,10 +32,12 @@ class WindowDetailScreen extends ConsumerWidget {
     final drillMapAsync = ref.watch(drillMapProvider(userId));
     final refsAsync = ref.watch(allSubskillRefsProvider);
 
-    final subskillName = refsAsync.whenOrNull(
+    final subskillRef = refsAsync.whenOrNull(
       data: (refs) =>
-          refs.where((r) => r.subskillId == subskillId).firstOrNull?.name,
-    ) ?? subskillId;
+          refs.where((r) => r.subskillId == subskillId).firstOrNull,
+    );
+    final subskillName = subskillRef?.name ?? subskillId;
+    final windowSize = subskillRef?.windowSize ?? 25;
 
     final typeName =
         practiceType == DrillType.transition ? 'Transition' : 'Pressure';
@@ -65,7 +66,7 @@ class WindowDetailScreen extends ConsumerWidget {
                 color: ColorTokens.surfaceRaised,
                 child: Text(
                   'Window: ${detail.totalOccupancy.toStringAsFixed(1)} / '
-                  '${kMaxWindowOccupancy.toStringAsFixed(1)} occupancy   '
+                  '$windowSize occupancy   '
                   'Avg: ${detail.windowAverage.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: TypographyTokens.bodySize,

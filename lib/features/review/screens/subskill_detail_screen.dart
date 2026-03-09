@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -23,10 +22,12 @@ class SubskillDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final refsAsync = ref.watch(allSubskillRefsProvider);
-    final subskillName = refsAsync.whenOrNull(
+    final subskillRef = refsAsync.whenOrNull(
       data: (refs) =>
-          refs.where((r) => r.subskillId == subskillId).firstOrNull?.name,
-    ) ?? subskillId;
+          refs.where((r) => r.subskillId == subskillId).firstOrNull,
+    );
+    final subskillName = subskillRef?.name ?? subskillId;
+    final windowSize = subskillRef?.windowSize ?? 25;
 
     final transitionAsync = ref.watch(windowDetailProvider(
       (userId: userId, subskill: subskillId, practiceType: DrillType.transition),
@@ -45,6 +46,7 @@ class SubskillDetailScreen extends ConsumerWidget {
             'Transition Window',
             transitionAsync,
             DrillType.transition,
+            windowSize,
           ),
           const SizedBox(height: SpacingTokens.md),
           _buildWindowCard(
@@ -52,6 +54,7 @@ class SubskillDetailScreen extends ConsumerWidget {
             'Pressure Window',
             pressureAsync,
             DrillType.pressure,
+            windowSize,
           ),
         ],
       ),
@@ -63,6 +66,7 @@ class SubskillDetailScreen extends ConsumerWidget {
     String title,
     AsyncValue<ParsedWindowDetail?> windowAsync,
     DrillType practiceType,
+    int windowSize,
   ) {
     return windowAsync.when(
       data: (detail) {
@@ -123,7 +127,7 @@ class SubskillDetailScreen extends ConsumerWidget {
                   // Saturation.
                   Text(
                     'Saturation: ${detail.totalOccupancy.toStringAsFixed(1)} / '
-                    '${kMaxWindowOccupancy.toStringAsFixed(1)}',
+                    '$windowSize',
                     style: TextStyle(
                       fontSize: TypographyTokens.bodySize,
                       color: ColorTokens.textSecondary,

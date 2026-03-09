@@ -341,6 +341,15 @@ final allSubskillRefsProvider =
   return ref.watch(scoringRepositoryProvider).getAllSubskillRefs();
 });
 
+/// Single SubskillRef lookup by subskillId.
+/// Derives from allSubskillRefsProvider to avoid extra DB calls.
+final subskillRefProvider =
+    Provider.family<AsyncValue<SubskillRef?>, String>((ref, subskillId) {
+  final refsAsync = ref.watch(allSubskillRefsProvider);
+  return refsAsync.whenData((refs) =>
+      refs.where((r) => r.subskillId == subskillId).firstOrNull);
+});
+
 // ---------------------------------------------------------------------------
 // Plan adherence — S05 §5.3
 // ---------------------------------------------------------------------------

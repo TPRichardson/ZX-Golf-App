@@ -55,6 +55,7 @@ void main() {
       skillArea: skillArea,
       name: id,
       allocation: allocation,
+      windowSize: 25,
     );
   }
 

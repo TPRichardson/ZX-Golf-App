@@ -1,6 +1,6 @@
 // App-wide constants per S01, S02, TD-03.
 
-// Spec: S01 §1.4 — Scoring window maximum occupancy.
+// Default window occupancy. Per-subskill sizes defined in SubskillRef.windowSize.
 const kMaxWindowOccupancy = 25.0;
 
 // Spec: S02 §2.5 — Subskill weighting: Transition vs Pressure.

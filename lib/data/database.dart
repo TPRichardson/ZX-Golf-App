@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -122,6 +122,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV5ToV6(m);
               case 6:
                 await _migrateV6ToV7(m);
+              case 7:
+                await _migrateV7ToV8(m);
             }
           }
         },
@@ -145,6 +147,13 @@ class AppDatabase extends _$AppDatabase {
   // Add Target column to Drill table for custom drill targets.
   Future<void> _migrateV6ToV7(Migrator m) async {
     await customStatement('ALTER TABLE Drill ADD COLUMN Target REAL');
+  }
+
+  // Add WindowSize column to SubskillRef for per-subskill window capacity.
+  Future<void> _migrateV7ToV8(Migrator m) async {
+    await customStatement(
+        'ALTER TABLE SubskillRef ADD COLUMN WindowSize INTEGER NOT NULL DEFAULT 25');
+    await reseedSubskillRefs(this);
   }
 
   // Add SurfaceType column to PracticeBlock and Session tables.

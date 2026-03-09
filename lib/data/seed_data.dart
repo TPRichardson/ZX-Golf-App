@@ -46,33 +46,34 @@ EventTypeRefsCompanion _eventType(String id, String name, String desc) =>
     );
 
 // 002_seed_reference_data.sql §2 — 19 SubskillRef rows (allocations sum to 1000).
+// WindowSize is per-subskill: controls accumulation scoring window capacity.
 List<SubskillRefsCompanion> _subskillRefRows() => <SubskillRefsCompanion>[
     // Irons (360)
-    _subskill('irons_distance_control', SkillArea.irons, 'Distance Control', 150),
-    _subskill('irons_direction_control', SkillArea.irons, 'Direction Control', 150),
-    _subskill('irons_shape_control', SkillArea.irons, 'Shape Control', 60),
+    _subskill('irons_distance_control', SkillArea.irons, 'Distance Control', 150, 25),
+    _subskill('irons_direction_control', SkillArea.irons, 'Direction Control', 150, 25),
+    _subskill('irons_shape_control', SkillArea.irons, 'Shape Control', 60, 15),
     // Driving (240)
-    _subskill('driving_distance_maximum', SkillArea.driving, 'Distance Maximum', 100),
-    _subskill('driving_direction_control', SkillArea.driving, 'Direction Control', 100),
-    _subskill('driving_shape_control', SkillArea.driving, 'Shape Control', 40),
+    _subskill('driving_distance_maximum', SkillArea.driving, 'Distance Maximum', 100, 20),
+    _subskill('driving_direction_control', SkillArea.driving, 'Direction Control', 100, 20),
+    _subskill('driving_shape_control', SkillArea.driving, 'Shape Control', 40, 10),
     // Putting (240)
-    _subskill('putting_distance_control', SkillArea.putting, 'Distance Control', 120),
-    _subskill('putting_direction_control', SkillArea.putting, 'Direction Control', 120),
+    _subskill('putting_distance_control', SkillArea.putting, 'Distance Control', 120, 25),
+    _subskill('putting_direction_control', SkillArea.putting, 'Direction Control', 120, 25),
     // Pitching (60)
-    _subskill('pitching_distance_control', SkillArea.pitching, 'Distance Control', 25),
-    _subskill('pitching_direction_control', SkillArea.pitching, 'Direction Control', 25),
-    _subskill('pitching_flight_control', SkillArea.pitching, 'Flight Control', 10),
+    _subskill('pitching_distance_control', SkillArea.pitching, 'Distance Control', 25, 10),
+    _subskill('pitching_direction_control', SkillArea.pitching, 'Direction Control', 25, 10),
+    _subskill('pitching_flight_control', SkillArea.pitching, 'Flight Control', 10, 3),
     // Chipping (60)
-    _subskill('chipping_distance_control', SkillArea.chipping, 'Distance Control', 25),
-    _subskill('chipping_direction_control', SkillArea.chipping, 'Direction Control', 25),
-    _subskill('chipping_flight_control', SkillArea.chipping, 'Flight Control', 10),
+    _subskill('chipping_distance_control', SkillArea.chipping, 'Distance Control', 25, 10),
+    _subskill('chipping_direction_control', SkillArea.chipping, 'Direction Control', 25, 10),
+    _subskill('chipping_flight_control', SkillArea.chipping, 'Flight Control', 10, 3),
     // Woods (20)
-    _subskill('woods_distance_control', SkillArea.woods, 'Distance Control', 8),
-    _subskill('woods_direction_control', SkillArea.woods, 'Direction Control', 8),
-    _subskill('woods_shape_control', SkillArea.woods, 'Shape Control', 4),
+    _subskill('woods_distance_control', SkillArea.woods, 'Distance Control', 8, 3),
+    _subskill('woods_direction_control', SkillArea.woods, 'Direction Control', 8, 3),
+    _subskill('woods_shape_control', SkillArea.woods, 'Shape Control', 4, 2),
     // Bunkers (20)
-    _subskill('bunkers_distance_control', SkillArea.bunkers, 'Distance Control', 10),
-    _subskill('bunkers_direction_control', SkillArea.bunkers, 'Direction Control', 10),
+    _subskill('bunkers_distance_control', SkillArea.bunkers, 'Distance Control', 10, 3),
+    _subskill('bunkers_direction_control', SkillArea.bunkers, 'Direction Control', 10, 3),
   ];
 
 Future<void> _seedSubskillRefs(AppDatabase db) async {
@@ -91,12 +92,13 @@ Future<void> reseedSubskillRefs(AppDatabase db) async {
 }
 
 SubskillRefsCompanion _subskill(
-        String id, SkillArea area, String name, int allocation) =>
+        String id, SkillArea area, String name, int allocation, int windowSize) =>
     SubskillRefsCompanion.insert(
       subskillId: id,
       skillArea: area,
       name: name,
       allocation: allocation,
+      windowSize: Value(windowSize),
     );
 
 // 002_seed_reference_data.sql §3 — 8 MetricSchema rows.

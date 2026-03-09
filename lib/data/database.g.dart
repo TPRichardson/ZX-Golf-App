@@ -831,12 +831,25 @@ class $SubskillRefsTable extends SubskillRefs
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _windowSizeMeta = const VerificationMeta(
+    'windowSize',
+  );
+  @override
+  late final GeneratedColumn<int> windowSize = GeneratedColumn<int>(
+    'WindowSize',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(25),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     subskillId,
     skillArea,
     name,
     allocation,
+    windowSize,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -874,6 +887,12 @@ class $SubskillRefsTable extends SubskillRefs
     } else if (isInserting) {
       context.missing(_allocationMeta);
     }
+    if (data.containsKey('WindowSize')) {
+      context.handle(
+        _windowSizeMeta,
+        windowSize.isAcceptableOrUnknown(data['WindowSize']!, _windowSizeMeta),
+      );
+    }
     return context;
   }
 
@@ -901,6 +920,10 @@ class $SubskillRefsTable extends SubskillRefs
         DriftSqlType.int,
         data['${effectivePrefix}Allocation'],
       )!,
+      windowSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}WindowSize'],
+      )!,
     );
   }
 
@@ -918,11 +941,13 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
   final SkillArea skillArea;
   final String name;
   final int allocation;
+  final int windowSize;
   const SubskillRef({
     required this.subskillId,
     required this.skillArea,
     required this.name,
     required this.allocation,
+    required this.windowSize,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -935,6 +960,7 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
     }
     map['Name'] = Variable<String>(name);
     map['Allocation'] = Variable<int>(allocation);
+    map['WindowSize'] = Variable<int>(windowSize);
     return map;
   }
 
@@ -944,6 +970,7 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
       skillArea: Value(skillArea),
       name: Value(name),
       allocation: Value(allocation),
+      windowSize: Value(windowSize),
     );
   }
 
@@ -957,6 +984,7 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
       skillArea: serializer.fromJson<SkillArea>(json['skillArea']),
       name: serializer.fromJson<String>(json['name']),
       allocation: serializer.fromJson<int>(json['allocation']),
+      windowSize: serializer.fromJson<int>(json['windowSize']),
     );
   }
   @override
@@ -967,6 +995,7 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
       'skillArea': serializer.toJson<SkillArea>(skillArea),
       'name': serializer.toJson<String>(name),
       'allocation': serializer.toJson<int>(allocation),
+      'windowSize': serializer.toJson<int>(windowSize),
     };
   }
 
@@ -975,11 +1004,13 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
     SkillArea? skillArea,
     String? name,
     int? allocation,
+    int? windowSize,
   }) => SubskillRef(
     subskillId: subskillId ?? this.subskillId,
     skillArea: skillArea ?? this.skillArea,
     name: name ?? this.name,
     allocation: allocation ?? this.allocation,
+    windowSize: windowSize ?? this.windowSize,
   );
   SubskillRef copyWithCompanion(SubskillRefsCompanion data) {
     return SubskillRef(
@@ -991,6 +1022,9 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
       allocation: data.allocation.present
           ? data.allocation.value
           : this.allocation,
+      windowSize: data.windowSize.present
+          ? data.windowSize.value
+          : this.windowSize,
     );
   }
 
@@ -1000,13 +1034,15 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
           ..write('subskillId: $subskillId, ')
           ..write('skillArea: $skillArea, ')
           ..write('name: $name, ')
-          ..write('allocation: $allocation')
+          ..write('allocation: $allocation, ')
+          ..write('windowSize: $windowSize')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(subskillId, skillArea, name, allocation);
+  int get hashCode =>
+      Object.hash(subskillId, skillArea, name, allocation, windowSize);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1014,7 +1050,8 @@ class SubskillRef extends DataClass implements Insertable<SubskillRef> {
           other.subskillId == this.subskillId &&
           other.skillArea == this.skillArea &&
           other.name == this.name &&
-          other.allocation == this.allocation);
+          other.allocation == this.allocation &&
+          other.windowSize == this.windowSize);
 }
 
 class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
@@ -1022,12 +1059,14 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
   final Value<SkillArea> skillArea;
   final Value<String> name;
   final Value<int> allocation;
+  final Value<int> windowSize;
   final Value<int> rowid;
   const SubskillRefsCompanion({
     this.subskillId = const Value.absent(),
     this.skillArea = const Value.absent(),
     this.name = const Value.absent(),
     this.allocation = const Value.absent(),
+    this.windowSize = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SubskillRefsCompanion.insert({
@@ -1035,6 +1074,7 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
     required SkillArea skillArea,
     required String name,
     required int allocation,
+    this.windowSize = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : subskillId = Value(subskillId),
        skillArea = Value(skillArea),
@@ -1045,6 +1085,7 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
     Expression<String>? skillArea,
     Expression<String>? name,
     Expression<int>? allocation,
+    Expression<int>? windowSize,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1052,6 +1093,7 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
       if (skillArea != null) 'SkillArea': skillArea,
       if (name != null) 'Name': name,
       if (allocation != null) 'Allocation': allocation,
+      if (windowSize != null) 'WindowSize': windowSize,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1061,6 +1103,7 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
     Value<SkillArea>? skillArea,
     Value<String>? name,
     Value<int>? allocation,
+    Value<int>? windowSize,
     Value<int>? rowid,
   }) {
     return SubskillRefsCompanion(
@@ -1068,6 +1111,7 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
       skillArea: skillArea ?? this.skillArea,
       name: name ?? this.name,
       allocation: allocation ?? this.allocation,
+      windowSize: windowSize ?? this.windowSize,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1089,6 +1133,9 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
     if (allocation.present) {
       map['Allocation'] = Variable<int>(allocation.value);
     }
+    if (windowSize.present) {
+      map['WindowSize'] = Variable<int>(windowSize.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1102,6 +1149,7 @@ class SubskillRefsCompanion extends UpdateCompanion<SubskillRef> {
           ..write('skillArea: $skillArea, ')
           ..write('name: $name, ')
           ..write('allocation: $allocation, ')
+          ..write('windowSize: $windowSize, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -19214,6 +19262,7 @@ typedef $$SubskillRefsTableCreateCompanionBuilder =
       required SkillArea skillArea,
       required String name,
       required int allocation,
+      Value<int> windowSize,
       Value<int> rowid,
     });
 typedef $$SubskillRefsTableUpdateCompanionBuilder =
@@ -19222,6 +19271,7 @@ typedef $$SubskillRefsTableUpdateCompanionBuilder =
       Value<SkillArea> skillArea,
       Value<String> name,
       Value<int> allocation,
+      Value<int> windowSize,
       Value<int> rowid,
     });
 
@@ -19254,6 +19304,11 @@ class $$SubskillRefsTableFilterComposer
     column: $table.allocation,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<int> get windowSize => $composableBuilder(
+    column: $table.windowSize,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SubskillRefsTableOrderingComposer
@@ -19284,6 +19339,11 @@ class $$SubskillRefsTableOrderingComposer
     column: $table.allocation,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get windowSize => $composableBuilder(
+    column: $table.windowSize,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SubskillRefsTableAnnotationComposer
@@ -19308,6 +19368,11 @@ class $$SubskillRefsTableAnnotationComposer
 
   GeneratedColumn<int> get allocation => $composableBuilder(
     column: $table.allocation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get windowSize => $composableBuilder(
+    column: $table.windowSize,
     builder: (column) => column,
   );
 }
@@ -19347,12 +19412,14 @@ class $$SubskillRefsTableTableManager
                 Value<SkillArea> skillArea = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<int> allocation = const Value.absent(),
+                Value<int> windowSize = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SubskillRefsCompanion(
                 subskillId: subskillId,
                 skillArea: skillArea,
                 name: name,
                 allocation: allocation,
+                windowSize: windowSize,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19361,12 +19428,14 @@ class $$SubskillRefsTableTableManager
                 required SkillArea skillArea,
                 required String name,
                 required int allocation,
+                Value<int> windowSize = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SubskillRefsCompanion.insert(
                 subskillId: subskillId,
                 skillArea: skillArea,
                 name: name,
                 allocation: allocation,
+                windowSize: windowSize,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

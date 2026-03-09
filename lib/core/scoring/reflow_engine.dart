@@ -284,10 +284,12 @@ class ReflowEngine {
     }
 
     // TD-04 §3.2 Step 5 — Partial roll-off before composing.
-    final adjusted = _applyPartialRollOff(entries);
+    final adjusted = _applyPartialRollOff(entries,
+        maxOccupancy: subskillRef.windowSize.toDouble());
 
     // Compose the window using the pure stateless composer.
-    final windowState = composeWindow(adjusted);
+    final windowState = composeWindow(adjusted,
+        maxOccupancy: subskillRef.windowSize.toDouble());
 
     // Write materialised window state.
     await _scoringRepo.upsertWindowState(
@@ -307,9 +309,10 @@ class ReflowEngine {
   }
 
   /// TD-04 §3.2 Step 5 — Partial roll-off: sort DESC, walk forward accumulating
-  /// occupancy. If an entry's full occupancy would exceed 25 but its occupancy
-  /// minus 0.5 fits, include at reduced occupancy.
-  List<WindowEntry> _applyPartialRollOff(List<WindowEntry> entries) {
+  /// occupancy. If an entry's full occupancy would exceed [maxOccupancy] but its
+  /// occupancy minus 0.5 fits, include at reduced occupancy.
+  List<WindowEntry> _applyPartialRollOff(List<WindowEntry> entries,
+      {double maxOccupancy = kMaxWindowOccupancy}) {
     // Sort by CompletionTimestamp DESC, SessionID DESC.
     final sorted = List<WindowEntry>.from(entries)
       ..sort((a, b) {
@@ -322,11 +325,11 @@ class ReflowEngine {
     var accumulated = 0.0;
 
     for (final entry in sorted) {
-      if (accumulated + entry.occupancy <= kMaxWindowOccupancy) {
+      if (accumulated + entry.occupancy <= maxOccupancy) {
         result.add(entry);
         accumulated += entry.occupancy;
       } else if (entry.occupancy > 0.5 &&
-          accumulated + (entry.occupancy - 0.5) <= kMaxWindowOccupancy) {
+          accumulated + (entry.occupancy - 0.5) <= maxOccupancy) {
         // Partial roll-off: reduce occupancy by 0.5.
         final reduced = entry.copyWith(occupancy: entry.occupancy - 0.5);
         result.add(reduced);
@@ -419,6 +422,7 @@ class ReflowEngine {
       transition: transitionWindow,
       pressure: pressureWindow,
       allocation: ref.allocation,
+      windowSize: ref.windowSize,
     );
 
     await _scoringRepo.upsertSubskillScore(
@@ -676,12 +680,12 @@ class ReflowEngine {
       }
     }
 
-    // 3. Pre-filter: cap sessions per window at occupancy limit.
-    const maxSessionsPerWindow = 55;
+    // 3. Pre-filter: cap sessions per window at per-subskill occupancy limit.
     final neededSessionIds = <String>{};
     final cappedIndex =
         <String, Map<DrillType, List<LightSession>>>{};
     for (final ref in allRefs) {
+      final maxSessionsPerWindow = (ref.windowSize * 2.2).ceil();
       for (final drillType in [DrillType.transition, DrillType.pressure]) {
         final sessions = sessionIndex[ref.subskillId]?[drillType] ?? [];
         final capped = sessions.length > maxSessionsPerWindow
@@ -778,8 +782,10 @@ class ReflowEngine {
 
         totalWindowEntries += entries.length;
 
-        final adjusted = _applyPartialRollOff(entries);
-        final windowState = composeWindow(adjusted);
+        final adjusted = _applyPartialRollOff(entries,
+            maxOccupancy: ref.windowSize.toDouble());
+        final windowState = composeWindow(adjusted,
+            maxOccupancy: ref.windowSize.toDouble());
 
         windowCompanions.add(MaterialisedWindowStatesCompanion.insert(
           userId: userId,
@@ -836,6 +842,7 @@ class ReflowEngine {
         transition: transitionWindow,
         pressure: pressureWindow,
         allocation: ref.allocation,
+        windowSize: ref.windowSize,
       );
 
       subskillScoreMap[ref.subskillId] = score;
