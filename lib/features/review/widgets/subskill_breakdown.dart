@@ -150,24 +150,11 @@ class _SubskillTile extends StatelessWidget {
               capacity: windowCapacity,
             )),
             const SizedBox(width: SpacingTokens.sm),
-            Text(
-              '$earnedPoints / $allocation pts',
-              style: TextStyle(
-                fontSize: TypographyTokens.microSize,
-                color: ColorTokens.textSecondary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
+            Expanded(child: _WindowFillBar(
+              occupancy: earnedPoints.toDouble(),
+              capacity: allocation.toDouble(),
+            )),
             const SizedBox(width: SpacingTokens.sm),
-            Text(
-              'avg ${average.toStringAsFixed(1)}',
-              style: TextStyle(
-                fontSize: TypographyTokens.microSize,
-                color: ColorTokens.textTertiary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(width: SpacingTokens.xs),
             Icon(
               Icons.chevron_right,
               size: 14,
@@ -206,7 +193,7 @@ class _WindowFillBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(3),
       child: LinearProgressIndicator(
         value: fill,
-        backgroundColor: ColorTokens.surfaceBase,
+        backgroundColor: ColorTokens.textTertiary.withValues(alpha: 0.15),
         valueColor: AlwaysStoppedAnimation<Color>(barColor),
         minHeight: 6,
       ),

@@ -33,84 +33,87 @@ class OverallScoreDisplay extends StatelessWidget {
         borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
         border: Border.all(color: ColorTokens.surfaceBorder),
       ),
-      child: Row(
-        children: [
-          // Left half — SkillScore.
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  'SkillScore',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySize,
-                    fontWeight: TypographyTokens.bodyWeight,
-                    color: ColorTokens.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: SpacingTokens.sm),
-                // S15 §15.5 — Display XL with tabular figures.
-                Text(
-                  '$displayScore',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.displayXlSize,
-                    fontWeight: TypographyTokens.displayXlWeight,
-                    height: TypographyTokens.displayXlHeight,
-                    color: ColorTokens.textPrimary,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                const SizedBox(height: SpacingTokens.xs),
-                Text(
-                  'out of 1000',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
-                    fontWeight: TypographyTokens.microWeight,
-                    color: ColorTokens.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Right half — Profile completeness.
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  'Profile',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySize,
-                    fontWeight: TypographyTokens.bodyWeight,
-                    color: ColorTokens.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: SpacingTokens.sm),
-                SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: CustomPaint(
-                    painter: _CircleProgressPainter(
-                      progress: profileComplete,
-                      trackColor: ColorTokens.surfaceBorder,
-                      progressColor: ColorTokens.primaryDefault,
-                      strokeWidth: 6,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left half — SkillScore.
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    'SkillScore',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      fontWeight: TypographyTokens.bodyWeight,
+                      color: ColorTokens.textSecondary,
                     ),
-                    child: Center(
-                      child: Text(
-                        '${(profileComplete * 100).round()}%',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.displayLgSize,
-                          fontWeight: TypographyTokens.displayLgWeight,
-                          color: ColorTokens.textPrimary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                  const SizedBox(height: SpacingTokens.sm),
+                  // S15 §15.5 — Display XL with tabular figures.
+                  Text(
+                    '$displayScore',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.displayXlSize,
+                      fontWeight: TypographyTokens.displayXlWeight,
+                      height: TypographyTokens.displayXlHeight,
+                      color: ColorTokens.textPrimary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: SpacingTokens.xs),
+                  Text(
+                    'out of 1000',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.microSize,
+                      fontWeight: TypographyTokens.microWeight,
+                      color: ColorTokens.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Right half — SkillProfile completeness.
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    'SkillProfile',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      fontWeight: TypographyTokens.bodyWeight,
+                      color: ColorTokens.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: SpacingTokens.sm),
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: CustomPaint(
+                      painter: _CircleProgressPainter(
+                        progress: profileComplete,
+                        trackColor: ColorTokens.textTertiary.withValues(alpha: 0.15),
+                        progressColor: ColorTokens.primaryDefault,
+                        strokeWidth: 6,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${(profileComplete * 100).round()}%',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.displayLgSize,
+                            fontWeight: TypographyTokens.displayLgWeight,
+                            color: ColorTokens.textPrimary,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
