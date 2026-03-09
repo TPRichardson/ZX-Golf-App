@@ -87,16 +87,29 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     Map<SkillArea, int> allocations,
   ) {
     final isExpanded = _expandedRow == rowIndex;
+    final expandedIndex = isExpanded ? areas.indexOf(_expandedArea!) : -1;
+
+    // When a tile in a multi-tile row is expanded, it takes 80% width
+    // and siblings collapse to 10% each.
+    final effectiveFlex = <int>[];
+    if (isExpanded && areas.length > 1) {
+      for (int i = 0; i < areas.length; i++) {
+        effectiveFlex.add(i == expandedIndex ? 80 : 10);
+      }
+    } else {
+      effectiveFlex.addAll(flexValues);
+    }
 
     final tileRow = Row(
       children: [
         for (int i = 0; i < areas.length; i++)
           Expanded(
-            flex: flexValues[i],
+            flex: effectiveFlex[i],
             child: _buildTileWidget(
               areas[i], windowStats, allocations,
               hasLeft: i > 0,
               hasRight: i < areas.length - 1,
+              isCollapsed: isExpanded && i != expandedIndex,
             ),
           ),
       ],
@@ -109,12 +122,11 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     // The subskill panel has sides+bottom border, spanning full width.
     // A top-border row bridges the gap between the tile's sides and the
     // subskill panel edges where non-selected tiles sit above.
-    final expandedIndex = areas.indexOf(_expandedArea!);
     final leftFlex =
-        flexValues.sublist(0, expandedIndex).fold<int>(0, (a, b) => a + b);
-    final selectedFlex = flexValues[expandedIndex];
+        effectiveFlex.sublist(0, expandedIndex).fold<int>(0, (a, b) => a + b);
+    final selectedFlex = effectiveFlex[expandedIndex];
     final rightFlex =
-        flexValues.sublist(expandedIndex + 1).fold<int>(0, (a, b) => a + b);
+        effectiveFlex.sublist(expandedIndex + 1).fold<int>(0, (a, b) => a + b);
 
     const borderSide = BorderSide(
       color: ColorTokens.primaryDefault,
@@ -203,6 +215,7 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
     Map<SkillArea, int> allocations, {
     bool hasLeft = false,
     bool hasRight = false,
+    bool isCollapsed = false,
   }) {
     final stats = windowStats[area];
     final avg = stats?.average ?? 0.0;
@@ -219,6 +232,7 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
         totalOccupancy: stats?.totalOccupancy ?? 0.0,
         windowCapacity: stats?.windowCapacity ?? 0.0,
         isExpanded: _expandedArea == area,
+        isCollapsed: isCollapsed,
         hasLeft: hasLeft,
         hasRight: hasRight,
         onTap: () {

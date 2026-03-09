@@ -16,6 +16,9 @@ class SkillAreaTile extends StatelessWidget {
   final double totalOccupancy;
   final double windowCapacity;
   final bool isExpanded;
+  /// Whether this tile is collapsed (another tile in the row is expanded).
+  /// Collapsed tiles keep RAG colour but hide stars.
+  final bool isCollapsed;
   /// Whether tiles exist to the left/right of this one in its row.
   /// Controls bottom corner rounding when expanded.
   final bool hasLeft;
@@ -32,6 +35,7 @@ class SkillAreaTile extends StatelessWidget {
     required this.totalOccupancy,
     required this.windowCapacity,
     required this.isExpanded,
+    this.isCollapsed = false,
     this.hasLeft = false,
     this.hasRight = false,
     required this.onTap,
@@ -109,22 +113,24 @@ class SkillAreaTile extends StatelessWidget {
                 Text(
                   skillArea.dbValue,
                   style: TextStyle(
-                    fontSize: TypographyTokens.bodySize,
+                    fontSize: isCollapsed ? TypographyTokens.microSize : TypographyTokens.bodySize,
                     fontWeight: TypographyTokens.headerWeight,
                     color: ColorTokens.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                if (average > 0)
-                  StarRating(
-                    stars: scoreToStars(average),
-                    size: 14,
-                    color: ColorTokens.textSecondary,
-                  )
-                else
-                  const SizedBox(height: 14, width: 70),
+                if (!isCollapsed) ...[
+                  const SizedBox(height: 2),
+                  if (average > 0)
+                    StarRating(
+                      stars: scoreToStars(average),
+                      size: 14,
+                      color: ColorTokens.textSecondary,
+                    )
+                  else
+                    const SizedBox(height: 14, width: 70),
+                ],
               ],
             );
 
