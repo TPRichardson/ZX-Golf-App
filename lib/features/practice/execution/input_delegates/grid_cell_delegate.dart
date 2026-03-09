@@ -58,7 +58,9 @@ class GridCellDelegate extends ExecutionInputDelegate {
       child: Opacity(
         opacity: executionContext.isLocked ? 0.4 : 1.0,
         child: Padding(
-          padding: const EdgeInsets.all(SpacingTokens.lg),
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.lg, SpacingTokens.sm, SpacingTokens.lg, SpacingTokens.lg,
+          ),
           child: is3x3 ? _build3x3Grid(cells, executionContext, onLogInstance)
               : _build1x3Or3x1(cells, executionContext, onLogInstance),
         ),

@@ -56,6 +56,7 @@ class PracticeEntryCard extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Skill area color indicator.
             Container(
@@ -67,11 +68,11 @@ class PracticeEntryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SpacingTokens.sm),
+            // Left: drill name + structured info + stars.
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Drill name.
                   Text(
                     drill.name,
                     style: TextStyle(
@@ -80,33 +81,16 @@ class PracticeEntryCard extends StatelessWidget {
                       color: ColorTokens.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: SpacingTokens.xs),
-                  // Badges row: skill area + drill type.
-                  Row(
-                    children: [
-                      ZxBadge(
-                        label: drill.skillArea.dbValue,
-                        color: ColorTokens.skillArea(drill.skillArea),
-                      ),
-                      const SizedBox(width: SpacingTokens.xs),
-                      ZxBadge(
-                        label: _drillTypeLabel(drill.drillType),
-                        color: _drillTypeColor(drill.drillType),
-                      ),
-                    ],
-                  ),
-                  // Structured drill info (sets/shots).
-                  if (drill.requiredSetCount > 1) ...[
+                  if (_structuredInfo(drill) != null) ...[
                     const SizedBox(height: SpacingTokens.xs),
                     Text(
-                      _structuredInfo(drill),
+                      _structuredInfo(drill)!,
                       style: TextStyle(
                         fontSize: TypographyTokens.microSize,
                         color: ColorTokens.textTertiary,
                       ),
                     ),
                   ],
-                  // Stars for completed drills.
                   if (isComplete && sessionScore != null) ...[
                     const SizedBox(height: SpacingTokens.xs),
                     StarRating(
@@ -118,10 +102,26 @@ class PracticeEntryCard extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: SpacingTokens.sm),
+            // Right: badges stacked vertically.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ZxBadge(
+                  label: drill.skillArea.dbValue,
+                  color: ColorTokens.skillArea(drill.skillArea),
+                ),
+                const SizedBox(height: SpacingTokens.xs),
+                ZxBadge(
+                  label: _drillTypeLabel(drill.drillType),
+                  color: _drillTypeColor(drill.drillType),
+                ),
+              ],
+            ),
             // Active indicator.
             if (isActive)
               Padding(
-                padding: const EdgeInsets.only(right: SpacingTokens.xs),
+                padding: const EdgeInsets.only(left: 12, right: SpacingTokens.sm),
                 child: Icon(
                   Icons.play_circle_filled,
                   color: ColorTokens.primaryDefault,
@@ -130,10 +130,13 @@ class PracticeEntryCard extends StatelessWidget {
               ),
             // Delete button for pending and completed entries.
             if (onRemove != null)
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                color: ColorTokens.errorDestructive,
-                onPressed: onRemove,
+              Padding(
+                padding: const EdgeInsets.only(left: SpacingTokens.xs),
+                child: IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: ColorTokens.errorDestructive,
+                  onPressed: onRemove,
+                ),
               ),
           ],
         ),
@@ -141,11 +144,17 @@ class PracticeEntryCard extends StatelessWidget {
     );
   }
 
-  String _structuredInfo(Drill drill) {
-    if (drill.requiredAttemptsPerSet != null) {
+  String? _structuredInfo(Drill drill) {
+    if (drill.requiredSetCount > 1 && drill.requiredAttemptsPerSet != null) {
       return '${drill.requiredSetCount} Sets of ${drill.requiredAttemptsPerSet}';
     }
-    return '${drill.requiredSetCount} Sets';
+    if (drill.requiredSetCount > 1) {
+      return '${drill.requiredSetCount} Sets';
+    }
+    if (drill.requiredAttemptsPerSet != null) {
+      return '${drill.requiredAttemptsPerSet} Shots';
+    }
+    return null;
   }
 
   static String _drillTypeLabel(DrillType type) {

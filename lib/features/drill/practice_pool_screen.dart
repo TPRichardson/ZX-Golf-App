@@ -235,6 +235,8 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Widget _buildDrillCard(BuildContext context, DrillWithAdoption dwa) {
+    final hasActivePb =
+        ref.watch(activePracticeBlockProvider(_userId)).valueOrNull != null;
     return DrillCard(
       drill: dwa.drill,
       onTap: () {
@@ -244,7 +246,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         }
         _openDrillDetail(dwa);
       },
-      trailing: widget.pickMode
+      trailing: widget.pickMode || hasActivePb
           ? null
           : _PlayDrillButton(
               drillId: dwa.drill.drillId,

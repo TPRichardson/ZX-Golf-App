@@ -61,7 +61,7 @@ class AnchorScoreBar extends StatelessWidget {
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Bar background with gradient.
+                  // Bar: solid red up to Min, then RAG gradient from Min onward.
                   Positioned(
                     left: 0,
                     right: 0,
@@ -70,11 +70,18 @@ class AnchorScoreBar extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFE05252), // Red
-                            Color(0xFFE8A830), // Amber
-                            Color(0xFF22C55E), // Green
+                        gradient: LinearGradient(
+                          stops: [
+                            (minAnchor! / 100.0),
+                            (minAnchor! / 100.0),
+                            ((minAnchor! + scratchAnchor!) / 200.0),
+                            (proAnchor! / 100.0).clamp(0.0, 1.0),
+                          ],
+                          colors: const [
+                            Color(0xFFE05252), // Red (0 to Min)
+                            Color(0xFFE05252), // Red (at Min)
+                            Color(0xFFE8A830), // Amber (mid)
+                            Color(0xFF22C55E), // Green (Pro)
                           ],
                         ),
                       ),

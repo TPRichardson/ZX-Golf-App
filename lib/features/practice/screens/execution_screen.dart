@@ -21,6 +21,7 @@ import 'package:zx_golf_app/features/practice/execution/input_delegates/raw_data
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_grid_picker.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
+import 'package:zx_golf_app/features/practice/widgets/practice_stats_bar.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
@@ -333,6 +334,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               currentInstanceCount: _controller.currentSetInstanceCount,
               requiredAttemptsPerSet: _controller.requiredAttemptsPerSet,
             ),
+            // Environment / Surface / Location bar.
+            PracticeStatsBar(
+              environmentType: _environmentType,
+              surfaceType: _surfaceType,
+              onEnvironmentTap: _changeEnvironment,
+              onSurfaceTap: _changeSurfaceType,
+            ),
             // Shot log + Club square section.
             _buildShotLogSection(),
             // Gap 42 — Inline lock indicator.
@@ -366,24 +374,27 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Shot log (left) + club square (right) section.
   Widget _buildShotLogSection() {
-    final hasClubs = widget.drill.clubSelectionMode != null &&
+    final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
     final hitCount = _shotLog.where((s) => s.isHit).length;
     final totalCount = _shotLog.length;
 
-    return Container(
-      height: 140,
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: ColorTokens.surfaceBorder),
-        ),
-      ),
+    return SizedBox(
+      height: 144,
       child: Row(
         children: [
           // Shot log (left).
           Expanded(
-            flex: 2,
-            child: Column(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(
+                SpacingTokens.lg, SpacingTokens.sm, SpacingTokens.sm, SpacingTokens.sm,
+              ),
+              decoration: BoxDecoration(
+                color: ColorTokens.surfaceRaised,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                border: Border.all(color: ColorTokens.surfaceBorder),
+              ),
+                child: Column(
               children: [
                 // Scrollable shot list.
                 Expanded(
@@ -415,123 +426,166 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 ),
                 // Shot count + undo row.
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.md,
+                  padding: const EdgeInsets.fromLTRB(
+                    SpacingTokens.md + 20, 0, SpacingTokens.md, 0,
                   ),
-                  child: Row(
-                    children: [
-                      Text(
-                        '$hitCount/$totalCount',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.microSize,
-                          fontWeight: FontWeight.w500,
-                          color: ColorTokens.textSecondary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                      if (totalCount > 0)
-                        Text(
-                          ' hits',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.microSize,
-                            color: ColorTokens.textTertiary,
-                          ),
-                        ),
-                      const Spacer(),
-                      if (_controller.canUndo)
-                        GestureDetector(
-                          onTap: _undoLast,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: SpacingTokens.xs,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.undo, size: 14,
-                                    color: ColorTokens.textTertiary),
-                                const SizedBox(width: SpacingTokens.xs),
-                                Text(
-                                  'Undo',
-                                  style: TextStyle(
-                                    fontSize: TypographyTokens.microSize,
-                                    color: ColorTokens.textTertiary,
+                  child: SizedBox(
+                    height: 24,
+                    child: Stack(
+                      children: [
+                        // Hits (left) + Undo (right).
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '$hitCount',
+                                    style: TextStyle(
+                                      fontSize: TypographyTokens.microSize,
+                                      fontWeight: FontWeight.w500,
+                                      color: ColorTokens.successDefault,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  TextSpan(
+                                    text: '/$totalCount',
+                                    style: TextStyle(
+                                      fontSize: TypographyTokens.microSize,
+                                      fontWeight: FontWeight.w500,
+                                      color: ColorTokens.textSecondary,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            if (totalCount > 0)
+                              Text(
+                                ' hits',
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.microSize,
+                                  color: ColorTokens.textTertiary,
+                                ),
+                              ),
+                            const Spacer(),
+                            if (_controller.canUndo)
+                              GestureDetector(
+                                onTap: _undoLast,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.undo, size: 14,
+                                        color: ColorTokens.textTertiary),
+                                    const SizedBox(width: SpacingTokens.xs),
+                                    Text(
+                                      'Undo',
+                                      style: TextStyle(
+                                        fontSize: TypographyTokens.microSize,
+                                        color: ColorTokens.textTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                        // Set counter — always centered horizontally, aligned with row text.
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Set ${_controller.currentSetIndex + 1}/${_controller.requiredSetCount}',
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.microSize,
+                                  color: ColorTokens.textTertiary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: SpacingTokens.xs),
               ],
             ),
           ),
+          ),
           // Club square (right).
-          if (hasClubs) _buildClubSquare(),
+          _buildClubSquare(canChange: hasClubSelection),
         ],
       ),
     );
   }
 
+  /// Abbreviate club name for the square display.
+  static String _abbreviateClub(String name) {
+    const abbreviations = {
+      'Driver': 'Dr',
+      'Putter': 'Pt',
+      'Chipper': 'Ch',
+    };
+    return abbreviations[name] ?? name;
+  }
+
   /// Large tappable club square — tap to open grid picker.
-  Widget _buildClubSquare() {
+  Widget _buildClubSquare({bool canChange = true}) {
     final isRandom =
         widget.drill.clubSelectionMode == ClubSelectionMode.random;
+    final isTappable = canChange && !isRandom;
 
     return GestureDetector(
-      onTap: isRandom ? null : _pickClub,
+      onTap: isTappable ? _pickClub : null,
       child: Container(
-        width: 100,
+        width: 121,
+        margin: const EdgeInsets.fromLTRB(
+          0, SpacingTokens.sm, SpacingTokens.lg, SpacingTokens.sm,
+        ),
         decoration: BoxDecoration(
-          color: ColorTokens.primaryDefault.withValues(alpha: 0.08),
-          border: const Border(
-            left: BorderSide(color: ColorTokens.surfaceBorder),
-          ),
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          border: Border.all(color: ColorTokens.surfaceBorder),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.sports_golf,
-              size: 24,
-              color: ColorTokens.primaryDefault,
+            Text(
+              'Active Club',
+              style: TextStyle(
+                fontSize: TypographyTokens.microSize,
+                fontWeight: FontWeight.w500,
+                color: ColorTokens.textPrimary,
+              ),
             ),
             const SizedBox(height: SpacingTokens.xs),
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: SpacingTokens.xs),
               child: Text(
-                _selectedClub,
+                _abbreviateClub(_selectedClub),
                 style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
+                  fontSize: TypographyTokens.displayXlSize,
                   fontWeight: FontWeight.w600,
                   color: ColorTokens.primaryDefault,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (!isRandom) ...[
-              const SizedBox(height: SpacingTokens.xs),
-              Text(
-                'Tap to change',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: ColorTokens.textTertiary,
-                ),
-              ),
-            ],
             if (isRandom) ...[
               const SizedBox(height: SpacingTokens.xs),
               Text(
                 'Random',
                 style: TextStyle(
-                  fontSize: 10,
-                  color: ColorTokens.primaryDefault,
+                  fontSize: TypographyTokens.microSize,
+                  color: ColorTokens.textTertiary,
                 ),
               ),
             ],
@@ -542,8 +596,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 
   Widget _buildBottomBar() {
-    final envStyle = EnvironmentSurfaceStyles.environment(_environmentType);
-    final surfStyle = EnvironmentSurfaceStyles.surface(_surfaceType);
+    if (_controller.isStructured) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -558,41 +611,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           top: BorderSide(color: ColorTokens.surfaceBorder),
         ),
       ),
-      child: Row(
-        children: [
-          // Environment badge (tappable).
-          GestureDetector(
-            onTap: _changeEnvironment,
-            child: _BottomBadge(
-              label: envStyle.label,
-              icon: envStyle.icon,
-              color: envStyle.color,
-            ),
-          ),
-          const SizedBox(width: SpacingTokens.xs),
-          // Surface badge (tappable).
-          GestureDetector(
-            onTap: _changeSurfaceType,
-            child: _BottomBadge(
-              label: surfStyle.label,
-              icon: surfStyle.icon,
-              iconScale: surfStyle.iconScale,
-              color: surfStyle.color,
-              fillColor: surfStyle.fillColor,
-              borderColor: surfStyle.borderColor,
-            ),
-          ),
-          const Spacer(),
-          // End Drill button (unstructured only).
-          if (!_controller.isStructured)
-            FilledButton(
-              onPressed: _endSession,
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.primaryDefault,
-              ),
-              child: const Text('End Drill'),
-            ),
-        ],
+      child: FilledButton(
+        onPressed: _endSession,
+        style: FilledButton.styleFrom(
+          backgroundColor: ColorTokens.primaryDefault,
+        ),
+        child: const Text('End Drill'),
       ),
     );
   }
@@ -654,56 +678,6 @@ class _ShotLogRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               color: ColorTokens.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Small badge pill for the bottom bar.
-class _BottomBadge extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final double iconScale;
-  final Color color;
-  final Color? fillColor;
-  final Color? borderColor;
-
-  const _BottomBadge({
-    required this.label,
-    required this.icon,
-    this.iconScale = 1.0,
-    required this.color,
-    this.fillColor,
-    this.borderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.sm,
-        vertical: SpacingTokens.xs,
-      ),
-      decoration: BoxDecoration(
-        color: fillColor ?? color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-        border:
-            Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14 * iconScale, color: color),
-          const SizedBox(width: SpacingTokens.xs),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: TypographyTokens.microSize,
-              fontWeight: FontWeight.w500,
-              color: color,
             ),
           ),
         ],

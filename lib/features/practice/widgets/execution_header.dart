@@ -56,14 +56,6 @@ class ExecutionHeader extends StatelessWidget {
               ),
             ),
           ),
-          // Set info on the right.
-          Text(
-            'Set ${currentSetIndex + 1}/$requiredSetCount',
-            style: TextStyle(
-              fontSize: TypographyTokens.bodySize,
-              color: ColorTokens.textSecondary,
-            ),
-          ),
         ],
       ),
     );
