@@ -107,11 +107,11 @@ class SkillAreaTile extends StatelessWidget {
             final showLabels = constraints.maxWidth >= _showLabelsThreshold;
 
             final nameStars = Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: isCollapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  isCollapsed ? skillArea.dbValue[0] : skillArea.dbValue,
+                  isCollapsed ? skillArea.dbValue.substring(0, 2) : skillArea.dbValue,
                   style: TextStyle(
                     fontSize: isCollapsed ? TypographyTokens.microSize : TypographyTokens.bodySize,
                     fontWeight: TypographyTokens.headerWeight,
