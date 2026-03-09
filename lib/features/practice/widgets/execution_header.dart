@@ -4,9 +4,11 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/drill/drill_detail_screen.dart';
 
-/// S13 §13.6 — Header showing drill name and set progress.
-class ExecutionHeader extends StatelessWidget {
+/// S13 §13.6 — Header showing drill name. Styled to match ZxAppBar.
+class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
   final Drill drill;
   final int currentSetIndex;
   final int requiredSetCount;
@@ -23,40 +25,40 @@ class ExecutionHeader extends StatelessWidget {
   });
 
   @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(
-        left: SpacingTokens.xs,
-        right: SpacingTokens.md,
-        top: SpacingTokens.sm,
-        bottom: SpacingTokens.sm,
-      ),
-      decoration: const BoxDecoration(
-        color: ColorTokens.surfaceRaised,
-        border: Border(
-          bottom: BorderSide(color: ColorTokens.surfaceBorder),
+    return HeroMode(
+      enabled: false,
+      child: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back,
+              color: ColorTokens.textSecondary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back,
-                color: ColorTokens.textSecondary),
-            onPressed: () => Navigator.of(context).pop(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          ),
-          Expanded(
-            child: Text(
-              drill.name,
-              style: TextStyle(
-                fontSize: TypographyTokens.headerSize,
-                fontWeight: TypographyTokens.headerWeight,
-                color: ColorTokens.textPrimary,
+        title: GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DrillDetailScreen(
+                drillId: drill.drillId,
+                isCustom: drill.origin == DrillOrigin.userCustom,
               ),
             ),
           ),
-        ],
+          child: Text(
+            drill.name,
+            style: TextStyle(
+              fontSize: TypographyTokens.headerSize,
+              fontWeight: TypographyTokens.headerWeight,
+              color: ColorTokens.textPrimary,
+            ),
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: ColorTokens.surfacePrimary,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
       ),
     );
   }

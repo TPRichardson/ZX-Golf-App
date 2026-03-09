@@ -27,7 +27,7 @@ class PracticeStatsBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        SpacingTokens.sm, SpacingTokens.sm, SpacingTokens.sm, 0,
+        SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, 0,
       ),
       child: Row(
         children: [
@@ -114,7 +114,7 @@ class _StatsPill extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14 * iconScale, color: color),
+          Icon(icon, size: 14, color: color),
           const SizedBox(width: SpacingTokens.xs),
           Text(
             label,

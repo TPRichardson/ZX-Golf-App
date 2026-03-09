@@ -7,14 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 
 /// Horizontal bar showing Min, Scratch, and Pro anchor positions on a 0–100 scale,
-/// with the user's score marker. The bar gradient goes red → amber → green.
+/// with the user's hit rate plotted on it. The bar gradient goes red → amber → green.
 class AnchorScoreBar extends StatelessWidget {
-  final double userScore;
+  /// User's actual hit rate percentage (0–100).
+  final double userHitRatePct;
   final String? anchorsJson;
 
   const AnchorScoreBar({
     super.key,
-    required this.userScore,
+    required this.userHitRatePct,
     this.anchorsJson,
   });
 
@@ -41,9 +42,10 @@ class AnchorScoreBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // Score is 0-5, anchors are 0-100 (hit rate percentages).
-    // Map user score to the same 0-100 scale: score/5 * 100.
-    final userPct = (userScore / 5.0 * 100).clamp(0.0, 100.0);
+    final mn = minAnchor;
+    final sc = scratchAnchor;
+    final pr = proAnchor;
+    final userPct = userHitRatePct.clamp(0.0, 100.0);
 
     return Column(
       children: [
@@ -53,9 +55,9 @@ class AnchorScoreBar extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final minPos = (minAnchor! / 100.0 * width).clamp(0.0, width);
-              final scratchPos = (scratchAnchor! / 100.0 * width).clamp(0.0, width);
-              final proPos = (proAnchor! / 100.0 * width).clamp(0.0, width);
+              final minPos = (mn / 100.0 * width).clamp(0.0, width);
+              final scratchPos = (sc / 100.0 * width).clamp(0.0, width);
+              final proPos = (pr / 100.0 * width).clamp(0.0, width);
               final userPos = (userPct / 100.0 * width).clamp(0.0, width);
 
               return Stack(
@@ -72,10 +74,10 @@ class AnchorScoreBar extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                         gradient: LinearGradient(
                           stops: [
-                            (minAnchor! / 100.0),
-                            (minAnchor! / 100.0),
-                            ((minAnchor! + scratchAnchor!) / 200.0),
-                            (proAnchor! / 100.0).clamp(0.0, 1.0),
+                            (mn / 100.0),
+                            (mn / 100.0),
+                            ((mn + sc) / 200.0),
+                            (pr / 100.0).clamp(0.0, 1.0),
                           ],
                           colors: const [
                             Color(0xFFE05252), // Red (0 to Min)

@@ -116,10 +116,11 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                         size: 48,
                         color: _goldStar,
                       ),
-                      // Anchor bar — Min/Scratch/Pro with user score.
-                      AnchorScoreBar(
-                        userScore: score,
-                        anchorsJson: drill.anchors,
+                      // Anchor bar — Min/Scratch/Pro with user hit rate.
+                      _HitRateAnchorBar(
+                        sessionId: session.sessionId,
+                        drill: drill,
+                        ref: ref,
                       ),
                     ] else if (isCustom)
                       _CustomDrillMetrics(
@@ -148,6 +149,16 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                       ),
                     const SizedBox(height: SpacingTokens.xl),
                     // Integrity flag warning.
+                    // Debug: raw score.
+                    if (sessionScore != null)
+                      Text(
+                        'Raw score: ${sessionScore!.toStringAsFixed(2)} / 5',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.microSize,
+                          color: ColorTokens.textTertiary,
+                        ),
+                      ),
+                    const SizedBox(height: SpacingTokens.md),
                     if (integrityBreach)
                       Container(
                         padding: const EdgeInsets.all(SpacingTokens.md),
@@ -409,6 +420,44 @@ class _CustomDrillMetrics extends StatelessWidget {
     }
 
     return metrics;
+  }
+}
+
+/// Loads instances for the session, computes hit rate %, and shows the anchor bar.
+class _HitRateAnchorBar extends StatelessWidget {
+  final String sessionId;
+  final Drill drill;
+  final WidgetRef ref;
+
+  const _HitRateAnchorBar({
+    required this.sessionId,
+    required this.drill,
+    required this.ref,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Instance>>(
+      future: ref.read(scoringRepositoryProvider).getInstancesForSession(sessionId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final instances = snapshot.data!;
+        int hits = 0;
+        for (final instance in instances) {
+          try {
+            final raw = jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
+            if (raw['hit'] == true) hits++;
+          } catch (_) {}
+        }
+        final hitRatePct = hits / instances.length * 100.0;
+        return AnchorScoreBar(
+          userHitRatePct: hitRatePct,
+          anchorsJson: drill.anchors,
+        );
+      },
+    );
   }
 }
 

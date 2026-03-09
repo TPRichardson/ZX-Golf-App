@@ -468,7 +468,10 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     List<PracticeEntryWithDrill> pending,
   ) {
     return ListView(
-      padding: const EdgeInsets.all(SpacingTokens.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.lg,
+        vertical: SpacingTokens.md,
+      ),
       children: [
         // Completed section.
         if (completed.isNotEmpty)

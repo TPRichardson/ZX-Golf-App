@@ -21,7 +21,7 @@ class EnvironmentSurfaceStyles {
   static const grassLabel = 'Grass';
 
   static const matFillColor = Color(0xFF1A5C2A);
-  static const matBorderColor = Colors.black;
+  static const matBorderColor = Color(0xFF2D7A3E);
   static const matTextColor = ColorTokens.textPrimary;
   static const matIcon = Icons.stop_rounded;
   static const matLabel = 'Mat';

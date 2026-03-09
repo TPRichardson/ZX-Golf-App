@@ -59,7 +59,7 @@ class GridCellDelegate extends ExecutionInputDelegate {
         opacity: executionContext.isLocked ? 0.4 : 1.0,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            SpacingTokens.lg, SpacingTokens.sm, SpacingTokens.lg, SpacingTokens.lg,
+            SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, SpacingTokens.lg,
           ),
           child: is3x3 ? _build3x3Grid(cells, executionContext, onLogInstance)
               : _build1x3Or3x1(cells, executionContext, onLogInstance),
@@ -90,7 +90,7 @@ class GridCellDelegate extends ExecutionInputDelegate {
           : Row(
               children: [
                 for (var i = 0; i < cells.length; i++) ...[
-                  if (i > 0) const SizedBox(width: SpacingTokens.sm),
+                  if (i > 0) const SizedBox(width: SpacingTokens.xs),
                   Expanded(
                       child: _buildLabeledCell(
                           cells[i], isVert, ctx, onLogInstance)),

@@ -305,9 +305,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: ColorTokens.surfaceBase,
-        body: Center(child: CircularProgressIndicator()),
+        appBar: ExecutionHeader(
+          drill: widget.drill,
+          currentSetIndex: 0,
+          requiredSetCount: widget.drill.requiredSetCount,
+          currentInstanceCount: 0,
+          requiredAttemptsPerSet: widget.drill.requiredAttemptsPerSet,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -324,16 +331,15 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
-      body: SafeArea(
-        child: Column(
+      appBar: ExecutionHeader(
+        drill: widget.drill,
+        currentSetIndex: _controller.currentSetIndex,
+        requiredSetCount: _controller.requiredSetCount,
+        currentInstanceCount: _controller.currentSetInstanceCount,
+        requiredAttemptsPerSet: _controller.requiredAttemptsPerSet,
+      ),
+      body: Column(
           children: [
-            ExecutionHeader(
-              drill: widget.drill,
-              currentSetIndex: _controller.currentSetIndex,
-              requiredSetCount: _controller.requiredSetCount,
-              currentInstanceCount: _controller.currentSetInstanceCount,
-              requiredAttemptsPerSet: _controller.requiredAttemptsPerSet,
-            ),
             // Environment / Surface / Location bar.
             PracticeStatsBar(
               environmentType: _environmentType,
@@ -368,7 +374,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
             _buildBottomBar(),
           ],
         ),
-      ),
     );
   }
 
@@ -379,16 +384,18 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final hitCount = _shotLog.where((s) => s.isHit).length;
     final totalCount = _shotLog.length;
 
-    return SizedBox(
-      height: 144,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
+      ),
+      child: SizedBox(
+      height: 128,
       child: Row(
         children: [
-          // Shot log (left).
+          // Shot log (left — 2/3 width).
           Expanded(
+            flex: 2,
             child: Container(
-              margin: const EdgeInsets.fromLTRB(
-                SpacingTokens.lg, SpacingTokens.sm, SpacingTokens.sm, SpacingTokens.sm,
-              ),
               decoration: BoxDecoration(
                 color: ColorTokens.surfaceRaised,
                 borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
@@ -470,20 +477,23 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                                 ),
                               ),
                             const Spacer(),
-                            if (_controller.canUndo)
-                              GestureDetector(
-                                onTap: _undoLast,
+                            GestureDetector(
+                                onTap: _controller.canUndo ? _undoLast : null,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.undo, size: 14,
-                                        color: ColorTokens.textTertiary),
+                                        color: _controller.canUndo
+                                            ? ColorTokens.textTertiary
+                                            : ColorTokens.surfaceRaised),
                                     const SizedBox(width: SpacingTokens.xs),
                                     Text(
                                       'Undo',
                                       style: TextStyle(
                                         fontSize: TypographyTokens.microSize,
-                                        color: ColorTokens.textTertiary,
+                                        color: _controller.canUndo
+                                            ? ColorTokens.textTertiary
+                                            : ColorTokens.surfaceRaised,
                                       ),
                                     ),
                                   ],
@@ -517,9 +527,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
             ),
           ),
           ),
-          // Club square (right).
-          _buildClubSquare(canChange: hasClubSelection),
+          const SizedBox(width: SpacingTokens.xs),
+          // Club square (right — 1/3 width).
+          Expanded(
+            child: _buildClubSquare(canChange: hasClubSelection),
+          ),
         ],
+      ),
       ),
     );
   }
@@ -543,52 +557,61 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     return GestureDetector(
       onTap: isTappable ? _pickClub : null,
       child: Container(
-        width: 121,
-        margin: const EdgeInsets.fromLTRB(
-          0, SpacingTokens.sm, SpacingTokens.lg, SpacingTokens.sm,
-        ),
         decoration: BoxDecoration(
           color: ColorTokens.surfaceRaised,
           borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
           border: Border.all(color: ColorTokens.surfaceBorder),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Text(
-              'Active Club',
-              style: TextStyle(
-                fontSize: TypographyTokens.microSize,
-                fontWeight: FontWeight.w500,
-                color: ColorTokens.textPrimary,
-              ),
-            ),
-            const SizedBox(height: SpacingTokens.xs),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.xs),
+            // Label pinned 4px from top.
+            Positioned(
+              left: 0,
+              right: 0,
+              top: SpacingTokens.xs,
               child: Text(
-                _abbreviateClub(_selectedClub),
-                style: TextStyle(
-                  fontSize: TypographyTokens.displayXlSize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.primaryDefault,
-                ),
+                'Active Club',
                 textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (isRandom) ...[
-              const SizedBox(height: SpacingTokens.xs),
-              Text(
-                'Random',
                 style: TextStyle(
                   fontSize: TypographyTokens.microSize,
-                  color: ColorTokens.textTertiary,
+                  fontWeight: FontWeight.w500,
+                  color: ColorTokens.textPrimary,
                 ),
               ),
-            ],
+            ),
+            // Club text centered.
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.xs),
+                    child: Text(
+                      _abbreviateClub(_selectedClub),
+                      style: TextStyle(
+                        fontSize: TypographyTokens.displayXlSize,
+                        fontWeight: FontWeight.w600,
+                        color: ColorTokens.primaryDefault,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isRandom) ...[
+                    const SizedBox(height: SpacingTokens.xs),
+                    Text(
+                      'Random',
+                      style: TextStyle(
+                        fontSize: TypographyTokens.microSize,
+                        color: ColorTokens.textTertiary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
