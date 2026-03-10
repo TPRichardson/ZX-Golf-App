@@ -102,7 +102,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ),
               const Spacer(),
               ZxPillButton(
-                label: 'Add',
+                label: 'Add drills to library',
                 icon: Icons.add,
                 size: ZxPillSize.sm,
                 onTap: () {
