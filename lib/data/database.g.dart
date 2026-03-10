@@ -7390,6 +7390,17 @@ class $ClubPerformanceProfilesTable extends ClubPerformanceProfiles
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _totalDistanceMeta = const VerificationMeta(
+    'totalDistance',
+  );
+  @override
+  late final GeneratedColumn<double> totalDistance = GeneratedColumn<double>(
+    'TotalDistance',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dispersionLeftMeta = const VerificationMeta(
     'dispersionLeft',
   );
@@ -7464,6 +7475,7 @@ class $ClubPerformanceProfilesTable extends ClubPerformanceProfiles
     clubId,
     effectiveFromDate,
     carryDistance,
+    totalDistance,
     dispersionLeft,
     dispersionRight,
     dispersionShort,
@@ -7516,6 +7528,15 @@ class $ClubPerformanceProfilesTable extends ClubPerformanceProfiles
         carryDistance.isAcceptableOrUnknown(
           data['CarryDistance']!,
           _carryDistanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('TotalDistance')) {
+      context.handle(
+        _totalDistanceMeta,
+        totalDistance.isAcceptableOrUnknown(
+          data['TotalDistance']!,
+          _totalDistanceMeta,
         ),
       );
     }
@@ -7592,6 +7613,10 @@ class $ClubPerformanceProfilesTable extends ClubPerformanceProfiles
         DriftSqlType.double,
         data['${effectivePrefix}CarryDistance'],
       ),
+      totalDistance: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}TotalDistance'],
+      ),
       dispersionLeft: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}DispersionLeft'],
@@ -7631,6 +7656,7 @@ class ClubPerformanceProfile extends DataClass
   final String clubId;
   final DateTime effectiveFromDate;
   final double? carryDistance;
+  final double? totalDistance;
   final double? dispersionLeft;
   final double? dispersionRight;
   final double? dispersionShort;
@@ -7642,6 +7668,7 @@ class ClubPerformanceProfile extends DataClass
     required this.clubId,
     required this.effectiveFromDate,
     this.carryDistance,
+    this.totalDistance,
     this.dispersionLeft,
     this.dispersionRight,
     this.dispersionShort,
@@ -7657,6 +7684,9 @@ class ClubPerformanceProfile extends DataClass
     map['EffectiveFromDate'] = Variable<DateTime>(effectiveFromDate);
     if (!nullToAbsent || carryDistance != null) {
       map['CarryDistance'] = Variable<double>(carryDistance);
+    }
+    if (!nullToAbsent || totalDistance != null) {
+      map['TotalDistance'] = Variable<double>(totalDistance);
     }
     if (!nullToAbsent || dispersionLeft != null) {
       map['DispersionLeft'] = Variable<double>(dispersionLeft);
@@ -7683,6 +7713,9 @@ class ClubPerformanceProfile extends DataClass
       carryDistance: carryDistance == null && nullToAbsent
           ? const Value.absent()
           : Value(carryDistance),
+      totalDistance: totalDistance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalDistance),
       dispersionLeft: dispersionLeft == null && nullToAbsent
           ? const Value.absent()
           : Value(dispersionLeft),
@@ -7712,6 +7745,7 @@ class ClubPerformanceProfile extends DataClass
         json['effectiveFromDate'],
       ),
       carryDistance: serializer.fromJson<double?>(json['carryDistance']),
+      totalDistance: serializer.fromJson<double?>(json['totalDistance']),
       dispersionLeft: serializer.fromJson<double?>(json['dispersionLeft']),
       dispersionRight: serializer.fromJson<double?>(json['dispersionRight']),
       dispersionShort: serializer.fromJson<double?>(json['dispersionShort']),
@@ -7728,6 +7762,7 @@ class ClubPerformanceProfile extends DataClass
       'clubId': serializer.toJson<String>(clubId),
       'effectiveFromDate': serializer.toJson<DateTime>(effectiveFromDate),
       'carryDistance': serializer.toJson<double?>(carryDistance),
+      'totalDistance': serializer.toJson<double?>(totalDistance),
       'dispersionLeft': serializer.toJson<double?>(dispersionLeft),
       'dispersionRight': serializer.toJson<double?>(dispersionRight),
       'dispersionShort': serializer.toJson<double?>(dispersionShort),
@@ -7742,6 +7777,7 @@ class ClubPerformanceProfile extends DataClass
     String? clubId,
     DateTime? effectiveFromDate,
     Value<double?> carryDistance = const Value.absent(),
+    Value<double?> totalDistance = const Value.absent(),
     Value<double?> dispersionLeft = const Value.absent(),
     Value<double?> dispersionRight = const Value.absent(),
     Value<double?> dispersionShort = const Value.absent(),
@@ -7755,6 +7791,9 @@ class ClubPerformanceProfile extends DataClass
     carryDistance: carryDistance.present
         ? carryDistance.value
         : this.carryDistance,
+    totalDistance: totalDistance.present
+        ? totalDistance.value
+        : this.totalDistance,
     dispersionLeft: dispersionLeft.present
         ? dispersionLeft.value
         : this.dispersionLeft,
@@ -7782,6 +7821,9 @@ class ClubPerformanceProfile extends DataClass
       carryDistance: data.carryDistance.present
           ? data.carryDistance.value
           : this.carryDistance,
+      totalDistance: data.totalDistance.present
+          ? data.totalDistance.value
+          : this.totalDistance,
       dispersionLeft: data.dispersionLeft.present
           ? data.dispersionLeft.value
           : this.dispersionLeft,
@@ -7806,6 +7848,7 @@ class ClubPerformanceProfile extends DataClass
           ..write('clubId: $clubId, ')
           ..write('effectiveFromDate: $effectiveFromDate, ')
           ..write('carryDistance: $carryDistance, ')
+          ..write('totalDistance: $totalDistance, ')
           ..write('dispersionLeft: $dispersionLeft, ')
           ..write('dispersionRight: $dispersionRight, ')
           ..write('dispersionShort: $dispersionShort, ')
@@ -7822,6 +7865,7 @@ class ClubPerformanceProfile extends DataClass
     clubId,
     effectiveFromDate,
     carryDistance,
+    totalDistance,
     dispersionLeft,
     dispersionRight,
     dispersionShort,
@@ -7837,6 +7881,7 @@ class ClubPerformanceProfile extends DataClass
           other.clubId == this.clubId &&
           other.effectiveFromDate == this.effectiveFromDate &&
           other.carryDistance == this.carryDistance &&
+          other.totalDistance == this.totalDistance &&
           other.dispersionLeft == this.dispersionLeft &&
           other.dispersionRight == this.dispersionRight &&
           other.dispersionShort == this.dispersionShort &&
@@ -7851,6 +7896,7 @@ class ClubPerformanceProfilesCompanion
   final Value<String> clubId;
   final Value<DateTime> effectiveFromDate;
   final Value<double?> carryDistance;
+  final Value<double?> totalDistance;
   final Value<double?> dispersionLeft;
   final Value<double?> dispersionRight;
   final Value<double?> dispersionShort;
@@ -7863,6 +7909,7 @@ class ClubPerformanceProfilesCompanion
     this.clubId = const Value.absent(),
     this.effectiveFromDate = const Value.absent(),
     this.carryDistance = const Value.absent(),
+    this.totalDistance = const Value.absent(),
     this.dispersionLeft = const Value.absent(),
     this.dispersionRight = const Value.absent(),
     this.dispersionShort = const Value.absent(),
@@ -7876,6 +7923,7 @@ class ClubPerformanceProfilesCompanion
     required String clubId,
     required DateTime effectiveFromDate,
     this.carryDistance = const Value.absent(),
+    this.totalDistance = const Value.absent(),
     this.dispersionLeft = const Value.absent(),
     this.dispersionRight = const Value.absent(),
     this.dispersionShort = const Value.absent(),
@@ -7891,6 +7939,7 @@ class ClubPerformanceProfilesCompanion
     Expression<String>? clubId,
     Expression<DateTime>? effectiveFromDate,
     Expression<double>? carryDistance,
+    Expression<double>? totalDistance,
     Expression<double>? dispersionLeft,
     Expression<double>? dispersionRight,
     Expression<double>? dispersionShort,
@@ -7904,6 +7953,7 @@ class ClubPerformanceProfilesCompanion
       if (clubId != null) 'ClubID': clubId,
       if (effectiveFromDate != null) 'EffectiveFromDate': effectiveFromDate,
       if (carryDistance != null) 'CarryDistance': carryDistance,
+      if (totalDistance != null) 'TotalDistance': totalDistance,
       if (dispersionLeft != null) 'DispersionLeft': dispersionLeft,
       if (dispersionRight != null) 'DispersionRight': dispersionRight,
       if (dispersionShort != null) 'DispersionShort': dispersionShort,
@@ -7919,6 +7969,7 @@ class ClubPerformanceProfilesCompanion
     Value<String>? clubId,
     Value<DateTime>? effectiveFromDate,
     Value<double?>? carryDistance,
+    Value<double?>? totalDistance,
     Value<double?>? dispersionLeft,
     Value<double?>? dispersionRight,
     Value<double?>? dispersionShort,
@@ -7932,6 +7983,7 @@ class ClubPerformanceProfilesCompanion
       clubId: clubId ?? this.clubId,
       effectiveFromDate: effectiveFromDate ?? this.effectiveFromDate,
       carryDistance: carryDistance ?? this.carryDistance,
+      totalDistance: totalDistance ?? this.totalDistance,
       dispersionLeft: dispersionLeft ?? this.dispersionLeft,
       dispersionRight: dispersionRight ?? this.dispersionRight,
       dispersionShort: dispersionShort ?? this.dispersionShort,
@@ -7956,6 +8008,9 @@ class ClubPerformanceProfilesCompanion
     }
     if (carryDistance.present) {
       map['CarryDistance'] = Variable<double>(carryDistance.value);
+    }
+    if (totalDistance.present) {
+      map['TotalDistance'] = Variable<double>(totalDistance.value);
     }
     if (dispersionLeft.present) {
       map['DispersionLeft'] = Variable<double>(dispersionLeft.value);
@@ -7988,6 +8043,7 @@ class ClubPerformanceProfilesCompanion
           ..write('clubId: $clubId, ')
           ..write('effectiveFromDate: $effectiveFromDate, ')
           ..write('carryDistance: $carryDistance, ')
+          ..write('totalDistance: $totalDistance, ')
           ..write('dispersionLeft: $dispersionLeft, ')
           ..write('dispersionRight: $dispersionRight, ')
           ..write('dispersionShort: $dispersionShort, ')
@@ -22448,6 +22504,7 @@ typedef $$ClubPerformanceProfilesTableCreateCompanionBuilder =
       required String clubId,
       required DateTime effectiveFromDate,
       Value<double?> carryDistance,
+      Value<double?> totalDistance,
       Value<double?> dispersionLeft,
       Value<double?> dispersionRight,
       Value<double?> dispersionShort,
@@ -22462,6 +22519,7 @@ typedef $$ClubPerformanceProfilesTableUpdateCompanionBuilder =
       Value<String> clubId,
       Value<DateTime> effectiveFromDate,
       Value<double?> carryDistance,
+      Value<double?> totalDistance,
       Value<double?> dispersionLeft,
       Value<double?> dispersionRight,
       Value<double?> dispersionShort,
@@ -22497,6 +22555,11 @@ class $$ClubPerformanceProfilesTableFilterComposer
 
   ColumnFilters<double> get carryDistance => $composableBuilder(
     column: $table.carryDistance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalDistance => $composableBuilder(
+    column: $table.totalDistance,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22560,6 +22623,11 @@ class $$ClubPerformanceProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get totalDistance => $composableBuilder(
+    column: $table.totalDistance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get dispersionLeft => $composableBuilder(
     column: $table.dispersionLeft,
     builder: (column) => ColumnOrderings(column),
@@ -22613,6 +22681,11 @@ class $$ClubPerformanceProfilesTableAnnotationComposer
 
   GeneratedColumn<double> get carryDistance => $composableBuilder(
     column: $table.carryDistance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalDistance => $composableBuilder(
+    column: $table.totalDistance,
     builder: (column) => column,
   );
 
@@ -22693,6 +22766,7 @@ class $$ClubPerformanceProfilesTableTableManager
                 Value<String> clubId = const Value.absent(),
                 Value<DateTime> effectiveFromDate = const Value.absent(),
                 Value<double?> carryDistance = const Value.absent(),
+                Value<double?> totalDistance = const Value.absent(),
                 Value<double?> dispersionLeft = const Value.absent(),
                 Value<double?> dispersionRight = const Value.absent(),
                 Value<double?> dispersionShort = const Value.absent(),
@@ -22705,6 +22779,7 @@ class $$ClubPerformanceProfilesTableTableManager
                 clubId: clubId,
                 effectiveFromDate: effectiveFromDate,
                 carryDistance: carryDistance,
+                totalDistance: totalDistance,
                 dispersionLeft: dispersionLeft,
                 dispersionRight: dispersionRight,
                 dispersionShort: dispersionShort,
@@ -22719,6 +22794,7 @@ class $$ClubPerformanceProfilesTableTableManager
                 required String clubId,
                 required DateTime effectiveFromDate,
                 Value<double?> carryDistance = const Value.absent(),
+                Value<double?> totalDistance = const Value.absent(),
                 Value<double?> dispersionLeft = const Value.absent(),
                 Value<double?> dispersionRight = const Value.absent(),
                 Value<double?> dispersionShort = const Value.absent(),
@@ -22731,6 +22807,7 @@ class $$ClubPerformanceProfilesTableTableManager
                 clubId: clubId,
                 effectiveFromDate: effectiveFromDate,
                 carryDistance: carryDistance,
+                totalDistance: totalDistance,
                 dispersionLeft: dispersionLeft,
                 dispersionRight: dispersionRight,
                 dispersionShort: dispersionShort,

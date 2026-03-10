@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
 
 /// Shared style definitions for environment + surface display.
@@ -99,17 +100,21 @@ Future<EnvironmentType?> showEnvironmentPicker(BuildContext context) {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PickerOption(
+          ZxPillButton(
             label: outdoor.label,
             icon: outdoor.icon,
             color: outdoor.color,
+            size: ZxPillSize.lg,
+            expanded: true,
             onTap: () => Navigator.pop(ctx, EnvironmentType.outdoor),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          _PickerOption(
+          ZxPillButton(
             label: indoor.label,
             icon: indoor.icon,
             color: indoor.color,
+            size: ZxPillSize.lg,
+            expanded: true,
             onTap: () => Navigator.pop(ctx, EnvironmentType.indoor),
           ),
         ],
@@ -137,21 +142,23 @@ Future<SurfaceType?> showSurfacePicker(BuildContext context) {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PickerOption(
+          ZxPillButton(
             label: grass.label,
             icon: grass.icon,
-            iconScale: grass.iconScale,
             color: grass.color,
+            size: ZxPillSize.lg,
+            expanded: true,
             onTap: () => Navigator.pop(ctx, SurfaceType.grass),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          _PickerOption(
+          ZxPillButton(
             label: mat.label,
             icon: mat.icon,
-            iconScale: mat.iconScale * 0.8,
             color: mat.color,
-            fillColor: mat.fillColor,
+            backgroundColor: mat.fillColor,
             borderColor: mat.borderColor,
+            size: ZxPillSize.lg,
+            expanded: true,
             onTap: () => Navigator.pop(ctx, SurfaceType.mat),
           ),
         ],
@@ -160,64 +167,6 @@ Future<SurfaceType?> showSurfacePicker(BuildContext context) {
   );
 }
 
-/// Picker option styled to match block tiles — filled background with colour.
-class _PickerOption extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final double iconScale;
-  final Color color;
-  final Color? fillColor;
-  final Color? borderColor;
-  final VoidCallback onTap;
-
-  const _PickerOption({
-    required this.label,
-    required this.icon,
-    this.iconScale = 1.0,
-    required this.color,
-    this.fillColor,
-    this.borderColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md,
-          vertical: SpacingTokens.md,
-        ),
-        decoration: BoxDecoration(
-          color: fillColor ?? color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-          border: Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 36,
-              child: Center(
-                child: Icon(icon, color: color, size: 28 * iconScale),
-              ),
-            ),
-            const SizedBox(width: SpacingTokens.md),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodyLgSize,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// Small tappable badges showing environment + surface.
 class SurfaceBadge extends StatelessWidget {
@@ -247,15 +196,22 @@ class SurfaceBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _BadgePill(label: env.label, icon: env.icon, color: env.color),
+          ZxPillButton(
+            label: env.label,
+            icon: env.icon,
+            color: env.color,
+            size: ZxPillSize.sm,
+            onTap: onTap,
+          ),
           const SizedBox(width: SpacingTokens.xs),
-          _BadgePill(
+          ZxPillButton(
             label: surf.label,
             icon: surf.icon,
-            iconScale: surf.iconScale,
             color: surf.color,
-            fillColor: surf.fillColor,
+            backgroundColor: surf.fillColor,
             borderColor: surf.borderColor,
+            size: ZxPillSize.sm,
+            onTap: onTap,
           ),
         ],
       ),
@@ -263,50 +219,3 @@ class SurfaceBadge extends StatelessWidget {
   }
 }
 
-class _BadgePill extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final double iconScale;
-  final Color color;
-  final Color? fillColor;
-  final Color? borderColor;
-
-  const _BadgePill({
-    required this.label,
-    required this.icon,
-    this.iconScale = 1.0,
-    required this.color,
-    this.fillColor,
-    this.borderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.sm,
-        vertical: SpacingTokens.xs,
-      ),
-      decoration: BoxDecoration(
-        color: fillColor ?? color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-        border: Border.all(color: borderColor ?? color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14 * iconScale, color: color),
-          const SizedBox(width: SpacingTokens.xs),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: TypographyTokens.microSize,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -8,7 +8,10 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 const _commonClubs = {
   'Driver',
   'W3',
+  'W5',
   'H3',
+  'H4',
+  'i3',
   'i4',
   'i5',
   'i6',
@@ -16,7 +19,6 @@ const _commonClubs = {
   'i8',
   'i9',
   'PW',
-  'AW',
   'GW',
   'SW',
   'LW',

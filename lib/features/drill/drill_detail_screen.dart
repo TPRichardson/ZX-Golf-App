@@ -7,6 +7,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
@@ -204,20 +205,12 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           SpacingTokens.md,
           SpacingTokens.md,
         ),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () => _startPractice(drill),
-            icon: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
-            label: const Text(
-              'Start Practice',
-              style: TextStyle(color: Colors.white),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.successDefault,
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
-            ),
-          ),
+        child: ZxPillButton(
+          label: 'Start Practice',
+          icon: Icons.play_arrow,
+          variant: ZxPillVariant.progress,
+          expanded: true,
+          onTap: () => _startPractice(drill),
         ),
       ),
     );

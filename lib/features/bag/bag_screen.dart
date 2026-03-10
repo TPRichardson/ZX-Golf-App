@@ -88,19 +88,7 @@ class BagScreen extends ConsumerWidget {
                       ),
                 ),
               ),
-              for (final entry in grouped.entries) ...[
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: SpacingTokens.md,
-                    bottom: SpacingTokens.sm,
-                  ),
-                  child: Text(
-                    entry.key,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: ColorTokens.textPrimary,
-                        ),
-                  ),
-                ),
+              for (final entry in grouped.entries)
                 for (final club in entry.value)
                   Padding(
                     padding: const EdgeInsets.only(
@@ -117,7 +105,6 @@ class BagScreen extends ConsumerWidget {
                       },
                     ),
                   ),
-              ],
             ],
           );
         },
@@ -140,11 +127,22 @@ class BagScreen extends ConsumerWidget {
     );
   }
 
+  // Canonical club order — matches _fullClubGroups.
+  static final _clubOrder = {
+    for (var i = 0; i < ClubType.values.length; i++)
+      ClubType.values[i]: i,
+  };
+
   Map<String, List<UserClub>> _groupClubs(List<UserClub> clubs) {
     final grouped = <String, List<UserClub>>{};
     for (final club in clubs) {
       final category = _clubCategory(club.clubType);
       grouped.putIfAbsent(category, () => []).add(club);
+    }
+    // Sort clubs within each group by canonical order.
+    for (final list in grouped.values) {
+      list.sort((a, b) =>
+          (_clubOrder[a.clubType] ?? 0).compareTo(_clubOrder[b.clubType] ?? 0));
     }
     // Order categories.
     final ordered = <String, List<UserClub>>{};
@@ -154,7 +152,7 @@ class BagScreen extends ConsumerWidget {
       'Hybrids',
       'Irons',
       'Wedges',
-      'Specialty',
+      'Chipper',
       'Putter'
     ]) {
       if (grouped.containsKey(cat)) {
@@ -167,7 +165,7 @@ class BagScreen extends ConsumerWidget {
   String _clubCategory(ClubType type) {
     if (type == ClubType.driver) return 'Driver';
     if (type == ClubType.putter) return 'Putter';
-    if (type == ClubType.chipper) return 'Specialty';
+    if (type == ClubType.chipper) return 'Chipper';
     if (type.dbValue.startsWith('W')) return 'Woods';
     if (type.dbValue.startsWith('H')) return 'Hybrids';
     if (type.dbValue.startsWith('i')) return 'Irons';
@@ -175,8 +173,30 @@ class BagScreen extends ConsumerWidget {
     return 'Wedges';
   }
 
-  // Club categories for the grouped picker.
-  static const _clubGroups = <String, List<ClubType>>{
+  // Common clubs — the 16 most typical clubs in a bag.
+  static const _commonClubs = <ClubType>[
+    ClubType.driver,
+    ClubType.w3,
+    ClubType.w5,
+    ClubType.h3,
+    ClubType.h4,
+    ClubType.i3,
+    ClubType.i4,
+    ClubType.i5,
+    ClubType.i6,
+    ClubType.i7,
+    ClubType.i8,
+    ClubType.i9,
+    ClubType.pw,
+    ClubType.gw,
+    ClubType.sw,
+    ClubType.lw,
+    ClubType.chipper,
+    ClubType.putter,
+  ];
+
+  // Full list — all clubs grouped by category for expandable view.
+  static const _fullClubGroups = <String, List<ClubType>>{
     'Driver': [ClubType.driver],
     'Woods': [
       ClubType.w1, ClubType.w2, ClubType.w3, ClubType.w4, ClubType.w5,
@@ -194,15 +214,16 @@ class BagScreen extends ConsumerWidget {
       ClubType.pw, ClubType.aw, ClubType.gw, ClubType.sw, ClubType.uw,
       ClubType.lw,
     ],
+    'Chipper': [ClubType.chipper],
     'Putter': [ClubType.putter],
-    'Specialty': [ClubType.chipper],
   };
 
   void _showAddClubDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (ctx) => _AddClubsDialog(
-        clubGroups: _clubGroups,
+        commonClubs: _commonClubs,
+        fullClubGroups: _fullClubGroups,
         onAdd: (selected) async {
           Navigator.pop(ctx);
           final clubRepo = ref.read(clubRepositoryProvider);
@@ -218,12 +239,17 @@ class BagScreen extends ConsumerWidget {
   }
 }
 
-/// Multi-select dialog with grouped club categories.
+/// Multi-select dialog with Common / Full tabs.
 class _AddClubsDialog extends StatefulWidget {
-  final Map<String, List<ClubType>> clubGroups;
+  final List<ClubType> commonClubs;
+  final Map<String, List<ClubType>> fullClubGroups;
   final ValueChanged<Set<ClubType>> onAdd;
 
-  const _AddClubsDialog({required this.clubGroups, required this.onAdd});
+  const _AddClubsDialog({
+    required this.commonClubs,
+    required this.fullClubGroups,
+    required this.onAdd,
+  });
 
   @override
   State<_AddClubsDialog> createState() => _AddClubsDialogState();
@@ -245,118 +271,326 @@ class _AddClubsDialogState extends State<_AddClubsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: ColorTokens.surfaceModal,
-      title: const Text('Add Clubs',
-          style: TextStyle(color: ColorTokens.textPrimary)),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView(
-          shrinkWrap: true,
+    return DefaultTabController(
+      length: 2,
+      child: AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            for (final entry in widget.clubGroups.entries)
-              _buildGroup(entry.key, entry.value),
+            const Text('Add Clubs',
+                style: TextStyle(color: ColorTokens.textPrimary)),
+            const SizedBox(height: SpacingTokens.sm),
+            TabBar(
+              labelColor: ColorTokens.primaryDefault,
+              unselectedLabelColor: ColorTokens.textTertiary,
+              indicatorColor: ColorTokens.primaryDefault,
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: ColorTokens.surfaceBorder,
+              labelStyle: const TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                fontWeight: FontWeight.w400,
+              ),
+              tabs: const [
+                Tab(text: 'Common'),
+                Tab(text: 'Full'),
+              ],
+            ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.md,
+          vertical: SpacingTokens.sm,
         ),
-        FilledButton(
-          onPressed:
-              _selected.isEmpty ? null : () => widget.onAdd(_selected),
-          style: FilledButton.styleFrom(
-            backgroundColor: ColorTokens.primaryDefault,
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 350,
+          child: TabBarView(
+            children: [
+              _ClubGrid(
+                clubs: widget.commonClubs,
+                selected: _selected,
+                onToggle: _toggle,
+              ),
+              _FullClubList(
+                groups: widget.fullClubGroups,
+                selected: _selected,
+                expanded: _expanded,
+                onToggle: _toggle,
+                onToggleGroup: (group) => setState(() {
+                  if (_expanded.contains(group)) {
+                    _expanded.remove(group);
+                  } else {
+                    _expanded.add(group);
+                  }
+                }),
+              ),
+            ],
           ),
-          child: Text('Add${_selected.isEmpty ? '' : ' (${_selected.length})'}'),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed:
+                _selected.isEmpty ? null : () => widget.onAdd(_selected),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.primaryDefault,
+            ),
+            child: Text(
+                'Add${_selected.isEmpty ? '' : ' (${_selected.length})'}'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 3-column grid of tappable club cells with selection state.
+class _ClubGrid extends StatelessWidget {
+  final List<ClubType> clubs;
+  final Set<ClubType> selected;
+  final ValueChanged<ClubType> onToggle;
+
+  const _ClubGrid({
+    required this.clubs,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: SpacingTokens.sm,
+        crossAxisSpacing: SpacingTokens.sm,
+        childAspectRatio: 2.0,
+      ),
+      itemCount: clubs.length,
+      itemBuilder: (context, index) {
+        final club = clubs[index];
+        final isSelected = selected.contains(club);
+        return InkWell(
+          onTap: () => onToggle(club),
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? ColorTokens.primaryDefault.withValues(alpha: 0.2)
+                  : ColorTokens.surfaceRaised,
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+              border: Border.all(
+                color: isSelected
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.surfaceBorder,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                club.dbValue,
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySize,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected
+                      ? ColorTokens.primaryDefault
+                      : ColorTokens.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Expandable category list showing all clubs.
+class _FullClubList extends StatelessWidget {
+  final Map<String, List<ClubType>> groups;
+  final Set<ClubType> selected;
+  final Set<String> expanded;
+  final ValueChanged<ClubType> onToggle;
+  final ValueChanged<String> onToggleGroup;
+
+  const _FullClubList({
+    required this.groups,
+    required this.selected,
+    required this.expanded,
+    required this.onToggle,
+    required this.onToggleGroup,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        for (final entry in groups.entries)
+          _buildGroup(entry.key, entry.value),
       ],
     );
   }
 
   Widget _buildGroup(String category, List<ClubType> clubs) {
-    // Single-club categories — checkbox directly.
+    // Single-club categories — tap cell directly.
     if (clubs.length == 1) {
-      final type = clubs.first;
-      return CheckboxListTile(
-        title: Text(category,
-            style: const TextStyle(color: ColorTokens.textPrimary)),
-        value: _selected.contains(type),
-        onChanged: (_) => _toggle(type),
-        activeColor: ColorTokens.primaryDefault,
-        controlAffinity: ListTileControlAffinity.trailing,
-        secondary: const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
+      final club = clubs.first;
+      final isSelected = selected.contains(club);
+      return Padding(
+        padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+        child: InkWell(
+          onTap: () => onToggle(club),
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SpacingTokens.md,
+              vertical: SpacingTokens.sm + 2,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? ColorTokens.primaryDefault.withValues(alpha: 0.2)
+                  : ColorTokens.surfaceRaised,
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+              border: Border.all(
+                color: isSelected
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.surfaceBorder,
+              ),
+            ),
+            child: Text(
+              category,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.textPrimary,
+              ),
+            ),
+          ),
+        ),
       );
     }
 
-    // Multi-club categories — expand/collapse with children.
-    final isExpanded = _expanded.contains(category);
-    final selectedInGroup =
-        clubs.where((c) => _selected.contains(c)).length;
+    // Multi-club categories — expandable header + grid.
+    final isExpanded = expanded.contains(category);
+    final selectedInGroup = clubs.where((c) => selected.contains(c)).length;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          title: Text(category,
-              style: const TextStyle(color: ColorTokens.textPrimary)),
-          leading:
-              const Icon(Icons.sports_golf, color: ColorTokens.textSecondary),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selectedInGroup > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: SpacingTokens.xs + 2, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.primaryDefault.withValues(alpha: 0.3),
-                    borderRadius:
-                        BorderRadius.circular(ShapeTokens.radiusSegmented),
-                  ),
-                  child: Text('$selectedInGroup',
-                      style: const TextStyle(
-                        fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.textPrimary,
-                      )),
-                ),
-              const SizedBox(width: SpacingTokens.xs),
-              Icon(
-                isExpanded ? Icons.expand_less : Icons.expand_more,
-                color: ColorTokens.textTertiary,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => onToggleGroup(category),
+            borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpacingTokens.md,
+                vertical: SpacingTokens.sm + 2,
               ),
-            ],
-          ),
-          onTap: () => setState(() {
-            if (isExpanded) {
-              _expanded.remove(category);
-            } else {
-              _expanded.add(category);
-            }
-          }),
-        ),
-        if (isExpanded)
-          Padding(
-            padding: const EdgeInsets.only(left: SpacingTokens.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: clubs
-                  .map((club) => CheckboxListTile(
-                        dense: true,
-                        title: Text(club.dbValue,
-                            style: const TextStyle(
-                                color: ColorTokens.textSecondary)),
-                        value: _selected.contains(club),
-                        onChanged: (_) => _toggle(club),
-                        activeColor: ColorTokens.primaryDefault,
-                        controlAffinity: ListTileControlAffinity.trailing,
-                      ))
-                  .toList(),
+              decoration: BoxDecoration(
+                color: ColorTokens.surfaceRaised,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+                border: Border.all(color: ColorTokens.surfaceBorder),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      category,
+                      style: const TextStyle(
+                        fontSize: TypographyTokens.bodySize,
+                        fontWeight: FontWeight.w500,
+                        color: ColorTokens.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (selectedInGroup > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: SpacingTokens.xs + 2, vertical: 2),
+                      margin:
+                          const EdgeInsets.only(right: SpacingTokens.xs),
+                      decoration: BoxDecoration(
+                        color: ColorTokens.primaryDefault
+                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(
+                            ShapeTokens.radiusSegmented),
+                      ),
+                      child: Text('$selectedInGroup',
+                          style: const TextStyle(
+                            fontSize: TypographyTokens.microSize,
+                            color: ColorTokens.primaryDefault,
+                          )),
+                    ),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: ColorTokens.textTertiary,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
-      ],
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.only(top: SpacingTokens.sm),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 3,
+                mainAxisSpacing: SpacingTokens.sm,
+                crossAxisSpacing: SpacingTokens.sm,
+                childAspectRatio: 2.0,
+                children: clubs.map((club) {
+                  final isSelected = selected.contains(club);
+                  return InkWell(
+                    onTap: () => onToggle(club),
+                    borderRadius:
+                        BorderRadius.circular(ShapeTokens.radiusGrid),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? ColorTokens.primaryDefault
+                                .withValues(alpha: 0.2)
+                            : ColorTokens.surfaceRaised,
+                        borderRadius:
+                            BorderRadius.circular(ShapeTokens.radiusGrid),
+                        border: Border.all(
+                          color: isSelected
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.surfaceBorder,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          club.dbValue,
+                          style: TextStyle(
+                            fontSize: TypographyTokens.bodySize,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? ColorTokens.primaryDefault
+                                : ColorTokens.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

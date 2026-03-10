@@ -3,12 +3,11 @@
 // start sessions, end practice block.
 
 import 'dart:async';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
@@ -444,38 +443,11 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: SpacingTokens.lg),
-            GestureDetector(
+            ZxPillButton(
+              label: 'Add Drill',
+              icon: Icons.playlist_add,
+              variant: ZxPillVariant.primary,
               onTap: _addDrill,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.lg,
-                  vertical: SpacingTokens.sm + 2,
-                ),
-                decoration: BoxDecoration(
-                  color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
-                  borderRadius:
-                      BorderRadius.circular(ShapeTokens.radiusGrid),
-                  border: Border.all(
-                      color: ColorTokens.primaryDefault
-                          .withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.playlist_add,
-                        size: 16, color: ColorTokens.primaryDefault),
-                    const SizedBox(width: SpacingTokens.xs),
-                    Text(
-                      'Add Drill',
-                      style: TextStyle(
-                        fontSize: TypographyTokens.bodySize,
-                        fontWeight: FontWeight.w500,
-                        color: ColorTokens.primaryDefault,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -598,131 +570,45 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                     child: Text('Save as Routine'),
                   ),
                 ],
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.sm + 4,
-                    vertical: SpacingTokens.sm + 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.textTertiary.withValues(alpha: 0.1),
-                    borderRadius:
-                        BorderRadius.circular(ShapeTokens.radiusGrid),
-                    border: Border.all(
-                        color:
-                            ColorTokens.textTertiary.withValues(alpha: 0.25)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.playlist_add,
-                          size: 16, color: ColorTokens.textSecondary),
-                      const SizedBox(width: SpacingTokens.xs),
-                      Text(
-                        'Routines',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.bodySize,
-                          fontWeight: FontWeight.w500,
-                          color: ColorTokens.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: ZxPillButton(
+                  label: 'Routines',
+                  icon: Icons.playlist_add,
+                  variant: ZxPillVariant.tertiary,
+                  onTap: null,
                 ),
               ),
               const SizedBox(width: SpacingTokens.sm),
               // Add Drill button — cyan pill matching Routines style.
               Expanded(
-                child: GestureDetector(
+                child: ZxPillButton(
+                  label: 'Add Drill',
+                  icon: Icons.playlist_add,
+                  variant: ZxPillVariant.primary,
+                  expanded: true,
                   onTap: _addDrill,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: SpacingTokens.sm + 4,
-                      vertical: SpacingTokens.sm + 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
-                      borderRadius:
-                          BorderRadius.circular(ShapeTokens.radiusGrid),
-                      border: Border.all(
-                          color: ColorTokens.primaryDefault
-                              .withValues(alpha: 0.25)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.playlist_add,
-                            size: 16, color: ColorTokens.primaryDefault),
-                        const SizedBox(width: SpacingTokens.xs),
-                        Text(
-                          'Add Drill',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.bodySize,
-                            fontWeight: FontWeight.w500,
-                            color: ColorTokens.primaryDefault,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: SpacingTokens.sm),
           // Finish Practice — pill style matching above buttons.
-          SizedBox(
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: _endingBlock ? null : () => _endPracticeBlock(entries),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.sm + 4,
-                  vertical: SpacingTokens.sm + 2,
-                ),
-                decoration: BoxDecoration(
-                  color: ColorTokens.successDefault.withValues(alpha: 0.1),
-                  borderRadius:
-                      BorderRadius.circular(ShapeTokens.radiusGrid),
-                  border: Border.all(
-                      color: ColorTokens.successDefault
-                          .withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_endingBlock)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else ...[
-                      Icon(Icons.check_circle_outline,
-                          size: 16, color: ColorTokens.successDefault),
-                      const SizedBox(width: SpacingTokens.xs),
-                      Text(
-                        'Finish Practice',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.bodySize,
-                          fontWeight: FontWeight.w500,
-                          color: ColorTokens.successDefault,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+          ZxPillButton(
+            label: 'Finish Practice',
+            icon: Icons.check_circle_outline,
+            variant: ZxPillVariant.progress,
+            expanded: true,
+            isLoading: _endingBlock,
+            onTap: _endingBlock ? null : () => _endPracticeBlock(entries),
           ),
           const SizedBox(height: SpacingTokens.sm),
           // Practice Settings + Discard row.
           Row(
             children: [
               Expanded(
-                child: _PillButton(
+                child: ZxPillButton(
                   label: 'Practice Settings',
                   icon: Icons.settings_outlined,
-                  color: ColorTokens.textTertiary,
+                  variant: ZxPillVariant.tertiary,
                   centered: true,
                   iconRight: true,
                   onTap: () {
@@ -735,10 +621,10 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
               ),
               const SizedBox(width: SpacingTokens.sm),
               Expanded(
-                child: _PillButton(
+                child: ZxPillButton(
                   label: 'Discard Practice',
                   icon: Icons.delete_outline,
-                  color: ColorTokens.errorDestructive,
+                  variant: ZxPillVariant.destructive,
                   centered: true,
                   iconRight: true,
                   onTap: _discardPracticeBlock,
@@ -817,57 +703,3 @@ class _ElapsedTimeBadgeState extends State<_ElapsedTimeBadge> {
   }
 }
 
-class _PillButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool centered;
-  final bool iconRight;
-  final VoidCallback onTap;
-
-  const _PillButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    this.centered = false,
-    this.iconRight = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconWidget = Icon(icon, size: 14, color: color);
-    final textWidget = Text(
-      label,
-      style: TextStyle(
-        fontSize: TypographyTokens.microSize,
-        fontWeight: FontWeight.w500,
-        color: color,
-      ),
-    );
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.sm,
-          vertical: SpacingTokens.xs,
-        ),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          mainAxisSize: centered ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: centered
-              ? MainAxisAlignment.center
-              : MainAxisAlignment.start,
-          children: iconRight
-              ? [textWidget, const SizedBox(width: SpacingTokens.xs), iconWidget]
-              : [iconWidget, const SizedBox(width: SpacingTokens.xs), textWidget],
-        ),
-      ),
-    );
-  }
-}

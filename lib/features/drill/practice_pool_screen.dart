@@ -4,6 +4,7 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
@@ -92,44 +93,16 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               const SizedBox(width: SpacingTokens.sm),
               Transform.translate(
                 offset: const Offset(0, -1),
-                child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const AddDrillsScreen(),
-                  ));
-                },
-                child: Container(
-                  padding: const EdgeInsets.only(
-                    left: SpacingTokens.xs,
-                    right: SpacingTokens.sm,
-                    top: SpacingTokens.xs,
-                    bottom: SpacingTokens.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius:
-                        BorderRadius.circular(ShapeTokens.radiusSegmented),
-                    border: Border.all(color: ColorTokens.primaryDefault),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add,
-                        size: 16,
-                        color: ColorTokens.primaryDefault,
-                      ),
-                      const SizedBox(width: SpacingTokens.xs),
-                      Text(
-                        'Add',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: ColorTokens.primaryDefault,
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                    ],
-                  ),
+                child: ZxPillButton(
+                  label: 'Add',
+                  icon: Icons.add,
+                  variant: ZxPillVariant.secondary,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const AddDrillsScreen(),
+                    ));
+                  },
                 ),
-              ),
               ),
               const Spacer(),
               // 5E — Skill area filter + grouped/flat toggle.
@@ -320,51 +293,25 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
           if (!hasActivePb) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _startCleanPractice,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: ColorTokens.successDefault,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: SpacingTokens.md,
-                      vertical: SpacingTokens.sm,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'Practice Drills',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      SizedBox(width: SpacingTokens.sm),
-                      Icon(Icons.play_circle_filled, color: Colors.white, size: 24),
-                    ],
-                  ),
-                ),
+              child: ZxPillButton(
+                label: 'Practice Drills',
+                icon: Icons.play_circle_filled,
+                variant: ZxPillVariant.progress,
+                size: ZxPillSize.lg,
+                expanded: true,
+                iconRight: true,
+                onTap: _startCleanPractice,
               ),
             ),
             if (filledDrillIds.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _startPlannedPractice(filledDrillIds),
-                    icon: Icon(Icons.calendar_today, color: ColorTokens.primaryDefault, size: 18),
-                    label: Text(
-                      'Start Planned Practice (${filledDrillIds.length} drills)',
-                      style: TextStyle(color: ColorTokens.primaryDefault),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: ColorTokens.primaryDefault),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: SpacingTokens.sm,
-                      ),
-                    ),
-                  ),
+                child: ZxPillButton(
+                  label: 'Start Planned Practice (${filledDrillIds.length} drills)',
+                  icon: Icons.calendar_today,
+                  variant: ZxPillVariant.primary,
+                  expanded: true,
+                  onTap: () => _startPlannedPractice(filledDrillIds),
                 ),
               ),
           ],

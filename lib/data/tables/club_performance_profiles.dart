@@ -10,6 +10,7 @@ class ClubPerformanceProfiles extends Table {
   DateTimeColumn get effectiveFromDate =>
       dateTime().named('EffectiveFromDate')();
   RealColumn get carryDistance => real().named('CarryDistance').nullable()();
+  RealColumn get totalDistance => real().named('TotalDistance').nullable()();
   RealColumn get dispersionLeft => real().named('DispersionLeft').nullable()();
   RealColumn get dispersionRight =>
       real().named('DispersionRight').nullable()();

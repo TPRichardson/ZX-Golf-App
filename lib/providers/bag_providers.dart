@@ -26,6 +26,12 @@ final clubsForSkillAreaProvider =
       );
 });
 
+/// Active performance profile for a club (latest by effective date).
+final activeProfileProvider =
+    FutureProvider.family<ClubPerformanceProfile?, String>((ref, clubId) {
+  return ref.watch(clubRepositoryProvider).getActiveProfile(clubId);
+});
+
 /// All skill area mappings for a user.
 final skillAreaMappingsProvider =
     StreamProvider.family<List<UserSkillAreaClubMapping>, String>(

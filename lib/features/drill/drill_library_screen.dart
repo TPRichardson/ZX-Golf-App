@@ -4,6 +4,7 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
@@ -119,13 +120,18 @@ class DrillLibraryScreen extends ConsumerWidget {
                                               color: ColorTokens.textSecondary),
                                         ),
                                         actions: [
-                                          TextButton(
-                                            onPressed: () =>
+                                          ZxPillButton(
+                                            label: 'Return to Drills',
+                                            variant: ZxPillVariant.tertiary,
+
+                                            onTap: () =>
                                                 Navigator.pop(dialogCtx),
-                                            child: const Text('Return to Drills'),
                                           ),
-                                          FilledButton(
-                                            onPressed: () {
+                                          ZxPillButton(
+                                            label: 'Customise Golf Bag',
+                                            variant: ZxPillVariant.primary,
+
+                                            onTap: () {
                                               Navigator.pop(dialogCtx);
                                               Navigator.of(context).push(
                                                 MaterialPageRoute(
@@ -134,12 +140,6 @@ class DrillLibraryScreen extends ConsumerWidget {
                                                 ),
                                               );
                                             },
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor:
-                                                  ColorTokens.primaryDefault,
-                                            ),
-                                            child:
-                                                const Text('Customise Golf Bag'),
                                           ),
                                         ],
                                       ),

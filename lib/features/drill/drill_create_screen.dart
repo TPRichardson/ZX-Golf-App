@@ -4,7 +4,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
-import 'package:zx_golf_app/core/widgets/zx_button.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/core/widgets/zx_card.dart';
 import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -419,10 +419,12 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
       children: [
         if (_step > 0)
           Expanded(
-            child: ZxButton(
+            child: ZxPillButton(
               label: 'Back',
-              variant: ZxButtonVariant.secondary,
-              onPressed: () => setState(() {
+              variant: ZxPillVariant.tertiary,
+
+              expanded: true,
+              onTap: () => setState(() {
                 _step--;
                 _errorMessage = null;
               }),
@@ -430,21 +432,25 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
           ),
         if (_step > 0) const SizedBox(width: SpacingTokens.sm),
         Expanded(
-          child: ZxButton(
+          child: ZxPillButton(
             label: isLastStep ? 'Create Drill' : 'Next',
+            variant: isLastStep ? ZxPillVariant.progress : ZxPillVariant.primary,
+
             isLoading: _isCreating,
-            onPressed: isLastStep ? _createDrill : _nextStep,
+            expanded: true,
+            onTap: isLastStep ? _createDrill : _nextStep,
           ),
         ),
         // 7A — Save & Practice shortcut on last step.
         if (isLastStep) ...[
           const SizedBox(width: SpacingTokens.sm),
           Expanded(
-            child: ZxButton(
+            child: ZxPillButton(
               label: 'Save & Practice',
-              variant: ZxButtonVariant.secondary,
+              variant: ZxPillVariant.secondary,
               isLoading: _isCreating,
-              onPressed: _saveAndPractice,
+              expanded: true,
+              onTap: _saveAndPractice,
             ),
           ),
         ],

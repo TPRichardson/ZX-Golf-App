@@ -4,7 +4,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
-import 'package:zx_golf_app/core/widgets/zx_button.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -176,9 +176,11 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
             hintText: 'Degrees',
           ),
           const SizedBox(height: SpacingTokens.md),
-          ZxButton(
+          ZxPillButton(
             label: 'Save Details',
-            onPressed: _saveDetails,
+            variant: ZxPillVariant.primary,
+            expanded: true,
+            onTap: _saveDetails,
           ),
 
           const SizedBox(height: SpacingTokens.xl),
@@ -217,10 +219,11 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
             ],
           ),
           const SizedBox(height: SpacingTokens.md),
-          ZxButton(
+          ZxPillButton(
             label: 'Update Profile',
-            variant: ZxButtonVariant.secondary,
-            onPressed: _updateProfile,
+            variant: ZxPillVariant.secondary,
+            expanded: true,
+            onTap: _updateProfile,
           ),
         ],
       ),
