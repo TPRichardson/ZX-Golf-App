@@ -11,6 +11,7 @@ import 'package:zx_golf_app/core/widgets/star_rating.dart';
 import 'package:zx_golf_app/core/widgets/zx_badge.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/anchor_score_bar.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -267,7 +268,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
   }
 }
 
-/// Button that checks for next pending drill and navigates to it.
+/// Button that shows "Next Drill" or "Finish Practice" based on pending drills.
 class _NextDrillButton extends ConsumerWidget {
   final String practiceBlockId;
   final String userId;
@@ -294,7 +295,32 @@ class _NextDrillButton extends ConsumerWidget {
             .toList();
 
         if (nextPending.isEmpty) {
-          return const SizedBox.shrink();
+          // No more drills — offer to finish the practice block.
+          return FilledButton(
+            onPressed: () async {
+              final startTimestamp = pbWithEntries.practiceBlock.startTimestamp;
+              final actions = ref.read(practiceActionsProvider);
+              await actions.endPracticeBlock(practiceBlockId, userId);
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => PracticeSummaryScreen(
+                      practiceBlockId: practiceBlockId,
+                      startTimestamp: startTimestamp,
+                    ),
+                  ),
+                  (route) => route.isFirst,
+                );
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.successDefault,
+              padding: const EdgeInsets.symmetric(
+                vertical: SpacingTokens.sm + 4,
+              ),
+            ),
+            child: const Text('Finish Practice'),
+          );
         }
 
         return FilledButton(

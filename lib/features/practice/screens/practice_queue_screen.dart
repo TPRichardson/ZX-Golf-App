@@ -14,6 +14,7 @@ import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_entry_card.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_stats_bar.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
@@ -198,41 +199,60 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     );
   }
 
-  Future<void> _endPracticeBlock() async {
+  Future<void> _endPracticeBlock(List<PracticeEntryWithDrill> entries) async {
     if (_endingBlock) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Finish Practice?',
-            style: TextStyle(color: ColorTokens.textPrimary)),
-        content: const Text(
-          'This will close the practice block. Pending drills will be removed.',
-          style: TextStyle(color: ColorTokens.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.primaryDefault,
-            ),
-            child: const Text('Finish'),
-          ),
-        ],
-      ),
-    );
+    final hasPending = entries.any(
+        (e) => e.entry.entryType == PracticeEntryType.pendingDrill);
 
-    if (confirmed != true || !mounted) return;
+    if (hasPending) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: ColorTokens.surfaceModal,
+          title: const Text('Finish Practice?',
+              style: TextStyle(color: ColorTokens.textPrimary)),
+          content: const Text(
+            'This will close the practice block. Pending drills will be removed.',
+            style: TextStyle(color: ColorTokens.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: ColorTokens.primaryDefault,
+              ),
+              child: const Text('Finish'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
 
     setState(() => _endingBlock = true);
+
+    // Capture start timestamp before ending (block may become unavailable).
+    final pbData = ref.read(
+        practiceBlockWithEntriesProvider(widget.practiceBlockId)).valueOrNull;
+    final startTimestamp = pbData?.practiceBlock.startTimestamp ?? DateTime.now();
+
     final actions = ref.read(practiceActionsProvider);
     await actions.endPracticeBlock(widget.practiceBlockId, widget.userId);
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => PracticeSummaryScreen(
+            practiceBlockId: widget.practiceBlockId,
+            startTimestamp: startTimestamp,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _discardPracticeBlock() async {
@@ -653,7 +673,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
           SizedBox(
             width: double.infinity,
             child: GestureDetector(
-              onTap: _endingBlock ? null : _endPracticeBlock,
+              onTap: _endingBlock ? null : () => _endPracticeBlock(entries),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: SpacingTokens.sm + 4,
