@@ -91,20 +91,6 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     ),
               ),
               const SizedBox(width: SpacingTokens.sm),
-              Transform.translate(
-                offset: const Offset(0, -1),
-                child: ZxPillButton(
-                  label: 'Add',
-                  icon: Icons.add,
-                  variant: ZxPillVariant.secondary,
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const AddDrillsScreen(),
-                    ));
-                  },
-                ),
-              ),
-              const Spacer(),
               // 5E — Skill area filter + grouped/flat toggle.
               _FilterButton(
                 selected: selectedFilter,
@@ -113,6 +99,17 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 isGrouped: isGrouped,
                 onGroupToggle: (v) =>
                     ref.read(practicePoolGroupedProvider.notifier).state = v,
+              ),
+              const Spacer(),
+              ZxPillButton(
+                label: 'Add',
+                icon: Icons.add,
+                size: ZxPillSize.sm,
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const AddDrillsScreen(),
+                  ));
+                },
               ),
             ],
           ),
