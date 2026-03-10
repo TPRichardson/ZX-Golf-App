@@ -75,22 +75,27 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     return Column(
       children: [
-        // Page header + filter button.
+        // Page subtitle.
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm, 0,
+            SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+          ),
+          child: Center(
+            child: Text(
+              'Drill Library',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: ColorTokens.textPrimary,
+                  ),
+            ),
+          ),
+        ),
+        // Filters + Add Drills row.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.md, SpacingTokens.sm, SpacingTokens.md, 0,
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                'Your Drills',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: ColorTokens.textPrimary,
-                    ),
-              ),
-              const SizedBox(width: SpacingTokens.sm),
               // 5E — Skill area filter + grouped/flat toggle.
               _FilterButton(
                 selected: selectedFilter,
@@ -102,9 +107,8 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ),
               const Spacer(),
               ZxPillButton(
-                label: 'Add drills to library',
+                label: 'Add Drills',
                 icon: Icons.add,
-                size: ZxPillSize.sm,
                 onTap: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => const AddDrillsScreen(),
@@ -308,6 +312,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                   label: 'Start Planned Practice (${filledDrillIds.length} drills)',
                   icon: Icons.calendar_today,
                   variant: ZxPillVariant.primary,
+                  size: ZxPillSize.lg,
                   expanded: true,
                   centered: true,
                   onTap: () => _startPlannedPractice(filledDrillIds),
@@ -435,7 +440,7 @@ class _FilterButton extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: SpacingTokens.sm,
-                vertical: SpacingTokens.xs,
+                vertical: SpacingTokens.sm,
               ),
               child: Icon(
                 isGrouped ? Icons.list : Icons.view_agenda_outlined,
@@ -452,21 +457,10 @@ class _FilterButton extends StatelessWidget {
           ),
           // Filter menu.
           GestureDetector(
-            onTapDown: (details) async {
-              final result = await showMenu<String>(
+            onTap: () async {
+              final result = await showDialog<String>(
                 context: context,
-                position: RelativeRect.fromLTRB(
-                  details.globalPosition.dx,
-                  details.globalPosition.dy,
-                  details.globalPosition.dx,
-                  details.globalPosition.dy,
-                ),
-                items: [
-                  const PopupMenuItem(value: 'all', child: Text('All')),
-                  for (final area in SkillArea.values)
-                    PopupMenuItem(
-                        value: area.dbValue, child: Text(area.dbValue)),
-                ],
+                builder: (ctx) => _SkillAreaGridDialog(selected: selected),
               );
               if (result == null) return;
               if (result == 'all') {
@@ -479,7 +473,7 @@ class _FilterButton extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: SpacingTokens.sm,
-                vertical: SpacingTokens.xs,
+                vertical: SpacingTokens.sm,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -502,6 +496,65 @@ class _FilterButton extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 2×4 grid dialog for skill area filter selection.
+class _SkillAreaGridDialog extends StatelessWidget {
+  final SkillArea? selected;
+
+  const _SkillAreaGridDialog({required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    // "All" + 7 skill areas = 8 items in a 2×4 grid.
+    final items = <({String value, String label, Color? color})>[
+      (value: 'all', label: 'All', color: null),
+      for (final area in _skillAreaDisplayOrder)
+        (value: area.dbValue, label: area.dbValue, color: ColorTokens.skillArea(area)),
+    ];
+
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: const Text(
+        'Filter by Skill Area',
+        style: TextStyle(color: ColorTokens.textPrimary),
+      ),
+      contentPadding: const EdgeInsets.all(SpacingTokens.md),
+      content: SizedBox(
+        width: 280,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: SpacingTokens.sm,
+            crossAxisSpacing: SpacingTokens.sm,
+            childAspectRatio: 2.5,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            final isSelected = item.value == 'all'
+                ? selected == null
+                : selected?.dbValue == item.value;
+            return ZxPillButton(
+              label: item.label,
+              expanded: true,
+              centered: true,
+              color: item.color,
+              variant: isSelected
+                  ? ZxPillVariant.primary
+                  : ZxPillVariant.tertiary,
+              onTap: () => Navigator.pop(context, item.value),
+            );
+          },
+        ),
       ),
     );
   }
