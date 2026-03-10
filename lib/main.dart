@@ -56,6 +56,21 @@ void main() {
   );
 }
 
+class _NoOverscrollBehavior extends ScrollBehavior {
+  const _NoOverscrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+}
+
 class ZxGolfApp extends ConsumerStatefulWidget {
   const ZxGolfApp({super.key});
 
@@ -96,6 +111,7 @@ class _ZxGolfAppState extends ConsumerState<ZxGolfApp> {
       title: 'ZX Golf',
       debugShowCheckedModeBanner: false,
       theme: ZxTheme.dark(),
+      scrollBehavior: const _NoOverscrollBehavior(),
       home: const AuthGate(),
     );
   }

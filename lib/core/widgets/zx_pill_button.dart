@@ -62,6 +62,7 @@ class ZxPillButton extends StatelessWidget {
           mainAxisAlignment: centered
               ? MainAxisAlignment.center
               : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: isLoading
               ? [
                   SizedBox(
@@ -94,6 +95,7 @@ class ZxPillButton extends StatelessWidget {
         fontSize: metrics.fontSize,
         fontWeight: FontWeight.w500,
         color: fg,
+        height: 1.0,
       ),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,

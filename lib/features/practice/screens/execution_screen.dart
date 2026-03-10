@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_helpers.dart';
@@ -437,7 +438,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 // Shot count + undo row.
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    SpacingTokens.md + 20, 0, SpacingTokens.md, 0,
+                    SpacingTokens.md, 0, SpacingTokens.md, SpacingTokens.xs,
                   ),
                   child: SizedBox(
                     height: 24,
@@ -471,44 +472,29 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                                 ],
                               ),
                             ),
-                            if (totalCount > 0)
-                              Text(
-                                ' hits',
+                            Text(
+                                ' Hits',
                                 style: TextStyle(
                                   fontSize: TypographyTokens.microSize,
                                   color: ColorTokens.textTertiary,
                                 ),
                               ),
                             const Spacer(),
-                            GestureDetector(
+                            ZxPillButton(
+                                label: 'Undo',
+                                icon: Icons.undo,
+                                size: ZxPillSize.sm,
+                                variant: ZxPillVariant.secondary,
                                 onTap: _controller.canUndo ? _undoLast : null,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.undo, size: 14,
-                                        color: _controller.canUndo
-                                            ? ColorTokens.textTertiary
-                                            : ColorTokens.surfaceRaised),
-                                    const SizedBox(width: SpacingTokens.xs),
-                                    Text(
-                                      'Undo',
-                                      style: TextStyle(
-                                        fontSize: TypographyTokens.microSize,
-                                        color: _controller.canUndo
-                                            ? ColorTokens.textTertiary
-                                            : ColorTokens.surfaceRaised,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
                           ],
                         ),
                         // Set counter — always centered horizontally, aligned with row text.
                         Positioned(
                           left: 0,
-                          right: 0,
+                          right: SpacingTokens.sm,
                           top: 0,
+                          bottom: 0,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
