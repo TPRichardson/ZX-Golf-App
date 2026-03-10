@@ -296,6 +296,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       context,
       clubs: _availableClubs,
       selectedClub: _selectedClub,
+      skillArea: widget.drill.skillArea,
+      userId: widget.userId,
     );
     if (club != null && mounted) {
       setState(() => _selectedClub = club);
@@ -347,6 +349,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               onEnvironmentTap: _changeEnvironment,
               onSurfaceTap: _changeSurfaceType,
             ),
+            const SizedBox(height: SpacingTokens.sm),
             // Shot log + Club square section.
             _buildShotLogSection(),
             // Gap 42 — Inline lock indicator.

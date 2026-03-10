@@ -2,7 +2,12 @@
 // Common tab shows 16 most-used clubs; Specialist tab shows the rest.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/providers/bag_providers.dart';
+import 'package:zx_golf_app/providers/repository_providers.dart';
 
 /// The 16 most common club names (by dbValue).
 const _commonClubs = {
@@ -26,6 +31,15 @@ const _commonClubs = {
   'Putter',
 };
 
+String _clubLabel(ClubType type) {
+  return switch (type) {
+    ClubType.driver => 'Dr',
+    ClubType.putter => 'Pt',
+    ClubType.chipper => 'Ch',
+    _ => type.dbValue,
+  };
+}
+
 /// Shows a tabbed dialog with clubs in a grid layout.
 /// Common tab (default) shows the 16 most-used clubs; Specialist tab shows
 /// everything else. Returns the selected club name.
@@ -33,13 +47,19 @@ Future<String?> showClubGridPicker(
   BuildContext context, {
   required List<String> clubs,
   required String selectedClub,
+  SkillArea? skillArea,
+  String? userId,
 }) {
   final common = clubs.where((c) => _commonClubs.contains(c)).toList();
   final specialist = clubs.where((c) => !_commonClubs.contains(c)).toList();
 
   // If all clubs fit in one tab, skip tabs entirely.
   if (specialist.isEmpty) {
-    return _showSingleGrid(context, clubs: clubs, selectedClub: selectedClub);
+    return _showSingleGrid(context,
+        clubs: clubs,
+        selectedClub: selectedClub,
+        skillArea: skillArea,
+        userId: userId);
   }
 
   // Default tab: whichever contains the currently selected club.
@@ -52,6 +72,8 @@ Future<String?> showClubGridPicker(
       specialist: specialist,
       selectedClub: selectedClub,
       initialTab: initialTab,
+      skillArea: skillArea,
+      userId: userId,
     ),
   );
 }
@@ -61,6 +83,8 @@ Future<String?> _showSingleGrid(
   BuildContext context, {
   required List<String> clubs,
   required String selectedClub,
+  SkillArea? skillArea,
+  String? userId,
 }) {
   return showDialog<String>(
     context: context,
@@ -69,9 +93,22 @@ Future<String?> _showSingleGrid(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
       ),
-      title: const Text(
-        'Select Club',
-        style: TextStyle(color: ColorTokens.textPrimary),
+      title: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'Select Club',
+              style: TextStyle(color: ColorTokens.textPrimary),
+            ),
+          ),
+          if (skillArea != null && userId != null)
+            IconButton(
+              icon: const Icon(Icons.tune, color: ColorTokens.textSecondary),
+              tooltip: 'Map clubs to ${skillArea.dbValue}',
+              onPressed: () => _showSkillAreaClubMapper(
+                  ctx, skillArea: skillArea, userId: userId),
+            ),
+        ],
       ),
       contentPadding: const EdgeInsets.all(SpacingTokens.md),
       content: SizedBox(
@@ -91,12 +128,16 @@ class _TabbedClubPicker extends StatelessWidget {
   final List<String> specialist;
   final String selectedClub;
   final int initialTab;
+  final SkillArea? skillArea;
+  final String? userId;
 
   const _TabbedClubPicker({
     required this.common,
     required this.specialist,
     required this.selectedClub,
     required this.initialTab,
+    this.skillArea,
+    this.userId,
   });
 
   @override
@@ -112,9 +153,23 @@ class _TabbedClubPicker extends StatelessWidget {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Select Club',
-              style: TextStyle(color: ColorTokens.textPrimary),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Select Club',
+                    style: TextStyle(color: ColorTokens.textPrimary),
+                  ),
+                ),
+                if (skillArea != null && userId != null)
+                  IconButton(
+                    icon: const Icon(Icons.tune,
+                        color: ColorTokens.textSecondary),
+                    tooltip: 'Map clubs to ${skillArea!.dbValue}',
+                    onPressed: () => _showSkillAreaClubMapper(
+                        context, skillArea: skillArea!, userId: userId!),
+                  ),
+              ],
             ),
             const SizedBox(height: SpacingTokens.sm),
             TabBar(
@@ -141,7 +196,7 @@ class _TabbedClubPicker extends StatelessWidget {
         contentPadding: const EdgeInsets.all(SpacingTokens.md),
         content: SizedBox(
           width: double.maxFinite,
-          height: 300,
+          height: 400,
           child: TabBarView(
             children: [
               _ClubGrid(
@@ -193,7 +248,7 @@ class _ClubGrid extends StatelessWidget {
         crossAxisCount: 3,
         mainAxisSpacing: SpacingTokens.sm,
         crossAxisSpacing: SpacingTokens.sm,
-        childAspectRatio: 2.0,
+        childAspectRatio: 1.0,
       ),
       itemCount: clubs.length,
       itemBuilder: (context, index) {
@@ -218,7 +273,7 @@ class _ClubGrid extends StatelessWidget {
               child: Text(
                 club,
                 style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
+                  fontSize: TypographyTokens.headerSize,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected
                       ? ColorTokens.primaryDefault
@@ -232,6 +287,109 @@ class _ClubGrid extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Opens a dialog to map/unmap clubs to a specific skill area.
+void _showSkillAreaClubMapper(
+  BuildContext context, {
+  required SkillArea skillArea,
+  required String userId,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => _SkillAreaClubMapperDialog(
+      skillArea: skillArea,
+      userId: userId,
+    ),
+  );
+}
+
+/// Maps all club types to a single skill area (reverse of the bag screen dialog
+/// which maps all skill areas to a single club).
+class _SkillAreaClubMapperDialog extends ConsumerWidget {
+  final SkillArea skillArea;
+  final String userId;
+
+  const _SkillAreaClubMapperDialog({
+    required this.skillArea,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allMappings =
+        ref.watch(skillAreaMappingsProvider(userId)).valueOrNull ?? [];
+    final mappedClubs = allMappings
+        .where((m) => m.skillArea == skillArea)
+        .map((m) => m.clubType)
+        .toSet();
+
+    // Only show club types the user has in their bag.
+    final userBag = ref.watch(userBagProvider(userId)).valueOrNull ?? [];
+    final bagClubTypes = userBag.map((c) => c.clubType).toList();
+
+    final color = ColorTokens.skillArea(skillArea);
+
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: Text(
+        'Clubs for ${skillArea.dbValue}:',
+        style: const TextStyle(color: ColorTokens.textPrimary),
+      ),
+      content: SizedBox(
+        width: 300,
+        child: GridView.count(
+          crossAxisCount: 3,
+          mainAxisSpacing: SpacingTokens.sm,
+          crossAxisSpacing: SpacingTokens.sm,
+          childAspectRatio: 1.0,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            for (final clubType in bagClubTypes)
+              ZxPillButton(
+                label: _clubLabel(clubType),
+                size: ZxPillSize.md,
+                expanded: true,
+                centered: true,
+                color: mappedClubs.contains(clubType) ? color : null,
+                variant: mappedClubs.contains(clubType)
+                    ? ZxPillVariant.primary
+                    : ZxPillVariant.tertiary,
+                onTap: () async {
+                  try {
+                    await ref
+                        .read(clubRepositoryProvider)
+                        .updateSkillAreaMapping(
+                          userId,
+                          clubType,
+                          skillArea,
+                          !mappedClubs.contains(clubType),
+                        );
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$e')),
+                      );
+                    }
+                  }
+                },
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        ZxPillButton(
+          label: 'Done',
+          variant: ZxPillVariant.primary,
+          onTap: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
 }

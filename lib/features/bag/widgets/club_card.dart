@@ -29,13 +29,16 @@ class ClubCard extends ConsumerWidget {
     final makeModel = [club.make, club.model]
         .where((s) => s != null && s.isNotEmpty)
         .join(' ');
+    final skillAreas =
+        ref.watch(skillAreasForClubProvider((club.userId, club.clubType)));
 
     return ZxCard(
-      onTap: onTap,
       child: Row(
         children: [
           // Left column: color square + make/model.
-          Column(
+          SizedBox(
+            width: 56,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -43,7 +46,7 @@ class ClubCard extends ConsumerWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _categoryColor(club.clubType).withAlpha(30),
+                  color: ColorTokens.surfaceRaised,
                   borderRadius:
                       BorderRadius.circular(ShapeTokens.radiusCard),
                 ),
@@ -51,7 +54,7 @@ class ClubCard extends ConsumerWidget {
                 child: Text(
                   _clubTypeShort(club.clubType),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: _categoryColor(club.clubType),
+                        color: ColorTokens.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -61,12 +64,12 @@ class ClubCard extends ConsumerWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => _showMakeModelDialog(context, ref),
                 child: Text(
-                  makeModel.isEmpty ? 'Make / Model' : makeModel,
+                  (club.model != null && club.model!.isNotEmpty) ? club.model! : 'Model',
                   style: TextStyle(
                     fontSize: TypographyTokens.microSize,
-                    color: makeModel.isEmpty
-                        ? ColorTokens.textTertiary
-                        : ColorTokens.textSecondary,
+                    color: (club.model != null && club.model!.isNotEmpty)
+                        ? ColorTokens.textSecondary
+                        : ColorTokens.textTertiary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -74,22 +77,81 @@ class ClubCard extends ConsumerWidget {
               ),
             ],
           ),
-          const Spacer(),
+          ),
+          const SizedBox(width: SpacingTokens.sm),
+          Flexible(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _showSkillAreaMappingDialog(context, ref),
+              child: skillAreas.isEmpty
+                  ? ZxPillButton(
+                      label: 'Map',
+                      size: ZxPillSize.sm,
+                      variant: ZxPillVariant.tertiary,
+                      onTap: () => _showSkillAreaMappingDialog(context, ref),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 83, // 2 × 40px pills + 3px gap
+                          child: Wrap(
+                            spacing: 3,
+                            runSpacing: 3,
+                            children: [
+                              for (final area in skillAreas.take(4))
+                                SizedBox(
+                                  width: 40,
+                                  child: ZxPillButton(
+                                    label: _skillAreaShort(area),
+                                    size: ZxPillSize.sm,
+                                    expanded: true,
+                                    centered: true,
+                                    color: ColorTokens.skillArea(area),
+                                    onTap: () =>
+                                        _showSkillAreaMappingDialog(context, ref),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (skillAreas.length > 4)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 3),
+                            child: Text(
+                              '+${skillAreas.length - 4}',
+                              style: TextStyle(
+                                fontSize: TypographyTokens.microSize,
+                                color: ColorTokens.textTertiary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.xs),
           // Loft field.
           _DataField(
-            label: 'Loft',
             value: club.loft != null
                 ? '${club.loft!.toStringAsFixed(0)}°'
                 : null,
+            placeholder: 'Loft',
             onTap: () => _showLoftDialog(context, ref),
           ),
-          const SizedBox(width: SpacingTokens.sm),
-          // Carry field.
-          _DataField(
-            label: 'Carry',
-            value: carry != null ? '${carry.toStringAsFixed(0)}y' : null,
-            onTap: () => _showCarryDialog(context, ref),
-          ),
+          if (_carryRange(club.clubType) != null) ...[
+            const SizedBox(width: SpacingTokens.sm),
+            // Carry field.
+            _DataField(
+              value: carry != null ? '${carry.toStringAsFixed(0)}y' : null,
+              placeholder: 'Carry',
+              onTap: () => _showCarryDialog(context, ref),
+            ),
+          ],
           if (club.status == UserClubStatus.retired) ...[
             const SizedBox(width: SpacingTokens.sm),
             Container(
@@ -111,9 +173,13 @@ class ClubCard extends ConsumerWidget {
             ),
           ],
           const SizedBox(width: SpacingTokens.xs),
-          Icon(
-            Icons.chevron_right,
-            color: ColorTokens.textTertiary,
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTap,
+            child: Icon(
+              Icons.chevron_right,
+              color: ColorTokens.textTertiary,
+            ),
           ),
         ],
       ),
@@ -166,15 +232,47 @@ class ClubCard extends ConsumerWidget {
     }
   }
 
-  /// Returns carry range per club category, or null for putter.
+  /// Returns carry range scaled by specific club number, or null for putter.
   static ({int min, int max, int middle})? _carryRange(ClubType type) {
-    if (type == ClubType.putter) return null;
-    if (type == ClubType.driver) return (min: 150, max: 400, middle: 250);
-    if (type.dbValue.startsWith('W')) return (min: 130, max: 350, middle: 220);
-    if (type.dbValue.startsWith('H')) return (min: 80, max: 300, middle: 180);
-    if (type.dbValue.startsWith('i')) return (min: 50, max: 280, middle: 150);
-    // Wedges: PW, AW, GW, SW, UW, LW, chipper.
-    return (min: 40, max: 160, middle: 100);
+    if (type == ClubType.putter || type == ClubType.chipper) return null;
+    if (type == ClubType.driver) return (min: 180, max: 350, middle: 260);
+    // Parse club number (1-9) from dbValue for per-club scaling.
+    final db = type.dbValue;
+    if (db.startsWith('W')) {
+      final n = int.tryParse(db.substring(1)) ?? 5;
+      // W1=170-350, W3=150-310, W5=140-280, W7=120-250, W9=110-230
+      return (
+        min: 180 - n * 10,
+        max: 360 - n * 15,
+        middle: (180 - n * 10 + 360 - n * 15) ~/ 2,
+      );
+    }
+    if (db.startsWith('H')) {
+      final n = int.tryParse(db.substring(1)) ?? 4;
+      // H2=150-300, H4=120-260, H6=100-220, H9=70-175
+      return (
+        min: 160 - n * 10,
+        max: 320 - n * 15,
+        middle: (160 - n * 10 + 320 - n * 15) ~/ 2,
+      );
+    }
+    if (db.startsWith('i')) {
+      final n = int.tryParse(db.substring(1)) ?? 7;
+      // i1=150-280, i3=130-250, i5=110-220, i7=90-190, i9=70-175
+      final min = 160 - n * 10;
+      final max = (295 - n * 13.3).round();
+      return (min: min, max: max, middle: (min + max) ~/ 2);
+    }
+    // Wedges: PW highest, LW bottoms out at 40.
+    return switch (type) {
+      ClubType.pw => (min: 70, max: 170, middle: 120),
+      ClubType.aw => (min: 60, max: 155, middle: 105),
+      ClubType.gw => (min: 55, max: 145, middle: 100),
+      ClubType.sw => (min: 50, max: 130, middle: 85),
+      ClubType.uw => (min: 45, max: 120, middle: 75),
+      ClubType.lw => (min: 40, max: 110, middle: 65),
+      _ => (min: 40, max: 160, middle: 100),
+    };
   }
 
   static ({int min, int max, int middle}) _loftRange(ClubType type) {
@@ -195,23 +293,21 @@ class ClubCard extends ConsumerWidget {
     final profile = ref.read(activeProfileProvider(club.clubId)).valueOrNull;
     final currentCarry = profile?.carryDistance?.round() ?? range.middle;
 
-    final result = await showDialog<({int carry, double? total})>(
+    final selected = await showDialog<int>(
       context: context,
       builder: (ctx) => _CarryPickerDialog(
         min: range.min,
         max: range.max,
         initial: currentCarry.clamp(range.min, range.max),
-        initialTotal: profile?.totalDistance,
       ),
     );
 
-    if (result != null) {
+    if (selected != null) {
       await ref.read(clubRepositoryProvider).addPerformanceProfile(
             club.clubId,
             ClubPerformanceProfilesCompanion(
               effectiveFromDate: drift.Value(DateTime.now()),
-              carryDistance: drift.Value(result.carry.toDouble()),
-              totalDistance: drift.Value(result.total),
+              carryDistance: drift.Value(selected.toDouble()),
               dispersionLeft: drift.Value(profile?.dispersionLeft),
               dispersionRight: drift.Value(profile?.dispersionRight),
               dispersionShort: drift.Value(profile?.dispersionShort),
@@ -222,17 +318,55 @@ class ClubCard extends ConsumerWidget {
     }
   }
 
+  Future<void> _showSkillAreaMappingDialog(
+      BuildContext context, WidgetRef ref) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => _ClubSkillAreaDialog(
+        clubType: club.clubType,
+        userId: club.userId,
+      ),
+    );
+  }
+
   static String _clubTypeShort(ClubType type) {
+    final db = type.dbValue;
+    // Woods: "W3" → "3w", Hybrids: "H4" → "4h".
+    if (db.startsWith('W') || db.startsWith('H')) {
+      return '${db.substring(1)}${db[0].toLowerCase()}';
+    }
+    // Irons: "i4" → "4i".
+    if (db.startsWith('i')) {
+      return '${db.substring(1)}i';
+    }
     return switch (type) {
-      ClubType.driver => 'D',
-      ClubType.putter => 'P',
+      ClubType.driver => 'Dr',
+      ClubType.putter => 'Pt',
       ClubType.chipper => 'Ch',
-      _ => type.dbValue,
+      ClubType.pw => 'Pw',
+      ClubType.aw => 'Aw',
+      ClubType.gw => 'Gw',
+      ClubType.sw => 'Sw',
+      ClubType.uw => 'Uw',
+      ClubType.lw => 'Lw',
+      _ => db,
     };
   }
 
   static Color _categoryColor(ClubType type) {
     return ColorTokens.clubCategory(type);
+  }
+
+  static String _skillAreaShort(SkillArea area) {
+    return switch (area) {
+      SkillArea.driving => 'Dr',
+      SkillArea.woods => 'Wo',
+      SkillArea.irons => 'Ir',
+      SkillArea.pitching => 'Pi',
+      SkillArea.chipping => 'Ch',
+      SkillArea.bunkers => 'Bu',
+      SkillArea.putting => 'Pu',
+    };
   }
 }
 
@@ -419,6 +553,109 @@ class _MakeModelDialogState extends State<_MakeModelDialog> {
   }
 }
 
+/// Per-club skill area mapping dialog. Toggle which areas this club maps to.
+class _ClubSkillAreaDialog extends ConsumerWidget {
+  final ClubType clubType;
+  final String userId;
+
+  const _ClubSkillAreaDialog({
+    required this.clubType,
+    required this.userId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allMappings =
+        ref.watch(skillAreaMappingsProvider(userId)).valueOrNull ?? [];
+    final clubMappings =
+        allMappings.where((m) => m.clubType == clubType).toList();
+    final mappedAreas = clubMappings.map((m) => m.skillArea).toSet();
+
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: Text(
+        '${clubType.dbValue} available for drills in:',
+        style: const TextStyle(color: ColorTokens.textPrimary),
+      ),
+      content: SizedBox(
+        width: 300,
+        child: GridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: SpacingTokens.xs,
+          crossAxisSpacing: SpacingTokens.xs,
+          childAspectRatio: 2.8,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            for (final area in const [
+              SkillArea.driving,
+              SkillArea.woods,
+              SkillArea.irons,
+              SkillArea.pitching,
+              SkillArea.chipping,
+              SkillArea.bunkers,
+              SkillArea.putting,
+            ])
+              _buildAreaTile(context, ref, area, mappedAreas),
+          ],
+        ),
+      ),
+      actions: [
+        ZxPillButton(
+          label: 'Cancel',
+          variant: ZxPillVariant.tertiary,
+          onTap: () => Navigator.pop(context),
+        ),
+        ZxPillButton(
+          label: 'Done',
+          variant: ZxPillVariant.primary,
+          onTap: () => Navigator.pop(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAreaTile(
+    BuildContext context,
+    WidgetRef ref,
+    SkillArea area,
+    Set<SkillArea> mappedAreas,
+  ) {
+    final isMapped = mappedAreas.contains(area);
+    final color = ColorTokens.skillArea(area);
+
+    return ZxPillButton(
+      label: area.dbValue,
+      size: ZxPillSize.md,
+      expanded: true,
+      centered: true,
+      color: isMapped ? color : null,
+      variant: isMapped ? ZxPillVariant.primary : ZxPillVariant.tertiary,
+      onTap: () async {
+              try {
+                await ref
+                    .read(clubRepositoryProvider)
+                    .updateSkillAreaMapping(
+                      userId,
+                      clubType,
+                      area,
+                      !isMapped,
+                    );
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('$e')),
+                  );
+                }
+              }
+            },
+    );
+  }
+}
+
 /// Scroll-wheel loft picker dialog with category-constrained range.
 class _LoftPickerDialog extends StatefulWidget {
   final int min;
@@ -589,13 +826,11 @@ class _CarryPickerDialog extends StatefulWidget {
   final int min;
   final int max;
   final int initial;
-  final double? initialTotal;
 
   const _CarryPickerDialog({
     required this.min,
     required this.max,
     required this.initial,
-    this.initialTotal,
   });
 
   @override
@@ -605,7 +840,6 @@ class _CarryPickerDialog extends StatefulWidget {
 class _CarryPickerDialogState extends State<_CarryPickerDialog> {
   late final FixedExtentScrollController _scrollCtrl;
   late int _selected;
-  late final TextEditingController _totalCtrl;
 
   @override
   void initState() {
@@ -614,15 +848,11 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
     _scrollCtrl = FixedExtentScrollController(
       initialItem: widget.initial - widget.min,
     );
-    _totalCtrl = TextEditingController(
-      text: widget.initialTotal?.toStringAsFixed(0) ?? '',
-    );
   }
 
   @override
   void dispose() {
     _scrollCtrl.dispose();
-    _totalCtrl.dispose();
     super.dispose();
   }
 
@@ -634,135 +864,100 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
         borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
       ),
       title: const Text(
-        'Distance',
+        'Carry',
         style: TextStyle(color: ColorTokens.textPrimary),
       ),
       content: SizedBox(
-        height: 260,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        height: 180,
+        child: Row(
           children: [
-            Text(
-              'Carry',
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                color: ColorTokens.textSecondary,
-              ),
-            ),
-            const SizedBox(height: SpacingTokens.xs),
-            SizedBox(
-              height: 140,
-              child: Row(
-                children: [
-                  ZxPillButton(
-                    label: 'Enter\nvalue',
-                    variant: ZxPillVariant.secondary,
-                    onTap: () async {
-                      final ctrl = TextEditingController();
-                      final value = await showDialog<int>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          backgroundColor: ColorTokens.surfaceModal,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                ShapeTokens.radiusModal),
-                          ),
-                          title: const Text(
-                            'Enter Carry',
-                            style:
-                                TextStyle(color: ColorTokens.textPrimary),
-                          ),
-                          content: TextField(
-                            controller: ctrl,
-                            keyboardType: TextInputType.number,
-                            autofocus: true,
-                            style: const TextStyle(
-                                color: ColorTokens.textPrimary),
-                            decoration: const InputDecoration(
-                              labelText: 'Yards',
-                              hintText: 'e.g. 150',
-                              labelStyle: TextStyle(
-                                  color: ColorTokens.textTertiary),
-                              hintStyle: TextStyle(
-                                  color: ColorTokens.textTertiary),
-                            ),
-                          ),
-                          actions: [
-                            ZxPillButton(
-                              label: 'Cancel',
-                              variant: ZxPillVariant.tertiary,
-                              onTap: () => Navigator.pop(ctx),
-                            ),
-                            ZxPillButton(
-                              label: 'Save',
-                              variant: ZxPillVariant.primary,
-                              onTap: () {
-                                final v = int.tryParse(ctrl.text);
-                                if (v != null) Navigator.pop(ctx, v);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                      if (value != null && context.mounted) {
-                        Navigator.pop(
-                          context,
-                          (
-                            carry: value,
-                            total: double.tryParse(_totalCtrl.text),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(width: SpacingTokens.md),
-                  Expanded(
-                    child: ListWheelScrollView.useDelegate(
-                      controller: _scrollCtrl,
-                      itemExtent: 40,
-                      physics: const FixedExtentScrollPhysics(),
-                      diameterRatio: 1.5,
-                      onSelectedItemChanged: (index) {
-                        setState(() => _selected = widget.min + index);
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: widget.max - widget.min + 1,
-                        builder: (context, index) {
-                          final value = widget.min + index;
-                          final isSelected = value == _selected;
-                          return Center(
-                            child: Text(
-                              '${value}y',
-                              style: TextStyle(
-                                fontSize: isSelected
-                                    ? TypographyTokens.displayLgSize
-                                    : TypographyTokens.bodyLgSize,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                color: isSelected
-                                    ? ColorTokens.primaryDefault
-                                    : ColorTokens.textTertiary,
-                              ),
-                            ),
-                          );
-                        },
+            ZxPillButton(
+              label: 'Enter\nvalue',
+              variant: ZxPillVariant.secondary,
+              onTap: () async {
+                final ctrl = TextEditingController();
+                final value = await showDialog<int>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: ColorTokens.surfaceModal,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(ShapeTokens.radiusModal),
+                    ),
+                    title: const Text(
+                      'Enter Carry',
+                      style: TextStyle(color: ColorTokens.textPrimary),
+                    ),
+                    content: TextField(
+                      controller: ctrl,
+                      keyboardType: TextInputType.number,
+                      autofocus: true,
+                      style: const TextStyle(
+                          color: ColorTokens.textPrimary),
+                      decoration: const InputDecoration(
+                        labelText: 'Yards',
+                        hintText: 'e.g. 150',
+                        labelStyle:
+                            TextStyle(color: ColorTokens.textTertiary),
+                        hintStyle:
+                            TextStyle(color: ColorTokens.textTertiary),
                       ),
                     ),
+                    actions: [
+                      ZxPillButton(
+                        label: 'Cancel',
+                        variant: ZxPillVariant.tertiary,
+                        onTap: () => Navigator.pop(ctx),
+                      ),
+                      ZxPillButton(
+                        label: 'Save',
+                        variant: ZxPillVariant.primary,
+                        onTap: () {
+                          final v = int.tryParse(ctrl.text);
+                          if (v != null) Navigator.pop(ctx, v);
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+                if (value != null && context.mounted) {
+                  Navigator.pop(context, value);
+                }
+              },
             ),
-            const SizedBox(height: SpacingTokens.sm),
-            TextField(
-              controller: _totalCtrl,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: ColorTokens.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Total (yards)',
-                hintText: '(Optional)',
-                labelStyle: TextStyle(color: ColorTokens.textTertiary),
-                hintStyle: TextStyle(color: ColorTokens.textTertiary),
+            const SizedBox(width: SpacingTokens.md),
+            Expanded(
+              child: ListWheelScrollView.useDelegate(
+                controller: _scrollCtrl,
+                itemExtent: 40,
+                physics: const FixedExtentScrollPhysics(),
+                diameterRatio: 1.5,
+                onSelectedItemChanged: (index) {
+                  setState(() => _selected = widget.min + index);
+                },
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: widget.max - widget.min + 1,
+                  builder: (context, index) {
+                    final value = widget.min + index;
+                    final isSelected = value == _selected;
+                    return Center(
+                      child: Text(
+                        '${value}y',
+                        style: TextStyle(
+                          fontSize: isSelected
+                              ? TypographyTokens.displayLgSize
+                              : TypographyTokens.bodyLgSize,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: isSelected
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.textTertiary,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -777,13 +972,7 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
         ZxPillButton(
           label: 'Save',
           variant: ZxPillVariant.primary,
-          onTap: () => Navigator.pop(
-            context,
-            (
-              carry: _selected,
-              total: double.tryParse(_totalCtrl.text),
-            ),
-          ),
+          onTap: () => Navigator.pop(context, _selected),
         ),
       ],
     );
@@ -792,13 +981,13 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
 
 /// Tappable data field cell showing label + value.
 class _DataField extends StatelessWidget {
-  final String label;
   final String? value;
+  final String placeholder;
   final VoidCallback onTap;
 
   const _DataField({
-    required this.label,
     required this.value,
+    this.placeholder = '--',
     required this.onTap,
   });
 
@@ -811,35 +1000,24 @@ class _DataField extends StatelessWidget {
         width: 56,
         padding: const EdgeInsets.symmetric(
           horizontal: SpacingTokens.xs,
-          vertical: SpacingTokens.xs,
+          vertical: SpacingTokens.sm,
         ),
         decoration: BoxDecoration(
           color: ColorTokens.surfaceRaised,
           borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
           border: Border.all(color: ColorTokens.surfaceBorder),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: TypographyTokens.microSize,
-                color: ColorTokens.textTertiary,
-              ),
+        child: Center(
+          child: Text(
+            value ?? placeholder,
+            style: TextStyle(
+              fontSize: TypographyTokens.bodySize,
+              fontWeight: FontWeight.w500,
+              color: value != null
+                  ? ColorTokens.textSecondary
+                  : ColorTokens.textTertiary,
             ),
-            const SizedBox(height: 2),
-            Text(
-              value ?? '--',
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                fontWeight: FontWeight.w500,
-                color: value != null
-                    ? ColorTokens.textSecondary
-                    : ColorTokens.textTertiary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

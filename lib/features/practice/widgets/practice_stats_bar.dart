@@ -28,7 +28,7 @@ class PracticeStatsBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, 0,
+        SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
       ),
       child: Row(
         children: [
@@ -37,8 +37,10 @@ class PracticeStatsBar extends StatelessWidget {
               child: ZxPillButton(
                 label: envStyle.label,
                 icon: envStyle.icon,
+                size: ZxPillSize.sm,
                 color: envStyle.color,
                 expanded: true,
+                centered: true,
                 onTap: onEnvironmentTap,
               ),
             ),
@@ -48,10 +50,12 @@ class PracticeStatsBar extends StatelessWidget {
               child: ZxPillButton(
                 label: surfStyle.label,
                 icon: surfStyle.icon,
+                size: ZxPillSize.sm,
                 color: surfStyle.color,
                 backgroundColor: surfStyle.fillColor,
                 borderColor: surfStyle.borderColor,
                 expanded: true,
+                centered: true,
                 onTap: onSurfaceTap,
               ),
             ),
@@ -60,8 +64,10 @@ class PracticeStatsBar extends StatelessWidget {
             child: ZxPillButton(
               label: 'Location',
               icon: Icons.location_on_outlined,
+              size: ZxPillSize.sm,
               variant: ZxPillVariant.tertiary,
               expanded: true,
+              centered: true,
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Location picker coming soon')),

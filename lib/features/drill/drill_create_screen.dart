@@ -422,8 +422,8 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
             child: ZxPillButton(
               label: 'Back',
               variant: ZxPillVariant.tertiary,
-
               expanded: true,
+              centered: true,
               onTap: () => setState(() {
                 _step--;
                 _errorMessage = null;
@@ -438,6 +438,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
 
             isLoading: _isCreating,
             expanded: true,
+            centered: true,
             onTap: isLastStep ? _createDrill : _nextStep,
           ),
         ),
@@ -450,6 +451,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
               variant: ZxPillVariant.secondary,
               isLoading: _isCreating,
               expanded: true,
+              centered: true,
               onTap: _saveAndPractice,
             ),
           ),

@@ -38,3 +38,14 @@ final skillAreaMappingsProvider =
         (ref, userId) {
   return ref.watch(clubRepositoryProvider).watchMappingsByUser(userId);
 });
+
+/// Skill areas mapped to a specific club type for a user.
+final skillAreasForClubProvider = Provider.family<List<SkillArea>,
+    (String userId, ClubType clubType)>((ref, params) {
+  final (userId, clubType) = params;
+  final mappings = ref.watch(skillAreaMappingsProvider(userId)).valueOrNull ?? [];
+  return mappings
+      .where((m) => m.clubType == clubType)
+      .map((m) => m.skillArea)
+      .toList();
+});

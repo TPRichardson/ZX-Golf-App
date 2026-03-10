@@ -293,21 +293,7 @@ class ClubRepository {
     bool mapped,
   ) async {
     await _gate.awaitGateRelease();
-    // Check mandatory mapping enforcement.
-    if (!mapped) {
-      final mandatory = _mandatoryMappings[clubType];
-      if (mandatory != null && mandatory.contains(skillArea)) {
-        throw ValidationException(
-          code: ValidationException.invalidStructure,
-          message:
-              'Cannot remove mandatory mapping: ${clubType.dbValue} → ${skillArea.dbValue}',
-          context: {
-            'clubType': clubType.dbValue,
-            'skillArea': skillArea.dbValue,
-          },
-        );
-      }
-    }
+    // Mandatory enforcement removed — users can freely toggle all mappings.
 
     final existing = await (_db.select(_db.userSkillAreaClubMappings)
           ..where((t) => t.userId.equals(userId))

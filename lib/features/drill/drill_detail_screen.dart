@@ -210,6 +210,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           icon: Icons.play_arrow,
           variant: ZxPillVariant.progress,
           expanded: true,
+          centered: true,
           onTap: () => _startPractice(drill),
         ),
       ),

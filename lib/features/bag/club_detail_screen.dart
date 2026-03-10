@@ -35,6 +35,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
 
   // Performance profile fields.
   final _carryController = TextEditingController();
+  final _totalController = TextEditingController();
   final _dispLeftController = TextEditingController();
   final _dispRightController = TextEditingController();
 
@@ -66,6 +67,8 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
         if (profile != null) {
           _carryController.text =
               profile.carryDistance?.toStringAsFixed(0) ?? '';
+          _totalController.text =
+              profile.totalDistance?.toStringAsFixed(0) ?? '';
           _dispLeftController.text =
               profile.dispersionLeft?.toStringAsFixed(0) ?? '';
           _dispRightController.text =
@@ -81,6 +84,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
     _modelController.dispose();
     _loftController.dispose();
     _carryController.dispose();
+    _totalController.dispose();
     _dispLeftController.dispose();
     _dispRightController.dispose();
     super.dispose();
@@ -180,6 +184,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
             label: 'Save Details',
             variant: ZxPillVariant.primary,
             expanded: true,
+            centered: true,
             onTap: _saveDetails,
           ),
 
@@ -196,6 +201,12 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
           ZxInputField(
             label: 'Carry Distance (yards)',
             controller: _carryController,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: SpacingTokens.md),
+          ZxInputField(
+            label: 'Total Distance (yards)',
+            controller: _totalController,
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: SpacingTokens.md),
@@ -223,6 +234,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
             label: 'Update Profile',
             variant: ZxPillVariant.secondary,
             expanded: true,
+            centered: true,
             onTap: _updateProfile,
           ),
         ],
@@ -266,6 +278,8 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
               effectiveFromDate: drift.Value(DateTime.now()),
               carryDistance:
                   drift.Value(double.tryParse(_carryController.text)),
+              totalDistance:
+                  drift.Value(double.tryParse(_totalController.text)),
               dispersionLeft:
                   drift.Value(double.tryParse(_dispLeftController.text)),
               dispersionRight:

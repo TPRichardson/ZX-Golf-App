@@ -59,7 +59,7 @@ class ZxPillButton extends StatelessWidget {
         ),
         child: Row(
           mainAxisSize: expanded || centered ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: expanded || centered
+          mainAxisAlignment: centered
               ? MainAxisAlignment.center
               : MainAxisAlignment.start,
           children: isLoading
@@ -95,14 +95,16 @@ class ZxPillButton extends StatelessWidget {
         fontWeight: FontWeight.w500,
         color: fg,
       ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
 
-    if (iconWidget == null) return [textWidget];
+    if (iconWidget == null) return [Flexible(child: textWidget)];
 
-    final gap = Flexible(child: SizedBox(width: metrics.gap));
+    final gap = SizedBox(width: metrics.gap);
     return iconRight
-        ? [textWidget, gap, iconWidget]
-        : [iconWidget, gap, textWidget];
+        ? [Flexible(child: textWidget), gap, iconWidget]
+        : [iconWidget, gap, Flexible(child: textWidget)];
   }
 
   _ZxPillMetrics _resolveSize() {
@@ -110,7 +112,7 @@ class ZxPillButton extends StatelessWidget {
       ZxPillSize.sm => const _ZxPillMetrics(
           fontSize: TypographyTokens.microSize,
           iconSize: 14,
-          horizontalPadding: SpacingTokens.sm,
+          horizontalPadding: SpacingTokens.xs,
           verticalPadding: SpacingTokens.xs,
           gap: SpacingTokens.xs,
         ),
