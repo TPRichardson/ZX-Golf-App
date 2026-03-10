@@ -102,10 +102,10 @@ Future<String?> _showSingleGrid(
             ),
           ),
           if (skillArea != null && userId != null)
-            IconButton(
-              icon: const Icon(Icons.tune, color: ColorTokens.textSecondary),
-              tooltip: 'Map clubs to ${skillArea.dbValue}',
-              onPressed: () => _showSkillAreaClubMapper(
+            ZxPillButton(
+              label: 'Edit Clubs',
+              variant: ZxPillVariant.secondary,
+              onTap: () => _showSkillAreaClubMapper(
                   ctx, skillArea: skillArea, userId: userId),
             ),
         ],
@@ -162,11 +162,10 @@ class _TabbedClubPicker extends StatelessWidget {
                   ),
                 ),
                 if (skillArea != null && userId != null)
-                  IconButton(
-                    icon: const Icon(Icons.tune,
-                        color: ColorTokens.textSecondary),
-                    tooltip: 'Map clubs to ${skillArea!.dbValue}',
-                    onPressed: () => _showSkillAreaClubMapper(
+                  ZxPillButton(
+                    label: 'Edit Clubs',
+                    variant: ZxPillVariant.secondary,
+                    onTap: () => _showSkillAreaClubMapper(
                         context, skillArea: skillArea!, userId: userId!),
                   ),
               ],
