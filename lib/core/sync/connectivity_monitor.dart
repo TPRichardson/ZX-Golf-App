@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 // S17 §17.4 — Connectivity monitoring for offline-first sync.
 // Wraps connectivity_plus with injectable stream for testing.
@@ -9,9 +12,29 @@ class ConnectivityMonitor {
   final Future<List<ConnectivityResult>> Function() _checkConnectivity;
 
   /// Production constructor: uses Connectivity().onConnectivityChanged.
+  /// On Windows desktop, connectivity_plus throws PlatformException —
+  /// fall back to assuming always-connected.
   ConnectivityMonitor()
-      : _connectivityStream = Connectivity().onConnectivityChanged,
-        _checkConnectivity = Connectivity().checkConnectivity;
+      : _connectivityStream = _platformStream(),
+        _checkConnectivity = _platformCheck();
+
+  static Stream<List<ConnectivityResult>> _platformStream() {
+    if (!kIsWeb && Platform.isWindows) {
+      // Use a broadcast StreamController so multiple listeners work.
+      final controller =
+          StreamController<List<ConnectivityResult>>.broadcast();
+      controller.add([ConnectivityResult.wifi]);
+      return controller.stream;
+    }
+    return Connectivity().onConnectivityChanged;
+  }
+
+  static Future<List<ConnectivityResult>> Function() _platformCheck() {
+    if (!kIsWeb && Platform.isWindows) {
+      return () async => [ConnectivityResult.wifi];
+    }
+    return Connectivity().checkConnectivity;
+  }
 
   /// Test constructor: inject stream and one-shot check.
   ConnectivityMonitor.withStream(

@@ -140,7 +140,7 @@ final syncBannerInputProvider = Provider<
   final schemaMismatch = ref.watch(schemaMismatchDetectedProvider);
   final connectivity = ref.watch(connectivityStatusProvider);
   final storageLow = ref.watch(isStorageLowProvider);
-  final authState = ref.watch(authStateProvider);
+  // TODO: restore ref.watch(authStateProvider) when OAuth is resolved.
 
   return (
     syncEnabled: syncEnabled,
@@ -151,7 +151,8 @@ final syncBannerInputProvider = Provider<
     isSyncing:
         syncStatus.whenOrNull(data: (s) => s) == SyncStatus.inProgress,
     isStorageLow: storageLow.whenOrNull(data: (s) => s) ?? false,
-    isAuthenticated:
-        authState.whenOrNull(data: (a) => a.session != null) ?? true,
+    // Temporary bypass: treat as authenticated until OAuth is resolved.
+    // TODO: restore auth check when Google OAuth redirect_uri_mismatch is resolved.
+    isAuthenticated: true,
   );
 });

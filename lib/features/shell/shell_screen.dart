@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
@@ -223,8 +226,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               MaterialPageRoute(builder: (_) => const BagScreen()),
             ),
           ),
-          // Sign In prompt when not authenticated.
-          if (!isAuthenticated)
+          // Sign In prompt when not authenticated (hidden on Windows dev bypass).
+          if (!isAuthenticated && !(!kIsWeb && Platform.isWindows))
             TextButton(
               onPressed: () {
                 // TODO: navigate to sign-in flow.

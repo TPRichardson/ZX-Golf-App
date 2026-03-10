@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 
@@ -18,10 +19,12 @@ class AuthService {
 
   /// TD-03 §5 — Sign in with Google OAuth.
   Future<void> signInWithGoogle() async {
+    const redirectUrl = 'io.supabase.zxgolfapp://login-callback/';
+    developer.log('OAuth redirectTo: $redirectUrl', name: 'AuthService');
     try {
       await _client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.zxgolfapp://login-callback/',
+        redirectTo: redirectUrl,
       );
     } on AuthException catch (e) {
       throw AuthenticationException(
