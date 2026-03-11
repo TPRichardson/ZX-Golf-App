@@ -37,7 +37,7 @@ class PracticeStatsBar extends StatelessWidget {
               child: ZxPillButton(
                 label: envStyle.label,
                 icon: envStyle.icon,
-                size: ZxPillSize.sm,
+                size: ZxPillSize.md,
                 color: envStyle.color,
                 expanded: true,
                 centered: true,
@@ -50,7 +50,7 @@ class PracticeStatsBar extends StatelessWidget {
               child: ZxPillButton(
                 label: surfStyle.label,
                 icon: surfStyle.icon,
-                size: ZxPillSize.sm,
+                size: ZxPillSize.md,
                 color: surfStyle.color,
                 backgroundColor: surfStyle.fillColor,
                 borderColor: surfStyle.borderColor,
@@ -64,7 +64,7 @@ class PracticeStatsBar extends StatelessWidget {
             child: ZxPillButton(
               label: 'Location',
               icon: Icons.location_on_outlined,
-              size: ZxPillSize.sm,
+              size: ZxPillSize.md,
               variant: ZxPillVariant.tertiary,
               expanded: true,
               centered: true,

@@ -4,6 +4,7 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
@@ -21,6 +22,9 @@ import 'widgets/drill_card.dart';
 
 /// 5E — Persistent filter state for Practice Pool (survives navigation).
 final practicePoolFilterProvider = StateProvider<SkillArea?>((ref) => null);
+
+/// Drill type filter (Transition/Pressure/Technique).
+final practicePoolTypeFilterProvider = StateProvider<DrillType?>((ref) => null);
 
 /// Toggle between grouped (by skill area) and flat list display.
 final practicePoolGroupedProvider = StateProvider<bool>((ref) => false);
@@ -50,10 +54,18 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
   /// When true, omits Scaffold/AppBar (embedded in a parent tab).
   final bool embedded;
 
+  /// Existing block stats passed from practice queue (pick mode only).
+  final int existingDrillCount;
+  final int existingSets;
+  final int existingShots;
+
   const PracticePoolScreen({
     super.key,
     this.pickMode = false,
     this.embedded = false,
+    this.existingDrillCount = 0,
+    this.existingSets = 0,
+    this.existingShots = 0,
   });
 
   @override
@@ -68,67 +80,94 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = kDevUserId;
 
+  /// Multi-select state for pick mode.
+  final _selectedDrillIds = <String>{};
+
+  /// Compute sets and shots for a list of drill IDs from the pool.
+  ({int sets, int shots}) _statsForDrillIds(
+      List<DrillWithAdoption> pool, Set<String> ids) {
+    int sets = 0;
+    int shots = 0;
+    for (final dwa in pool) {
+      if (!ids.contains(dwa.drill.drillId)) continue;
+      sets += dwa.drill.requiredSetCount;
+      shots += dwa.drill.requiredSetCount *
+          (dwa.drill.requiredAttemptsPerSet ?? 0);
+    }
+    return (sets: sets, shots: shots);
+  }
+
   Widget _buildBody(BuildContext context) {
     final selectedFilter = ref.watch(practicePoolFilterProvider);
+    final typeFilter = ref.watch(practicePoolTypeFilterProvider);
     final isGrouped = ref.watch(practicePoolGroupedProvider);
     final poolAsync = ref.watch(practicePoolProvider(_userId));
 
     return Column(
       children: [
-        // Page subtitle.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+        // Info bar (pick mode only — shows drill/set/shot counts).
+        if (widget.pickMode)
+          poolAsync.when(
+            data: (drills) => _buildInfoBar(drills),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
-          child: Center(
-            child: Text(
-              'Drill Library',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: ColorTokens.textPrimary,
-                  ),
+        if (widget.pickMode)
+          const SizedBox(height: SpacingTokens.sm),
+        // Page subtitle (non-pick mode only — pick mode has it in the AppBar).
+        if (!widget.pickMode)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+            ),
+            child: Center(
+              child: Text(
+                'Drill Library',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: ColorTokens.textPrimary,
+                    ),
+              ),
             ),
           ),
-        ),
-        // Filters + Add Drills row.
+        // Filters row — unified pill with dividers.
         Padding(
           padding: const EdgeInsets.fromLTRB(
             SpacingTokens.md, SpacingTokens.sm, SpacingTokens.md, 0,
           ),
-          child: Row(
-            children: [
-              // 5E — Skill area filter + grouped/flat toggle.
-              _FilterButton(
-                selected: selectedFilter,
-                onChanged: (area) =>
-                    ref.read(practicePoolFilterProvider.notifier).state = area,
-                isGrouped: isGrouped,
-                onGroupToggle: (v) =>
-                    ref.read(practicePoolGroupedProvider.notifier).state = v,
-              ),
-              const Spacer(),
-              ZxPillButton(
-                label: 'Add Drills',
-                icon: Icons.add,
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const AddDrillsScreen(),
-                  ));
-                },
-              ),
-            ],
+          child: _UnifiedFilterBar(
+            selectedSkill: selectedFilter,
+            onSkillChanged: (area) =>
+                ref.read(practicePoolFilterProvider.notifier).state = area,
+            selectedType: typeFilter,
+            onTypeChanged: (type) =>
+                ref.read(practicePoolTypeFilterProvider.notifier).state = type,
+            isGrouped: isGrouped,
+            onGroupToggle: (v) =>
+                ref.read(practicePoolGroupedProvider.notifier).state = v,
+            showAddDrills: !widget.pickMode,
+            onAddDrills: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const AddDrillsScreen(),
+              ));
+            },
           ),
         ),
-        const SizedBox(height: SpacingTokens.sm),
+        SizedBox(height: widget.pickMode ? SpacingTokens.md : SpacingTokens.sm),
         // Drill list.
         Expanded(
           child: poolAsync.when(
             data: (drills) {
-              final filtered = selectedFilter == null
-                  ? drills
-                  : drills
-                      .where(
-                          (d) => d.drill.skillArea == selectedFilter)
-                      .toList();
+              var filtered = drills.toList();
+              if (selectedFilter != null) {
+                filtered = filtered
+                    .where((d) => d.drill.skillArea == selectedFilter)
+                    .toList();
+              }
+              if (typeFilter != null) {
+                filtered = filtered
+                    .where((d) => d.drill.drillType == typeFilter)
+                    .toList();
+              }
               final hiddenCount = drills.length - filtered.length;
 
               // Hidden-by-filter notice.
@@ -153,11 +192,25 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 return Column(
                   children: [
                     if (notice != null) notice,
-                    const Expanded(
-                      child: EmptyState(
-                        icon: Icons.sports_golf,
-                        message: 'No drills match this filter',
-                        subtitle: 'Try a different skill area filter',
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const EmptyState(
+                            icon: Icons.sports_golf,
+                            message: 'No drills match this filter',
+                            subtitle: 'Try a different skill area filter',
+                          ),
+                          const SizedBox(height: SpacingTokens.md),
+                          ZxPillButton(
+                            label: 'Clear Filter',
+                            icon: Icons.filter_list_off,
+                            variant: ZxPillVariant.secondary,
+                            onTap: () => ref
+                                .read(practicePoolFilterProvider.notifier)
+                                .state = null,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -205,7 +258,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   Widget _buildFlatList(BuildContext context, List<DrillWithAdoption> drills) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md,
+        horizontal: SpacingTokens.lg,
       ),
       itemCount: drills.length,
       separatorBuilder: (_, _) =>
@@ -229,7 +282,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         .toList();
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.md),
+      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
       itemCount: orderedAreas.length,
       itemBuilder: (context, index) {
         final area = orderedAreas[index];
@@ -246,21 +299,36 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   Widget _buildDrillCard(BuildContext context, DrillWithAdoption dwa) {
     final hasActivePb =
         ref.watch(activePracticeBlockProvider(_userId)).valueOrNull != null;
+    final drillId = dwa.drill.drillId;
+    final isSelected = _selectedDrillIds.contains(drillId);
     return DrillCard(
       drill: dwa.drill,
       onTap: () {
         if (widget.pickMode) {
-          Navigator.of(context).pop(dwa.drill.drillId);
+          setState(() {
+            if (isSelected) {
+              _selectedDrillIds.remove(drillId);
+            } else {
+              _selectedDrillIds.add(drillId);
+            }
+          });
           return;
         }
         _openDrillDetail(dwa);
       },
-      trailing: widget.pickMode || hasActivePb
-          ? null
-          : _PlayDrillButton(
-              drillId: dwa.drill.drillId,
-              userId: _userId,
-            ),
+      trailing: widget.pickMode
+          ? Icon(
+              isSelected ? Icons.check_circle : Icons.circle_outlined,
+              color: isSelected
+                  ? ColorTokens.primaryDefault
+                  : ColorTokens.textTertiary,
+            )
+          : hasActivePb
+              ? null
+              : _PlayDrillButton(
+                  drillId: drillId,
+                  userId: _userId,
+                ),
     );
   }
 
@@ -331,10 +399,9 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             Padding(
               padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
               child: ZxPillButton(
-                label: 'Practice Drills',
+                label: 'Begin Drill Practice',
                 icon: Icons.play_circle_filled,
                 variant: ZxPillVariant.progress,
-                size: ZxPillSize.lg,
                 expanded: true,
                 centered: true,
                 iconRight: true,
@@ -348,7 +415,6 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                   label: 'Start Planned Practice (${filledDrillIds.length} drills)',
                   icon: Icons.calendar_today,
                   variant: ZxPillVariant.primary,
-                  size: ZxPillSize.lg,
                   expanded: true,
                   centered: true,
                   onTap: () => _startPlannedPractice(filledDrillIds),
@@ -375,12 +441,20 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     return Scaffold(
       appBar: ZxAppBar(
-        title: widget.pickMode ? 'Select Drill' : 'Drill Library',
+        title: 'Drill Library',
         actions: widget.pickMode
             ? null
             : [
                 IconButton(
-                  icon: const Icon(Icons.shopping_bag_outlined),
+                  icon: SvgPicture.asset(
+                    'assets/icons/golf-bag.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: const ColorFilter.mode(
+                      ColorTokens.textPrimary,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                   tooltip: 'Golf Bag',
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
@@ -391,7 +465,116 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ],
       ),
       body: _buildBody(context),
-      bottomNavigationBar: widget.pickMode ? null : _buildBottomBar(),
+      bottomNavigationBar: widget.pickMode
+          ? _buildPickModeBottomBar()
+          : _buildBottomBar(),
+    );
+  }
+
+  Widget _buildInfoBar(List<DrillWithAdoption> drills) {
+    final adding = _statsForDrillIds(drills, _selectedDrillIds);
+    final existDrills = widget.existingDrillCount;
+    final existSets = widget.existingSets;
+    final existShots = widget.existingShots;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md,
+        vertical: SpacingTokens.sm,
+      ),
+      color: ColorTokens.surfaceRaised,
+      child: Column(
+        children: [
+          Text(
+            'Practice Information',
+            style: TextStyle(
+              fontSize: TypographyTokens.displayLgSize,
+              color: ColorTokens.textTertiary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Row(
+            children: [
+              _statCell(
+                context,
+                '${existDrills + _selectedDrillIds.length}',
+                '(+${_selectedDrillIds.length})',
+                'Drills',
+              ),
+              _statCell(
+                context,
+                '${existSets + adding.sets}',
+                '(+${adding.sets})',
+                'Sets',
+              ),
+              _statCell(
+                context,
+                '${existShots + adding.shots}',
+                '(+${adding.shots})',
+                'Shots',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCell(
+      BuildContext context, String total, String delta, String label) {
+    return Expanded(
+      child: Text.rich(
+        TextSpan(
+          style: const TextStyle(
+            fontSize: 16,
+            color: ColorTokens.textSecondary,
+          ),
+          children: [
+            TextSpan(text: '$total '),
+            TextSpan(
+              text: delta,
+              style: const TextStyle(
+                color: ColorTokens.primaryDefault,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            TextSpan(text: '\n$label'),
+          ],
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildPickModeBottomBar() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.md,
+            0,
+            SpacingTokens.md,
+            SpacingTokens.xl,
+          ),
+          child: ZxPillButton(
+            label: _selectedDrillIds.isEmpty
+                ? 'Select drills to add'
+                : 'Add ${_selectedDrillIds.length} drill${_selectedDrillIds.length == 1 ? '' : 's'}',
+            icon: Icons.playlist_add,
+            variant: _selectedDrillIds.isEmpty
+                ? ZxPillVariant.tertiary
+                : ZxPillVariant.progress,
+            expanded: true,
+            centered: true,
+            onTap: _selectedDrillIds.isEmpty
+                ? null
+                : () => Navigator.of(context).pop(_selectedDrillIds.toList()),
+          ),
+        ),
+        SizedBox(height: MediaQuery.of(context).padding.bottom),
+      ],
     );
   }
 
@@ -444,20 +627,41 @@ class _PlayDrillButton extends ConsumerWidget {
   }
 }
 
-/// Filter button with inline group toggle.
-/// Uses a manual showMenu to support null (All) as a selectable value.
-class _FilterButton extends StatelessWidget {
-  final SkillArea? selected;
-  final ValueChanged<SkillArea?> onChanged;
+/// Drill type filter chip (All / Transition / Pressure / Technique).
+/// Unified filter bar — group toggle | skill area | drill type in one pill, full width.
+class _UnifiedFilterBar extends StatelessWidget {
+  final SkillArea? selectedSkill;
+  final ValueChanged<SkillArea?> onSkillChanged;
+  final DrillType? selectedType;
+  final ValueChanged<DrillType?> onTypeChanged;
   final bool isGrouped;
   final ValueChanged<bool> onGroupToggle;
+  final bool showAddDrills;
+  final VoidCallback? onAddDrills;
 
-  const _FilterButton({
-    required this.selected,
-    required this.onChanged,
+  const _UnifiedFilterBar({
+    required this.selectedSkill,
+    required this.onSkillChanged,
+    required this.selectedType,
+    required this.onTypeChanged,
     required this.isGrouped,
     required this.onGroupToggle,
+    this.showAddDrills = false,
+    this.onAddDrills,
   });
+
+  static String _typeLabel(DrillType? type) => switch (type) {
+        null => 'All Types',
+        DrillType.transition => 'Transition',
+        DrillType.pressure => 'Pressure',
+        DrillType.techniqueBlock => 'Technique',
+      };
+
+  Widget _divider() => Container(
+        width: 1,
+        height: 24,
+        color: ColorTokens.textTertiary,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -468,69 +672,163 @@ class _FilterButton extends StatelessWidget {
         border: Border.all(color: ColorTokens.surfaceBorder),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           // Group toggle.
           GestureDetector(
             onTap: () => onGroupToggle(!isGrouped),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: SpacingTokens.sm,
-                vertical: SpacingTokens.sm,
+                horizontal: SpacingTokens.md,
+                vertical: SpacingTokens.md,
               ),
               child: Icon(
                 isGrouped ? Icons.list : Icons.view_agenda_outlined,
-                size: 16,
+                size: 24,
                 color: ColorTokens.primaryDefault,
               ),
             ),
           ),
-          // Divider.
-          Container(
-            width: 1,
-            height: 16,
-            color: ColorTokens.textTertiary,
-          ),
-          // Filter menu.
-          GestureDetector(
-            onTap: () async {
-              final result = await showDialog<String>(
-                context: context,
-                builder: (ctx) => _SkillAreaGridDialog(selected: selected),
-              );
-              if (result == null) return;
-              if (result == 'all') {
-                onChanged(null);
-              } else {
-                onChanged(
-                    SkillArea.values.firstWhere((a) => a.dbValue == result));
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpacingTokens.sm,
-                vertical: SpacingTokens.sm,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    selected?.dbValue ?? 'All',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: ColorTokens.primaryDefault,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                  const SizedBox(width: SpacingTokens.xs),
-                  Icon(
-                    Icons.filter_list,
-                    size: 16,
-                    color: ColorTokens.primaryDefault,
-                  ),
-                ],
+          _divider(),
+          // Skill area filter.
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final result = await showDialog<String>(
+                  context: context,
+                  builder: (ctx) =>
+                      _SkillAreaGridDialog(selected: selectedSkill),
+                );
+                if (result == null) return;
+                if (result == 'all') {
+                  onSkillChanged(null);
+                } else {
+                  onSkillChanged(SkillArea.values
+                      .firstWhere((a) => a.dbValue == result));
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.md,
+                  vertical: SpacingTokens.md,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        selectedSkill?.dbValue ?? 'All Skills',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: ColorTokens.primaryDefault,
+                              fontWeight: FontWeight.w500,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: SpacingTokens.xs),
+                    Icon(
+                      Icons.filter_list,
+                      size: 20,
+                      color: ColorTokens.primaryDefault,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
+          _divider(),
+          // Drill type filter.
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final result = await showDialog<String>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: ColorTokens.surfaceModal,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(ShapeTokens.radiusModal),
+                    ),
+                    title: const Text(
+                      'Filter by Drill Type',
+                      style: TextStyle(color: ColorTokens.textPrimary),
+                    ),
+                    contentPadding: const EdgeInsets.all(SpacingTokens.md),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final type in [null, ...DrillType.values])
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                bottom: SpacingTokens.sm),
+                            child: ZxPillButton(
+                              label: _typeLabel(type),
+                              expanded: true,
+                              centered: true,
+                              variant: type == selectedType
+                                  ? ZxPillVariant.primary
+                                  : ZxPillVariant.tertiary,
+                              onTap: () =>
+                                  Navigator.pop(ctx, type?.name ?? 'all'),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+                if (result == null) return;
+                if (result == 'all') {
+                  onTypeChanged(null);
+                } else {
+                  onTypeChanged(
+                      DrillType.values.firstWhere((t) => t.name == result));
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.md,
+                  vertical: SpacingTokens.md,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _typeLabel(selectedType),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: ColorTokens.primaryDefault,
+                              fontWeight: FontWeight.w500,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: SpacingTokens.xs),
+                    Icon(
+                      Icons.filter_list,
+                      size: 20,
+                      color: ColorTokens.primaryDefault,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (showAddDrills) ...[
+            _divider(),
+            GestureDetector(
+              onTap: onAddDrills,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.md,
+                  vertical: SpacingTokens.md,
+                ),
+                child: Icon(
+                  Icons.add,
+                  size: 24,
+                  color: ColorTokens.primaryDefault,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -547,7 +845,7 @@ class _SkillAreaGridDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     // "All" + 7 skill areas = 8 items in a 2×4 grid.
     final items = <({String value, String label, Color? color})>[
-      (value: 'all', label: 'All', color: null),
+      (value: 'all', label: 'All Skills', color: null),
       for (final area in _skillAreaDisplayOrder)
         (value: area.dbValue, label: area.dbValue, color: ColorTokens.skillArea(area)),
     ];

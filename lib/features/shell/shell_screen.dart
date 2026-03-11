@@ -9,7 +9,8 @@ import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
-import 'package:zx_golf_app/core/widgets/golf_club_plus_icon.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -195,7 +196,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       },
       child: Scaffold(
       appBar: AppBar(
-        toolbarHeight: 68,
+        toolbarHeight: 72,
         title: const SizedBox.shrink(),
         backgroundColor: ColorTokens.surfaceBase,
         leading: Padding(
@@ -203,7 +204,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           child: IconButton(
             icon: Icon(
               Icons.home,
-              size: 40,
+              size: 46,
               color: showHome
                   ? ColorTokens.primaryDefault
                   : ColorTokens.textSecondary,
@@ -215,10 +216,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         actions: [
           // Golf Bag button.
           IconButton(
-            icon: GolfClubPlusIcon(
-              size: 32,
-              clubColor: ColorTokens.textSecondary,
-              plusColor: ColorTokens.primaryDefault,
+            icon: SvgPicture.asset(
+              'assets/icons/golf-bag-tpr-3club.svg',
+              width: 35,
+              height: 35,
+              colorFilter: const ColorFilter.mode(
+                ColorTokens.textSecondary,
+                BlendMode.srcIn,
+              ),
             ),
             tooltip: 'Golf Bag',
             onPressed: () => Navigator.push(
@@ -247,7 +252,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           IconButton(
             icon: Icon(
               Icons.account_circle_outlined,
-              size: 32,
+              size: 40,
               color: isAuthenticated
                   ? ColorTokens.textSecondary
                   : ColorTokens.textTertiary,
@@ -296,80 +301,25 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ),
               child: Row(
                 children: [
-                  // Discard pill button.
-                  GestureDetector(
+                  ZxPillButton(
+                    label: 'Discard',
+                    icon: Icons.delete_outline,
+                    iconRight: true,
+                    variant: ZxPillVariant.destructive,
                     onTap: () => _discardPracticeBlock(
                       activePbData.practiceBlockId,
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SpacingTokens.sm + 4,
-                        vertical: SpacingTokens.sm + 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: ColorTokens.errorDestructive
-                            .withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(ShapeTokens.radiusGrid),
-                        border: Border.all(
-                            color: ColorTokens.errorDestructive
-                                .withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Discard',
-                            style: TextStyle(
-                              fontSize: TypographyTokens.bodySize,
-                              fontWeight: FontWeight.w500,
-                              color: ColorTokens.errorDestructive,
-                            ),
-                          ),
-                          const SizedBox(width: SpacingTokens.xs),
-                          Icon(Icons.delete_outline,
-                              size: 16, color: ColorTokens.errorDestructive),
-                        ],
-                      ),
-                    ),
                   ),
                   const SizedBox(width: SpacingTokens.sm),
-                  // Resume Practice pill button.
                   Expanded(
-                    child: GestureDetector(
+                    child: ZxPillButton(
+                      label: 'Resume Practice',
+                      icon: Icons.play_arrow,
+                      variant: ZxPillVariant.progress,
+                      expanded: true,
+                      centered: true,
                       onTap: () => _resumePractice(
                         activePbData.practiceBlockId,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: SpacingTokens.sm + 4,
-                          vertical: SpacingTokens.sm + 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: ColorTokens.successDefault
-                              .withValues(alpha: 0.1),
-                          borderRadius:
-                              BorderRadius.circular(ShapeTokens.radiusGrid),
-                          border: Border.all(
-                              color: ColorTokens.successDefault
-                                  .withValues(alpha: 0.25)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.play_arrow,
-                                size: 16, color: ColorTokens.successDefault),
-                            const SizedBox(width: SpacingTokens.xs),
-                            Text(
-                              'Resume Practice',
-                              style: TextStyle(
-                                fontSize: TypographyTokens.bodySize,
-                                fontWeight: FontWeight.w500,
-                                color: ColorTokens.successDefault,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),

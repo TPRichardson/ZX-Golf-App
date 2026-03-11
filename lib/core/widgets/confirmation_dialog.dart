@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 
 // S10 §10.5 — Reusable confirmation dialogs (soft and strong).
 
@@ -21,20 +22,17 @@ Future<bool> showSoftConfirmation(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancel'),
+        ZxPillButton(
+          label: 'Cancel',
+          variant: ZxPillVariant.tertiary,
+          onTap: () => Navigator.pop(ctx, false),
         ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: Text(
-            confirmLabel,
-            style: TextStyle(
-              color: isDestructive
-                  ? ColorTokens.errorDestructive
-                  : ColorTokens.primaryDefault,
-            ),
-          ),
+        ZxPillButton(
+          label: confirmLabel,
+          variant: isDestructive
+              ? ZxPillVariant.destructive
+              : ZxPillVariant.primary,
+          onTap: () => Navigator.pop(ctx, true),
         ),
       ],
     ),
@@ -75,22 +73,17 @@ Future<bool> showStrongConfirmation(
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+          ZxPillButton(
+            label: 'Cancel',
+            variant: ZxPillVariant.tertiary,
+            onTap: () => Navigator.pop(ctx, false),
           ),
-          TextButton(
-            onPressed: controller.text == confirmPhrase
+          ZxPillButton(
+            label: 'Confirm',
+            variant: ZxPillVariant.destructive,
+            onTap: controller.text == confirmPhrase
                 ? () => Navigator.pop(ctx, true)
                 : null,
-            child: Text(
-              'Confirm',
-              style: TextStyle(
-                color: controller.text == confirmPhrase
-                    ? ColorTokens.errorDestructive
-                    : ColorTokens.textTertiary,
-              ),
-            ),
           ),
         ],
       ),

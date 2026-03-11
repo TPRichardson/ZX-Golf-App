@@ -49,7 +49,7 @@ class ZxPillButton extends StatelessWidget {
       onTap: isLoading ? null : onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: metrics.horizontalPadding,
+          horizontal: expanded ? SpacingTokens.sm : metrics.horizontalPadding,
           vertical: metrics.verticalPadding,
         ),
         decoration: BoxDecoration(
@@ -93,7 +93,7 @@ class ZxPillButton extends StatelessWidget {
       label,
       style: TextStyle(
         fontSize: metrics.fontSize,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w800,
         color: fg,
         height: 1.0,
       ),
@@ -102,6 +102,7 @@ class ZxPillButton extends StatelessWidget {
     );
 
     if (iconWidget == null) return [Flexible(child: textWidget)];
+    if (label.isEmpty) return [iconWidget];
 
     final gap = SizedBox(width: metrics.gap);
     return iconRight
@@ -112,25 +113,25 @@ class ZxPillButton extends StatelessWidget {
   _ZxPillMetrics _resolveSize() {
     return switch (size) {
       ZxPillSize.sm => const _ZxPillMetrics(
-          fontSize: TypographyTokens.microSize,
-          iconSize: 14,
-          horizontalPadding: SpacingTokens.xs,
-          verticalPadding: SpacingTokens.xs,
-          gap: SpacingTokens.xs,
-        ),
-      ZxPillSize.md => const _ZxPillMetrics(
           fontSize: TypographyTokens.bodySize,
           iconSize: 16,
           horizontalPadding: SpacingTokens.md,
           verticalPadding: SpacingTokens.sm,
           gap: SpacingTokens.xs,
         ),
-      ZxPillSize.lg => const _ZxPillMetrics(
+      ZxPillSize.md => const _ZxPillMetrics(
           fontSize: TypographyTokens.bodyLgSize,
           iconSize: 20,
           horizontalPadding: SpacingTokens.xl,
           verticalPadding: SpacingTokens.md,
           gap: SpacingTokens.sm,
+        ),
+      ZxPillSize.lg => const _ZxPillMetrics(
+          fontSize: TypographyTokens.displayLgSize,
+          iconSize: 28,
+          horizontalPadding: SpacingTokens.xxl,
+          verticalPadding: SpacingTokens.lg,
+          gap: SpacingTokens.md,
         ),
     };
   }

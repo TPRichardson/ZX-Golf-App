@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
@@ -69,15 +70,36 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   }
 
   Future<void> _addDrill() async {
-    final drillId = await Navigator.of(context).push<String>(
+    // Compute existing block stats for pick mode info bar.
+    final pbData = ref.read(
+        practiceBlockWithEntriesProvider(widget.practiceBlockId)).valueOrNull;
+    int existDrills = 0;
+    int existSets = 0;
+    int existShots = 0;
+    if (pbData != null) {
+      existDrills = pbData.entries.length;
+      for (final e in pbData.entries) {
+        existSets += e.drill.requiredSetCount;
+        existShots += e.drill.requiredSetCount *
+            (e.drill.requiredAttemptsPerSet ?? 0);
+      }
+    }
+
+    final drillIds = await Navigator.of(context).push<List<String>>(
       MaterialPageRoute(
-        builder: (_) => const PracticePoolScreen(pickMode: true),
+        builder: (_) => PracticePoolScreen(
+          pickMode: true,
+          existingDrillCount: existDrills,
+          existingSets: existSets,
+          existingShots: existShots,
+        ),
       ),
     );
-    if (drillId != null && mounted) {
-      await ref
-          .read(practiceRepositoryProvider)
-          .addDrillToQueue(widget.practiceBlockId, drillId);
+    if (drillIds != null && drillIds.isNotEmpty && mounted) {
+      final repo = ref.read(practiceRepositoryProvider);
+      for (final drillId in drillIds) {
+        await repo.addDrillToQueue(widget.practiceBlockId, drillId);
+      }
     }
   }
 
@@ -255,32 +277,14 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   }
 
   Future<void> _discardPracticeBlock() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Discard Practice?',
-            style: TextStyle(color: ColorTokens.textPrimary)),
-        content: const Text(
-          'This will discard the entire practice block and all sessions.',
-          style: TextStyle(color: ColorTokens.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.errorDestructive,
-            ),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Discard Practice?',
+      message: 'This will discard the entire practice block and all sessions.',
+      confirmLabel: 'Discard',
+      isDestructive: true,
     );
-    if (confirmed == true && mounted) {
+    if (confirmed && mounted) {
       await ref
           .read(practiceActionsProvider)
           .discardPracticeBlock(widget.practiceBlockId, widget.userId);
@@ -444,7 +448,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             ),
             const SizedBox(height: SpacingTokens.lg),
             ZxPillButton(
-              label: 'Add Drill',
+              label: 'Add Drills',
               icon: Icons.playlist_add,
               variant: ZxPillVariant.primary,
               onTap: _addDrill,
@@ -535,7 +539,12 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
   Widget _buildBottomBar(List<PracticeEntryWithDrill> entries) {
     return Container(
-      padding: const EdgeInsets.all(SpacingTokens.md),
+      padding: EdgeInsets.fromLTRB(
+        SpacingTokens.md,
+        SpacingTokens.md,
+        SpacingTokens.md,
+        SpacingTokens.md + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: const BoxDecoration(
         color: ColorTokens.surfaceRaised,
         border: Border(
@@ -549,7 +558,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
           Row(
             children: [
               // Routines popup button.
-              PopupMenuButton<String>(
+              Expanded(child: PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'saveAsRoutine') {
                     _saveAsRoutine(entries);
@@ -571,17 +580,19 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                   ),
                 ],
                 child: ZxPillButton(
-                  label: 'Routines',
+                  label: 'Add Routine',
                   icon: Icons.playlist_add,
-                  variant: ZxPillVariant.tertiary,
+                  variant: ZxPillVariant.secondary,
+                  expanded: true,
+                  centered: true,
                   onTap: null,
                 ),
-              ),
+              )),
               const SizedBox(width: SpacingTokens.sm),
               // Add Drill button — cyan pill matching Routines style.
               Expanded(
                 child: ZxPillButton(
-                  label: 'Add Drill',
+                  label: 'Add Drills',
                   icon: Icons.playlist_add,
                   variant: ZxPillVariant.primary,
                   expanded: true,
@@ -603,23 +614,19 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             onTap: _endingBlock ? null : () => _endPracticeBlock(entries),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          // Practice Settings + Discard row.
+          // Settings cog + Discard row.
           Row(
             children: [
-              Expanded(
-                child: ZxPillButton(
-                  label: 'Practice Settings',
-                  icon: Icons.settings_outlined,
-                  variant: ZxPillVariant.tertiary,
-                  centered: true,
-                  iconRight: true,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Practice settings coming soon')),
-                    );
-                  },
-                ),
+              ZxPillButton(
+                label: '',
+                icon: Icons.settings_outlined,
+                variant: ZxPillVariant.tertiary,
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Practice settings coming soon')),
+                  );
+                },
               ),
               const SizedBox(width: SpacingTokens.sm),
               Expanded(

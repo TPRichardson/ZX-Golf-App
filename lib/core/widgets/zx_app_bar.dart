@@ -16,13 +16,20 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(72);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       centerTitle: true,
-      title: Text(title),
+      toolbarHeight: 72,
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 30,
+          fontWeight: TypographyTokens.displayXlWeight,
+        ),
+      ),
       leading: leading,
       actions: actions,
       backgroundColor: ColorTokens.surfacePrimary,
