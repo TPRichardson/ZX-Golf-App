@@ -354,12 +354,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                     color: showHome
                         ? ColorTokens.textSecondary
                         : ColorTokens.primaryDefault,
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodyLgSize,
                   );
                 }
                 return TextStyle(
                   color: ColorTokens.textSecondary,
-                  fontSize: TypographyTokens.microSize,
+                  fontSize: TypographyTokens.bodyLgSize,
                 );
               }),
             ),

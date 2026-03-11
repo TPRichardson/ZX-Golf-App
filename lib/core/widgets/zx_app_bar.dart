@@ -90,6 +90,14 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
           indicatorPadding: const EdgeInsets.symmetric(horizontal: 1),
           labelColor: ColorTokens.textPrimary,
           unselectedLabelColor: ColorTokens.textSecondary,
+          labelStyle: const TextStyle(
+            fontSize: TypographyTokens.bodySize,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: TypographyTokens.bodySize,
+            fontWeight: FontWeight.w400,
+          ),
           dividerHeight: 0,
           indicator: _ConnectedTabIndicator(
             color: ColorTokens.surfacePrimary,

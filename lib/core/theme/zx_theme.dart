@@ -111,6 +111,26 @@ class ZxTheme {
         color: ColorTokens.surfaceBorder,
         thickness: 1,
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          textStyle: const TextStyle(fontSize: TypographyTokens.bodySize),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          textStyle: const TextStyle(fontSize: TypographyTokens.bodySize),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          textStyle: const TextStyle(fontSize: TypographyTokens.bodySize),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          textStyle: const TextStyle(fontSize: TypographyTokens.bodySize),
+        ),
+      ),
     );
   }
 }

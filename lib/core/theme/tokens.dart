@@ -142,8 +142,8 @@ abstract final class TypographyTokens {
   static const bodyLgHeight = 22.0 / 16.0;
   static const bodyWeight = FontWeight.w400;
 
-  static const bodySize = 14.0;
-  static const bodyHeight = 20.0 / 14.0;
+  static const bodySize = 16.0;
+  static const bodyHeight = 22.0 / 16.0;
 
   // Micro: 12px, Regular @ 70-80% opacity
   static const microSize = 12.0;

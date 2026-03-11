@@ -197,7 +197,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                           child: Text(
                             'Today',
                             style: TextStyle(
-                              fontSize: TypographyTokens.microSize,
+                              fontSize: TypographyTokens.bodySize,
                               fontWeight: FontWeight.w600,
                               color: ColorTokens.primaryDefault,
                             ),
@@ -331,7 +331,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     child: Text(
                       headers[i],
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySize,
                         fontWeight: _selectedDay != null &&
                                 (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
                             ? FontWeight.w600
@@ -408,7 +408,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             Text(
               _ordinalDay(date.day),
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySize,
                 fontWeight: isToday ? FontWeight.w600 : FontWeight.w400,
                 color: isToday
                     ? ColorTokens.textPrimary
@@ -493,7 +493,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                 child: const Text(
                   'Today',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySize,
                     color: ColorTokens.primaryDefault,
                     fontWeight: FontWeight.w600,
                   ),
@@ -518,7 +518,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             const Text(
               'slot',
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySize,
                 color: ColorTokens.textTertiary,
               ),
             ),
@@ -551,24 +551,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                       style: TextStyle(color: ColorTokens.textTertiary),
                     ),
                     const SizedBox(height: SpacingTokens.sm),
-                    OutlinedButton.icon(
-                      onPressed: () => _addSlotForDate(_selectedDay!),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add slot'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: ColorTokens.primaryDefault,
-                        side:
-                            const BorderSide(color: ColorTokens.primaryDefault),
-                      ),
-                    ),
-                    const SizedBox(height: SpacingTokens.sm),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         OutlinedButton.icon(
                           onPressed: () =>
                               _showRoutinePicker(_selectedDay!),
-                          icon: const Icon(Icons.playlist_add, size: 18),
+                          icon: const Icon(Icons.add, size: 18),
                           label: const Text('Routine'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
@@ -580,7 +569,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                         OutlinedButton.icon(
                           onPressed: () =>
                               _showSchedulePicker(_selectedDay!),
-                          icon: const Icon(Icons.date_range, size: 18),
+                          icon: const Icon(Icons.add, size: 18),
                           label: const Text('Schedule'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
@@ -597,7 +586,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           )
         else
           Expanded(
-            child: ListView.separated(
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: ListView.separated(
               itemCount: slots.length + 1,
               separatorBuilder: (_, _) =>
                   const SizedBox(height: SpacingTokens.xs),
@@ -623,22 +614,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _addSlot(day!),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Slot'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ColorTokens.primaryDefault,
-                            side: const BorderSide(
-                                color: ColorTokens.primaryDefault),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: SpacingTokens.xs),
-                      Expanded(
-                        child: OutlinedButton.icon(
                           onPressed: () =>
                               _showRoutinePicker(_selectedDay!),
-                          icon: const Icon(Icons.playlist_add, size: 16),
+                          icon: const Icon(Icons.add, size: 16),
                           label: const Text('Routine'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
@@ -652,7 +630,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                         child: OutlinedButton.icon(
                           onPressed: () =>
                               _showSchedulePicker(_selectedDay!),
-                          icon: const Icon(Icons.date_range, size: 16),
+                          icon: const Icon(Icons.add, size: 16),
                           label: const Text('Schedule'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
@@ -666,17 +644,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                 );
               },
             ),
+            ),
           ),
       ],
     );
-  }
-
-  /// Add an empty slot to a CalendarDay by incrementing its capacity.
-  Future<void> _addSlot(CalendarDay day) async {
-    final actions = ref.read(planningActionsProvider);
-    final currentSlots = parseSlotsFromJson(day.slots);
-    await actions.updateSlotCapacity(
-        _userId, day.date, currentSlots.length + 1);
   }
 
   /// Add a single slot to a day. If the day doesn't exist yet, creates it with 1 slot
@@ -1016,7 +987,7 @@ class _ViewToggle extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: TypographyTokens.microSize,
+            fontSize: TypographyTokens.bodySize,
             color: selected
                 ? ColorTokens.textPrimary
                 : ColorTokens.textSecondary,
