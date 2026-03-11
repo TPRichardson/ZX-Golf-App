@@ -83,6 +83,9 @@ class SessionExecutionController {
   /// Number of fully completed sets.
   int get completedSetCount => _completedSetCount;
 
+  /// Whether any instances have been recorded in this session.
+  bool get hasAnyInstances => _currentSetInstanceCount > 0 || _completedSetCount > 0;
+
   /// S13 §13.6 — Log an instance and compute real-time score.
   /// Returns the instance + optional 0–5 score for display.
   /// For structured drills: auto-advances set or signals auto-completion.

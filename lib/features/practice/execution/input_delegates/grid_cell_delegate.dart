@@ -13,6 +13,9 @@ import 'package:zx_golf_app/features/practice/execution/execution_input_delegate
 class GridCellDelegate extends ExecutionInputDelegate {
   final Drill drill;
 
+  /// Optional padding override (e.g. when wrapped with vertical target bar).
+  EdgeInsets? overridePadding;
+
   GridCellDelegate({required this.drill});
 
   List<_CellDef> get _cells {
@@ -58,7 +61,7 @@ class GridCellDelegate extends ExecutionInputDelegate {
       child: Opacity(
         opacity: executionContext.isLocked ? 0.4 : 1.0,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
+          padding: overridePadding ?? const EdgeInsets.fromLTRB(
             SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, SpacingTokens.lg,
           ),
           child: is3x3 ? _build3x3Grid(cells, executionContext, onLogInstance)

@@ -1,0 +1,5 @@
+Name,Skill Area,Drill Type,Scoring Mode,Input Mode,Metric Schema,Grid Type,Subskill Mapping,Club Selection Mode,Target Distance Mode,Target Distance Value,Target Size Mode,Target Size Width,Target Size Depth,Required Set Count,Required Attempts Per Set,Anchors (JSON)
+"Example: Irons Direction","Irons","Transition","Shared","GridCell","grid_1x3_direction","OneByThree","[""irons_direction_control""]","UserLed","ClubCarry","","PercentageOfTargetDistance","7","","1","10","{""irons_direction_control"": {""Min"": 30, ""Scratch"": 70, ""Pro"": 90}}"
+"Example: Driving Carry","Driving","Transition","Shared","RawDataEntry","raw_carry_distance","","[""driving_distance_maximum""]","","","","","","","1","10","{""driving_distance_maximum"": {""Min"": 180, ""Scratch"": 250, ""Pro"": 300}}"
+"Example: Irons Shape","Irons","Transition","Shared","BinaryHitMiss","binary_hit_miss","","[""irons_shape_control""]","UserLed","","","","","","1","10","{""irons_shape_control"": {""Min"": 30, ""Scratch"": 70, ""Pro"": 90}}"
+"Example: Driving Technique","Driving","TechniqueBlock","","RawDataEntry","technique_duration","","[]","","","","","","","1","","{}}"

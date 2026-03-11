@@ -21,9 +21,8 @@ class EnvironmentSurfaceStyles {
   static const grassIcon = Icons.grass;
   static const grassLabel = 'Grass';
 
-  static const matFillColor = Color(0xFF1A5C2A);
-  static const matBorderColor = Color(0xFF2D7A3E);
-  static const matTextColor = ColorTokens.textPrimary;
+  // Warm amber/brown — evokes the rubber base of a synthetic hitting mat.
+  static const matColor = Color(0xFFC4956A);
   static const matIcon = Icons.stop_rounded;
   static const matLabel = 'Mat';
 
@@ -43,12 +42,12 @@ class EnvironmentSurfaceStyles {
       surface(SurfaceType? surface) {
     final isGrass = surface == SurfaceType.grass;
     return (
-      color: isGrass ? grassColor : matTextColor,
+      color: isGrass ? grassColor : matColor,
       icon: isGrass ? grassIcon : matIcon,
       iconScale: isGrass ? 1.0 : 1.4,
       label: isGrass ? grassLabel : matLabel,
-      fillColor: isGrass ? null : matFillColor,
-      borderColor: isGrass ? null : matBorderColor,
+      fillColor: null,
+      borderColor: null,
     );
   }
 }

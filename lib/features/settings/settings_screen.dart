@@ -62,6 +62,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final prefs = ref.watch(userPreferencesProvider);
     final userAsync = ref.watch(currentUserProvider);
+    final authProfile = ref.watch(authProfileProvider);
 
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
@@ -79,11 +80,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 _InfoTile(
                   label: 'Display Name',
-                  value: user?.displayName ?? 'Not set',
+                  value: user?.displayName ?? authProfile.displayName ?? 'Not set',
                 ),
                 _InfoTile(
                   label: 'Email',
-                  value: user?.email ?? 'Not set',
+                  value: user?.email ?? authProfile.email ?? 'Not set',
                 ),
                 _InfoTile(
                   label: 'Timezone',
@@ -92,9 +93,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
             loading: () => const _LoadingTile(),
-            error: (_, _) => const _InfoTile(
-              label: 'Profile',
-              value: 'Unable to load',
+            error: (_, _) => Column(
+              children: [
+                _InfoTile(
+                  label: 'Display Name',
+                  value: authProfile.displayName ?? 'Not set',
+                ),
+                _InfoTile(
+                  label: 'Email',
+                  value: authProfile.email ?? 'Not set',
+                ),
+              ],
             ),
           ),
 

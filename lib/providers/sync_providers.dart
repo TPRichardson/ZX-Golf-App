@@ -140,7 +140,12 @@ final syncBannerInputProvider = Provider<
   final schemaMismatch = ref.watch(schemaMismatchDetectedProvider);
   final connectivity = ref.watch(connectivityStatusProvider);
   final storageLow = ref.watch(isStorageLowProvider);
-  // TODO: restore ref.watch(authStateProvider) when OAuth is resolved.
+  final authState = ref.watch(authStateProvider);
+
+  // TD-07 §9 — Derive auth status from Supabase session.
+  final isAuthenticated = authState.whenOrNull(data: (_) {
+    return Supabase.instance.client.auth.currentSession != null;
+  }) ?? false;
 
   return (
     syncEnabled: syncEnabled,
@@ -151,8 +156,6 @@ final syncBannerInputProvider = Provider<
     isSyncing:
         syncStatus.whenOrNull(data: (s) => s) == SyncStatus.inProgress,
     isStorageLow: storageLow.whenOrNull(data: (s) => s) ?? false,
-    // Temporary bypass: treat as authenticated until OAuth is resolved.
-    // TODO: restore auth check when Google OAuth redirect_uri_mismatch is resolved.
-    isAuthenticated: true,
+    isAuthenticated: isAuthenticated,
   );
 });

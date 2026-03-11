@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
-import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_helpers.dart';
@@ -21,6 +20,7 @@ import 'package:zx_golf_app/features/practice/execution/input_delegates/grid_cel
 import 'package:zx_golf_app/features/practice/execution/input_delegates/raw_data_entry_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_grid_picker.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_stats_bar.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
@@ -99,12 +99,49 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
     await _controller.initialize();
     await _loadClubs();
+    // Rebuild shot log from existing instances in the current set.
+    await _restoreShotLog();
     // Load environment type from practice block.
     final block = await ref
         .read(practiceRepositoryProvider)
         .getPracticeBlockById(widget.session.practiceBlockId);
     _environmentType = block?.environmentType;
     if (mounted) setState(() => _initialized = true);
+  }
+
+  /// Restore the shot log from persisted instances in the current set.
+  Future<void> _restoreShotLog() async {
+    final setId = _controller.currentSetId;
+    if (setId == null) return;
+    final repo = ref.read(practiceRepositoryProvider);
+    final instances = await repo.watchInstancesBySet(setId).first;
+    for (final inst in instances) {
+      final metrics =
+          jsonDecode(inst.rawMetrics) as Map<String, dynamic>;
+      if (metrics.containsKey('hit')) {
+        final isHit = metrics['hit'] as bool;
+        final label =
+            metrics['label'] as String? ?? (isHit ? 'Hit' : 'Miss');
+        _shotLog.add(_ShotEntry(
+          label: label,
+          isHit: isHit,
+          club: inst.selectedClub,
+        ));
+      } else if (metrics.containsKey('value')) {
+        final value = (metrics['value'] as num).toDouble();
+        _shotLog.add(_ShotEntry(
+          label: value.toStringAsFixed(1),
+          isHit: false,
+          club: inst.selectedClub,
+        ));
+      } else {
+        _shotLog.add(_ShotEntry(
+          label: '\u2014',
+          isHit: false,
+          club: inst.selectedClub,
+        ));
+      }
+    }
   }
 
   // TD-06 §9.1.2 — Load clubs for this drill's skill area.
@@ -351,7 +388,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               onSurfaceTap: _changeSurfaceType,
             ),
             const SizedBox(height: SpacingTokens.sm),
-            // Shot log + Club square section.
+            // Shot log + Club bar section (~2/3 of remaining space).
             _buildShotLogSection(),
             // Gap 42 — Inline lock indicator.
             if (isLocked)
@@ -366,13 +403,26 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                   ),
                 ),
               ),
-            // Input area — varies by delegate.
+            // Input area — varies by delegate (~65% of remaining space).
+            // Target width bar sits just above the input for 1x3/3x3 grids.
+            // For 3x1 grids, a vertical target depth bar sits on the left.
             Expanded(
-              child: _delegate.buildInputArea(
-                context: context,
-                executionContext: executionContext,
-                onLogInstance: _onLogInstance,
-                requestRebuild: () => setState(() {}),
+              flex: 65,
+              child: Column(
+                children: [
+                  // Target width indicator bar (horizontal, for 1x3/3x3 grids).
+                  _buildTargetWidthBar(),
+                  Expanded(
+                    child: _wrapWithVerticalTargetBar(
+                      _delegate.buildInputArea(
+                        context: context,
+                        executionContext: executionContext,
+                        onLogInstance: _onLogInstance,
+                        requestRebuild: () => setState(() {}),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             _buildBottomBar(),
@@ -381,224 +431,389 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
   }
 
-  /// Shot log (left) + club square (right) section.
+  /// Club bar (full width) + shot log (full width) stacked section.
+  /// Uses Expanded so the input area below gets ~1/3 of the screen.
   Widget _buildShotLogSection() {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
     final hitCount = _shotLog.where((s) => s.isHit).length;
     final totalCount = _shotLog.length;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
-      ),
-      child: SizedBox(
-      height: 128,
-      child: Row(
-        children: [
-          // Shot log (left — 2/3 width).
-          Expanded(
-            flex: 2,
-            child: Container(
-              decoration: BoxDecoration(
-                color: ColorTokens.surfaceRaised,
-                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                border: Border.all(color: ColorTokens.surfaceBorder),
-              ),
+    return Expanded(
+      flex: 35,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
+        ),
+        child: Column(
+          children: [
+            // Club bar (full width, doubled size).
+            _buildClubBar(canChange: hasClubSelection),
+            const SizedBox(height: SpacingTokens.sm),
+            // Shot log (fills remaining space).
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: ColorTokens.surfaceRaised,
+                  borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                  border: Border.all(color: ColorTokens.surfaceBorder),
+                ),
                 child: Column(
-              children: [
-                // Scrollable shot list.
-                Expanded(
-                  child: _shotLog.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No shots recorded',
+                  children: [
+                    // Scrollable shot list.
+                    Expanded(
+                      child: _shotLog.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No shots recorded',
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.bodyLgSize,
+                                  color: ColorTokens.textTertiary,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: _shotListController,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: SpacingTokens.md,
+                                vertical: SpacingTokens.xs,
+                              ),
+                              itemCount: _shotLog.length,
+                              itemBuilder: (context, index) {
+                                final shot = _shotLog[index];
+                                return _ShotLogRow(
+                                  index: index + 1,
+                                  shot: shot,
+                                );
+                              },
+                            ),
+                    ),
+                    // Shot count + undo row.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        SpacingTokens.md, 0, SpacingTokens.md, SpacingTokens.sm,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Hits counter (left).
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '$hitCount',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.bodyLgSize,
+                                    fontWeight: FontWeight.w500,
+                                    color: ColorTokens.successDefault,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '/$totalCount',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.bodyLgSize,
+                                    fontWeight: FontWeight.w500,
+                                    color: ColorTokens.textSecondary,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            ' Hits',
                             style: TextStyle(
-                              fontSize: TypographyTokens.microSize,
+                              fontSize: TypographyTokens.bodyLgSize,
                               color: ColorTokens.textTertiary,
                             ),
                           ),
-                        )
-                      : ListView.builder(
-                          controller: _shotListController,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: SpacingTokens.md,
-                            vertical: SpacingTokens.xs,
-                          ),
-                          itemCount: _shotLog.length,
-                          itemBuilder: (context, index) {
-                            final shot = _shotLog[index];
-                            return _ShotLogRow(
-                              index: index + 1,
-                              shot: shot,
-                            );
-                          },
-                        ),
-                ),
-                // Shot count + undo row.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    SpacingTokens.md, 0, SpacingTokens.md, SpacingTokens.xs,
-                  ),
-                  child: SizedBox(
-                    height: 24,
-                    child: Stack(
-                      children: [
-                        // Hits (left) + Undo (right).
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '$hitCount',
-                                    style: TextStyle(
-                                      fontSize: TypographyTokens.microSize,
-                                      fontWeight: FontWeight.w500,
-                                      color: ColorTokens.successDefault,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
-                                    ),
+                          const Spacer(),
+                          // Set counter (center).
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Set ',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.bodyLgSize,
+                                    color: ColorTokens.textTertiary,
                                   ),
-                                  TextSpan(
-                                    text: '/$totalCount',
-                                    style: TextStyle(
-                                      fontSize: TypographyTokens.microSize,
-                                      fontWeight: FontWeight.w500,
-                                      color: ColorTokens.textSecondary,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
-                                    ),
+                                ),
+                                TextSpan(
+                                  text: '${_controller.currentSetIndex + 1}',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.bodyLgSize,
+                                    fontWeight: FontWeight.w500,
+                                    color: ColorTokens.primaryDefault,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
                                   ),
-                                ],
-                              ),
+                                ),
+                                TextSpan(
+                                  text: '/${_controller.requiredSetCount}',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.bodyLgSize,
+                                    color: ColorTokens.textTertiary,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                                ' Hits',
-                                style: TextStyle(
-                                  fontSize: TypographyTokens.microSize,
-                                  color: ColorTokens.textTertiary,
-                                ),
-                              ),
-                            const Spacer(),
-                            ZxPillButton(
-                                label: 'Undo',
-                                icon: Icons.undo,
-                                size: ZxPillSize.sm,
-                                variant: ZxPillVariant.secondary,
-                                onTap: _controller.canUndo ? _undoLast : null,
-                              ),
-                          ],
-                        ),
-                        // Set counter — always centered horizontally, aligned with row text.
-                        Positioned(
-                          left: 0,
-                          right: SpacingTokens.sm,
-                          top: 0,
-                          bottom: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Set ${_controller.currentSetIndex + 1}/${_controller.requiredSetCount}',
-                                style: TextStyle(
-                                  fontSize: TypographyTokens.microSize,
-                                  color: ColorTokens.textTertiary,
-                                ),
-                              ),
-                            ],
                           ),
+                          const Spacer(),
+                          // Undo button (right).
+                          Padding(
+                            padding: const EdgeInsets.only(right: SpacingTokens.sm),
+                            child: ZxPillButton(
+                              label: 'Undo',
+                              icon: Icons.undo,
+                              variant: ZxPillVariant.secondary,
+                              size: ZxPillSize.sm,
+                              onTap: _controller.canUndo ? _undoLast : () {},
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Full-width club bar — tap to open grid picker. Centered, large text.
+  Widget _buildClubBar({bool canChange = true}) {
+    final isRandom =
+        widget.drill.clubSelectionMode == ClubSelectionMode.random;
+    final isGuided =
+        widget.drill.clubSelectionMode == ClubSelectionMode.guided;
+    final isTappable = canChange && !isRandom && !isGuided;
+
+    final modeLabel = switch (widget.drill.clubSelectionMode) {
+      ClubSelectionMode.userLed => 'Players Choice',
+      ClubSelectionMode.random => 'Fixed Random',
+      ClubSelectionMode.guided => 'Fixed Sequence',
+      _ => '',
+    };
+
+    return GestureDetector(
+      onTap: isTappable ? _pickClub : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(
+          SpacingTokens.md, SpacingTokens.xs, SpacingTokens.sm, SpacingTokens.xs,
+        ),
+        decoration: BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+          border: Border.all(color: ColorTokens.surfaceBorder),
+        ),
+        child: Row(
+          children: [
+            if (modeLabel.isNotEmpty)
+              Text(
+                modeLabel,
+                style: TextStyle(
+                  fontSize: TypographyTokens.displayLgSize,
+                  color: ColorTokens.textTertiary,
+                ),
+              ),
+            const Spacer(),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 120),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.lg,
+                  vertical: SpacingTokens.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: ColorTokens.primaryDefault.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                  border: Border.all(
+                    color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Text(
+                  _selectedClub,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: TypographyTokens.displayXlSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.primaryDefault,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Wraps the input area with a vertical target depth bar for 3x1 grids.
+  Widget _wrapWithVerticalTargetBar(Widget inputArea) {
+    if (widget.drill.inputMode != InputMode.gridCell ||
+        widget.drill.gridType != GridType.threeByOne) {
+      return inputArea;
+    }
+
+    // Reduce grid left padding so the 4px gap between bar and input is tight.
+    if (_delegate is GridCellDelegate) {
+      (_delegate as GridCellDelegate).overridePadding =
+          const EdgeInsets.fromLTRB(
+            SpacingTokens.xs, SpacingTokens.md, SpacingTokens.lg, SpacingTokens.lg,
+          );
+    }
+
+    final targetDepth = widget.drill.targetSizeDepth ?? 15.0;
+
+    return Row(
+      children: [
+        // Vertical target bar on the left — match grid input padding.
+        Padding(
+          padding: const EdgeInsets.only(
+            left: SpacingTokens.lg,
+            top: SpacingTokens.md,
+            bottom: SpacingTokens.lg,
+          ),
+          child: SizedBox(
+            width: 28,
+            child: Column(
+              children: [
+                // Miss long zone (top).
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: ColorTokens.missDefault.withValues(alpha: 0.15),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(ShapeTokens.radiusGrid),
+                      ),
+                      border: Border.all(
+                        color: ColorTokens.missDefault.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ),
+                ),
+                // Hit zone (middle) — shows target depth.
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: ColorTokens.successDefault.withValues(alpha: 0.15),
+                      border: Border.all(
+                        color: ColorTokens.successDefault.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: RotatedBox(
+                      quarterTurns: 3,
+                      child: Text(
+                        'X yds',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.microSize,
+                          fontWeight: FontWeight.w600,
+                          color: ColorTokens.successDefault,
                         ),
-                      ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Miss short zone (bottom).
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: ColorTokens.missDefault.withValues(alpha: 0.15),
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(ShapeTokens.radiusGrid),
+                      ),
+                      border: Border.all(
+                        color: ColorTokens.missDefault.withValues(alpha: 0.3),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          ),
-          const SizedBox(width: SpacingTokens.xs),
-          // Club square (right — 1/3 width).
-          Expanded(
-            child: _buildClubSquare(canChange: hasClubSelection),
-          ),
-        ],
-      ),
-      ),
+        ),
+        const SizedBox(width: SpacingTokens.xs),
+        // Input area fills the rest.
+        Expanded(child: inputArea),
+      ],
     );
   }
 
-  /// Abbreviate club name for the square display.
-  static String _abbreviateClub(String name) {
-    const abbreviations = {
-      'Driver': 'Dr',
-      'Putter': 'Pt',
-      'Chipper': 'Ch',
-    };
-    return abbreviations[name] ?? name;
-  }
+  /// Visual bar showing the target width aligned to the grid input below.
+  Widget _buildTargetWidthBar() {
+    // Only show for grid-based drills with a target width.
+    if (widget.drill.inputMode != InputMode.gridCell) {
+      return const SizedBox.shrink();
+    }
 
-  /// Large tappable club square — tap to open grid picker.
-  Widget _buildClubSquare({bool canChange = true}) {
-    final isRandom =
-        widget.drill.clubSelectionMode == ClubSelectionMode.random;
-    final isTappable = canChange && !isRandom;
+    // Use drill's targetSizeWidth if available, otherwise dummy 15yd.
+    final targetWidth = widget.drill.targetSizeWidth ?? 15.0;
+    final gridType = widget.drill.gridType;
 
-    return GestureDetector(
-      onTap: isTappable ? _pickClub : null,
-      child: Container(
-        decoration: BoxDecoration(
-          color: ColorTokens.surfaceRaised,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-          border: Border.all(color: ColorTokens.surfaceBorder),
-        ),
-        child: Stack(
+    // For 1x3 (direction): the center 1/3 is the hit zone.
+    // For 3x1 (distance): not applicable for width.
+    // For 3x3: center column is the hit zone (1/3 width).
+    if (gridType == GridType.threeByOne) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
+      child: SizedBox(
+        height: 28,
+        child: Row(
           children: [
-            // Label pinned 4px from top.
-            Positioned(
-              left: 0,
-              right: 0,
-              top: SpacingTokens.xs,
-              child: Text(
-                'Active Club',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
-                  fontWeight: FontWeight.w500,
-                  color: ColorTokens.textPrimary,
+            // Left miss zone.
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: ColorTokens.missDefault.withValues(alpha: 0.15),
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(ShapeTokens.radiusGrid),
+                  ),
+                  border: Border.all(
+                    color: ColorTokens.missDefault.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
             ),
-            // Club text centered.
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: SpacingTokens.xs),
-                    child: Text(
-                      _abbreviateClub(_selectedClub),
-                      style: TextStyle(
-                        fontSize: TypographyTokens.displayXlSize,
-                        fontWeight: FontWeight.w600,
-                        color: ColorTokens.primaryDefault,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+            // Center hit zone — shows target width.
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: ColorTokens.successDefault.withValues(alpha: 0.15),
+                  border: Border.all(
+                    color: ColorTokens.successDefault.withValues(alpha: 0.5),
                   ),
-                  if (isRandom) ...[
-                    const SizedBox(height: SpacingTokens.xs),
-                    Text(
-                      'Random',
-                      style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.textTertiary,
-                      ),
-                    ),
-                  ],
-                ],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'X yds',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.microSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.successDefault,
+                  ),
+                ),
+              ),
+            ),
+            // Right miss zone.
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: ColorTokens.missDefault.withValues(alpha: 0.15),
+                  borderRadius: const BorderRadius.horizontal(
+                    right: Radius.circular(ShapeTokens.radiusGrid),
+                  ),
+                  border: Border.all(
+                    color: ColorTokens.missDefault.withValues(alpha: 0.3),
+                  ),
+                ),
               ),
             ),
           ],
@@ -608,14 +823,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 
   Widget _buildBottomBar() {
-    if (_controller.isStructured) return const SizedBox.shrink();
+    if (_controller.isStructured) {
+      return SizedBox(height: MediaQuery.of(context).padding.bottom);
+    }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         SpacingTokens.md,
         SpacingTokens.sm,
         SpacingTokens.md,
-        SpacingTokens.sm,
+        SpacingTokens.sm + MediaQuery.of(context).padding.bottom,
       ),
       decoration: const BoxDecoration(
         color: ColorTokens.surfaceRaised,
@@ -644,16 +861,16 @@ class _ShotLogRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
           // Shot number.
           SizedBox(
-            width: 20,
+            width: 28,
             child: Text(
               '$index',
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodyLgSize,
                 color: ColorTokens.textTertiary,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
@@ -661,8 +878,8 @@ class _ShotLogRow extends StatelessWidget {
           ),
           // Hit/miss indicator dot.
           Container(
-            width: 8,
-            height: 8,
+            width: 12,
+            height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: shot.isHit
@@ -670,13 +887,13 @@ class _ShotLogRow extends StatelessWidget {
                   : ColorTokens.missDefault,
             ),
           ),
-          const SizedBox(width: SpacingTokens.xs),
+          const SizedBox(width: SpacingTokens.sm),
           // Result label.
           Expanded(
             child: Text(
               shot.label,
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodyLgSize,
                 color: shot.isHit
                     ? ColorTokens.successDefault
                     : ColorTokens.textSecondary,
@@ -685,11 +902,14 @@ class _ShotLogRow extends StatelessWidget {
             ),
           ),
           // Club name.
-          Text(
-            shot.club,
-            style: TextStyle(
-              fontSize: 10,
-              color: ColorTokens.textTertiary,
+          Padding(
+            padding: const EdgeInsets.only(right: SpacingTokens.xl + SpacingTokens.sm),
+            child: Text(
+              shot.club,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                color: ColorTokens.textTertiary,
+              ),
             ),
           ),
         ],

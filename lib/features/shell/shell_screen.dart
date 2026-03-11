@@ -1,6 +1,3 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
@@ -11,6 +8,7 @@ import 'package:zx_golf_app/features/practice/screens/post_session_summary_scree
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/features/auth/sign_in_screen.dart';
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -231,12 +229,15 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               MaterialPageRoute(builder: (_) => const BagScreen()),
             ),
           ),
-          // Sign In prompt when not authenticated (hidden on Windows dev bypass).
-          if (!isAuthenticated && !(!kIsWeb && Platform.isWindows))
+          // Sign In prompt when not authenticated.
+          if (!isAuthenticated)
             TextButton(
-              onPressed: () {
-                // TODO: navigate to sign-in flow.
-              },
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SignInScreen(),
+                ),
+              ),
               style: TextButton.styleFrom(
                 foregroundColor: ColorTokens.primaryDefault,
                 padding: const EdgeInsets.symmetric(

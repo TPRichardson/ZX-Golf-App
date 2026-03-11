@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 
 // TD-07 §9 — Sign-in screen shown when user is not authenticated.
@@ -64,30 +65,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 ),
               ),
               const SizedBox(height: SpacingTokens.xxl),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton.icon(
-                  onPressed: _loading ? null : _signInWithGoogle,
-                  icon: _loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: ColorTokens.textPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.login),
-                  label: Text(_loading ? 'Signing in...' : 'Sign in with Google'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: ColorTokens.primaryDefault,
-                    foregroundColor: ColorTokens.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(ShapeTokens.radiusInput),
-                    ),
-                  ),
-                ),
+              ZxPillButton(
+                label: _loading ? 'Signing in...' : 'Sign in with Google',
+                icon: Icons.login,
+                variant: ZxPillVariant.primary,
+                expanded: true,
+                centered: true,
+                isLoading: _loading,
+                onTap: _loading ? null : _signInWithGoogle,
               ),
               if (_error != null) ...[
                 const SizedBox(height: SpacingTokens.md),
