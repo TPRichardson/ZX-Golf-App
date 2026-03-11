@@ -5,12 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/star_rating.dart';
-import 'package:zx_golf_app/core/widgets/zx_badge.dart';
-import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 
-const _goldStar = Color(0xFFFFD700);
+const _starColor = ColorTokens.primaryDefault;
 
 class PracticeEntryCard extends StatelessWidget {
   final PracticeEntryWithDrill entryWithDrill;
@@ -68,58 +66,28 @@ class PracticeEntryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SpacingTokens.sm),
-            // Left: drill name + structured info + stars.
+            // Drill name.
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    drill.name,
-                    style: TextStyle(
-                      fontSize: TypographyTokens.bodyLgSize,
-                      fontWeight: FontWeight.w500,
-                      color: ColorTokens.textPrimary,
-                    ),
-                  ),
-                  if (_structuredInfo(drill) != null) ...[
-                    const SizedBox(height: SpacingTokens.xs),
-                    Text(
-                      _structuredInfo(drill)!,
-                      style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
-                        color: ColorTokens.textTertiary,
-                      ),
-                    ),
-                  ],
-                  if (isComplete && sessionScore != null) ...[
-                    const SizedBox(height: SpacingTokens.xs),
-                    StarRating(
-                      stars: scoreToStars(sessionScore!),
-                      size: 18,
-                      color: _goldStar,
-                    ),
-                  ],
-                ],
+              child: Text(
+                drill.name,
+                style: TextStyle(
+                  fontSize: TypographyTokens.headerSize,
+                  fontWeight: FontWeight.w600,
+                  color: ColorTokens.textPrimary,
+                ),
               ),
             ),
-            const SizedBox(width: SpacingTokens.sm),
-            // Right: badges stacked vertically.
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                ZxBadge(
-                  label: drill.skillArea.dbValue,
-                  color: ColorTokens.skillArea(drill.skillArea),
+            // Completed: show stars. Pending: show remove button.
+            if (isComplete && sessionScore != null)
+              Padding(
+                padding: const EdgeInsets.only(left: SpacingTokens.sm),
+                child: StarRating(
+                  stars: scoreToStars(sessionScore!),
+                  size: 20,
+                  color: _starColor,
                 ),
-                const SizedBox(height: SpacingTokens.xs),
-                ZxBadge(
-                  label: _drillTypeLabel(drill.drillType),
-                  color: _drillTypeColor(drill.drillType),
-                ),
-              ],
-            ),
-            // Remove button for pending and completed entries.
-            if (onRemove != null)
+              )
+            else if (onRemove != null)
               Padding(
                 padding: const EdgeInsets.only(left: SpacingTokens.xs),
                 child: IconButton(
@@ -134,32 +102,4 @@ class PracticeEntryCard extends StatelessWidget {
     );
   }
 
-  String? _structuredInfo(Drill drill) {
-    if (drill.requiredSetCount > 1 && drill.requiredAttemptsPerSet != null) {
-      return '${drill.requiredSetCount} Sets of ${drill.requiredAttemptsPerSet}';
-    }
-    if (drill.requiredSetCount > 1) {
-      return '${drill.requiredSetCount} Sets';
-    }
-    if (drill.requiredAttemptsPerSet != null) {
-      return '${drill.requiredAttemptsPerSet} Shots';
-    }
-    return null;
-  }
-
-  static String _drillTypeLabel(DrillType type) {
-    return switch (type) {
-      DrillType.techniqueBlock => 'Technique',
-      DrillType.transition => 'Transition',
-      DrillType.pressure => 'Pressure',
-    };
-  }
-
-  static Color _drillTypeColor(DrillType type) {
-    return switch (type) {
-      DrillType.techniqueBlock => ColorTokens.textTertiary,
-      DrillType.transition => ColorTokens.primaryDefault,
-      DrillType.pressure => ColorTokens.warningIntegrity,
-    };
-  }
 }

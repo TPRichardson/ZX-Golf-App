@@ -44,6 +44,87 @@ class PracticeQueueScreen extends ConsumerStatefulWidget {
 
 class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   bool _endingBlock = false;
+  final _scrollController = ScrollController();
+
+  /// Key for the UP NEXT divider to scroll to.
+  final _upNextKey = GlobalKey();
+
+  /// Whether the next build should scroll to the UP NEXT divider.
+  bool _needsScrollToUpNext = true;
+
+  /// Cached session scores loaded from EventLog metadata.
+  final _sessionScores = <String, double>{};
+  final _scoreLoadPending = <String>{};
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Scroll so the UP NEXT divider sits just below one visible completed drill.
+  void _scrollToUpNext() {
+    if (!_needsScrollToUpNext) return;
+    _needsScrollToUpNext = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final keyContext = _upNextKey.currentContext;
+      if (keyContext != null) {
+        Scrollable.ensureVisible(
+          keyContext,
+          duration: MotionTokens.standard,
+          curve: Curves.easeInOut,
+          // 0.1 ≈ leaves room for one completed card above the divider.
+          alignment: 0.1,
+        );
+      }
+    });
+  }
+
+  /// Request a scroll to UP NEXT on the next build frame.
+  void _requestScrollToUpNext() {
+    _needsScrollToUpNext = true;
+  }
+
+  /// Load scores for completed sessions from EventLog, then rebuild.
+  void _loadSessionScoresIfNeeded(List<PracticeEntryWithDrill> completed) {
+    final sessionIds = completed
+        .where((e) => e.session != null)
+        .map((e) => e.session!.sessionId)
+        .where((id) => !_sessionScores.containsKey(id) && !_scoreLoadPending.contains(id))
+        .toSet();
+    if (sessionIds.isEmpty) return;
+
+    _scoreLoadPending.addAll(sessionIds);
+    _doLoadScores(sessionIds);
+  }
+
+  Future<void> _doLoadScores(Set<String> sessionIds) async {
+    final db = ref.read(databaseProvider);
+    final logs = await (db.select(db.eventLogs)
+          ..where((t) => t.eventTypeId.equals('SessionCompletion')))
+        .get();
+
+    bool found = false;
+    for (final log in logs) {
+      if (log.affectedEntityIds == null || log.metadata == null) continue;
+      try {
+        final entityIds = jsonDecode(log.affectedEntityIds!) as List;
+        for (final id in sessionIds) {
+          if (entityIds.contains(id)) {
+            final meta = jsonDecode(log.metadata!) as Map<String, dynamic>;
+            final score = (meta['sessionScore'] as num?)?.toDouble();
+            if (score != null) {
+              _sessionScores[id] = score;
+              found = true;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    _scoreLoadPending.removeAll(sessionIds);
+    if (found && mounted) setState(() {});
+  }
 
   /// Change environment only (Indoor/Outdoor). Surface stays as-is.
   Future<void> _changeEnvironment(SurfaceType? currentSurface) async {
@@ -104,6 +185,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       for (final drillId in drillIds) {
         await repo.addDrillToQueue(widget.practiceBlockId, drillId);
       }
+      _requestScrollToUpNext();
     }
   }
 
@@ -140,7 +222,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
     if (!mounted) return;
 
-    Navigator.of(context).push(MaterialPageRoute(
+    await Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => PostSessionSummaryScreen(
         drill: ewd.drill,
         session: ewd.session!,
@@ -150,6 +232,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
         userId: widget.userId,
       ),
     ));
+    if (mounted) _requestScrollToUpNext();
   }
 
   /// Remove a completed session entry (discard the session).
@@ -235,6 +318,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
         entryWithDrill.entry.practiceEntryId,
         session.sessionId,
       );
+      _requestScrollToUpNext();
     }
   }
 
@@ -258,6 +342,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
         ewd.entry.practiceEntryId,
         ewd.session!.sessionId,
       );
+      _requestScrollToUpNext();
     }
   }
 
@@ -667,12 +752,6 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     );
   }
 
-  /// Max visible completed cards before the section becomes scrollable.
-  static const _maxVisibleCompleted = 2;
-
-  /// Approximate height of a single completed entry card + bottom padding.
-  static const _completedCardHeight = 72.0;
-
   Widget _buildEntryList(
     List<PracticeEntryWithDrill> completed,
     List<PracticeEntryWithDrill> pending,
@@ -681,18 +760,42 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     final hasActive = pending.any(
         (e) => e.entry.entryType == PracticeEntryType.activeSession);
 
-    return Column(
+    // Load scores for completed sessions.
+    if (completed.isNotEmpty) _loadSessionScoresIfNeeded(completed);
+
+    // Auto-scroll to UP NEXT divider when completed drills exist.
+    if (completed.isNotEmpty && pending.isNotEmpty) _scrollToUpNext();
+
+    return ListView(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.lg,
+        vertical: SpacingTokens.md,
+      ),
       children: [
-        // Completed section — scrollable when > 2 items.
-        if (completed.isNotEmpty)
-          _buildCompletedSection(completed, hasActive),
-        // UP NEXT divider — shown when there are pending drills.
+        // Completed section.
+        for (final ewd in completed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+            child: Opacity(
+              opacity: hasActive ? 0.2 : 0.5,
+              child: PracticeEntryCard(
+                entryWithDrill: ewd,
+                sessionScore: ewd.session != null
+                    ? _sessionScores[ewd.session!.sessionId]
+                    : null,
+                onTap: hasActive || ewd.session == null
+                    ? null
+                    : () => _viewCompletedSession(ewd),
+                onRemove: hasActive ? null : () => _removeCompletedEntry(ewd),
+              ),
+            ),
+          ),
+        // UP NEXT divider.
         if (pending.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: SpacingTokens.sm,
-              horizontal: SpacingTokens.lg,
-            ),
+            key: _upNextKey,
+            padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
             child: Row(
               children: [
                 Expanded(
@@ -729,66 +832,13 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
               ],
             ),
           ),
-        // Pending / active section — takes remaining space.
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: SpacingTokens.lg,
-              vertical: SpacingTokens.sm,
-            ),
-            children: [
-              for (final ewd in pending)
-                _buildPendingEntry(ewd, hasActive),
-            ],
-          ),
-        ),
+        // Pending / active section.
+        for (final ewd in pending)
+          _buildPendingEntry(ewd, hasActive),
+        // Bottom spacer ensures UP NEXT stays in a consistent position
+        // even when there aren't enough pending drills to fill the screen.
+        SizedBox(height: MediaQuery.of(context).size.height * 0.5),
       ],
-    );
-  }
-
-  Widget _buildCompletedSection(
-    List<PracticeEntryWithDrill> completed,
-    bool hasActive,
-  ) {
-    final cards = completed
-        .map((ewd) => Padding(
-              padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-              child: Opacity(
-                opacity: hasActive ? 0.2 : 1.0,
-                child: PracticeEntryCard(
-                  entryWithDrill: ewd,
-                  sessionScore: ewd.session != null ? null : null,
-                  onTap: hasActive || ewd.session == null
-                      ? null
-                      : () => _viewCompletedSession(ewd),
-                  onRemove: hasActive ? null : () => _removeCompletedEntry(ewd),
-                ),
-              ),
-            ))
-        .toList();
-
-    if (completed.length <= _maxVisibleCompleted) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(
-          SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, 0,
-        ),
-        child: Column(children: cards),
-      );
-    }
-
-    // Scrollable constrained list for 3+ completed drills.
-    final maxHeight = _completedCardHeight * _maxVisibleCompleted;
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      child: Scrollbar(
-        thumbVisibility: true,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, 0,
-          ),
-          children: cards,
-        ),
-      ),
     );
   }
 
