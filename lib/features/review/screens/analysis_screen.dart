@@ -175,7 +175,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                   // Session history CTA when Scope=Drill.
                   if (_scope == AnalysisScope.drill &&
                       _selectedDrillId != null)
-                    OutlinedButton.icon(
+                    OutlinedButton(
                       onPressed: () {
                         Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => SessionHistoryScreen(
@@ -184,12 +184,18 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                           ),
                         ));
                       },
-                      icon: const Icon(Icons.history),
-                      label: const Text('View Session History'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: ColorTokens.primaryDefault,
                         side: const BorderSide(
                             color: ColorTokens.primaryDefault),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.history, size: 18),
+                          SizedBox(width: SpacingTokens.sm),
+                          Text('View Session History'),
+                        ],
                       ),
                     ),
                 ],

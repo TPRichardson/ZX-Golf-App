@@ -197,7 +197,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               if (filtered.isEmpty) {
                 return Column(
                   children: [
-                    if (notice != null) notice,
+                    ?notice,
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -231,14 +231,14 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               if (isGrouped) {
                 return Column(
                   children: [
-                    if (notice != null) notice,
+                    ?notice,
                     Expanded(child: _buildGroupedList(context, sorted)),
                   ],
                 );
               }
               return Column(
                 children: [
-                  if (notice != null) notice,
+                  ?notice,
                   Expanded(child: _buildFlatList(context, sorted)),
                 ],
               );
@@ -679,7 +679,7 @@ class _DrillCountControl extends StatelessWidget {
             onTap: onDecrement,
             child: Icon(
               Icons.remove_circle_outline,
-              color: const Color(0xFF8C2A2A),
+              color: ColorTokens.errorActive,
               size: 30,
             ),
           ),

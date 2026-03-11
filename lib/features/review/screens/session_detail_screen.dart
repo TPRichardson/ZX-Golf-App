@@ -142,7 +142,7 @@ class SessionDetailScreen extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.only(
                             top: SpacingTokens.md),
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -152,12 +152,18 @@ class SessionDetailScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          icon: const Icon(Icons.edit, size: 16),
-                          label: const Text('Edit Drill'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ColorTokens.primaryDefault,
                             side: const BorderSide(
                                 color: ColorTokens.primaryDefault),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit, size: 16),
+                              SizedBox(width: SpacingTokens.sm),
+                              Text('Edit Drill'),
+                            ],
                           ),
                         ),
                       ),

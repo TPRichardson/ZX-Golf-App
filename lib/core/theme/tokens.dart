@@ -106,6 +106,47 @@ abstract final class ColorTokens {
     return textSecondary;
   }
 
+  // RAG colour constants for scoring visualisation.
+  static const ragRed = Color(0xFFE05252);
+  static const ragAmber = Color(0xFFE8A830);
+  static const ragGreen = Color(0xFF22C55E);
+  static const ragPurple = Color(0xFF9333EA);
+
+  /// RAG tile/pill colour: grey (0) → red→amber (≤0.6) → amber→green (>0.6).
+  /// Used for heatmap tiles and subskill pills. Returns with 60% alpha.
+  static Color ragTileColor(double normalisedScore) {
+    if (normalisedScore <= 0) return surfaceRaised;
+    if (normalisedScore <= 0.6) {
+      return Color.lerp(
+        ragRed,
+        ragAmber,
+        (normalisedScore / 0.6).clamp(0.0, 1.0),
+      )!.withValues(alpha: 0.6);
+    }
+    return Color.lerp(
+      ragAmber,
+      ragGreen,
+      ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
+    )!.withValues(alpha: 0.6);
+  }
+
+  /// RAG bar colour: red→green linear interpolation by fill fraction.
+  /// Used for SkillScore progress bars.
+  static Color ragBarColor(double fill) {
+    return Color.lerp(ragRed, ragGreen, fill.clamp(0.0, 1.0))!;
+  }
+
+  /// SkillScore ring colour: grey(0) → red→green (≤700) → green→purple (>700).
+  /// Used for the overall score display ring.
+  static Color ragScoreColor(double score) {
+    if (score <= 0) return textTertiary;
+    final f = (score / 1000).clamp(0.0, 1.0);
+    if (f <= 0.7) {
+      return Color.lerp(ragRed, ragGreen, f / 0.7)!;
+    }
+    return Color.lerp(ragGreen, ragPurple, (f - 0.7) / 0.3)!;
+  }
+
   /// Resolve skill area to its colour token.
   static Color skillArea(SkillArea area) {
     return switch (area) {
@@ -140,10 +181,12 @@ abstract final class TypographyTokens {
   // Body LG: 18px, Regular
   static const bodyLgSize = 18.0;
   static const bodyLgHeight = 24.0 / 18.0;
-  static const bodyWeight = FontWeight.w400;
+  static const bodyLgWeight = FontWeight.w400;
 
+  // Body: 16px, Regular
   static const bodySize = 16.0;
   static const bodyHeight = 22.0 / 16.0;
+  static const bodyWeight = FontWeight.w400;
 
   // Body SM: 14px, Regular @ 70-80% opacity
   static const bodySmSize = 14.0;

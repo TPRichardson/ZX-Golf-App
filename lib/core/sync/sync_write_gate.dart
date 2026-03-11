@@ -32,12 +32,7 @@ class SyncWriteGate {
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
     _held = false;
-    for (final waiter in _waiters) {
-      if (!waiter.isCompleted) {
-        waiter.complete();
-      }
-    }
-    _waiters.clear();
+    _completeAllWaiters();
   }
 
   /// TD-03 §2.1.1 — Wait for the gate to be released.
@@ -54,6 +49,10 @@ class SyncWriteGate {
     _timeoutTimer?.cancel();
     _timeoutTimer = null;
     _held = false;
+    _completeAllWaiters();
+  }
+
+  void _completeAllWaiters() {
     for (final waiter in _waiters) {
       if (!waiter.isCompleted) {
         waiter.complete();

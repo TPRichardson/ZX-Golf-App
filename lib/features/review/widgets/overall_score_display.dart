@@ -122,25 +122,8 @@ class OverallScoreDisplay extends StatelessWidget {
   }
 }
 
-/// SkillScore ring colour: 0=grey, low=red, scratch(700)=green, pro(1000)=purple.
-Color _skillScoreColor(double score) {
-  if (score <= 0) return ColorTokens.textTertiary;
-  final f = (score / 1000).clamp(0.0, 1.0);
-  if (f <= 0.7) {
-    // Red → Green (0 → scratch).
-    return Color.lerp(
-      const Color(0xFFE05252),
-      const Color(0xFF22C55E),
-      f / 0.7,
-    )!;
-  }
-  // Green → Purple (scratch → pro).
-  return Color.lerp(
-    const Color(0xFF22C55E),
-    const Color(0xFF9333EA),
-    (f - 0.7) / 0.3,
-  )!;
-}
+/// SkillScore ring colour — delegates to shared RAG token.
+Color _skillScoreColor(double score) => ColorTokens.ragScoreColor(score);
 
 /// Circular progress arc painter for profile completeness.
 class _CircleProgressPainter extends CustomPainter {

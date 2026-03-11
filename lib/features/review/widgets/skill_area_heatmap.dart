@@ -61,9 +61,9 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildRow(1, _row1, _row1Flex, windowStats, allocations),
-            const SizedBox(height: 4),
+            const SizedBox(height: SpacingTokens.xs),
             _buildRow(2, _row2, _row2Flex, windowStats, allocations),
-            const SizedBox(height: 4),
+            const SizedBox(height: SpacingTokens.xs),
             _buildRow(3, _row3, _row3Flex, windowStats, allocations),
           ],
         );

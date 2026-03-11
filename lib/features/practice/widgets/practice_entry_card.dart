@@ -8,8 +8,6 @@ import 'package:zx_golf_app/core/widgets/star_rating.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 
-const _starColor = ColorTokens.primaryDefault;
-
 class PracticeEntryCard extends StatelessWidget {
   final PracticeEntryWithDrill entryWithDrill;
   final VoidCallback? onTap;
@@ -84,7 +82,7 @@ class PracticeEntryCard extends StatelessWidget {
                 child: StarRating(
                   stars: scoreToStars(sessionScore!),
                   size: 20,
-                  color: _starColor,
+                  color: ColorTokens.primaryDefault,
                 ),
               )
             else if (onRemove != null)

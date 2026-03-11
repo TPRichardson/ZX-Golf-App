@@ -138,22 +138,9 @@ class _SubskillTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // RAG pill colour.
-    final Color pillColor;
-    if (normalisedScore == 0.0) {
-      pillColor = ColorTokens.textTertiary.withValues(alpha: 0.3);
-    } else if (normalisedScore <= 0.6) {
-      pillColor = Color.lerp(
-        const Color(0xFFE05252),
-        const Color(0xFFE8A830),
-        (normalisedScore / 0.6).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.6);
-    } else {
-      pillColor = Color.lerp(
-        const Color(0xFFE8A830),
-        const Color(0xFF22C55E),
-        ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.6);
-    }
+    final pillColor = normalisedScore == 0.0
+        ? ColorTokens.textTertiary.withValues(alpha: 0.3)
+        : ColorTokens.ragTileColor(normalisedScore);
 
     return InkWell(
       onTap: onTap,
@@ -251,11 +238,7 @@ class _WindowFillBar extends StatelessWidget {
     if (occupancy == 0) {
       barColor = ColorTokens.textTertiary.withValues(alpha: 0.3);
     } else if (rag) {
-      barColor = Color.lerp(
-        const Color(0xFFE05252),
-        const Color(0xFF22C55E),
-        fill,
-      )!;
+      barColor = ColorTokens.ragBarColor(fill);
     } else {
       barColor = Color.lerp(
         ColorTokens.textTertiary,

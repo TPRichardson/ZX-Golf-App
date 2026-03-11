@@ -669,8 +669,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           );
     }
 
-    final targetDepth = widget.drill.targetSizeDepth ?? 15.0;
-
     return Row(
       children: [
         // Vertical target bar on the left — match grid input padding.
@@ -753,8 +751,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       return const SizedBox.shrink();
     }
 
-    // Use drill's targetSizeWidth if available, otherwise dummy 15yd.
-    final targetWidth = widget.drill.targetSizeWidth ?? 15.0;
     final gridType = widget.drill.gridType;
 
     // For 1x3 (direction): the center 1/3 is the hit zone.

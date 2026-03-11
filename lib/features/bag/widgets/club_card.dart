@@ -26,9 +26,6 @@ class ClubCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(activeProfileProvider(club.clubId));
     final carry = profileAsync.whenOrNull(data: (p) => p?.carryDistance);
-    final makeModel = [club.make, club.model]
-        .where((s) => s != null && s.isNotEmpty)
-        .join(' ');
     final skillAreas =
         ref.watch(skillAreasForClubProvider((club.userId, club.clubType)));
 
@@ -215,7 +212,11 @@ class ClubCard extends ConsumerWidget {
 
     final selected = await showDialog<int>(
       context: context,
-      builder: (ctx) => _LoftPickerDialog(
+      builder: (ctx) => _ScrollWheelPickerDialog(
+        title: 'Loft',
+        suffix: '°',
+        entryLabel: 'Degrees',
+        entryHint: 'e.g. 46',
         min: range.min,
         max: range.max,
         initial: currentLoft.clamp(range.min, range.max),
@@ -295,7 +296,11 @@ class ClubCard extends ConsumerWidget {
 
     final selected = await showDialog<int>(
       context: context,
-      builder: (ctx) => _CarryPickerDialog(
+      builder: (ctx) => _ScrollWheelPickerDialog(
+        title: 'Carry',
+        suffix: 'y',
+        entryLabel: 'Yards',
+        entryHint: 'e.g. 150',
         min: range.min,
         max: range.max,
         initial: currentCarry.clamp(range.min, range.max),
@@ -351,10 +356,6 @@ class ClubCard extends ConsumerWidget {
       ClubType.lw => 'Lw',
       _ => db,
     };
-  }
-
-  static Color _categoryColor(ClubType type) {
-    return ColorTokens.clubCategory(type);
   }
 
   static String _skillAreaShort(SkillArea area) {
@@ -656,23 +657,33 @@ class _ClubSkillAreaDialog extends ConsumerWidget {
   }
 }
 
-/// Scroll-wheel loft picker dialog with category-constrained range.
-class _LoftPickerDialog extends StatefulWidget {
+/// Scroll-wheel picker dialog for integer values with optional "Enter value" sub-dialog.
+/// Used for both loft and carry pickers.
+class _ScrollWheelPickerDialog extends StatefulWidget {
+  final String title;
+  final String suffix;
+  final String entryLabel;
+  final String entryHint;
   final int min;
   final int max;
   final int initial;
 
-  const _LoftPickerDialog({
+  const _ScrollWheelPickerDialog({
+    required this.title,
+    required this.suffix,
+    required this.entryLabel,
+    required this.entryHint,
     required this.min,
     required this.max,
     required this.initial,
   });
 
   @override
-  State<_LoftPickerDialog> createState() => _LoftPickerDialogState();
+  State<_ScrollWheelPickerDialog> createState() =>
+      _ScrollWheelPickerDialogState();
 }
 
-class _LoftPickerDialogState extends State<_LoftPickerDialog> {
+class _ScrollWheelPickerDialogState extends State<_ScrollWheelPickerDialog> {
   late final FixedExtentScrollController _scrollCtrl;
   late int _selected;
 
@@ -698,174 +709,9 @@ class _LoftPickerDialogState extends State<_LoftPickerDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
       ),
-      title: const Text(
-        'Loft',
-        style: TextStyle(color: ColorTokens.textPrimary),
-      ),
-      content: SizedBox(
-        height: 180,
-        child: Row(
-          children: [
-            // Type value button on the left.
-            ZxPillButton(
-              label: 'Enter\nvalue',
-              variant: ZxPillVariant.secondary,
-  
-              onTap: () async {
-                final ctrl = TextEditingController();
-                final value = await showDialog<int>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: ColorTokens.surfaceModal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(ShapeTokens.radiusModal),
-                    ),
-                    title: const Text(
-                      'Enter Loft',
-                      style: TextStyle(color: ColorTokens.textPrimary),
-                    ),
-                    content: TextField(
-                      controller: ctrl,
-                      keyboardType: TextInputType.number,
-                      autofocus: true,
-                      style: const TextStyle(
-                          color: ColorTokens.textPrimary),
-                      decoration: const InputDecoration(
-                        labelText: 'Degrees',
-                        hintText: 'e.g. 46',
-                        labelStyle:
-                            TextStyle(color: ColorTokens.textTertiary),
-                        hintStyle:
-                            TextStyle(color: ColorTokens.textTertiary),
-                      ),
-                    ),
-                    actions: [
-                      ZxPillButton(
-                        label: 'Cancel',
-                        variant: ZxPillVariant.tertiary,
-            
-                        onTap: () => Navigator.pop(ctx),
-                      ),
-                      ZxPillButton(
-                        label: 'Save',
-                        variant: ZxPillVariant.primary,
-            
-                        onTap: () {
-                          final v = int.tryParse(ctrl.text);
-                          if (v != null) Navigator.pop(ctx, v);
-                        },
-                      ),
-                    ],
-                  ),
-                );
-                if (value != null && context.mounted) {
-                  Navigator.pop(context, value);
-                }
-              },
-            ),
-            const SizedBox(width: SpacingTokens.md),
-            // Scroll wheel on the right.
-            Expanded(
-              child: ListWheelScrollView.useDelegate(
-                controller: _scrollCtrl,
-                itemExtent: 40,
-                physics: const FixedExtentScrollPhysics(),
-                diameterRatio: 1.5,
-                onSelectedItemChanged: (index) {
-                  setState(() => _selected = widget.min + index);
-                },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: widget.max - widget.min + 1,
-                  builder: (context, index) {
-                    final value = widget.min + index;
-                    final isSelected = value == _selected;
-                    return Center(
-                      child: Text(
-                        '$value°',
-                        style: TextStyle(
-                          fontSize: isSelected
-                              ? TypographyTokens.displayLgSize
-                              : TypographyTokens.bodyLgSize,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: isSelected
-                              ? ColorTokens.primaryDefault
-                              : ColorTokens.textTertiary,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        ZxPillButton(
-          label: 'Cancel',
-          variant: ZxPillVariant.tertiary,
-
-          onTap: () => Navigator.pop(context),
-        ),
-        ZxPillButton(
-          label: 'Save',
-          variant: ZxPillVariant.primary,
-
-          onTap: () => Navigator.pop(context, _selected),
-        ),
-      ],
-    );
-  }
-}
-
-/// Scroll-wheel carry picker + optional total distance field.
-class _CarryPickerDialog extends StatefulWidget {
-  final int min;
-  final int max;
-  final int initial;
-
-  const _CarryPickerDialog({
-    required this.min,
-    required this.max,
-    required this.initial,
-  });
-
-  @override
-  State<_CarryPickerDialog> createState() => _CarryPickerDialogState();
-}
-
-class _CarryPickerDialogState extends State<_CarryPickerDialog> {
-  late final FixedExtentScrollController _scrollCtrl;
-  late int _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.initial;
-    _scrollCtrl = FixedExtentScrollController(
-      initialItem: widget.initial - widget.min,
-    );
-  }
-
-  @override
-  void dispose() {
-    _scrollCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-      ),
-      title: const Text(
-        'Carry',
-        style: TextStyle(color: ColorTokens.textPrimary),
+      title: Text(
+        widget.title,
+        style: const TextStyle(color: ColorTokens.textPrimary),
       ),
       content: SizedBox(
         height: 180,
@@ -884,9 +730,9 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
                       borderRadius:
                           BorderRadius.circular(ShapeTokens.radiusModal),
                     ),
-                    title: const Text(
-                      'Enter Carry',
-                      style: TextStyle(color: ColorTokens.textPrimary),
+                    title: Text(
+                      'Enter ${widget.title}',
+                      style: const TextStyle(color: ColorTokens.textPrimary),
                     ),
                     content: TextField(
                       controller: ctrl,
@@ -894,13 +740,13 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
                       autofocus: true,
                       style: const TextStyle(
                           color: ColorTokens.textPrimary),
-                      decoration: const InputDecoration(
-                        labelText: 'Yards',
-                        hintText: 'e.g. 150',
+                      decoration: InputDecoration(
+                        labelText: widget.entryLabel,
+                        hintText: widget.entryHint,
                         labelStyle:
-                            TextStyle(color: ColorTokens.textTertiary),
+                            const TextStyle(color: ColorTokens.textTertiary),
                         hintStyle:
-                            TextStyle(color: ColorTokens.textTertiary),
+                            const TextStyle(color: ColorTokens.textTertiary),
                       ),
                     ),
                     actions: [
@@ -942,7 +788,7 @@ class _CarryPickerDialogState extends State<_CarryPickerDialog> {
                     final isSelected = value == _selected;
                     return Center(
                       child: Text(
-                        '${value}y',
+                        '$value${widget.suffix}',
                         style: TextStyle(
                           fontSize: isSelected
                               ? TypographyTokens.displayLgSize

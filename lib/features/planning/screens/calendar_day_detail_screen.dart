@@ -14,8 +14,7 @@ import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import '../widgets/slot_tile.dart';
-import 'routine_apply_screen.dart';
-import 'schedule_apply_screen.dart';
+import '../widgets/planning_actions_sheet.dart';
 
 // S08 §8.12.2 — Single day detail with slot list.
 
@@ -308,117 +307,19 @@ class _CalendarDayDetailScreenState
     }
   }
 
-  void _showRoutinePicker() {
-    final routinesAsync = ref.read(routinesProvider(_userId));
-    final routines = routinesAsync.valueOrNull ?? [];
-
-    if (routines.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No active routines')),
+  void _showRoutinePicker() => showRoutinePickerSheet(
+        context, ref,
+        userId: _userId,
+        date: _day!.date,
+        onApplied: _loadDay,
       );
-      return;
-    }
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-            top: Radius.circular(ShapeTokens.radiusModal)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm),
-              child: Text(
-                'Apply routine',
-                style: TextStyle(
-                  fontSize: TypographyTokens.headerSize,
-                  fontWeight: TypographyTokens.headerWeight,
-                  color: ColorTokens.textPrimary,
-                ),
-              ),
-            ),
-            for (final routine in routines)
-              ListTile(
-                leading: const Icon(Icons.playlist_play,
-                    color: ColorTokens.primaryDefault),
-                title: Text(routine.name),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => RoutineApplyScreen(
-                      routineId: routine.routineId,
-                      targetDate: _day!.date,
-                    ),
-                  )).then((_) => _loadDay());
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSchedulePicker() {
-    final schedulesAsync = ref.read(schedulesProvider(_userId));
-    final schedules = schedulesAsync.valueOrNull ?? [];
-
-    if (schedules.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No active schedules')),
+  void _showSchedulePicker() => showSchedulePickerSheet(
+        context, ref,
+        userId: _userId,
+        date: _day!.date,
+        onApplied: _loadDay,
       );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-            top: Radius.circular(ShapeTokens.radiusModal)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, SpacingTokens.sm),
-              child: Text(
-                'Apply schedule',
-                style: TextStyle(
-                  fontSize: TypographyTokens.headerSize,
-                  fontWeight: TypographyTokens.headerWeight,
-                  color: ColorTokens.textPrimary,
-                ),
-              ),
-            ),
-            for (final schedule in schedules)
-              ListTile(
-                leading: const Icon(Icons.date_range,
-                    color: ColorTokens.primaryDefault),
-                title: Text(schedule.name),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => ScheduleApplyScreen(
-                      scheduleId: schedule.scheduleId,
-                      startDate: _day!.date,
-                    ),
-                  )).then((_) => _loadDay());
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 
   String _formatDate(DateTime date) =>
       formatDate(date, includeWeekday: true);

@@ -46,23 +46,8 @@ class SkillAreaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RAG colour: grey (no data) → red (low) → amber (mid) → green (high).
-    final Color tileColor;
-    if (normalisedScore == 0.0) {
-      tileColor = ColorTokens.surfaceRaised;
-    } else if (normalisedScore <= 0.6) {
-      tileColor = Color.lerp(
-        const Color(0xFFE05252),
-        const Color(0xFFE8A830),
-        (normalisedScore / 0.6).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.6);
-    } else {
-      tileColor = Color.lerp(
-        const Color(0xFFE8A830),
-        const Color(0xFF22C55E),
-        ((normalisedScore - 0.6) / 0.4).clamp(0.0, 1.0),
-      )!.withValues(alpha: 0.6);
-    }
+    // RAG colour: grey (no data) → red → amber → green.
+    final tileColor = ColorTokens.ragTileColor(normalisedScore);
 
     return GestureDetector(
       onTap: onTap,
@@ -262,11 +247,7 @@ class _TileFillBar extends StatelessWidget {
     if (value == 0) {
       barColor = ColorTokens.textTertiary.withValues(alpha: 0.3);
     } else if (rag) {
-      barColor = Color.lerp(
-        const Color(0xFFE05252),
-        const Color(0xFF22C55E),
-        fill,
-      )!;
+      barColor = ColorTokens.ragBarColor(fill);
     } else {
       barColor = Color.lerp(
         ColorTokens.textTertiary,
