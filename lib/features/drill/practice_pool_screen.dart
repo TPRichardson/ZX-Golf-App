@@ -398,7 +398,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         SpacingTokens.md,
         SpacingTokens.sm,
         SpacingTokens.md,
-        SpacingTokens.md,
+        SpacingTokens.sm,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -408,6 +408,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             child: ZxPillButton(
               label: 'Add Drills',
               icon: Icons.add,
+              size: ZxPillSize.sm,
               variant: ZxPillVariant.primary,
               expanded: true,
               centered: true,
@@ -424,6 +425,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               child: ZxPillButton(
                 label: 'Begin Practice',
                 icon: Icons.play_circle_filled,
+                size: ZxPillSize.sm,
                 variant: ZxPillVariant.progress,
                 expanded: true,
                 centered: true,

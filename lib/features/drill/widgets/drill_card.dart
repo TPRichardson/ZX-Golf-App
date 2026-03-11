@@ -44,7 +44,7 @@ class DrillCard extends StatelessWidget {
             child: Text(
               drill.name,
               style: TextStyle(
-                fontSize: TypographyTokens.headerSize,
+                fontSize: TypographyTokens.bodyLgSize,
                 fontWeight: FontWeight.w600,
                 color: ColorTokens.textPrimary,
               ),

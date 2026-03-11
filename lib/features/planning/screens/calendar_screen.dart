@@ -511,36 +511,36 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
 
   Widget _buildBottomActionBar() {
     if (_selectedDay == null) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md,
-        vertical: SpacingTokens.sm,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SpacingTokens.md,
+        SpacingTokens.sm,
+        SpacingTokens.md,
+        SpacingTokens.sm,
       ),
-      color: ColorTokens.surfaceRaised,
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
             child: ZxPillButton(
-              label: 'Routine',
+              label: 'Add Routine',
               icon: Icons.add,
-              variant: ZxPillVariant.primary,
               size: ZxPillSize.sm,
+              variant: ZxPillVariant.primary,
               expanded: true,
               centered: true,
               onTap: () => _showRoutinePicker(_selectedDay!),
             ),
           ),
-          const SizedBox(width: SpacingTokens.xs),
-          Expanded(
-            child: ZxPillButton(
-              label: 'Schedule',
-              icon: Icons.add,
-              variant: ZxPillVariant.primary,
-              size: ZxPillSize.sm,
-              expanded: true,
-              centered: true,
-              onTap: () => _showSchedulePicker(_selectedDay!),
-            ),
+          ZxPillButton(
+            label: 'Add Schedule',
+            icon: Icons.add,
+            size: ZxPillSize.sm,
+            variant: ZxPillVariant.primary,
+            expanded: true,
+            centered: true,
+            onTap: () => _showSchedulePicker(_selectedDay!),
           ),
         ],
       ),
