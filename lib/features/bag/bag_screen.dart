@@ -614,7 +614,7 @@ class _FullClubList extends StatelessWidget {
                       ),
                       child: Text('$selectedInGroup',
                           style: const TextStyle(
-                            fontSize: TypographyTokens.microSize,
+                            fontSize: TypographyTokens.bodySmSize,
                             color: ColorTokens.primaryDefault,
                           )),
                     ),

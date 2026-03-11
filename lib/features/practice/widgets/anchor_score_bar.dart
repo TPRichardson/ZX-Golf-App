@@ -165,7 +165,7 @@ class _AnchorMarker extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: TypographyTokens.microSize,
+              fontSize: TypographyTokens.bodySmSize,
               fontWeight: FontWeight.w500,
               color: color,
             ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
@@ -15,7 +16,6 @@ import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 
-import '../widgets/calendar_day_card.dart';
 import '../widgets/slot_tile.dart';
 import 'calendar_day_detail_screen.dart';
 import 'routine_apply_screen.dart';
@@ -38,8 +38,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
   static const _userId = kDevUserId;
 
-  bool _showTwoWeeks = true;
-
   // 2-week grid: week offset from current week (0 = this week).
   int _weekOffset = 0;
 
@@ -59,19 +57,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   }
 
   DateTime _rangeStartFor(int weekStartDay) {
-    if (_showTwoWeeks) {
-      // Start from the configured week start day, shifted by _weekOffset weeks.
-      final diff = (_today.weekday - weekStartDay + 7) % 7;
-      return _today.subtract(Duration(days: diff)).add(Duration(days: _weekOffset * 7));
-    }
-    return _today;
+    final diff = (_today.weekday - weekStartDay + 7) % 7;
+    return _today.subtract(Duration(days: diff)).add(Duration(days: _weekOffset * 7));
   }
 
   DateTime _rangeEndFor(DateTime rangeStart) {
-    if (_showTwoWeeks) {
-      return rangeStart.add(const Duration(days: 13));
-    }
-    return _today.add(const Duration(days: 2));
+    return rangeStart.add(const Duration(days: 13));
   }
 
   @override
@@ -140,7 +131,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     )));
     return Column(
       children: [
-        // Toggle + week control header.
+        // Week navigation header.
         Padding(
           padding: const EdgeInsets.fromLTRB(
             SpacingTokens.md, 12, SpacingTokens.md, 0,
@@ -148,90 +139,53 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _ViewToggle(
-                showTwoWeeks: _showTwoWeeks,
-                onChanged: (v) => setState(() {
-                  _showTwoWeeks = v;
-                  if (v) {
-                    _weekOffset = 0;
-                    _selectedDay = _today;
-                  }
-                }),
-              ),
               const Spacer(),
-              if (_showTwoWeeks) ...[
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
-                    border: Border.all(color: ColorTokens.primaryDefault),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _weekOffset -= 1),
+                    child: const Padding(
+                      padding: EdgeInsets.all(SpacingTokens.xs),
+                      child: Icon(Icons.chevron_left, size: 22, color: ColorTokens.primaryDefault),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Left arrow — solid background.
-                      GestureDetector(
-                        onTap: () => setState(() => _weekOffset -= 1),
-                        child: Container(
-                          padding: const EdgeInsets.all(SpacingTokens.xs),
-                          decoration: BoxDecoration(
-                            color: ColorTokens.primaryDefault,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(ShapeTokens.radiusSegmented - 1),
-                              bottomLeft: Radius.circular(ShapeTokens.radiusSegmented - 1),
-                            ),
-                          ),
-                          child: const Icon(Icons.chevron_left, size: 18, color: Colors.white),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _weekOffset = 0;
+                      _selectedDay = _today;
+                    }),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.sm,
+                        vertical: SpacingTokens.xs,
+                      ),
+                      child: Text(
+                        'Today',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodySize,
+                          fontWeight: FontWeight.w600,
+                          color: ColorTokens.primaryDefault,
                         ),
                       ),
-                      // Today label.
-                      GestureDetector(
-                        onTap: () => setState(() {
-                          _weekOffset = 0;
-                          _selectedDay = _today;
-                        }),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: SpacingTokens.sm,
-                            vertical: SpacingTokens.xs,
-                          ),
-                          child: Text(
-                            'Today',
-                            style: TextStyle(
-                              fontSize: TypographyTokens.bodySize,
-                              fontWeight: FontWeight.w600,
-                              color: ColorTokens.primaryDefault,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Right arrow — solid background.
-                      GestureDetector(
-                        onTap: () => setState(() => _weekOffset += 1),
-                        child: Container(
-                          padding: const EdgeInsets.all(SpacingTokens.xs),
-                          decoration: BoxDecoration(
-                            color: ColorTokens.primaryDefault,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(ShapeTokens.radiusSegmented - 1),
-                              bottomRight: Radius.circular(ShapeTokens.radiusSegmented - 1),
-                            ),
-                          ),
-                          child: const Icon(Icons.chevron_right, size: 18, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: () => setState(() => _weekOffset += 1),
+                    child: const Padding(
+                      padding: EdgeInsets.all(SpacingTokens.xs),
+                      child: Icon(Icons.chevron_right, size: 22, color: ColorTokens.primaryDefault),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
-        // Calendar day list.
+        // Calendar grid.
         Expanded(
           child: daysAsync.when(
-            data: (days) => _showTwoWeeks
-                ? _buildWeekGrid(days, rangeStart, rangeEnd)
-                : _buildDayList(days, rangeStart, rangeEnd),
+            data: (days) => _buildWeekGrid(days, rangeStart, rangeEnd),
             loading: () => const Center(
               child: CircularProgressIndicator(
                 color: ColorTokens.primaryDefault,
@@ -246,51 +200,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildDayList(
-      List<CalendarDay> days, DateTime rangeStart, DateTime rangeEnd) {
-    final repo = ref.watch(planningRepositoryProvider);
-
-    // Build list of dates in range, pairing with CalendarDay if exists.
-    final dateRange = <DateTime>[];
-    var current = rangeStart;
-    while (!current.isAfter(rangeEnd)) {
-      dateRange.add(current);
-      current = current.add(const Duration(days: 1));
-    }
-
-    final dayMap = <DateTime, CalendarDay>{};
-    for (final day in days) {
-      final dateOnly = DateTime(day.date.year, day.date.month, day.date.day);
-      dayMap[dateOnly] = day;
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(SpacingTokens.md),
-      itemCount: dateRange.length,
-      separatorBuilder: (_, _) => const SizedBox(height: SpacingTokens.sm),
-      itemBuilder: (context, index) {
-        final date = dateRange[index];
-        final day = dayMap[date];
-
-        if (day != null) {
-          return CalendarDayCard(
-            day: day,
-            repo: repo,
-            isToday: date == _today,
-            onTap: () => _navigateToDetail(day),
-          );
-        }
-
-        // No CalendarDay for this date — show empty placeholder.
-        return _EmptyDayCard(
-          date: date,
-          isToday: date == _today,
-          onTap: () => _createAndNavigate(date),
-        );
-      },
     );
   }
 
@@ -318,59 +227,70 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       return _weekdayNames[day];
     });
 
-    return Padding(
-      padding: const EdgeInsets.all(SpacingTokens.md),
-      child: Column(
-        children: [
-          // Header row — highlight column matching selected day.
-          Row(
-            children: [
-              for (int i = 0; i < headers.length; i++)
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      headers[i],
-                      style: TextStyle(
-                        fontSize: TypographyTokens.bodySize,
-                        fontWeight: _selectedDay != null &&
-                                (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                        color: _selectedDay != null &&
-                                (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.textTertiary,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: SpacingTokens.xs),
-          // 2 rows of 7 day cells.
-          for (int row = 0; row < 2; row++) ...[
-            if (row > 0) const SizedBox(height: SpacingTokens.xs),
-            Row(
+    return Column(
+      children: [
+        // Padded top section: grid + slot panel.
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+            ),
+            child: Column(
               children: [
-                for (int col = 0; col < 7; col++) ...[
-                  if (col > 0) const SizedBox(width: SpacingTokens.xs),
-                  Expanded(
-                    child: _buildGridCell(
-                      dateRange[row * 7 + col],
-                      dayMap[dateRange[row * 7 + col]],
-                    ),
+                // Header row — highlight column matching selected day.
+                Row(
+                  children: [
+                    for (int i = 0; i < headers.length; i++)
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            headers[i],
+                            style: TextStyle(
+                              fontSize: TypographyTokens.bodySize,
+                              fontWeight: _selectedDay != null &&
+                                      (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: _selectedDay != null &&
+                                      (_selectedDay!.weekday - prefs.weekStartDay + 7) % 7 == i
+                                  ? ColorTokens.primaryDefault
+                                  : ColorTokens.textTertiary,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: SpacingTokens.xs),
+                // 2 rows of 7 day cells.
+                for (int row = 0; row < 2; row++) ...[
+                  if (row > 0) const SizedBox(height: SpacingTokens.xs),
+                  Row(
+                    children: [
+                      for (int col = 0; col < 7; col++) ...[
+                        if (col > 0) const SizedBox(width: SpacingTokens.xs),
+                        Expanded(
+                          child: _buildGridCell(
+                            dateRange[row * 7 + col],
+                            dayMap[dateRange[row * 7 + col]],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
+                const SizedBox(height: SpacingTokens.md),
+                // Inline slot panel for selected day.
+                Expanded(
+                  child: _buildInlineSlotPanel(dayMap),
+                ),
               ],
             ),
-          ],
-          const SizedBox(height: SpacingTokens.md),
-          // Inline slot panel for selected day.
-          Expanded(
-            child: _buildInlineSlotPanel(dayMap),
           ),
-        ],
-      ),
+        ),
+        // Routine / Schedule — full width, connected to bottom nav.
+        _buildBottomActionBar(),
+      ],
     );
   }
 
@@ -391,7 +311,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         : Colors.transparent;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedDay = date),
+      onTap: () {
+        if (isSelected) {
+          // Second tap on already-selected day — open detail page.
+          if (day != null) {
+            _navigateToDetail(day);
+          } else {
+            _createAndNavigate(date);
+          }
+        } else {
+          setState(() => _selectedDay = date);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
@@ -415,15 +346,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                     : ColorTokens.textSecondary,
               ),
             ),
-            if (totalSlots > 0)
-              Text(
-                '$completedCount/$totalSlots',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.primaryDefault,
-                ),
+            Text(
+              totalSlots > 0 ? '$completedCount/$totalSlots' : '–',
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySmSize,
+                fontWeight: FontWeight.w600,
+                color: totalSlots > 0
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.textTertiary,
               ),
+            ),
           ],
         ),
       ),
@@ -541,46 +473,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
         // Slot list.
         if (slots.isEmpty)
           Expanded(
-            child: SingleChildScrollView(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'No slots planned',
-                      style: TextStyle(color: ColorTokens.textTertiary),
-                    ),
-                    const SizedBox(height: SpacingTokens.sm),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              _showRoutinePicker(_selectedDay!),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Routine'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ColorTokens.primaryDefault,
-                            side: const BorderSide(
-                                color: ColorTokens.primaryDefault),
-                          ),
-                        ),
-                        const SizedBox(width: SpacingTokens.sm),
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              _showSchedulePicker(_selectedDay!),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Schedule'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ColorTokens.primaryDefault,
-                            side: const BorderSide(
-                                color: ColorTokens.primaryDefault),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            child: Center(
+              child: Text(
+                'No slots planned',
+                style: TextStyle(color: ColorTokens.textTertiary),
               ),
             ),
           )
@@ -589,11 +485,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             child: Scrollbar(
               thumbVisibility: true,
               child: ListView.separated(
-              itemCount: slots.length + 1,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: SpacingTokens.xs),
-              itemBuilder: (context, index) {
-                if (index < slots.length) {
+                padding: const EdgeInsets.only(right: SpacingTokens.sm),
+                itemCount: slots.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: SpacingTokens.xs),
+                itemBuilder: (context, index) {
                   final slot = slots[index];
                   return SlotTile(
                     slot: slot,
@@ -606,47 +502,49 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
                         : null,
                     onTap: () => _onInlineSlotTap(day!, slots, index),
                   );
-                }
-                // Action buttons after last slot.
-                return Padding(
-                  padding: const EdgeInsets.only(top: SpacingTokens.xs),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _showRoutinePicker(_selectedDay!),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Routine'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ColorTokens.primaryDefault,
-                            side: const BorderSide(
-                                color: ColorTokens.primaryDefault),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: SpacingTokens.xs),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _showSchedulePicker(_selectedDay!),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Schedule'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ColorTokens.primaryDefault,
-                            side: const BorderSide(
-                                color: ColorTokens.primaryDefault),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                },
+              ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildBottomActionBar() {
+    if (_selectedDay == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md,
+        vertical: SpacingTokens.sm,
+      ),
+      color: ColorTokens.surfaceRaised,
+      child: Row(
+        children: [
+          Expanded(
+            child: ZxPillButton(
+              label: 'Routine',
+              icon: Icons.add,
+              variant: ZxPillVariant.primary,
+              size: ZxPillSize.sm,
+              expanded: true,
+              centered: true,
+              onTap: () => _showRoutinePicker(_selectedDay!),
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.xs),
+          Expanded(
+            child: ZxPillButton(
+              label: 'Schedule',
+              icon: Icons.add,
+              variant: ZxPillVariant.primary,
+              size: ZxPillSize.sm,
+              expanded: true,
+              centered: true,
+              onTap: () => _showSchedulePicker(_selectedDay!),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -950,104 +848,3 @@ const _monthNames = [
 ];
 
 
-/// Compact 3D / 2W toggle replacing SegmentedButton for narrow layouts.
-class _ViewToggle extends StatelessWidget {
-  final bool showTwoWeeks;
-  final ValueChanged<bool> onChanged;
-
-  const _ViewToggle({required this.showTwoWeeks, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: ColorTokens.surfaceRaised,
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _option('3D', false),
-          _option('2W', true),
-        ],
-      ),
-    );
-  }
-
-  Widget _option(String label, bool value) {
-    final selected = showTwoWeeks == value;
-    return GestureDetector(
-      onTap: () => onChanged(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? ColorTokens.primaryDefault : Colors.transparent,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusSegmented),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: TypographyTokens.bodySize,
-            color: selected
-                ? ColorTokens.textPrimary
-                : ColorTokens.textSecondary,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyDayCard extends StatelessWidget {
-  final DateTime date;
-  final bool isToday;
-  final VoidCallback? onTap;
-
-  const _EmptyDayCard({
-    required this.date,
-    this.isToday = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-      child: Container(
-        padding: const EdgeInsets.all(SpacingTokens.md),
-        decoration: BoxDecoration(
-          color: ColorTokens.surfacePrimary,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-          border: Border.all(
-            color: isToday
-                ? ColorTokens.primaryDefault.withValues(alpha: 0.5)
-                : ColorTokens.surfaceBorder,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${_weekdayNames[date.weekday - 1]}, ${_monthNames[date.month - 1]} ${date.day}',
-              style: TextStyle(
-                fontSize: TypographyTokens.headerSize,
-                fontWeight: TypographyTokens.headerWeight,
-                color: ColorTokens.textSecondary,
-              ),
-            ),
-            Text(
-              'Tap to plan',
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                color: ColorTokens.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

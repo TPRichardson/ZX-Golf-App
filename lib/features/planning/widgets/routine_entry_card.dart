@@ -89,7 +89,7 @@ class RoutineEntryCard extends StatelessWidget {
             child: Text(
               '${index + 1}',
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textTertiary,
               ),
             ),

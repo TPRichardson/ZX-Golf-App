@@ -89,7 +89,7 @@ class MatrixCellCard extends StatelessWidget {
               child: Text(
                 _statusText,
                 style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
+                  fontSize: TypographyTokens.bodySmSize,
                   fontWeight: FontWeight.w500,
                   color: _statusColor,
                 ),

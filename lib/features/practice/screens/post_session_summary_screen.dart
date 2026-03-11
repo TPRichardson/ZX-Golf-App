@@ -151,7 +151,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                       Text(
                         'Raw score: ${sessionScore!.toStringAsFixed(2)} / 5',
                         style: TextStyle(
-                          fontSize: TypographyTokens.microSize,
+                          fontSize: TypographyTokens.bodySmSize,
                           color: ColorTokens.textTertiary,
                         ),
                       ),

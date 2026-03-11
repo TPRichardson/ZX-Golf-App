@@ -78,7 +78,7 @@ class PerformanceChart extends StatelessWidget {
                     return Text(
                       '${value.toInt()}\u2605',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textTertiary,
                       ),
                     );

@@ -97,21 +97,28 @@ class _ReviewDashboardScreenState
         // 5. CTA: Weakness Ranking.
         SizedBox(
           width: double.infinity,
-          child: OutlinedButton.icon(
+          child: OutlinedButton(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) =>
                     const WeaknessRankingScreen(userId: kDevUserId),
               ));
             },
-            icon: const Icon(Icons.trending_down),
-            label: const Text('View Weakness Ranking'),
             style: OutlinedButton.styleFrom(
               foregroundColor: ColorTokens.primaryDefault,
               side: const BorderSide(color: ColorTokens.primaryDefault),
               padding: const EdgeInsets.symmetric(
                 vertical: SpacingTokens.sm + 2,
               ),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.trending_down),
+                SizedBox(width: SpacingTokens.sm),
+                Text('View Weakness Ranking'),
+              ],
             ),
           ),
         ),

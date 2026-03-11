@@ -132,7 +132,7 @@ class SessionDetailScreen extends ConsumerWidget {
                         child: Text(
                           'Integrity flag cleared by user',
                           style: TextStyle(
-                            fontSize: TypographyTokens.microSize,
+                            fontSize: TypographyTokens.bodySmSize,
                             color: ColorTokens.textTertiary,
                           ),
                         ),

@@ -171,7 +171,7 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
                           child: Text(
                             '${i + 1}',
                             style: TextStyle(
-                              fontSize: TypographyTokens.microSize,
+                              fontSize: TypographyTokens.bodySmSize,
                               color: ColorTokens.primaryDefault,
                             ),
                           ),

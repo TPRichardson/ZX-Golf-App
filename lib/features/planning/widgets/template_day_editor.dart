@@ -91,7 +91,7 @@ class TemplateDayEditor extends StatelessWidget {
                   onPressed: () => _addFixedEntry(context),
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Fixed',
-                      style: TextStyle(fontSize: 12)),
+                      style: TextStyle(fontSize: TypographyTokens.bodySmSize)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ColorTokens.primaryDefault,
                     side: const BorderSide(
@@ -107,7 +107,7 @@ class TemplateDayEditor extends StatelessWidget {
                   onPressed: () => _addCriterionEntry(context),
                   icon: const Icon(Icons.auto_awesome, size: 16),
                   label: const Text('Generated',
-                      style: TextStyle(fontSize: 12)),
+                      style: TextStyle(fontSize: TypographyTokens.bodySmSize)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ColorTokens.primaryDefault,
                     side: const BorderSide(

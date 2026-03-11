@@ -265,7 +265,7 @@ class _MatrixCompletionScreenState
                     subtitle: const Text(
                       'Primary snapshot is used for drill target distances.',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textSecondary,
                       ),
                     ),
@@ -400,7 +400,7 @@ class _MatrixCompletionScreenState
                   flex: 3,
                   child: Text('Club',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         fontWeight: FontWeight.w500,
                         color: ColorTokens.textSecondary,
                       )),
@@ -410,7 +410,7 @@ class _MatrixCompletionScreenState
                   child: Text('Carry',
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         fontWeight: FontWeight.w500,
                         color: ColorTokens.textSecondary,
                       )),
@@ -420,7 +420,7 @@ class _MatrixCompletionScreenState
                   child: Text('Total',
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         fontWeight: FontWeight.w500,
                         color: ColorTokens.textSecondary,
                       )),

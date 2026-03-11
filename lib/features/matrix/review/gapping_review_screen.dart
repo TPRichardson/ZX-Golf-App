@@ -97,7 +97,7 @@ class GappingReviewScreen extends ConsumerWidget {
                 Text(
                   _formatDate(details.run.endTimestamp!),
                   style: const TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     color: ColorTokens.textTertiary,
                   ),
                 ),
@@ -226,7 +226,7 @@ class GappingReviewScreen extends ConsumerWidget {
                     child: Text(
                       club.label,
                       style: const TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textSecondary,
                       ),
                     ),
@@ -253,7 +253,7 @@ class GappingReviewScreen extends ConsumerWidget {
                             Text(
                               club.avgCarry.toStringAsFixed(0),
                               style: const TextStyle(
-                                fontSize: TypographyTokens.microSize,
+                                fontSize: TypographyTokens.bodySmSize,
                                 color: ColorTokens.textPrimary,
                                 fontFeatures: [
                                   FontFeature.tabularFigures()
@@ -312,7 +312,7 @@ class GappingReviewScreen extends ConsumerWidget {
                 child: Text(
                   'Club',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -324,7 +324,7 @@ class GappingReviewScreen extends ConsumerWidget {
                   'Avg Carry',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -336,7 +336,7 @@ class GappingReviewScreen extends ConsumerWidget {
                   'Avg Total',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -347,7 +347,7 @@ class GappingReviewScreen extends ConsumerWidget {
                   'Shots',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -459,7 +459,7 @@ class GappingReviewScreen extends ConsumerWidget {
               Text(
                 'Gap < ${_defaultMinGap.toStringAsFixed(0)} or > ${_defaultMaxGap.toStringAsFixed(0)}',
                 style: const TextStyle(
-                  fontSize: TypographyTokens.microSize,
+                  fontSize: TypographyTokens.bodySmSize,
                   color: ColorTokens.textTertiary,
                 ),
               ),

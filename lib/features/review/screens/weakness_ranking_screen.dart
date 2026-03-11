@@ -105,7 +105,7 @@ class WeaknessRankingScreen extends ConsumerWidget {
                                   'T:${saturation.transitionOccupancy.toStringAsFixed(0)}/${windowSizeMap[r.subskillId] ?? 25} '
                                   'P:${saturation.pressureOccupancy.toStringAsFixed(0)}/${windowSizeMap[r.subskillId] ?? 25}',
                                   style: TextStyle(
-                                    fontSize: TypographyTokens.microSize,
+                                    fontSize: TypographyTokens.bodySmSize,
                                     color: ColorTokens.textTertiary,
                                     fontFeatures: const [
                                       FontFeature.tabularFigures()
@@ -141,7 +141,7 @@ class WeaknessRankingScreen extends ConsumerWidget {
                             Text(
                               'WI: ${r.weaknessIndex.toStringAsFixed(3)}',
                               style: TextStyle(
-                                fontSize: TypographyTokens.microSize,
+                                fontSize: TypographyTokens.bodySmSize,
                                 color: ColorTokens.textTertiary,
                               ),
                             ),
@@ -159,7 +159,7 @@ class WeaknessRankingScreen extends ConsumerWidget {
                               child: Text(
                                 '${r.allocation}/$kTotalAllocation',
                                 style: TextStyle(
-                                  fontSize: TypographyTokens.microSize,
+                                  fontSize: TypographyTokens.bodySmSize,
                                   color: ColorTokens.textTertiary,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
@@ -244,7 +244,7 @@ class _SkillAreaBadge extends StatelessWidget {
       child: Text(
         skillArea.dbValue,
         style: TextStyle(
-          fontSize: TypographyTokens.microSize,
+          fontSize: TypographyTokens.bodySmSize,
           color: ColorTokens.primaryDefault,
           fontWeight: FontWeight.w500,
         ),

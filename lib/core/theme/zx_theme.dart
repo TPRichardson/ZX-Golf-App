@@ -42,9 +42,9 @@ class ZxTheme {
         color: ColorTokens.textPrimary,
       ),
       labelSmall: base.labelSmall?.copyWith(
-        fontSize: TypographyTokens.microSize,
-        fontWeight: TypographyTokens.microWeight,
-        height: TypographyTokens.microHeight,
+        fontSize: TypographyTokens.bodySmSize,
+        fontWeight: TypographyTokens.bodySmWeight,
+        height: TypographyTokens.bodySmHeight,
         color: ColorTokens.textSecondary,
       ),
     );

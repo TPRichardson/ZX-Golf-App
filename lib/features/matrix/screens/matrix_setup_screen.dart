@@ -326,7 +326,7 @@ class _MatrixSetupScreenState extends ConsumerState<MatrixSetupScreen> {
           ? Text(
               [club.make, club.model].whereType<String>().join(' '),
               style: const TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textSecondary,
               ),
             )

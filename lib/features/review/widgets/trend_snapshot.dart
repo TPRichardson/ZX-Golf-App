@@ -56,7 +56,7 @@ class TrendSnapshot extends ConsumerWidget {
                     Text(
                       '$sessionCount sessions recorded',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textTertiary,
                       ),
                     ),

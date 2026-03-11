@@ -94,7 +94,7 @@ class WindowDetailScreen extends ConsumerWidget {
                                 child: Text(
                                   'Roll-off boundary',
                                   style: TextStyle(
-                                    fontSize: TypographyTokens.microSize,
+                                    fontSize: TypographyTokens.bodySmSize,
                                     color: ColorTokens.textTertiary,
                                   ),
                                 ),
@@ -145,7 +145,7 @@ class WindowDetailScreen extends ConsumerWidget {
                                 Text(
                                   date,
                                   style: TextStyle(
-                                    fontSize: TypographyTokens.microSize,
+                                    fontSize: TypographyTokens.bodySmSize,
                                     color: ColorTokens.textTertiary,
                                   ),
                                 ),
@@ -182,7 +182,7 @@ class WindowDetailScreen extends ConsumerWidget {
                             child: Text(
                               entry.occupancy == 1.0 ? '1.0' : '0.5',
                               style: TextStyle(
-                                fontSize: TypographyTokens.microSize,
+                                fontSize: TypographyTokens.bodySmSize,
                                 color: entry.isDualMapped
                                     ? ColorTokens.warningIntegrity
                                     : ColorTokens.textTertiary,

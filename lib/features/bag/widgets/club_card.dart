@@ -66,7 +66,7 @@ class ClubCard extends ConsumerWidget {
                 child: Text(
                   (club.model != null && club.model!.isNotEmpty) ? club.model! : 'Model',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     color: (club.model != null && club.model!.isNotEmpty)
                         ? ColorTokens.textSecondary
                         : ColorTokens.textTertiary,
@@ -124,7 +124,7 @@ class ClubCard extends ConsumerWidget {
                             child: Text(
                               '+${skillAreas.length - 4}',
                               style: TextStyle(
-                                fontSize: TypographyTokens.microSize,
+                                fontSize: TypographyTokens.bodySmSize,
                                 color: ColorTokens.textTertiary,
                               ),
                             ),

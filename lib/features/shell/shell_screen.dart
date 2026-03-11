@@ -248,7 +248,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ),
               child: const Text(
                 'Sign In',
-                style: TextStyle(fontSize: 19),
+                style: TextStyle(fontSize: TypographyTokens.headerSize),
               ),
             ),
           // Account button — always visible.

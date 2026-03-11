@@ -99,7 +99,7 @@ class VolumeChart extends StatelessWidget {
                     return Text(
                       value.toInt().toString(),
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textTertiary,
                       ),
                     );
@@ -152,7 +152,7 @@ class VolumeChart extends StatelessWidget {
               Text(
                 area.dbValue,
                 style: TextStyle(
-                  fontSize: TypographyTokens.microSize,
+                  fontSize: TypographyTokens.bodySmSize,
                   color: ColorTokens.textSecondary,
                 ),
               ),

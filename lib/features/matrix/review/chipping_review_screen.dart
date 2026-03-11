@@ -272,7 +272,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
                 child: Text(
                   'Target',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -284,7 +284,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
                   'Avg Error',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -296,7 +296,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
                   'Short Bias',
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -423,7 +423,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
                   Text(
                     '${cells.length} cells',
                     style: const TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: TypographyTokens.bodySmSize,
                       color: ColorTokens.textTertiary,
                     ),
                   ),
@@ -500,7 +500,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
             Text(
               cell.flightLabel ?? 'Standard',
               style: const TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 fontWeight: FontWeight.w500,
                 color: ColorTokens.primaryDefault,
               ),
@@ -529,7 +529,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
             child: Text(
               label,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textTertiary,
               ),
             ),
@@ -537,7 +537,7 @@ class _ChippingReviewScreenState extends ConsumerState<ChippingReviewScreen> {
           Text(
             value,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: TypographyTokens.bodySmSize,
               color: ColorTokens.textPrimary,
               fontFeatures: [FontFeature.tabularFigures()],
             ),

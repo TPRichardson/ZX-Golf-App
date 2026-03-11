@@ -242,7 +242,7 @@ class _CellDetailScreenState extends ConsumerState<CellDetailScreen> {
     return Text(
       '$label $value',
       style: const TextStyle(
-        fontSize: TypographyTokens.microSize,
+        fontSize: TypographyTokens.bodySmSize,
         color: ColorTokens.textSecondary,
         fontFeatures: [FontFeature.tabularFigures()],
       ),

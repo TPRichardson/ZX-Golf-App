@@ -335,7 +335,7 @@ class _StatTile extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textTertiary,
               ),
             ),
@@ -396,7 +396,7 @@ class _SessionCard extends StatelessWidget {
                   '${summary.setCount} sets · ${summary.instanceCount} shots'
                   '${session.sessionDuration != null ? ' · ${formatDuration(session.sessionDuration!)}' : ''}',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     color: ColorTokens.textTertiary,
                   ),
                 ),

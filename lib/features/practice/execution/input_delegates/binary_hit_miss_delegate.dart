@@ -155,7 +155,7 @@ class _StatBox extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: TypographyTokens.microSize,
+            fontSize: TypographyTokens.bodySmSize,
             color: ColorTokens.textSecondary,
           ),
         ),

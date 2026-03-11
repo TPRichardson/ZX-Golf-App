@@ -112,7 +112,7 @@ class SkillAreaTile extends StatelessWidget {
                   child: Text(
                     isCollapsed ? skillArea.dbValue.substring(0, 2) : skillArea.dbValue,
                     style: TextStyle(
-                      fontSize: isCollapsed ? TypographyTokens.microSize : TypographyTokens.bodySize,
+                      fontSize: isCollapsed ? TypographyTokens.bodySmSize : TypographyTokens.bodySize,
                       fontWeight: TypographyTokens.headerWeight,
                       color: ColorTokens.textPrimary,
                     ),
@@ -167,7 +167,7 @@ class SkillAreaTile extends StatelessWidget {
                                 child: Text(
                                   'SkillScore',
                                   style: TextStyle(
-                                    fontSize: TypographyTokens.microSize,
+                                    fontSize: TypographyTokens.bodySmSize,
                                     fontWeight: FontWeight.w900,
                                     color: ColorTokens.textPrimary,
                                   ),
@@ -185,7 +185,7 @@ class SkillAreaTile extends StatelessWidget {
                               Text(
                                 allocation.toString(),
                                 style: TextStyle(
-                                  fontSize: TypographyTokens.microSize,
+                                  fontSize: TypographyTokens.bodySmSize,
                                   fontWeight: FontWeight.w900,
                                   color: ColorTokens.textPrimary,
                                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -201,7 +201,7 @@ class SkillAreaTile extends StatelessWidget {
                                 child: Text(
                                   'SkillProfile',
                                   style: TextStyle(
-                                    fontSize: TypographyTokens.microSize,
+                                    fontSize: TypographyTokens.bodySmSize,
                                     fontWeight: FontWeight.w900,
                                     color: ColorTokens.textPrimary,
                                   ),
@@ -219,7 +219,7 @@ class SkillAreaTile extends StatelessWidget {
                               Text(
                                 windowCapacity.toInt().toString(),
                                 style: TextStyle(
-                                  fontSize: TypographyTokens.microSize,
+                                  fontSize: TypographyTokens.bodySmSize,
                                   fontWeight: FontWeight.w900,
                                   color: ColorTokens.textPrimary,
                                   fontFeatures: const [FontFeature.tabularFigures()],

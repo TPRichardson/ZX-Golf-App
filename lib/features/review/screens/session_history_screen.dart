@@ -138,7 +138,7 @@ class SessionHistoryScreen extends ConsumerWidget {
                                             style: TextStyle(
                                               fontSize:
                                                   TypographyTokens
-                                                      .microSize,
+                                                      .bodySmSize,
                                               color: ColorTokens
                                                   .warningIntegrity,
                                             ),
@@ -306,7 +306,7 @@ class _VarianceHeader extends StatelessWidget {
             Text(
               'Low confidence',
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textTertiary,
               ),
             ),

@@ -111,7 +111,7 @@ class AnalysisFilters extends ConsumerWidget {
                       selectedColor: ColorTokens.primaryDefault
                           .withValues(alpha: 0.3),
                       labelStyle: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: selected
                             ? ColorTokens.textPrimary
                             : ColorTokens.textSecondary,
@@ -146,7 +146,7 @@ class AnalysisFilters extends ConsumerWidget {
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 10,
+          fontSize: TypographyTokens.bodySmSize,
           fontWeight: FontWeight.w600,
           color: ColorTokens.textTertiary,
           letterSpacing: 0.5,
@@ -178,7 +178,7 @@ class AnalysisFilters extends ConsumerWidget {
           selectedColor:
               ColorTokens.primaryDefault.withValues(alpha: 0.3),
           labelStyle: TextStyle(
-            fontSize: TypographyTokens.microSize,
+            fontSize: TypographyTokens.bodySmSize,
             color: drillTypeFilter == null
                 ? ColorTokens.textPrimary
                 : ColorTokens.textSecondary,
@@ -204,7 +204,7 @@ class AnalysisFilters extends ConsumerWidget {
               selectedColor: ColorTokens.primaryDefault
                   .withValues(alpha: 0.3),
               labelStyle: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: selected
                     ? ColorTokens.textPrimary
                     : ColorTokens.textSecondary,
@@ -231,7 +231,7 @@ class AnalysisFilters extends ConsumerWidget {
           onSelected: (_) => onSurfaceChanged(null),
           selectedColor: ColorTokens.primaryDefault.withValues(alpha: 0.3),
           labelStyle: TextStyle(
-            fontSize: TypographyTokens.microSize,
+            fontSize: TypographyTokens.bodySmSize,
             color: surfaceFilter == null
                 ? ColorTokens.textPrimary
                 : ColorTokens.textSecondary,
@@ -253,7 +253,7 @@ class AnalysisFilters extends ConsumerWidget {
               onSelected: (_) => onSurfaceChanged(selected ? null : st),
               selectedColor: ColorTokens.primaryDefault.withValues(alpha: 0.3),
               labelStyle: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: selected
                     ? ColorTokens.textPrimary
                     : ColorTokens.textSecondary,
@@ -295,7 +295,7 @@ class AnalysisFilters extends ConsumerWidget {
                   selectedColor: ColorTokens.primaryDefault
                       .withValues(alpha: 0.3),
                   labelStyle: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     color: selected
                         ? ColorTokens.textPrimary
                         : ColorTokens.textSecondary,
@@ -443,7 +443,7 @@ class _ChipGroup<T> extends StatelessWidget {
             selectedColor:
                 ColorTokens.primaryDefault.withValues(alpha: 0.3),
             labelStyle: TextStyle(
-              fontSize: TypographyTokens.microSize,
+              fontSize: TypographyTokens.bodySmSize,
               color: isSelected
                   ? ColorTokens.textPrimary
                   : ColorTokens.textSecondary,

@@ -713,7 +713,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       child: Text(
                         'X yds',
                         style: TextStyle(
-                          fontSize: TypographyTokens.microSize,
+                          fontSize: TypographyTokens.bodySmSize,
                           fontWeight: FontWeight.w600,
                           color: ColorTokens.successDefault,
                         ),
@@ -795,7 +795,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 child: Text(
                   'X yds',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w600,
                     color: ColorTokens.successDefault,
                   ),

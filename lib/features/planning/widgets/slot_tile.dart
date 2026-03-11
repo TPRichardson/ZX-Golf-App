@@ -62,7 +62,7 @@ class SlotTile extends StatelessWidget {
                     Text(
                       _ownerLabel!,
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textTertiary,
                       ),
                     ),

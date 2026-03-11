@@ -178,7 +178,7 @@ class GappingComparisonScreen extends ConsumerWidget {
             Text(
               'Run #${runs[i].run.runNumber}',
               style: const TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textSecondary,
               ),
             ),
@@ -267,7 +267,7 @@ class GappingComparisonScreen extends ConsumerWidget {
                               Text(
                                 rd.avgCarry.toStringAsFixed(0),
                                 style: TextStyle(
-                                  fontSize: TypographyTokens.microSize,
+                                  fontSize: TypographyTokens.bodySmSize,
                                   color: _runColors[
                                       runIdx % _runColors.length],
                                   fontFeatures: const [
@@ -323,7 +323,7 @@ class GappingComparisonScreen extends ConsumerWidget {
                 child: Text(
                   'Club',
                   style: TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w500,
                     color: ColorTokens.textTertiary,
                   ),
@@ -337,7 +337,7 @@ class GappingComparisonScreen extends ConsumerWidget {
                     'Run #${runs[i].run.runNumber}',
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: TypographyTokens.bodySmSize,
                       fontWeight: FontWeight.w500,
                       color: _runColors[i % _runColors.length],
                     ),

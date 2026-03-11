@@ -146,7 +146,7 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
       selectedColor: ColorTokens.primaryDefault,
       backgroundColor: ColorTokens.surfaceRaised,
       labelStyle: TextStyle(
-        fontSize: TypographyTokens.microSize,
+        fontSize: TypographyTokens.bodySmSize,
         color: selected ? Colors.white : ColorTokens.textSecondary,
       ),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -220,7 +220,7 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
                   child: Text(
                     stateLabel,
                     style: TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: TypographyTokens.bodySmSize,
                       fontWeight: FontWeight.w500,
                       color: run.runState == RunState.completed
                           ? ColorTokens.successDefault
@@ -236,7 +236,7 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
                 Text(
                   '${run.sessionShotTarget} shots/cell',
                   style: const TextStyle(
-                    fontSize: TypographyTokens.microSize,
+                    fontSize: TypographyTokens.bodySmSize,
                     color: ColorTokens.textSecondary,
                   ),
                 ),
@@ -245,7 +245,7 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
                   Text(
                     _formatDate(run.endTimestamp!),
                     style: const TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: TypographyTokens.bodySmSize,
                       color: ColorTokens.textTertiary,
                     ),
                   )
@@ -253,7 +253,7 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
                   Text(
                     'Started ${_formatDate(run.startTimestamp)}',
                     style: const TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: TypographyTokens.bodySmSize,
                       color: ColorTokens.textTertiary,
                     ),
                   ),

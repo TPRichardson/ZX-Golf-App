@@ -148,7 +148,7 @@ class SubskillDetailScreen extends ConsumerWidget {
                   Text(
                     '${detail.entries.length} entries',
                     style: TextStyle(
-                      fontSize: TypographyTokens.microSize,
+                      fontSize: TypographyTokens.bodySmSize,
                       color: ColorTokens.textTertiary,
                     ),
                   ),

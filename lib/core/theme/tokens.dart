@@ -132,23 +132,23 @@ abstract final class TypographyTokens {
   static const displayLgHeight = 28.0 / 24.0;
   static const displayLgWeight = FontWeight.w600;
 
-  // Header section: 18-22px, Medium
-  static const headerSize = 18.0;
-  static const headerHeight = 22.0 / 18.0;
+  // Header section: 20px, Medium
+  static const headerSize = 20.0;
+  static const headerHeight = 24.0 / 20.0;
   static const headerWeight = FontWeight.w500;
 
-  // Body: 14-16px, Regular
-  static const bodyLgSize = 16.0;
-  static const bodyLgHeight = 22.0 / 16.0;
+  // Body LG: 18px, Regular
+  static const bodyLgSize = 18.0;
+  static const bodyLgHeight = 24.0 / 18.0;
   static const bodyWeight = FontWeight.w400;
 
   static const bodySize = 16.0;
   static const bodyHeight = 22.0 / 16.0;
 
-  // Micro: 12px, Regular @ 70-80% opacity
-  static const microSize = 12.0;
-  static const microHeight = 16.0 / 12.0;
-  static const microWeight = FontWeight.w400;
+  // Body SM: 14px, Regular @ 70-80% opacity
+  static const bodySmSize = 14.0;
+  static const bodySmHeight = 18.0 / 14.0;
+  static const bodySmWeight = FontWeight.w400;
 }
 
 // S15 §15.6 — Spacing tokens (all multiples of 4).

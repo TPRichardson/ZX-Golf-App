@@ -187,7 +187,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                       child: Text(
                         '$hiddenCount drill${hiddenCount == 1 ? '' : 's'} hidden by filters',
                         style: const TextStyle(
-                          fontSize: TypographyTokens.microSize,
+                          fontSize: TypographyTokens.bodySmSize,
                           color: ColorTokens.textTertiary,
                         ),
                       ),
@@ -542,7 +542,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
       child: Text.rich(
         TextSpan(
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: TypographyTokens.bodySize,
             color: ColorTokens.textSecondary,
           ),
           children: [

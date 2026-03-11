@@ -55,7 +55,7 @@ class SubskillBreakdown extends ConsumerWidget {
                     child: Text(
                       'SkillScore',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         fontWeight: FontWeight.w900,
                         color: ColorTokens.textPrimary,
                       ),
@@ -67,7 +67,7 @@ class SubskillBreakdown extends ConsumerWidget {
                     child: Text(
                       'SkillProfile',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         fontWeight: FontWeight.w900,
                         color: ColorTokens.textPrimary,
                       ),
@@ -196,7 +196,7 @@ class _SubskillTile extends StatelessWidget {
             Text(
               allocation.toString(),
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 fontWeight: FontWeight.w900,
                 color: ColorTokens.textPrimary,
                 fontFeatures: const [FontFeature.tabularFigures()],
@@ -212,7 +212,7 @@ class _SubskillTile extends StatelessWidget {
             Text(
               windowCapacity.toInt().toString(),
               style: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 fontWeight: FontWeight.w900,
                 color: ColorTokens.textPrimary,
                 fontFeatures: const [FontFeature.tabularFigures()],

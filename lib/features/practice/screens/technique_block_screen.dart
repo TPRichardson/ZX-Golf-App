@@ -182,7 +182,7 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
                     child: Text(
                       'Technique',
                       style: TextStyle(
-                        fontSize: TypographyTokens.microSize,
+                        fontSize: TypographyTokens.bodySmSize,
                         color: ColorTokens.textSecondary,
                       ),
                     ),

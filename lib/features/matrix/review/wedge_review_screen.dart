@@ -234,7 +234,7 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
             Text(
               flightAxis.values[i].label,
               style: const TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: ColorTokens.textSecondary,
               ),
             ),
@@ -279,7 +279,7 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
         Text(
           axisLabel,
           style: const TextStyle(
-            fontSize: TypographyTokens.microSize,
+            fontSize: TypographyTokens.bodySmSize,
             color: ColorTokens.textTertiary,
           ),
         ),
@@ -302,7 +302,7 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
               selectedColor: ColorTokens.primaryDefault.withValues(alpha: 0.2),
               backgroundColor: ColorTokens.surfaceBase,
               labelStyle: TextStyle(
-                fontSize: TypographyTokens.microSize,
+                fontSize: TypographyTokens.bodySmSize,
                 color: enabled
                     ? ColorTokens.primaryDefault
                     : ColorTokens.textTertiary,
@@ -404,7 +404,7 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
                       child: Text(
                         pt.fullLabel,
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: TypographyTokens.bodySmSize,
                           color: ColorTokens.textSecondary,
                         ),
                         maxLines: 1,
@@ -450,7 +450,7 @@ class _WedgeReviewScreenState extends ConsumerState<WedgeReviewScreen> {
                         pt.avgCarry.toStringAsFixed(0),
                         textAlign: TextAlign.right,
                         style: TextStyle(
-                          fontSize: TypographyTokens.microSize,
+                          fontSize: TypographyTokens.bodySmSize,
                           color: pointColor,
                           fontFeatures: const [
                             FontFeature.tabularFigures()
