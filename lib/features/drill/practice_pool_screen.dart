@@ -80,19 +80,25 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = kDevUserId;
 
-  /// Multi-select state for pick mode.
-  final _selectedDrillIds = <String>{};
+  /// Multi-select state for pick mode (drill ID → count).
+  final _selectedDrillCounts = <String, int>{};
 
-  /// Compute sets and shots for a list of drill IDs from the pool.
-  ({int sets, int shots}) _statsForDrillIds(
-      List<DrillWithAdoption> pool, Set<String> ids) {
+  /// Total number of drills selected (sum of all counts).
+  int get _totalSelectedCount =>
+      _selectedDrillCounts.values.fold(0, (a, b) => a + b);
+
+  /// Compute sets and shots for selected drills, respecting counts.
+  ({int sets, int shots}) _statsForSelectedDrills(
+      List<DrillWithAdoption> pool) {
     int sets = 0;
     int shots = 0;
     for (final dwa in pool) {
-      if (!ids.contains(dwa.drill.drillId)) continue;
-      sets += dwa.drill.requiredSetCount;
+      final count = _selectedDrillCounts[dwa.drill.drillId] ?? 0;
+      if (count == 0) continue;
+      sets += dwa.drill.requiredSetCount * count;
       shots += dwa.drill.requiredSetCount *
-          (dwa.drill.requiredAttemptsPerSet ?? 0);
+          (dwa.drill.requiredAttemptsPerSet ?? 0) *
+          count;
     }
     return (sets: sets, shots: shots);
   }
@@ -256,17 +262,20 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Widget _buildFlatList(BuildContext context, List<DrillWithAdoption> drills) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.lg,
+    return Scrollbar(
+      thumbVisibility: true,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpacingTokens.lg,
+        ),
+        itemCount: drills.length,
+        separatorBuilder: (_, _) =>
+            const SizedBox(height: SpacingTokens.sm),
+        itemBuilder: (context, index) {
+          final dwa = drills[index];
+          return _buildDrillCard(context, dwa);
+        },
       ),
-      itemCount: drills.length,
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: SpacingTokens.sm),
-      itemBuilder: (context, index) {
-        final dwa = drills[index];
-        return _buildDrillCard(context, dwa);
-      },
     );
   }
 
@@ -281,18 +290,21 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         .where((a) => groups.containsKey(a))
         .toList();
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
-      itemCount: orderedAreas.length,
-      itemBuilder: (context, index) {
-        final area = orderedAreas[index];
-        final areaDrills = groups[area]!;
-        return _SkillAreaGroup(
-          area: area,
-          drills: areaDrills,
-          cardBuilder: (dwa) => _buildDrillCard(context, dwa),
-        );
-      },
+    return Scrollbar(
+      thumbVisibility: true,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
+        itemCount: orderedAreas.length,
+        itemBuilder: (context, index) {
+          final area = orderedAreas[index];
+          final areaDrills = groups[area]!;
+          return _SkillAreaGroup(
+            area: area,
+            drills: areaDrills,
+            cardBuilder: (dwa) => _buildDrillCard(context, dwa),
+          );
+        },
+      ),
     );
   }
 
@@ -300,28 +312,30 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     final hasActivePb =
         ref.watch(activePracticeBlockProvider(_userId)).valueOrNull != null;
     final drillId = dwa.drill.drillId;
-    final isSelected = _selectedDrillIds.contains(drillId);
+    final count = _selectedDrillCounts[drillId] ?? 0;
     return DrillCard(
       drill: dwa.drill,
       onTap: () {
         if (widget.pickMode) {
           setState(() {
-            if (isSelected) {
-              _selectedDrillIds.remove(drillId);
-            } else {
-              _selectedDrillIds.add(drillId);
-            }
+            _selectedDrillCounts[drillId] = count + 1;
           });
           return;
         }
         _openDrillDetail(dwa);
       },
       trailing: widget.pickMode
-          ? Icon(
-              isSelected ? Icons.check_circle : Icons.circle_outlined,
-              color: isSelected
-                  ? ColorTokens.primaryDefault
-                  : ColorTokens.textTertiary,
+          ? _DrillCountControl(
+              count: count,
+              onDecrement: () {
+                setState(() {
+                  if (count <= 1) {
+                    _selectedDrillCounts.remove(drillId);
+                  } else {
+                    _selectedDrillCounts[drillId] = count - 1;
+                  }
+                });
+              },
             )
           : hasActivePb
               ? null
@@ -472,7 +486,8 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Widget _buildInfoBar(List<DrillWithAdoption> drills) {
-    final adding = _statsForDrillIds(drills, _selectedDrillIds);
+    final adding = _statsForSelectedDrills(drills);
+    final totalCount = _totalSelectedCount;
     final existDrills = widget.existingDrillCount;
     final existSets = widget.existingSets;
     final existShots = widget.existingShots;
@@ -498,8 +513,8 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             children: [
               _statCell(
                 context,
-                '${existDrills + _selectedDrillIds.length}',
-                '(+${_selectedDrillIds.length})',
+                '${existDrills + totalCount}',
+                '(+$totalCount)',
                 'Drills',
               ),
               _statCell(
@@ -548,29 +563,38 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Widget _buildPickModeBottomBar() {
+    final totalCount = _totalSelectedCount;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
             SpacingTokens.md,
-            0,
+            SpacingTokens.md,
             SpacingTokens.md,
             SpacingTokens.xl,
           ),
           child: ZxPillButton(
-            label: _selectedDrillIds.isEmpty
+            label: totalCount == 0
                 ? 'Select drills to add'
-                : 'Add ${_selectedDrillIds.length} drill${_selectedDrillIds.length == 1 ? '' : 's'}',
+                : 'Add $totalCount drill${totalCount == 1 ? '' : 's'}',
             icon: Icons.playlist_add,
-            variant: _selectedDrillIds.isEmpty
+            size: ZxPillSize.lg,
+            variant: totalCount == 0
                 ? ZxPillVariant.tertiary
                 : ZxPillVariant.progress,
             expanded: true,
             centered: true,
-            onTap: _selectedDrillIds.isEmpty
+            onTap: totalCount == 0
                 ? null
-                : () => Navigator.of(context).pop(_selectedDrillIds.toList()),
+                : () {
+                    // Expand map to flat list: {drillA: 3} → [drillA, drillA, drillA]
+                    final flatList = <String>[
+                      for (final entry in _selectedDrillCounts.entries)
+                        for (var i = 0; i < entry.value; i++) entry.key,
+                    ];
+                    Navigator.of(context).pop(flatList);
+                  },
           ),
         ),
         SizedBox(height: MediaQuery.of(context).padding.bottom),
@@ -627,6 +651,68 @@ class _PlayDrillButton extends ConsumerWidget {
   }
 }
 
+/// Counter control for pick mode: minus button + count badge.
+class _DrillCountControl extends StatelessWidget {
+  final int count;
+  final VoidCallback onDecrement;
+
+  const _DrillCountControl({
+    required this.count,
+    required this.onDecrement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (count == 0) {
+      return Icon(
+        Icons.add_circle_outline,
+        color: ColorTokens.textTertiary.withAlpha(100),
+        size: 30,
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: SpacingTokens.xs),
+          child: GestureDetector(
+            onTap: onDecrement,
+            child: Icon(
+              Icons.remove_circle_outline,
+              color: const Color(0xFF8C2A2A),
+              size: 30,
+            ),
+          ),
+        ),
+        const SizedBox(width: SpacingTokens.md),
+        Container(
+          constraints: const BoxConstraints(minWidth: 32),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpacingTokens.sm + 2,
+            vertical: SpacingTokens.xs + 2,
+          ),
+          decoration: BoxDecoration(
+            color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+            border: Border.all(
+              color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Text(
+            '$count',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: ColorTokens.primaryDefault,
+              fontWeight: FontWeight.w600,
+              fontSize: TypographyTokens.headerSize,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Drill type filter chip (All / Transition / Pressure / Technique).
 /// Unified filter bar — group toggle | skill area | drill type in one pill, full width.
 class _UnifiedFilterBar extends StatelessWidget {
@@ -675,6 +761,7 @@ class _UnifiedFilterBar extends StatelessWidget {
         children: [
           // Group toggle.
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => onGroupToggle(!isGrouped),
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -692,6 +779,7 @@ class _UnifiedFilterBar extends StatelessWidget {
           // Skill area filter.
           Expanded(
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () async {
                 final result = await showDialog<String>(
                   context: context,
@@ -739,6 +827,7 @@ class _UnifiedFilterBar extends StatelessWidget {
           // Drill type filter.
           Expanded(
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () async {
                 final result = await showDialog<String>(
                   context: context,

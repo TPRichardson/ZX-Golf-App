@@ -118,23 +118,13 @@ class PracticeEntryCard extends StatelessWidget {
                 ),
               ],
             ),
-            // Active indicator.
-            if (isActive)
-              Padding(
-                padding: const EdgeInsets.only(left: 12, right: SpacingTokens.sm),
-                child: Icon(
-                  Icons.play_circle_filled,
-                  color: ColorTokens.primaryDefault,
-                  size: 24,
-                ),
-              ),
-            // Delete button for pending and completed entries.
+            // Remove button for pending and completed entries.
             if (onRemove != null)
               Padding(
                 padding: const EdgeInsets.only(left: SpacingTokens.xs),
                 child: IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  color: ColorTokens.errorDestructive,
+                  icon: const Icon(Icons.close, size: 20),
+                  color: ColorTokens.textTertiary,
                   onPressed: onRemove,
                 ),
               ),

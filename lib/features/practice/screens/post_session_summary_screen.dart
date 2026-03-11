@@ -6,13 +6,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/formatters.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/star_rating.dart';
 import 'package:zx_golf_app/core/widgets/zx_badge.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/data/repositories/practice_repository.dart';
+import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/anchor_score_bar.dart';
+import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
@@ -56,24 +61,15 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                   bottom: BorderSide(color: ColorTokens.surfaceBorder),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Session Complete',
-                      style: TextStyle(
-                        fontSize: TypographyTokens.headerSize,
-                        fontWeight: TypographyTokens.headerWeight,
-                        color: ColorTokens.textPrimary,
-                      ),
-                    ),
+              child: Center(
+                child: Text(
+                  'Session Complete',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.displayLgSize,
+                    fontWeight: TypographyTokens.displayLgWeight,
+                    color: ColorTokens.textPrimary,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    color: ColorTokens.textSecondary,
-                    onPressed: () => _navigateHome(context, ref),
-                  ),
-                ],
+                ),
               ),
             ),
             Expanded(
@@ -205,50 +201,82 @@ class PostSessionSummaryScreen extends ConsumerWidget {
   }
 
   Widget _buildBottomButtons(BuildContext context, WidgetRef ref) {
-    // Check if there's a next pending drill.
     final hasNextDrill = practiceBlockId != null;
 
     return Container(
-      padding: const EdgeInsets.all(SpacingTokens.md),
-      child: Row(
+      padding: EdgeInsets.fromLTRB(
+        SpacingTokens.md,
+        SpacingTokens.md,
+        SpacingTokens.md,
+        SpacingTokens.md + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: ColorTokens.surfaceRaised,
+        border: Border(
+          top: BorderSide(color: ColorTokens.surfaceBorder),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Practice Overview button.
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => _navigateToPracticeOverview(context),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: ColorTokens.primaryDefault,
-                side: const BorderSide(color: ColorTokens.primaryDefault),
-                padding: const EdgeInsets.symmetric(
-                  vertical: SpacingTokens.sm + 4,
+          if (hasNextDrill) ...[
+            _NextDrillButton(
+              practiceBlockId: practiceBlockId!,
+              userId: userId!,
+            ),
+            const SizedBox(height: SpacingTokens.sm),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: ZxPillButton(
+                  label: 'Discard',
+                  icon: Icons.delete_outline,
+                  variant: ZxPillVariant.destructive,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => _discardSession(context, ref),
                 ),
               ),
-              child: const Text('Practice Overview'),
-            ),
-          ),
-          if (hasNextDrill) ...[
-            const SizedBox(width: SpacingTokens.sm),
-            // Next Drill button.
-            Expanded(
-              child: _NextDrillButton(
-                practiceBlockId: practiceBlockId!,
-                userId: userId!,
+              const SizedBox(width: SpacingTokens.sm),
+              Expanded(
+                child: ZxPillButton(
+                  label: 'Back to Practice',
+                  icon: Icons.list_alt,
+                  variant: ZxPillVariant.secondary,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => _navigateToPracticeOverview(context),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
   }
 
-  void _navigateHome(BuildContext context, WidgetRef ref) {
-    ref.read(showHomeProvider.notifier).state = true;
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
   void _navigateToPracticeOverview(BuildContext context) {
     // Pop back to the practice queue screen.
     Navigator.of(context).pop();
+  }
+
+  Future<void> _discardSession(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Discard Session?',
+      message: 'This will discard "${drill.name}" and remove it from this practice block.',
+      confirmLabel: 'Discard',
+      isDestructive: true,
+    );
+    if (confirmed && context.mounted) {
+      final repo = ref.read(practiceRepositoryProvider);
+      final entry = await repo.getPracticeEntryBySessionId(session.sessionId);
+      if (entry != null) {
+        await repo.removeCompletedEntry(entry.practiceEntryId, userId ?? '');
+      }
+      if (context.mounted) Navigator.of(context).pop();
+    }
   }
 
   static String _drillTypeLabel(DrillType type) {
@@ -269,7 +297,8 @@ class PostSessionSummaryScreen extends ConsumerWidget {
 }
 
 /// Button that shows "Next Drill" or "Finish Practice" based on pending drills.
-class _NextDrillButton extends ConsumerWidget {
+/// Starts the next drill directly instead of navigating back to the queue.
+class _NextDrillButton extends ConsumerStatefulWidget {
   final String practiceBlockId;
   final String userId;
 
@@ -279,15 +308,56 @@ class _NextDrillButton extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NextDrillButton> createState() => _NextDrillButtonState();
+}
+
+class _NextDrillButtonState extends ConsumerState<_NextDrillButton> {
+  bool _loading = false;
+
+  Future<void> _startNextDrill(PracticeEntryWithDrill ewd) async {
+    if (_loading) return;
+    setState(() => _loading = true);
+
+    final drill = ewd.drill;
+
+    // Check club availability.
+    if (drill.clubSelectionMode != null) {
+      final clubs = await ref
+          .read(clubsForSkillAreaProvider((widget.userId, drill.skillArea))
+              .future);
+      if (clubs.isEmpty && mounted) {
+        setState(() => _loading = false);
+        return;
+      }
+    }
+
+    final actions = ref.read(practiceActionsProvider);
+    final session = await actions.startSession(
+      ewd.entry.practiceEntryId,
+      widget.userId,
+    );
+
+    if (!mounted) return;
+
+    final screen = PracticeRouter.routeToExecutionScreen(
+      drill: drill,
+      session: session,
+      userId: widget.userId,
+    );
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final pbAsync =
-        ref.watch(practiceBlockWithEntriesProvider(practiceBlockId));
+        ref.watch(practiceBlockWithEntriesProvider(widget.practiceBlockId));
 
     return pbAsync.when(
       data: (pbWithEntries) {
-        if (pbWithEntries == null) {
-          return const SizedBox.shrink();
-        }
+        if (pbWithEntries == null) return const SizedBox.shrink();
 
         final nextPending = pbWithEntries.entries
             .where(
@@ -295,17 +365,22 @@ class _NextDrillButton extends ConsumerWidget {
             .toList();
 
         if (nextPending.isEmpty) {
-          // No more drills — offer to finish the practice block.
-          return FilledButton(
-            onPressed: () async {
+          return ZxPillButton(
+            label: 'Finish Practice',
+            icon: Icons.check_circle_outline,
+            variant: ZxPillVariant.progress,
+            expanded: true,
+            centered: true,
+            onTap: () async {
               final startTimestamp = pbWithEntries.practiceBlock.startTimestamp;
               final actions = ref.read(practiceActionsProvider);
-              await actions.endPracticeBlock(practiceBlockId, userId);
+              await actions.endPracticeBlock(
+                  widget.practiceBlockId, widget.userId);
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
                     builder: (_) => PracticeSummaryScreen(
-                      practiceBlockId: practiceBlockId,
+                      practiceBlockId: widget.practiceBlockId,
                       startTimestamp: startTimestamp,
                     ),
                   ),
@@ -313,38 +388,27 @@ class _NextDrillButton extends ConsumerWidget {
                 );
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.successDefault,
-              padding: const EdgeInsets.symmetric(
-                vertical: SpacingTokens.sm + 4,
-              ),
-            ),
-            child: const Text('Finish Practice'),
           );
         }
 
-        return FilledButton(
-          onPressed: () {
-            // Pop back to queue — user can start from there.
-            Navigator.of(context).pop();
-          },
-          style: FilledButton.styleFrom(
-            backgroundColor: ColorTokens.primaryDefault,
-            padding: const EdgeInsets.symmetric(
-              vertical: SpacingTokens.sm + 4,
-            ),
-          ),
-          child: const Text('Next Drill'),
+        return ZxPillButton(
+          label: 'Next Drill: ${nextPending.first.drill.name}',
+          icon: Icons.play_arrow,
+          variant: ZxPillVariant.primary,
+          expanded: true,
+          centered: true,
+          isLoading: _loading,
+          onTap: () => _startNextDrill(nextPending.first),
         );
       },
-      loading: () => FilledButton(
-        onPressed: null,
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(
-            vertical: SpacingTokens.sm + 4,
-          ),
-        ),
-        child: const Text('Next Drill'),
+      loading: () => ZxPillButton(
+        label: 'Next Drill',
+        icon: Icons.play_arrow,
+        variant: ZxPillVariant.primary,
+        expanded: true,
+        centered: true,
+        isLoading: true,
+        onTap: null,
       ),
       error: (_, _) => const SizedBox.shrink(),
     );

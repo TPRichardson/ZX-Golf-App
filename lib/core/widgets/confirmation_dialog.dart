@@ -19,20 +19,46 @@ Future<bool> showSoftConfirmation(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
       ),
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        ZxPillButton(
-          label: 'Cancel',
-          variant: ZxPillVariant.tertiary,
-          onTap: () => Navigator.pop(ctx, false),
+      title: Text(
+        title,
+        style: const TextStyle(color: ColorTokens.textPrimary),
+      ),
+      content: Text(
+        message,
+        style: const TextStyle(
+          fontSize: TypographyTokens.bodyLgSize,
+          color: ColorTokens.textSecondary,
         ),
-        ZxPillButton(
-          label: confirmLabel,
-          variant: isDestructive
-              ? ZxPillVariant.destructive
-              : ZxPillVariant.primary,
-          onTap: () => Navigator.pop(ctx, true),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(
+        SpacingTokens.md, 0, SpacingTokens.md, SpacingTokens.md,
+      ),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: ZxPillButton(
+                label: 'Cancel',
+                icon: Icons.close,
+                variant: ZxPillVariant.tertiary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(ctx, false),
+              ),
+            ),
+            const SizedBox(width: SpacingTokens.sm),
+            Expanded(
+              child: ZxPillButton(
+                label: confirmLabel,
+                variant: isDestructive
+                    ? ZxPillVariant.destructive
+                    : ZxPillVariant.primary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(ctx, true),
+              ),
+            ),
+          ],
         ),
       ],
     ),
