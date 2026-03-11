@@ -150,12 +150,6 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             isGrouped: isGrouped,
             onGroupToggle: (v) =>
                 ref.read(practicePoolGroupedProvider.notifier).state = v,
-            showAddDrills: !widget.pickMode,
-            onAddDrills: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const AddDrillsScreen(),
-              ));
-            },
           ),
         ),
         SizedBox(height: widget.pickMode ? SpacingTokens.md : SpacingTokens.sm),
@@ -409,11 +403,26 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+            child: ZxPillButton(
+              label: 'Add Drills',
+              icon: Icons.add,
+              variant: ZxPillVariant.primary,
+              expanded: true,
+              centered: true,
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const AddDrillsScreen(),
+                ));
+              },
+            ),
+          ),
           if (!hasActivePb) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
               child: ZxPillButton(
-                label: 'Begin Drill Practice',
+                label: 'Begin Practice',
                 icon: Icons.play_circle_filled,
                 variant: ZxPillVariant.progress,
                 expanded: true,
@@ -722,8 +731,6 @@ class _UnifiedFilterBar extends StatelessWidget {
   final ValueChanged<DrillType?> onTypeChanged;
   final bool isGrouped;
   final ValueChanged<bool> onGroupToggle;
-  final bool showAddDrills;
-  final VoidCallback? onAddDrills;
 
   const _UnifiedFilterBar({
     required this.selectedSkill,
@@ -732,8 +739,6 @@ class _UnifiedFilterBar extends StatelessWidget {
     required this.onTypeChanged,
     required this.isGrouped,
     required this.onGroupToggle,
-    this.showAddDrills = false,
-    this.onAddDrills,
   });
 
   static String _typeLabel(DrillType? type) => switch (type) {
@@ -901,23 +906,6 @@ class _UnifiedFilterBar extends StatelessWidget {
               ),
             ),
           ),
-          if (showAddDrills) ...[
-            _divider(),
-            GestureDetector(
-              onTap: onAddDrills,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.md,
-                  vertical: SpacingTokens.md,
-                ),
-                child: Icon(
-                  Icons.add,
-                  size: 24,
-                  color: ColorTokens.primaryDefault,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
