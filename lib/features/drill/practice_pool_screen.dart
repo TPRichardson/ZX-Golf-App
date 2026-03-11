@@ -128,7 +128,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             ),
             child: Center(
               child: Text(
-                'Drill Library',
+                'Manage Drill Library',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: ColorTokens.textPrimary,
                     ),
@@ -189,6 +189,29 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                   : null;
 
               if (filtered.isEmpty) {
+                // No drills in library at all.
+                if (drills.isEmpty) {
+                  return Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const EmptyState(
+                          icon: Icons.sports_golf,
+                          message: 'No Drills in Library',
+                        ),
+                        const SizedBox(height: SpacingTokens.sm),
+                        Text(
+                          'Add drills to get started',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.bodyLgSize,
+                            color: ColorTokens.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                // Drills exist but none match the active filter.
                 return Column(
                   children: [
                     ?notice,
@@ -331,12 +354,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 });
               },
             )
-          : hasActivePb
-              ? null
-              : _PlayDrillButton(
-                  drillId: drillId,
-                  userId: _userId,
-                ),
+          : null,
     );
   }
 
@@ -408,7 +426,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             child: ZxPillButton(
               label: 'Add Drills',
               icon: Icons.add,
-              size: ZxPillSize.sm,
+              size: ZxPillSize.md,
               variant: ZxPillVariant.primary,
               expanded: true,
               centered: true,
@@ -425,11 +443,10 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               child: ZxPillButton(
                 label: 'Begin Practice',
                 icon: Icons.play_circle_filled,
-                size: ZxPillSize.sm,
+                size: ZxPillSize.md,
                 variant: ZxPillVariant.progress,
                 expanded: true,
                 centered: true,
-                iconRight: true,
                 onTap: _startCleanPractice,
               ),
             ),
@@ -466,7 +483,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     return Scaffold(
       appBar: ZxAppBar(
-        title: 'Drill Library',
+        title: 'Manage Drill Library',
         actions: widget.pickMode
             ? null
             : [
@@ -620,45 +637,6 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         isCustom: dwa.drill.origin == DrillOrigin.userCustom,
       ),
     ));
-  }
-}
-
-class _PlayDrillButton extends ConsumerWidget {
-  final String drillId;
-  final String userId;
-
-  const _PlayDrillButton({required this.drillId, required this.userId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      icon: Icon(
-        Icons.play_circle_outline,
-        size: 32,
-        color: ColorTokens.successDefault,
-      ),
-      onPressed: () async {
-        final envSurface = await showEnvironmentSurfacePicker(context);
-        if (envSurface == null || !context.mounted) return;
-
-        final actions = ref.read(practiceActionsProvider);
-        final pb = await actions.startPracticeBlock(
-          userId,
-          initialDrillIds: [drillId],
-          surfaceType: envSurface.surface,
-        );
-
-        if (context.mounted) {
-          Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-            builder: (_) => PracticeQueueScreen(
-              practiceBlockId: pb.practiceBlockId,
-              userId: userId,
-            ),
-          ));
-        }
-      },
-      tooltip: 'Start practice with this drill',
-    );
   }
 }
 

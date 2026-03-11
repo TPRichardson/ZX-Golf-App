@@ -206,7 +206,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           SpacingTokens.md,
         ),
         child: ZxPillButton(
-          label: 'Start Practice',
+          label: 'Start This Drill',
           icon: Icons.play_arrow,
           variant: ZxPillVariant.progress,
           expanded: true,

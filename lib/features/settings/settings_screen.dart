@@ -183,6 +183,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // --- Sync Section ---
           _SectionHeader(title: 'Sync'),
+          ref.watch(lastSyncTimestampProvider).when(
+            data: (ts) => _InfoTile(
+              label: 'Last Synced',
+              value: ts != null ? _formatSyncTime(ts) : 'Never',
+            ),
+            loading: () => const _InfoTile(label: 'Last Synced', value: '...'),
+            error: (_, _) => const _InfoTile(label: 'Last Synced', value: 'Unknown'),
+          ),
           _ActionTile(
             label: 'Sync Now',
             onTap: () => _triggerManualSync(context, ref),
@@ -275,6 +283,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       updatePreferences(ref, prefs.copyWith(reminderTime: timeStr));
     }
+  }
+
+  String _formatSyncTime(DateTime ts) {
+    final now = DateTime.now();
+    final diff = now.difference(ts);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${ts.day}/${ts.month}/${ts.year}';
   }
 
   void _triggerManualSync(BuildContext context, WidgetRef ref) {

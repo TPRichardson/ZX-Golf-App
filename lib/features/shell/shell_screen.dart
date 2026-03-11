@@ -7,7 +7,6 @@ import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/features/auth/sign_in_screen.dart';
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
@@ -18,7 +17,6 @@ import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
 import 'tabs/review_tab.dart';
 import 'widgets/dual_active_session_dialog.dart';
-import 'widgets/sync_status_banner.dart';
 import 'widgets/system_maintenance_banner.dart';
 
 /// Whether the auth-required sync banner has been dismissed this session.
@@ -268,68 +266,92 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          const SyncStatusBanner(),
-          // Gap 43 — Maintenance banner (trigger deferred to post-V1).
-          const SystemMaintenanceBanner(),
-          Expanded(
-            child: showHome
-                ? HomeDashboardScreen(onGoToTab: _goToTab)
-                : IndexedStack(
-                    index: _currentIndex,
+          Column(
+            children: [
+              // Gap 43 — Maintenance banner (trigger deferred to post-V1).
+              const SystemMaintenanceBanner(),
+              Expanded(
+                child: showHome
+                    ? HomeDashboardScreen(onGoToTab: _goToTab)
+                    : IndexedStack(
+                        index: _currentIndex,
+                        children: [
+                          for (int i = 0; i < _tabs.length; i++)
+                            Navigator(
+                              key: _navigatorKeys[i],
+                              onGenerateRoute: (_) => MaterialPageRoute(
+                                builder: (_) => _tabs[i],
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+          // Floating resume bar when a practice block is active.
+          if (activePbData != null)
+            Positioned(
+              left: SpacingTokens.xl,
+              right: SpacingTokens.xl,
+              bottom: SpacingTokens.md,
+              child: GestureDetector(
+                onTap: () => _resumePractice(activePbData.practiceBlockId),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpacingTokens.md,
+                    vertical: SpacingTokens.sm + SpacingTokens.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.surfaceRaised,
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                  ),
+                  child: Row(
                     children: [
-                      for (int i = 0; i < _tabs.length; i++)
-                        Navigator(
-                          key: _navigatorKeys[i],
-                          onGenerateRoute: (_) => MaterialPageRoute(
-                            builder: (_) => _tabs[i],
+                      Icon(
+                        Icons.fiber_manual_record,
+                        size: 14,
+                        color: ColorTokens.successDefault,
+                      ),
+                      const SizedBox(width: SpacingTokens.sm),
+                      Expanded(
+                        child: Text(
+                          'Practice in progress',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.headerSize,
+                            fontWeight: FontWeight.w600,
+                            color: ColorTokens.textPrimary,
                           ),
                         ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _discardPracticeBlock(
+                          activePbData.practiceBlockId,
+                        ),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: ColorTokens.errorDestructive.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                          ),
+                          child: Icon(
+                            Icons.delete_outline,
+                            size: 22,
+                            color: ColorTokens.errorDestructive,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Persistent resume bar when a practice block is active.
-          if (activePbData != null)
-            Container(
-              color: ColorTokens.surfaceRaised,
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpacingTokens.md,
-                vertical: SpacingTokens.sm,
-              ),
-              child: Row(
-                children: [
-                  ZxPillButton(
-                    label: 'Discard',
-                    icon: Icons.delete_outline,
-                    iconRight: true,
-                    variant: ZxPillVariant.destructive,
-                    onTap: () => _discardPracticeBlock(
-                      activePbData.practiceBlockId,
-                    ),
-                  ),
-                  const SizedBox(width: SpacingTokens.sm),
-                  Expanded(
-                    child: ZxPillButton(
-                      label: 'Resume Practice',
-                      icon: Icons.play_arrow,
-                      variant: ZxPillVariant.progress,
-                      expanded: true,
-                      centered: true,
-                      onTap: () => _resumePractice(
-                        activePbData.practiceBlockId,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          NavigationBarTheme(
+        ],
+      ),
+      bottomNavigationBar: NavigationBarTheme(
             data: NavigationBarThemeData(
               backgroundColor: ColorTokens.surfacePrimary,
               surfaceTintColor: Colors.transparent,
@@ -373,7 +395,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.sports_golf),
-                  label: 'Practice',
+                  label: 'Play',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.analytics_outlined),
@@ -382,8 +404,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ],
             ),
           ),
-        ],
-      ),
       ),
       ),
     );

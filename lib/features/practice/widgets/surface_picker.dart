@@ -8,7 +8,7 @@ class EnvironmentSurfaceStyles {
   EnvironmentSurfaceStyles._();
 
   // -- Environment styles --
-  static const indoorColor = ColorTokens.primaryDefault;
+  static const indoorColor = Color(0xFF9B72B0);
   static const indoorIcon = Icons.home;
   static const indoorLabel = 'Indoor';
 

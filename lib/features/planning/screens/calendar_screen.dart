@@ -526,7 +526,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
             child: ZxPillButton(
               label: 'Add Routine',
               icon: Icons.add,
-              size: ZxPillSize.sm,
+              size: ZxPillSize.md,
               variant: ZxPillVariant.primary,
               expanded: true,
               centered: true,
@@ -536,7 +536,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
           ZxPillButton(
             label: 'Add Schedule',
             icon: Icons.add,
-            size: ZxPillSize.sm,
+            size: ZxPillSize.md,
             variant: ZxPillVariant.primary,
             expanded: true,
             centered: true,

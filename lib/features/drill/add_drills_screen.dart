@@ -22,7 +22,7 @@ class AddDrillsScreen extends StatelessWidget {
             _ChoiceCard(
               icon: Icons.library_books,
               title: 'Add ZX Drills',
-              subtitle: 'Browse and adopt drills from the ZX system library.',
+              subtitle: 'Add golf drills to your library from our catalogue, build your SkillScore',
               onTap: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const DrillLibraryScreen(),
               )),
@@ -31,7 +31,7 @@ class AddDrillsScreen extends StatelessWidget {
             _ChoiceCard(
               icon: Icons.edit_note,
               title: 'Create Custom Drill',
-              subtitle: 'Design your own drill with custom scoring anchors.',
+              subtitle: 'Design your own custom drills',
               onTap: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const DrillCreateScreen(),
               )),

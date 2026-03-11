@@ -21,7 +21,7 @@ class TrackTab extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: const Text('Practice'),
+          title: const Text('Play', style: TextStyle(fontWeight: FontWeight.w600)),
           backgroundColor: ColorTokens.surfacePrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
@@ -31,7 +31,7 @@ class TrackTab extends StatelessWidget {
         body: const Column(
           children: [
             ZxTabBar(tabs: [
-              Tab(text: 'Drills'),
+              Tab(text: 'Practice'),
               Tab(text: 'Gapping'),
             ]),
             Expanded(

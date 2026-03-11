@@ -91,11 +91,11 @@ class ZxTabBar extends StatelessWidget implements PreferredSizeWidget {
           labelColor: ColorTokens.textPrimary,
           unselectedLabelColor: ColorTokens.textSecondary,
           labelStyle: const TextStyle(
-            fontSize: TypographyTokens.bodySize,
+            fontSize: TypographyTokens.headerSize,
             fontWeight: FontWeight.w600,
           ),
           unselectedLabelStyle: const TextStyle(
-            fontSize: TypographyTokens.bodySize,
+            fontSize: TypographyTokens.headerSize,
             fontWeight: FontWeight.w400,
           ),
           dividerHeight: 0,
