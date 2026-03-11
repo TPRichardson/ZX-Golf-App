@@ -53,6 +53,9 @@ class HomeDashboardScreen extends ConsumerWidget {
           // S08 §8.13 — Today's slot summary.
           todayAsync.when(
             data: (day) {
+              if (day == null) {
+                return const _SlotSummary(filled: 0, completed: 0, total: 0);
+              }
               final slots = parseSlotsFromJson(day.slots);
               final filled = slots.where((s) => s.isFilled).length;
               final completed = slots.where((s) => s.isCompleted).length;
@@ -188,6 +191,7 @@ class _ActionZone extends ConsumerWidget {
     // Parse filled drill IDs from today's calendar.
     List<String> filledDrillIds = [];
     todayAsync.whenData((day) {
+      if (day == null) return;
       final slots = parseSlotsFromJson(day.slots);
       filledDrillIds = slots
           .where((s) => s.isFilled && !s.isCompleted)

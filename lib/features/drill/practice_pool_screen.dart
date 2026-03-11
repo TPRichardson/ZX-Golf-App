@@ -129,13 +129,38 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                       .where(
                           (d) => d.drill.skillArea == selectedFilter)
                       .toList();
+              final hiddenCount = drills.length - filtered.length;
+
+              // Hidden-by-filter notice.
+              final notice = hiddenCount > 0
+                  ? Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: SpacingTokens.xs,
+                        left: SpacingTokens.md,
+                        right: SpacingTokens.md,
+                      ),
+                      child: Text(
+                        '$hiddenCount drill${hiddenCount == 1 ? '' : 's'} hidden by filters',
+                        style: const TextStyle(
+                          fontSize: TypographyTokens.microSize,
+                          color: ColorTokens.textTertiary,
+                        ),
+                      ),
+                    )
+                  : null;
 
               if (filtered.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.sports_golf,
-                  message: 'No drills in your drill library',
-                  subtitle:
-                      'Adopt drills from the System Library\nor create your own',
+                return Column(
+                  children: [
+                    if (notice != null) notice,
+                    const Expanded(
+                      child: EmptyState(
+                        icon: Icons.sports_golf,
+                        message: 'No drills match this filter',
+                        subtitle: 'Try a different skill area filter',
+                      ),
+                    ),
+                  ],
                 );
               }
 
@@ -145,9 +170,19 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                     .compareTo(_skillAreaSortKey(b.drill.skillArea)));
 
               if (isGrouped) {
-                return _buildGroupedList(context, sorted);
+                return Column(
+                  children: [
+                    if (notice != null) notice,
+                    Expanded(child: _buildGroupedList(context, sorted)),
+                  ],
+                );
               }
-              return _buildFlatList(context, sorted);
+              return Column(
+                children: [
+                  if (notice != null) notice,
+                  Expanded(child: _buildFlatList(context, sorted)),
+                ],
+              );
             },
             loading: () => const Center(
               child: CircularProgressIndicator(),
@@ -275,6 +310,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     // Extract filled drill IDs from today's slots.
     List<String> filledDrillIds = [];
     todayAsync.whenData((day) {
+      if (day == null) return;
       filledDrillIds = parseSlotsFromJson(day.slots)
           .where((s) => s.isFilled && !s.isCompleted)
           .map((s) => s.drillId!)

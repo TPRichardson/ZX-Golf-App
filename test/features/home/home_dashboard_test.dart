@@ -44,6 +44,7 @@ class _TestHomeDashboard extends ConsumerWidget {
             // Slot summary section.
             todayAsync.when(
               data: (day) {
+                if (day == null) return const Text('Slots: 0 / 0 drills');
                 final slots = parseSlotsFromJson(day.slots);
                 final filled = slots.where((s) => s.isFilled).length;
                 final completed = slots.where((s) => s.isCompleted).length;
@@ -61,6 +62,7 @@ class _TestHomeDashboard extends ConsumerWidget {
             if (!hasActivePb)
               todayAsync.when(
                 data: (day) {
+                  if (day == null) return const SizedBox.shrink();
                   final slots = parseSlotsFromJson(day.slots);
                   final filledDrillIds = slots
                       .where((s) => s.isFilled && !s.isCompleted)
