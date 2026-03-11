@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/instrumentation/sync_diagnostics.dart';
@@ -23,6 +24,9 @@ class SyncOrchestrator {
   bool _started = false;
   bool _isOnline = true;
 
+  /// Last time the user interacted with the app.
+  DateTime _lastUserActivity = clock.now();
+
   /// Whether the orchestrator is currently running.
   bool get isStarted => _started;
 
@@ -32,6 +36,17 @@ class SyncOrchestrator {
     this._diagnostics,
     this._authService,
   );
+
+  /// Record that the user has actively interacted with the app.
+  /// Called from navigation events, screen taps, session actions, etc.
+  void recordUserActivity() {
+    _lastUserActivity = clock.now();
+  }
+
+  /// Whether the user has been active within the sync idle threshold.
+  bool get _isUserActive {
+    return clock.now().difference(_lastUserActivity) < kSyncIdleThreshold;
+  }
 
   /// Start orchestrator: begin periodic timer + connectivity listener.
   void start() {
@@ -122,9 +137,13 @@ class SyncOrchestrator {
     }
   }
 
-  /// Periodic callback: check if online, then trigger.
+  /// Periodic callback: check if online and user is active, then trigger.
   void _onPeriodicTick() {
     if (!_started || !_isOnline) return;
+    if (!_isUserActive) {
+      debugPrint('[SyncOrchestrator] Skipped periodic (user idle)');
+      return;
+    }
     _debouncedTrigger(SyncTrigger.periodic);
   }
 
@@ -137,8 +156,8 @@ class SyncOrchestrator {
       _engine.setOffline(false);
       _startPeriodicTimer();
 
-      // TD-03 §5.1 — Trigger sync when connectivity restored.
-      if (wasOffline) {
+      // TD-03 §5.1 — Trigger sync when connectivity restored (only if user active).
+      if (wasOffline && _isUserActive) {
         _debouncedTrigger(SyncTrigger.connectivity);
       }
     } else {

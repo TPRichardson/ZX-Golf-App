@@ -21,6 +21,7 @@ dependencies:
   fl_chart: ^0.70.2
   connectivity_plus: ^6.0.0
   flutter_svg: ^2.0.17
+  clock: ^1.1.1
 
 dev_dependencies:
   flutter_test:

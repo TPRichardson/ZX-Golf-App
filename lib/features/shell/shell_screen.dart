@@ -192,7 +192,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           _goHome();
         }
       },
-      child: Scaffold(
+      child: Listener(
+        onPointerDown: (_) => ref.read(syncOrchestratorProvider).recordUserActivity(),
+        child: Scaffold(
       appBar: AppBar(
         toolbarHeight: 72,
         title: const SizedBox.shrink(),
@@ -381,6 +383,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             ),
           ),
         ],
+      ),
       ),
       ),
     );

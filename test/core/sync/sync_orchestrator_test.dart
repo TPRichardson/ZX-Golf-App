@@ -93,7 +93,10 @@ void main() {
   late ConnectivityMonitor monitor;
   late SyncInstrumentation diagnostics;
   late FakeAuthService fakeAuth;
-  late SyncOrchestrator orchestrator;
+
+  /// Create orchestrator — call inside fakeAsync so clock.now() aligns.
+  SyncOrchestrator makeOrchestrator() => SyncOrchestrator(
+        fakeEngine, monitor, diagnostics, fakeAuth);
 
   setUp(() {
     fakeEngine = FakeSyncEngine();
@@ -101,52 +104,66 @@ void main() {
     monitor = ConnectivityMonitor.withStream(connectivityController.stream);
     diagnostics = SyncInstrumentation();
     fakeAuth = FakeAuthService();
-    orchestrator = SyncOrchestrator(
-      fakeEngine,
-      monitor,
-      diagnostics,
-      fakeAuth,
-    );
   });
 
   tearDown(() {
-    orchestrator.dispose();
     connectivityController.close();
   });
 
   group('SyncOrchestrator lifecycle', () {
     test('isStarted is false initially', () {
-      expect(orchestrator.isStarted, isFalse);
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        expect(o.isStarted, isFalse);
+        o.dispose();
+      });
     });
 
     test('start sets isStarted to true', () {
-      orchestrator.start();
-      expect(orchestrator.isStarted, isTrue);
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.start();
+        expect(o.isStarted, isTrue);
+        o.dispose();
+      });
     });
 
     test('stop sets isStarted to false', () {
-      orchestrator.start();
-      orchestrator.stop();
-      expect(orchestrator.isStarted, isFalse);
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.start();
+        o.stop();
+        expect(o.isStarted, isFalse);
+        o.dispose();
+      });
     });
 
     test('double start is no-op', () {
-      orchestrator.start();
-      orchestrator.start();
-      expect(orchestrator.isStarted, isTrue);
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.start();
+        o.start();
+        expect(o.isStarted, isTrue);
+        o.dispose();
+      });
     });
 
     test('stop without start is safe', () {
-      orchestrator.stop();
-      expect(orchestrator.isStarted, isFalse);
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.stop();
+        expect(o.isStarted, isFalse);
+        o.dispose();
+      });
     });
   });
 
   group('SyncOrchestrator debouncing', () {
     test('requestSync triggers after debounce window', () {
       fakeAsync((async) {
-        orchestrator.start();
-        orchestrator.requestSync(SyncTrigger.manual);
+        final o = makeOrchestrator();
+        o.start();
+        o.requestSync(SyncTrigger.manual);
 
         // Not yet triggered.
         expect(fakeEngine.triggeredReasons, isEmpty);
@@ -155,16 +172,18 @@ void main() {
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         expect(fakeEngine.triggeredReasons, contains(SyncTrigger.manual));
+        o.dispose();
       });
     });
 
     test('rapid triggers coalesce to single sync', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
 
         // Fire 5 rapid triggers.
         for (var i = 0; i < 5; i++) {
-          orchestrator.requestSync(SyncTrigger.postSession);
+          o.requestSync(SyncTrigger.postSession);
           async.elapse(const Duration(milliseconds: 100));
         }
 
@@ -174,14 +193,17 @@ void main() {
         // Only one sync should have fired (the last one after debounce).
         // The first 4 were cancelled by subsequent calls within 500ms.
         expect(fakeEngine.triggeredReasons.length, 1);
+        o.dispose();
       });
     });
 
     test('requestSync does nothing when not started', () {
       fakeAsync((async) {
-        orchestrator.requestSync(SyncTrigger.manual);
+        final o = makeOrchestrator();
+        o.requestSync(SyncTrigger.manual);
         async.elapse(const Duration(seconds: 1));
         expect(fakeEngine.triggeredReasons, isEmpty);
+        o.dispose();
       });
     });
   });
@@ -189,7 +211,9 @@ void main() {
   group('SyncOrchestrator periodic timer', () {
     test('periodic timer fires after kSyncPeriodicInterval', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
+        o.recordUserActivity();
 
         // Advance to just after the periodic interval.
         async.elapse(kSyncPeriodicInterval + const Duration(seconds: 1));
@@ -198,15 +222,18 @@ void main() {
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         expect(fakeEngine.triggeredReasons, contains(SyncTrigger.periodic));
+        o.dispose();
       });
     });
 
     test('periodic timer fires multiple times', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
 
-        // Advance through 3 periodic intervals.
+        // Advance through 3 periodic intervals, recording activity each time.
         for (var i = 0; i < 3; i++) {
+          o.recordUserActivity();
           async.elapse(kSyncPeriodicInterval);
           async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
         }
@@ -215,14 +242,59 @@ void main() {
             .where((r) => r == SyncTrigger.periodic)
             .length;
         expect(periodicCount, greaterThanOrEqualTo(3));
+        o.dispose();
+      });
+    });
+
+    test('periodic timer skipped when user is idle', () {
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.start();
+
+        // Advance past idle threshold so user is considered inactive.
+        async.elapse(kSyncIdleThreshold + const Duration(minutes: 1));
+
+        // Clear any triggers that happened before idle.
+        fakeEngine.triggeredReasons.clear();
+
+        // Advance through a periodic interval — should be skipped.
+        async.elapse(kSyncPeriodicInterval + const Duration(seconds: 1));
+        async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
+
+        final periodicCount = fakeEngine.triggeredReasons
+            .where((r) => r == SyncTrigger.periodic)
+            .length;
+        expect(periodicCount, 0);
+        o.dispose();
+      });
+    });
+
+    test('periodic timer resumes after user activity', () {
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.start();
+
+        // Go idle.
+        async.elapse(kSyncIdleThreshold + const Duration(minutes: 1));
+        fakeEngine.triggeredReasons.clear();
+
+        // Record activity, then wait for periodic tick.
+        o.recordUserActivity();
+        async.elapse(kSyncPeriodicInterval + const Duration(seconds: 1));
+        async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
+
+        expect(fakeEngine.triggeredReasons, contains(SyncTrigger.periodic));
+        o.dispose();
       });
     });
   });
 
   group('SyncOrchestrator connectivity', () {
-    test('connectivity restored triggers sync', () {
+    test('connectivity restored triggers sync when user active', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
+        o.recordUserActivity();
 
         // Simulate going offline then online.
         connectivityController.add([ConnectivityResult.none]);
@@ -232,23 +304,51 @@ void main() {
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         expect(fakeEngine.triggeredReasons, contains(SyncTrigger.connectivity));
+        o.dispose();
+      });
+    });
+
+    test('connectivity restored skipped when user idle', () {
+      fakeAsync((async) {
+        final o = makeOrchestrator();
+        o.start();
+
+        // Go idle.
+        async.elapse(kSyncIdleThreshold + const Duration(minutes: 1));
+        fakeEngine.triggeredReasons.clear();
+
+        // Simulate offline then online while idle.
+        connectivityController.add([ConnectivityResult.none]);
+        async.elapse(const Duration(milliseconds: 50));
+
+        connectivityController.add([ConnectivityResult.wifi]);
+        async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
+
+        final connectivityTriggers = fakeEngine.triggeredReasons
+            .where((r) => r == SyncTrigger.connectivity)
+            .length;
+        expect(connectivityTriggers, 0);
+        o.dispose();
       });
     });
 
     test('connectivity lost sets engine offline', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
 
         connectivityController.add([ConnectivityResult.none]);
         async.elapse(const Duration(milliseconds: 50));
 
         expect(fakeEngine.isOffline, isTrue);
+        o.dispose();
       });
     });
 
     test('connectivity restored clears offline status', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
 
         connectivityController.add([ConnectivityResult.none]);
         async.elapse(const Duration(milliseconds: 50));
@@ -257,6 +357,7 @@ void main() {
         connectivityController.add([ConnectivityResult.wifi]);
         async.elapse(const Duration(milliseconds: 50));
         expect(fakeEngine.isOffline, isFalse);
+        o.dispose();
       });
     });
   });
@@ -265,8 +366,9 @@ void main() {
     test('sync skipped when not authenticated', () {
       fakeAsync((async) {
         fakeAuth.isAuthenticated = false;
-        orchestrator.start();
-        orchestrator.requestSync(SyncTrigger.manual);
+        final o = makeOrchestrator();
+        o.start();
+        o.requestSync(SyncTrigger.manual);
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         expect(fakeEngine.triggeredReasons, isEmpty);
@@ -277,14 +379,16 @@ void main() {
           ),
           isTrue,
         );
+        o.dispose();
       });
     });
 
     test('sync skipped when sync disabled', () {
       fakeAsync((async) {
         fakeEngine.syncEnabled = false;
-        orchestrator.start();
-        orchestrator.requestSync(SyncTrigger.manual);
+        final o = makeOrchestrator();
+        o.start();
+        o.requestSync(SyncTrigger.manual);
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         expect(fakeEngine.triggeredReasons, isEmpty);
@@ -295,12 +399,14 @@ void main() {
           ),
           isTrue,
         );
+        o.dispose();
       });
     });
 
     test('sync skipped when offline', () {
       fakeAsync((async) {
-        orchestrator.start();
+        final o = makeOrchestrator();
+        o.start();
 
         // Go offline.
         connectivityController.add([ConnectivityResult.none]);
@@ -308,7 +414,7 @@ void main() {
 
         // Try manual sync while offline.
         diagnostics.clear();
-        orchestrator.requestSync(SyncTrigger.manual);
+        o.requestSync(SyncTrigger.manual);
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         // Should not trigger engine (manual sync while offline is skipped).
@@ -316,6 +422,7 @@ void main() {
             .where((r) => r == SyncTrigger.manual)
             .length;
         expect(manualTriggers, 0);
+        o.dispose();
       });
     });
   });
@@ -323,11 +430,13 @@ void main() {
   group('SyncOrchestrator post-session trigger', () {
     test('postSession trigger fires sync', () {
       fakeAsync((async) {
-        orchestrator.start();
-        orchestrator.requestSync(SyncTrigger.postSession);
+        final o = makeOrchestrator();
+        o.start();
+        o.requestSync(SyncTrigger.postSession);
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 
         expect(fakeEngine.triggeredReasons, contains(SyncTrigger.postSession));
+        o.dispose();
       });
     });
   });

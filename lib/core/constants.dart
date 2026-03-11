@@ -94,6 +94,9 @@ const kSyncPeriodicInterval = Duration(minutes: 5);
 // TD-07 §6.1.1 — Debounce window for rapid triggers.
 const kSyncDebounceWindow = Duration(milliseconds: 500);
 
+// Idle threshold: skip automatic syncs if no user activity within this window.
+const kSyncIdleThreshold = Duration(minutes: 10);
+
 // TD-03 §5.2 — Maximum upload payload size in bytes (2MB).
 const kSyncMaxPayloadBytes = 2 * 1024 * 1024;
 
