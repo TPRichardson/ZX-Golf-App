@@ -249,7 +249,7 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: ColorTokens.textPrimary,
                             ),
                           )
                         : const Text('Confirm'),

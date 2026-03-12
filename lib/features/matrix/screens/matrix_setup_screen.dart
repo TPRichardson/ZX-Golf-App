@@ -403,7 +403,7 @@ class _MatrixSetupScreenState extends ConsumerState<MatrixSetupScreen> {
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: ColorTokens.textPrimary,
                   ),
                 )
               : Text(

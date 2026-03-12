@@ -36,8 +36,8 @@ class RawDataEntryDelegate extends ExecutionInputDelegate {
             Text(
               lastScore!.toStringAsFixed(1),
               style: TextStyle(
-                fontSize: 64,
-                fontWeight: TypographyTokens.displayXlWeight,
+                fontSize: TypographyTokens.displayXxlSize,
+                fontWeight: TypographyTokens.displayXxlWeight,
                 color: scoreColor(lastScore!),
               ),
             ),

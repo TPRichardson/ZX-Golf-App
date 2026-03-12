@@ -20,7 +20,8 @@
 ## Workflow Rules
 
 - **No compound shell commands.** Never chain commands with `&&`, `;`, or `||`. If you need to change directory and then run a command, issue them as two separate Bash tool calls. Compound commands trigger a security approval dialog on Windows.
-- **Git workflow.** Always commit and push without asking for confirmation. Stage only files relevant to the work done (don't include unrelated changes).
+- **No compound shell commands.** Never chain commands with `&&`, `;`, or `||` — this triggers the security confirmation prompt on Windows. Issue each command as a separate Bash tool call. For git operations, use `git -C <path>` instead of `cd <path> && git ...`.
+- **Git workflow.** Batch changes into meaningful commits — do not commit/push after every small change. Stage only files relevant to the work done (don't include unrelated changes). Commit and push when explicitly asked.
 
 ---
 
@@ -82,13 +83,6 @@ When documents conflict, higher precedence wins:
 - **CLAUDE.md scope restriction.** This file may only summarise existing spec/TD rules or record deviations. It must not create new behavioural rules or undocumented conventions (TD-08 §4.2 Rule 6).
 - **SyncWriteGate awareness.** All Repository writes must be structured for gate compatibility from Phase 1 onward: writes through transactions, no long-held write locks, no assumptions about uninterrupted write access (TD-03 §2.1.1).
 - **Cross-screen deduplication.** When implementing 3+ screens with the same parent concept (e.g. execution screens for different input modes), extract shared scaffolding into a single host widget with swappable content. Do not duplicate controller init, state management, navigation, or chrome across sibling screens. After completing a group of related screens, perform a structural review pass to identify and extract shared logic.
-
----
-
-## Shell Command Rules
-
-- **No compound commands.** Never chain commands with `&&`, `;`, or `||` — this triggers the security confirmation prompt on Windows. Issue each command as a separate Bash tool call.
-- For git operations, use `git -C <path>` instead of `cd <path> && git ...`.
 
 ---
 
@@ -195,14 +189,13 @@ lib/
 │   ├── home/
 │   │   └── home_dashboard_screen.dart  # S12 §12.2 — Home Dashboard (score + slots + actions)
 │   ├── shell/
-│   │   ├── shell_screen.dart       # Home/Tab navigator (Plan/Track/Review)
-│   │   ├── tabs/                   # Tab screens
+│   │   ├── shell_screen.dart       # Home/Tab navigator (Plan/Play/Review)
+│   │   ├── tabs/                   # Tab screens (Play has Practice + Gapping sub-tabs)
 │   │   └── widgets/                # [Phase 7C] Shell-level widgets
-│   │       ├── sync_banner_state.dart         # Pure banner priority resolution
-│   │       ├── sync_status_banner.dart        # Composite banner widget
 │   │       └── dual_active_session_dialog.dart # Cross-device conflict dialog
 │   ├── drill/                      # [Phase 3] Drill browsing, creation, editing
-│   │   ├── practice_pool_screen.dart   # Main drill hub (Track tab)
+│   │   ├── practice_pool_screen.dart   # Main drill hub (Play → Practice tab)
+│   │   ├── add_drills_screen.dart      # Add Drills chooser (ZX library or custom)
 │   │   ├── drill_library_screen.dart   # System Drill catalogue (28 drills)
 │   │   ├── drill_detail_screen.dart    # View/edit drill properties + anchors
 │   │   ├── drill_create_screen.dart    # Multi-step custom drill creation
@@ -231,12 +224,16 @@ lib/
 │   │   │   ├── practice_queue_screen.dart          # Queue: add/remove/reorder drills
 │   │   │   ├── execution_screen.dart               # Unified host for all input modes
 │   │   │   ├── technique_block_screen.dart         # Timer only (separate — no per-instance recording)
-│   │   │   └── post_session_summary_screen.dart    # Score + integrity summary
+│   │   │   ├── post_session_summary_screen.dart    # Score + integrity summary
+│   │   │   └── practice_summary_screen.dart        # Full practice block summary
 │   │   └── widgets/
 │   │       ├── execution_header.dart               # Drill name, set/instance progress
 │   │       ├── club_selector.dart                  # Club dropdown per ClubSelectionMode
 │   │       ├── score_flash.dart                    # 120ms color flash animation
-│   │       └── practice_entry_card.dart            # Queue entry card
+│   │       ├── practice_entry_card.dart            # Queue entry card
+│   │       ├── anchor_score_bar.dart               # Min/Scratch/Pro gradient bar
+│   │       ├── practice_stats_bar.dart             # Environment + surface badges
+│   │       └── surface_picker.dart                 # Indoor/Outdoor + Grass/Mat picker
 │   ├── planning/                   # [Phase 5] Routines, Schedules, Calendar
 │   │   ├── models/
 │   │   │   ├── slot.dart               # Slot data class with JSON serialization
@@ -257,7 +254,7 @@ lib/
 │   │   │   ├── schedule_detail_screen.dart       # View schedule + lifecycle
 │   │   │   └── schedule_apply_screen.dart        # Date range → apply
 │   │   └── widgets/
-│   │       ├── calendar_day_card.dart            # Day summary card
+│   │       ├── planning_actions_sheet.dart       # Shared routine/schedule picker sheets
 │   │       ├── slot_tile.dart                    # Slot with state indicators
 │   │       ├── adherence_badge.dart              # 4-week adherence percentage
 │   │       ├── routine_entry_card.dart           # Fixed or criterion display
@@ -286,9 +283,7 @@ lib/
 │   │       └── analysis_filters.dart          # Scope, DrillType, Resolution filters
 │   ├── matrix/                     # [Matrix M4-M10] Matrix & Gapping System
 │   │   ├── screens/                    # Setup, execution, completion screens
-│   │   │   ├── gapping_setup_screen.dart
-│   │   │   ├── wedge_setup_screen.dart
-│   │   │   ├── chipping_setup_screen.dart
+│   │   │   ├── matrix_setup_screen.dart          # Unified setup for all matrix types
 │   │   │   ├── gapping_execution_screen.dart
 │   │   │   ├── matrix_execution_screen.dart
 │   │   │   └── matrix_completion_screen.dart
@@ -379,7 +374,6 @@ Update this tree when a phase adds new directories.
 | Spec reference    | `// Spec: S07 §7.2 — Reflow trigger: anchor edit`                     | Every method implementing a specific spec rule.   |
 | TD reference      | `// TD-04 §3.2 Step 4 — Scope determination`                          | Every method implementing a specific TD decision. |
 | Deviation note    | `// DEVIATION: [description]. See CLAUDE.md Known Deviations.`         | Every deviation from spec.                        |
-| Phase stub        | `// Phase 3 stub — replaced in Phase 5 (completion matching)`          | Every stub for a future phase.                    |
 | Non-obvious logic | `// Dual-mapped drills contribute 0.5 to each subskill window`         | Complex business logic.                           |
 
 Do not comment obvious code. Target ~1 spec/TD reference per public repository/scoring method.
@@ -390,20 +384,49 @@ Do not comment obvious code. Target ~1 spec/TD reference per public repository/s
 
 Source: `lib/core/theme/tokens.dart` (S15 §15.3–15.10)
 
-**Colour tokens:**
-- Primary: `#00B3C6` (default), `#00C8DD` (hover), `#007C7F` (active)
-- Success: `#1FA463` (default), `#23B26C` (hover), `#15804A` (active)
-- Miss: `#3A3F46` (default), `#2C3036` (active), `#4A5058` (border)
-- Warning: `#F5A623` (integrity), `#C88719` (muted)
-- Error: `#D64545` (destructive), `#E05858` (hover), `#B63737` (active)
-- Surface: `#0F1115` (base), `#171A1F` (primary), `#1E232A` (raised), `#242A32` (modal)
-- Text: `#FFFFFF` (primary), `#B0B8C1` (secondary), `#6B7280` (tertiary)
+**Colour tokens — semantic groups:**
 
-**Typography:** Manrope (Google Fonts), tabular lining numerals. Display XL 36px/w600, Display LG 24px/w600, Header 18px/w500, Body 16px/w400, Body SM 14px/w400, Micro 12px/w400.
+| Group | Token | Hex | Usage |
+|-------|-------|-----|-------|
+| Primary (cyan) | `primaryDefault` / `Hover` / `Active` | `#00B3C6` / `#00C8DD` / `#007C7F` | Primary actions, selected states |
+| Success (green) | `successDefault` / `Hover` / `Active` | `#1FA463` / `#23B26C` / `#15804A` | Scoring hits, progress actions |
+| Miss (grey) | `missDefault` / `Active` / `Border` | `#3A3F46` / `#2C3036` / `#4A5058` | Neutral miss (not red) |
+| Warning | `warningIntegrity` / `Muted` | `#F5A623` / `#C88719` | Integrity warnings |
+| Error (red) | `errorDestructive` / `Hover` / `Active` | `#D64545` / `#E05858` / `#B63737` | Destructive actions |
+| Achievement | `achievementGold` | `#FFD700` | Star ratings |
+| RAG | `ragRed` / `ragAmber` / `ragGreen` / `ragPurple` | `#E05252` / `#E8A830` / `#22C55E` / `#9333EA` | Scoring visualisation |
+| Surface | `surfaceBase` → `Primary` → `Raised` → `Modal` | `#0F1115` → `#171A1F` → `#1E232A` → `#242A32` | Dark elevation stack |
+| Text | `textPrimary` / `Secondary` / `Tertiary` | `#FFF` / 70% / 50% | Text hierarchy |
+
+**Skill area colours (warm→cool):** Putting `#D4A535` → Chipping `#E67E22` → Pitching `#E05858` → Bunkers `#C74882` → Irons `#8E5BB5` → Woods `#5B6ABF` → Driving `#3A7BD5`
+
+**Environment/Surface colours** (in `surface_picker.dart`): Indoor `#9B72B0` (plum), Outdoor `#F5A623` (gold), Grass `#1FA463` (green), Mat `#C4956A` (amber/brown)
+
+**Button variants (ZxPillButton):**
+
+| Variant | Colour | Usage |
+|---------|--------|-------|
+| `primary` | Cyan | Default actions (Add Drills, Add Routine) |
+| `progress` | Green | Begin Practice, Resume, Next Drill |
+| `secondary` | Outlined | Secondary actions, Clear Filter |
+| `tertiary` | Muted grey | Disabled / low-priority |
+| `destructive` | Red | Discard, Delete |
+
+**Typography:** Manrope (Google Fonts), tabular lining numerals.
+
+| Token | Size | Weight | Usage |
+|-------|------|--------|-------|
+| `displayXxl` | 64px | w600 | Timer, score hero |
+| `displayXl` | 36px | w600 | Page titles |
+| `displayLg` | 24px | w600 | Section headers |
+| `header` | 20px | w500 | Card titles, tab labels |
+| `bodyLg` | 18px | w400 | Button labels (md), subtitles |
+| `body` | 16px | w400 | Body text, button labels (sm) |
+| `bodySm` | 14px | w400 | Captions, tertiary text |
 
 **Spacing:** xs=4, sm=8, md=16, lg=24, xl=32, xxl=48.
 
-**Shape:** card=8px, grid=6px, modal=10px, input=8px, segmented=8px.
+**Shape:** micro=2, badge=4, grid=6, card=8, input=8, segmented=8, modal=10.
 
 **Motion:** fast=120ms, standard=150ms, slow=200ms. Curve: easeInOut.
 

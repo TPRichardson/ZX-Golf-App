@@ -147,7 +147,7 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
       backgroundColor: ColorTokens.surfaceRaised,
       labelStyle: TextStyle(
         fontSize: TypographyTokens.bodySmSize,
-        color: selected ? Colors.white : ColorTokens.textSecondary,
+        color: selected ? ColorTokens.textPrimary : ColorTokens.textSecondary,
       ),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,

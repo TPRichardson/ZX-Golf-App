@@ -80,10 +80,10 @@ class AnchorScoreBar extends StatelessWidget {
                             (pr / 100.0).clamp(0.0, 1.0),
                           ],
                           colors: const [
-                            Color(0xFFE05252), // Red (0 to Min)
-                            Color(0xFFE05252), // Red (at Min)
-                            Color(0xFFE8A830), // Amber (mid)
-                            Color(0xFF22C55E), // Green (Pro)
+                            ColorTokens.ragRed, // Red (0 to Min)
+                            ColorTokens.ragRed, // Red (at Min)
+                            ColorTokens.ragAmber, // Amber (mid)
+                            ColorTokens.ragGreen, // Green (Pro)
                           ],
                         ),
                       ),
@@ -93,19 +93,19 @@ class AnchorScoreBar extends StatelessWidget {
                   _AnchorMarker(
                     position: minPos,
                     label: 'Min',
-                    color: const Color(0xFFE05252),
+                    color: ColorTokens.ragRed,
                   ),
                   // Scratch marker.
                   _AnchorMarker(
                     position: scratchPos,
                     label: 'Scratch',
-                    color: const Color(0xFFE8A830),
+                    color: ColorTokens.ragAmber,
                   ),
                   // Pro marker.
                   _AnchorMarker(
                     position: proPos,
                     label: 'Pro',
-                    color: const Color(0xFF22C55E),
+                    color: ColorTokens.ragGreen,
                   ),
                   // User score marker.
                   Positioned(
@@ -115,7 +115,7 @@ class AnchorScoreBar extends StatelessWidget {
                       width: 12,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: ColorTokens.textPrimary,
                         borderRadius: BorderRadius.circular(3),
                         border: Border.all(color: ColorTokens.surfaceBorder, width: 2),
                         boxShadow: [

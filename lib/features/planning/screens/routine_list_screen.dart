@@ -91,7 +91,7 @@ class RoutineListScreen extends ConsumerWidget {
           ));
         },
         backgroundColor: ColorTokens.primaryDefault,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: ColorTokens.textPrimary),
       ),
     );
   }

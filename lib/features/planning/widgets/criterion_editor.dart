@@ -121,14 +121,14 @@ class _CriterionEditorDialogState extends State<CriterionEditorDialog> {
         label,
         style: TextStyle(
           fontSize: TypographyTokens.bodySize,
-          color: selected ? Colors.white : ColorTokens.textSecondary,
+          color: selected ? ColorTokens.textPrimary : ColorTokens.textSecondary,
         ),
       ),
       selected: selected,
       onSelected: (_) => setState(() => _skillArea = sa),
       selectedColor: ColorTokens.primaryDefault,
       backgroundColor: ColorTokens.surfaceRaised,
-      checkmarkColor: Colors.white,
+      checkmarkColor: ColorTokens.textPrimary,
       side: BorderSide(
         color: selected ? ColorTokens.primaryDefault : ColorTokens.surfaceBorder,
       ),
@@ -142,7 +142,7 @@ class _CriterionEditorDialogState extends State<CriterionEditorDialog> {
         dt.dbValue,
         style: TextStyle(
           fontSize: TypographyTokens.bodySize,
-          color: selected ? Colors.white : ColorTokens.textSecondary,
+          color: selected ? ColorTokens.textPrimary : ColorTokens.textSecondary,
         ),
       ),
       selected: selected,
@@ -157,7 +157,7 @@ class _CriterionEditorDialogState extends State<CriterionEditorDialog> {
       },
       selectedColor: ColorTokens.primaryDefault,
       backgroundColor: ColorTokens.surfaceRaised,
-      checkmarkColor: Colors.white,
+      checkmarkColor: ColorTokens.textPrimary,
       side: BorderSide(
         color: selected ? ColorTokens.primaryDefault : ColorTokens.surfaceBorder,
       ),
@@ -171,14 +171,14 @@ class _CriterionEditorDialogState extends State<CriterionEditorDialog> {
         mode.dbValue,
         style: TextStyle(
           fontSize: TypographyTokens.bodySize,
-          color: selected ? Colors.white : ColorTokens.textSecondary,
+          color: selected ? ColorTokens.textPrimary : ColorTokens.textSecondary,
         ),
       ),
       selected: selected,
       onSelected: (_) => setState(() => _mode = mode),
       selectedColor: ColorTokens.primaryDefault,
       backgroundColor: ColorTokens.surfaceRaised,
-      checkmarkColor: Colors.white,
+      checkmarkColor: ColorTokens.textPrimary,
       side: BorderSide(
         color: selected ? ColorTokens.primaryDefault : ColorTokens.surfaceBorder,
       ),

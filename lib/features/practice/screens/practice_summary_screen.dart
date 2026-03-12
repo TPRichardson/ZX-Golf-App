@@ -16,7 +16,6 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
-const _goldStar = Color(0xFFFFD700);
 
 /// Data for one completed session in the summary.
 class _SessionSummary {
@@ -218,7 +217,7 @@ class _PracticeSummaryScreenState extends ConsumerState<PracticeSummaryScreen> {
                 StarRating(
                   stars: scoreToStars(avgScore),
                   size: 48,
-                  color: _goldStar,
+                  color: ColorTokens.achievementGold,
                 ),
               ],
               const SizedBox(height: SpacingTokens.md),
@@ -405,7 +404,7 @@ class _SessionCard extends StatelessWidget {
                   StarRating(
                     stars: scoreToStars(summary.score!),
                     size: 16,
-                    color: _goldStar,
+                    color: ColorTokens.achievementGold,
                   ),
                 ],
               ],

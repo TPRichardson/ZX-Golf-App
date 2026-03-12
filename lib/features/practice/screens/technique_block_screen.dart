@@ -199,8 +199,8 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
                     Text(
                       _formatDuration(_elapsedSeconds),
                       style: const TextStyle(
-                        fontSize: 72,
-                        fontWeight: FontWeight.w600,
+                        fontSize: TypographyTokens.displayXxlSize,
+                        fontWeight: TypographyTokens.displayXxlWeight,
                         color: ColorTokens.textPrimary,
                         fontFeatures: [FontFeature.tabularFigures()],
                       ),

@@ -253,10 +253,10 @@ class _ActionZone extends ConsumerWidget {
               Navigator.of(context, rootNavigator: true)
                   .push(MaterialPageRoute(builder: (_) => screen));
             },
-            icon: const Icon(Icons.grid_on, color: Colors.white),
+            icon: const Icon(Icons.grid_on, color: ColorTokens.textPrimary),
             label: Text(
               'Resume ${_matrixTypeLabel(activeMatrixRun.matrixType)}',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: ColorTokens.textPrimary),
             ),
             style: FilledButton.styleFrom(
               backgroundColor: ColorTokens.primaryDefault,

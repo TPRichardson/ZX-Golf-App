@@ -209,7 +209,7 @@ class BagScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddClubDialog(context, ref),
         backgroundColor: ColorTokens.primaryDefault,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: ColorTokens.textPrimary),
       ),
     );
   }

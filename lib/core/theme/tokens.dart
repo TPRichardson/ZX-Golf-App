@@ -106,6 +106,9 @@ abstract final class ColorTokens {
     return textSecondary;
   }
 
+  // Achievement
+  static const achievementGold = Color(0xFFFFD700);
+
   // RAG colour constants for scoring visualisation.
   static const ragRed = Color(0xFFE05252);
   static const ragAmber = Color(0xFFE8A830);
@@ -192,6 +195,10 @@ abstract final class TypographyTokens {
   static const bodySmSize = 14.0;
   static const bodySmHeight = 18.0 / 14.0;
   static const bodySmWeight = FontWeight.w400;
+
+  // Display XXL: 64px, SemiBold — timer/score hero displays
+  static const displayXxlSize = 64.0;
+  static const displayXxlWeight = FontWeight.w600;
 }
 
 // S15 §15.6 — Spacing tokens (all multiples of 4).

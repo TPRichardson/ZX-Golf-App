@@ -21,7 +21,6 @@ import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
-const _goldStar = Color(0xFFFFD700);
 
 /// S13 §13.13 — Post-session summary showing score and performance data.
 class PostSessionSummaryScreen extends ConsumerWidget {
@@ -111,7 +110,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                       StarRating(
                         stars: scoreToStars(score),
                         size: 48,
-                        color: _goldStar,
+                        color: ColorTokens.achievementGold,
                       ),
                       // Anchor bar — Min/Scratch/Pro with user hit rate.
                       _HitRateAnchorBar(

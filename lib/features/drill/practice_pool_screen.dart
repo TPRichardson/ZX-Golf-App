@@ -326,8 +326,6 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Widget _buildDrillCard(BuildContext context, DrillWithAdoption dwa) {
-    final hasActivePb =
-        ref.watch(activePracticeBlockProvider(_userId)).valueOrNull != null;
     final drillId = dwa.drill.drillId;
     final count = _selectedDrillCounts[drillId] ?? 0;
     return DrillCard(

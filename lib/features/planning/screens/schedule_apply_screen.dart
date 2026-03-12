@@ -91,7 +91,7 @@ class _ScheduleApplyScreenState
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: ColorTokens.textPrimary,
                         ),
                       )
                     : const Text('Apply Schedule'),

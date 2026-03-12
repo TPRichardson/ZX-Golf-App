@@ -293,7 +293,7 @@ class _MatrixCompletionScreenState
                               width: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: ColorTokens.textPrimary,
                               ),
                             )
                           : const Text('Save Snapshot'),
