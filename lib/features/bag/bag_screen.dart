@@ -16,8 +16,8 @@ import 'widgets/club_card.dart';
 // Phase 3 — Bag screen. Displays user's golf bag, grouped by club category.
 // S09 §9.1 — Club configuration.
 
-// Card height (ZxCard 16+16 padding + ~60 content + 2 border) + 8 bottom margin.
-const _kCardItemExtent = 104.0;
+// Card height (ZxCard 12+12 padding + ~70 content + 2 border) + 8 bottom margin.
+const _kCardItemExtent = 108.0;
 
 class BagScreen extends ConsumerWidget {
   const BagScreen({super.key});
@@ -95,11 +95,15 @@ class BagScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        '${clubs.length} ${clubs.length == 1 ? 'club' : 'clubs'}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: ColorTokens.textSecondary,
-                            ),
+                      child: Center(
+                        child: Text(
+                          '${clubs.length} ${clubs.length == 1 ? 'club' : 'clubs'}',
+                          style: const TextStyle(
+                            fontSize: TypographyTokens.headerSize,
+                            fontWeight: FontWeight.w500,
+                            color: ColorTokens.textSecondary,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -120,7 +124,7 @@ class BagScreen extends ConsumerWidget {
                       width: 56,
                       child: Text('Club',
                           style: TextStyle(
-                            fontSize: TypographyTokens.bodySize,
+                            fontSize: TypographyTokens.headerSize,
                             fontWeight: FontWeight.w600,
                             color: ColorTokens.textSecondary,
                           )),
@@ -129,7 +133,7 @@ class BagScreen extends ConsumerWidget {
                     Flexible(
                       child: Text('Skill Areas',
                           style: TextStyle(
-                            fontSize: TypographyTokens.bodySize,
+                            fontSize: TypographyTokens.headerSize,
                             fontWeight: FontWeight.w600,
                             color: ColorTokens.textSecondary,
                           )),
@@ -140,7 +144,7 @@ class BagScreen extends ConsumerWidget {
                       child: Center(
                         child: Text('Loft',
                             style: TextStyle(
-                              fontSize: TypographyTokens.bodySize,
+                              fontSize: TypographyTokens.headerSize,
                               fontWeight: FontWeight.w600,
                               color: ColorTokens.textSecondary,
                             )),
@@ -152,7 +156,7 @@ class BagScreen extends ConsumerWidget {
                       child: Center(
                         child: Text('Carry',
                             style: TextStyle(
-                              fontSize: TypographyTokens.bodySize,
+                              fontSize: TypographyTokens.headerSize,
                               fontWeight: FontWeight.w600,
                               color: ColorTokens.textSecondary,
                             )),

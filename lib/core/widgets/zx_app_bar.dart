@@ -7,12 +7,14 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
   final Widget? leading;
+  final double? titleSize;
 
   const ZxAppBar({
     super.key,
     required this.title,
     this.actions,
     this.leading,
+    this.titleSize,
   });
 
   @override
@@ -25,8 +27,8 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 72,
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: TypographyTokens.displayXlSize,
+        style: TextStyle(
+          fontSize: titleSize ?? TypographyTokens.displayXlSize,
           fontWeight: TypographyTokens.displayXlWeight,
         ),
       ),

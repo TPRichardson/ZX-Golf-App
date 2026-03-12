@@ -172,7 +172,7 @@ abstract final class TypographyTokens {
   static const displayXlWeight = FontWeight.w600;
 
   // Display LG: 24-28px, SemiBold
-  static const displayLgSize = 24.0;
+  static const displayLgSize = 28.0;
   static const displayLgHeight = 28.0 / 24.0;
   static const displayLgWeight = FontWeight.w600;
 

@@ -384,7 +384,7 @@ class _ActionZone extends ConsumerWidget {
   }
 }
 
-/// Outlined button with left-aligned text and right-aligned green play icon.
+/// Outlined action button.
 class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -402,17 +402,9 @@ class _ActionButton extends StatelessWidget {
           vertical: SpacingTokens.sm,
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(color: ColorTokens.primaryDefault),
-          ),
-          const SizedBox(width: SpacingTokens.sm),
-          Icon(Icons.play_circle_filled, size: 24, color: ColorTokens.successDefault),
-        ],
+      child: Text(
+        label,
+        style: TextStyle(color: ColorTokens.primaryDefault),
       ),
     );
   }

@@ -231,7 +231,7 @@ class _CalendarDayDetailScreenState
   Future<void> _showDrillAssignDialog(int index) async {
     final drillId = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => const PracticePoolScreen(pickMode: true),
+        builder: (_) => const PracticePoolScreen(slotPickMode: true),
       ),
     );
 

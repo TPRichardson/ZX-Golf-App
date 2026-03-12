@@ -137,98 +137,11 @@ MetricSchemasCompanion _metricSchema(
       scoringAdapterBinding: scoringAdapterBinding,
     );
 
-// 002_seed_reference_data.sql §4 — 28 System Drills with deterministic UUIDs.
+// System drills — placeholder for real drill library population.
+// Real drills will be added here when the V1 drill catalogue is finalised.
 Future<void> _seedSystemDrills(AppDatabase db) async {
-  final rows = <DrillsCompanion>[
-    // 4.1 Technique Blocks (7)
-    _systemDrill('a0000001-0000-4000-8000-000000000001', 'Driving Technique', SkillArea.driving, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-    _systemDrill('a0000001-0000-4000-8000-000000000002', 'Irons Technique', SkillArea.irons, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-    _systemDrill('a0000001-0000-4000-8000-000000000003', 'Putting Technique', SkillArea.putting, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-    _systemDrill('a0000001-0000-4000-8000-000000000004', 'Pitching Technique', SkillArea.pitching, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-    _systemDrill('a0000001-0000-4000-8000-000000000005', 'Chipping Technique', SkillArea.chipping, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-    _systemDrill('a0000001-0000-4000-8000-000000000006', 'Woods Technique', SkillArea.woods, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-    _systemDrill('a0000001-0000-4000-8000-000000000007', 'Bunkers Technique', SkillArea.bunkers, DrillType.techniqueBlock, null, InputMode.rawDataEntry, 'technique_duration', null, '[]', null, null, null, null, null, null, 1, null, '{}'),
-
-    // 4.2 Direction Control — 1×3 Grid (7)
-    _systemDrill('a0000002-0000-4000-8000-000000000001', 'Driving Direction', SkillArea.driving, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["driving_direction_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, 7, null, 1, 10, '{"driving_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000002-0000-4000-8000-000000000002', 'Irons Direction', SkillArea.irons, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["irons_direction_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, 7, null, 1, 10, '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000002-0000-4000-8000-000000000003', 'Woods Direction', SkillArea.woods, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["woods_direction_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, 7, null, 1, 10, '{"woods_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000002-0000-4000-8000-000000000004', 'Pitching Direction', SkillArea.pitching, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["pitching_direction_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, 7, null, 1, 10, '{"pitching_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000002-0000-4000-8000-000000000005', 'Putting Direction', SkillArea.putting, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["putting_direction_control"]', null, TargetDistanceMode.fixed, 10, null, null, null, 1, 10, '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 80}}'),
-    _systemDrill('a0000002-0000-4000-8000-000000000006', 'Chipping Direction', SkillArea.chipping, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["chipping_direction_control"]', ClubSelectionMode.userLed, TargetDistanceMode.fixed, 30, TargetSizeMode.fixed, 3, null, 1, 10, '{"chipping_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000002-0000-4000-8000-000000000007', 'Bunkers Direction', SkillArea.bunkers, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_1x3_direction', GridType.oneByThree, '["bunkers_direction_control"]', ClubSelectionMode.userLed, TargetDistanceMode.fixed, 20, TargetSizeMode.fixed, 10, null, 1, 10, '{"bunkers_direction_control": {"Min": 10, "Scratch": 50, "Pro": 70}}'),
-
-    // 4.3 Distance Control — 3×1 Grid (6)
-    _systemDrill('a0000003-0000-4000-8000-000000000001', 'Irons Distance', SkillArea.irons, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_3x1_distance', GridType.threeByOne, '["irons_distance_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, null, 4, 1, 10, '{"irons_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000003-0000-4000-8000-000000000002', 'Woods Distance', SkillArea.woods, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_3x1_distance', GridType.threeByOne, '["woods_distance_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, null, 5, 1, 10, '{"woods_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000003-0000-4000-8000-000000000003', 'Pitching Distance', SkillArea.pitching, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_3x1_distance', GridType.threeByOne, '["pitching_distance_control"]', ClubSelectionMode.userLed, TargetDistanceMode.clubCarry, null, TargetSizeMode.percentageOfTargetDistance, null, 3, 1, 10, '{"pitching_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000003-0000-4000-8000-000000000004', 'Putting Distance', SkillArea.putting, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_3x1_distance', GridType.threeByOne, '["putting_distance_control"]', null, TargetDistanceMode.fixed, 30, TargetSizeMode.fixed, null, 4, 1, 10, '{"putting_distance_control": {"Min": 20, "Scratch": 60, "Pro": 80}}'),
-    _systemDrill('a0000003-0000-4000-8000-000000000005', 'Chipping Distance', SkillArea.chipping, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_3x1_distance', GridType.threeByOne, '["chipping_distance_control"]', ClubSelectionMode.userLed, TargetDistanceMode.fixed, 30, TargetSizeMode.fixed, null, 6, 1, 10, '{"chipping_distance_control": {"Min": 10, "Scratch": 50, "Pro": 70}}'),
-    _systemDrill('a0000003-0000-4000-8000-000000000006', 'Bunkers Distance', SkillArea.bunkers, DrillType.transition, ScoringMode.shared, InputMode.gridCell, 'grid_3x1_distance', GridType.threeByOne, '["bunkers_distance_control"]', ClubSelectionMode.userLed, TargetDistanceMode.fixed, 30, TargetSizeMode.fixed, null, 10, 1, 10, '{"bunkers_distance_control": {"Min": 10, "Scratch": 40, "Pro": 60}}'),
-
-    // 4.4 Distance Maximum — Raw Data Entry (3)
-    _systemDrill('a0000004-0000-4000-8000-000000000001', 'Driving Carry', SkillArea.driving, DrillType.transition, ScoringMode.shared, InputMode.rawDataEntry, 'raw_carry_distance', null, '["driving_distance_maximum"]', null, null, null, null, null, null, 1, 10, '{"driving_distance_maximum": {"Min": 180, "Scratch": 250, "Pro": 300}}'),
-    _systemDrill('a0000004-0000-4000-8000-000000000002', 'Driving Ball Speed', SkillArea.driving, DrillType.transition, ScoringMode.shared, InputMode.rawDataEntry, 'raw_ball_speed', null, '["driving_distance_maximum"]', null, null, null, null, null, null, 1, 10, '{"driving_distance_maximum": {"Min": 130, "Scratch": 155, "Pro": 170}}'),
-    _systemDrill('a0000004-0000-4000-8000-000000000003', 'Driving Club Speed', SkillArea.driving, DrillType.transition, ScoringMode.shared, InputMode.rawDataEntry, 'raw_club_head_speed', null, '["driving_distance_maximum"]', null, null, null, null, null, null, 1, 10, '{"driving_distance_maximum": {"Min": 85, "Scratch": 105, "Pro": 115}}'),
-
-    // 4.5 Shape Control — Binary Hit/Miss (3)
-    _systemDrill('a0000005-0000-4000-8000-000000000001', 'Irons Shape', SkillArea.irons, DrillType.transition, ScoringMode.shared, InputMode.binaryHitMiss, 'binary_hit_miss', null, '["irons_shape_control"]', ClubSelectionMode.userLed, null, null, null, null, null, 1, 10, '{"irons_shape_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000005-0000-4000-8000-000000000002', 'Driving Shape', SkillArea.driving, DrillType.transition, ScoringMode.shared, InputMode.binaryHitMiss, 'binary_hit_miss', null, '["driving_shape_control"]', ClubSelectionMode.userLed, null, null, null, null, null, 1, 10, '{"driving_shape_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000005-0000-4000-8000-000000000003', 'Woods Shape', SkillArea.woods, DrillType.transition, ScoringMode.shared, InputMode.binaryHitMiss, 'binary_hit_miss', null, '["woods_shape_control"]', ClubSelectionMode.userLed, null, null, null, null, null, 1, 10, '{"woods_shape_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-
-    // 4.6 Flight Control — Binary Hit/Miss (2)
-    _systemDrill('a0000005-0000-4000-8000-000000000004', 'Pitching Flight', SkillArea.pitching, DrillType.transition, ScoringMode.shared, InputMode.binaryHitMiss, 'binary_hit_miss', null, '["pitching_flight_control"]', ClubSelectionMode.userLed, null, null, null, null, null, 1, 10, '{"pitching_flight_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-    _systemDrill('a0000005-0000-4000-8000-000000000005', 'Chipping Flight', SkillArea.chipping, DrillType.transition, ScoringMode.shared, InputMode.binaryHitMiss, 'binary_hit_miss', null, '["chipping_flight_control"]', ClubSelectionMode.userLed, null, null, null, null, null, 1, 10, '{"chipping_flight_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
-  ];
-  await db.batch((batch) {
-    batch.insertAll(db.drills, rows);
-  });
+  // No system drills seeded yet.
 }
-
-DrillsCompanion _systemDrill(
-  String id,
-  String name,
-  SkillArea skillArea,
-  DrillType drillType,
-  ScoringMode? scoringMode,
-  InputMode inputMode,
-  String metricSchemaId,
-  GridType? gridType,
-  String subskillMapping,
-  ClubSelectionMode? clubSelectionMode,
-  TargetDistanceMode? targetDistanceMode,
-  double? targetDistanceValue,
-  TargetSizeMode? targetSizeMode,
-  double? targetSizeWidth,
-  double? targetSizeDepth,
-  int requiredSetCount,
-  int? requiredAttemptsPerSet,
-  String anchors,
-) =>
-    DrillsCompanion.insert(
-      drillId: id,
-      userId: const Value(null),
-      name: name,
-      skillArea: skillArea,
-      drillType: drillType,
-      scoringMode: Value(scoringMode),
-      inputMode: inputMode,
-      metricSchemaId: metricSchemaId,
-      gridType: Value(gridType),
-      subskillMapping: Value(subskillMapping),
-      clubSelectionMode: Value(clubSelectionMode),
-      targetDistanceMode: Value(targetDistanceMode),
-      targetDistanceValue: Value(targetDistanceValue),
-      targetSizeMode: Value(targetSizeMode),
-      targetSizeWidth: Value(targetSizeWidth),
-      targetSizeDepth: Value(targetSizeDepth),
-      requiredSetCount: Value(requiredSetCount),
-      requiredAttemptsPerSet: Value(requiredAttemptsPerSet),
-      anchors: Value(anchors),
-      origin: DrillOrigin.system,
-      status: Value(DrillStatus.active),
-      isDeleted: const Value(false),
-    );
 
 // 002_seed_reference_data.sql §5 — Post-seed invariant validation.
 Future<void> _validateSeedInvariants(AppDatabase db) async {
@@ -246,15 +159,15 @@ Future<void> _validateSeedInvariants(AppDatabase db) async {
   assert(subskillCount == 19,
       'SubskillRef count invariant: $subskillCount rows, expected 19');
 
-  // Invariant 3: Exactly 28 system drills
+  // Invariant 3: System drill count (0 until real drills are populated)
   final drillCount = await (db.selectOnly(db.drills)
         ..addColumns([db.drills.drillId.count()])
         ..where(db.drills.origin.equalsValue(DrillOrigin.system)))
       .getSingle();
   final systemDrillCount =
       drillCount.read(db.drills.drillId.count()) ?? 0;
-  assert(systemDrillCount == 28,
-      'System Drill count invariant: $systemDrillCount rows, expected 28');
+  assert(systemDrillCount == 0,
+      'System Drill count invariant: $systemDrillCount rows, expected 0');
 
   // Invariant 4: 16 event types
   final eventTypeCount = await db.eventTypeRefs.count().getSingle();

@@ -43,7 +43,7 @@ class SyncEngine {
   bool _failuresLoaded = false;
 
   // TD-03 §5.1 — Feature flag: enable/disable sync.
-  bool _syncEnabled = true;
+  bool _syncEnabled = false; // Off by default during testing. Flip to true to test sync.
   bool _syncEnabledLoaded = false;
 
   // Phase 7C — Merge timeout counter (transient, not persisted). TD-07 §6.2.

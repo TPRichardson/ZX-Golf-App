@@ -89,71 +89,10 @@ INSERT INTO "MetricSchema" ("MetricSchemaID", "Name", "InputMode", "HardMinInput
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- 4. System Drills (Section 14, §14.4 — V1 catalogue)
+-- 4. System Drills — placeholder
 -- ============================================================
--- UserID = NULL → System Drill.
--- Origin = 'System'. Status = 'Active'. IsDeleted = FALSE.
--- Deterministic UUIDs for reproducible seed.
-
--- 4.1 Technique Blocks (7 drills)
--- No subskill mapping, no scoring mode, no target, no grid.
--- RequiredSetCount=1, RequiredAttemptsPerSet=NULL (open-ended).
-
-INSERT INTO "Drill" ("DrillID", "UserID", "Name", "SkillArea", "DrillType", "ScoringMode", "InputMode", "MetricSchemaID", "GridType", "SubskillMapping", "ClubSelectionMode", "TargetDistanceMode", "TargetDistanceValue", "TargetSizeMode", "TargetSizeWidth", "TargetSizeDepth", "RequiredSetCount", "RequiredAttemptsPerSet", "Anchors", "Origin", "Status") VALUES
-  ('a0000001-0000-4000-8000-000000000001', NULL, 'Driving Technique',  'Driving',  'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-  ('a0000001-0000-4000-8000-000000000002', NULL, 'Irons Technique',    'Irons',    'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-  ('a0000001-0000-4000-8000-000000000003', NULL, 'Putting Technique',  'Putting',  'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-  ('a0000001-0000-4000-8000-000000000004', NULL, 'Pitching Technique', 'Pitching', 'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-  ('a0000001-0000-4000-8000-000000000005', NULL, 'Chipping Technique', 'Chipping', 'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-  ('a0000001-0000-4000-8000-000000000006', NULL, 'Woods Technique',    'Woods',    'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-  ('a0000001-0000-4000-8000-000000000007', NULL, 'Bunkers Technique',  'Bunkers',  'TechniqueBlock', NULL, 'RawDataEntry', 'technique_duration', NULL, '[]', NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '{}', 'System', 'Active'),
-
--- 4.2 Direction Control — 1×3 Grid (7 drills)
--- Scoring Mode: Shared. Single subskill: Direction Control.
--- Structure: 1×10. Club Selection: UserLed.
-
-  ('a0000002-0000-4000-8000-000000000001', NULL, 'Driving Direction',  'Driving',  'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["driving_direction_control"]',  'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', 7, NULL, 1, 10, '{"driving_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000002-0000-4000-8000-000000000002', NULL, 'Irons Direction',    'Irons',    'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["irons_direction_control"]',    'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', 7, NULL, 1, 10, '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000002-0000-4000-8000-000000000003', NULL, 'Woods Direction',    'Woods',    'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["woods_direction_control"]',    'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', 7, NULL, 1, 10, '{"woods_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000002-0000-4000-8000-000000000004', NULL, 'Pitching Direction', 'Pitching', 'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["pitching_direction_control"]', 'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', 7, NULL, 1, 10, '{"pitching_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000002-0000-4000-8000-000000000005', NULL, 'Putting Direction',  'Putting',  'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["putting_direction_control"]',  NULL,      'Fixed',     10,   NULL,                       NULL, NULL, 1, 10, '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 80}}', 'System', 'Active'),
-  ('a0000002-0000-4000-8000-000000000006', NULL, 'Chipping Direction', 'Chipping', 'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["chipping_direction_control"]', 'UserLed', 'Fixed',     30,   'Fixed',                    3,    NULL, 1, 10, '{"chipping_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000002-0000-4000-8000-000000000007', NULL, 'Bunkers Direction',  'Bunkers',  'Transition', 'Shared', 'GridCell', 'grid_1x3_direction', 'OneByThree', '["bunkers_direction_control"]',  'UserLed', 'Fixed',     20,   'Fixed',                    10,   NULL, 1, 10, '{"bunkers_direction_control": {"Min": 10, "Scratch": 50, "Pro": 70}}', 'System', 'Active'),
-
--- 4.3 Distance Control — 3×1 Grid (6 drills)
--- Scoring Mode: Shared. Single subskill: Distance Control.
--- Structure: 1×10. Club Selection: UserLed.
-
-  ('a0000003-0000-4000-8000-000000000001', NULL, 'Irons Distance',    'Irons',    'Transition', 'Shared', 'GridCell', 'grid_3x1_distance', 'ThreeByOne', '["irons_distance_control"]',    'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', NULL, 4,  1, 10, '{"irons_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000003-0000-4000-8000-000000000002', NULL, 'Woods Distance',    'Woods',    'Transition', 'Shared', 'GridCell', 'grid_3x1_distance', 'ThreeByOne', '["woods_distance_control"]',    'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', NULL, 5,  1, 10, '{"woods_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000003-0000-4000-8000-000000000003', NULL, 'Pitching Distance', 'Pitching', 'Transition', 'Shared', 'GridCell', 'grid_3x1_distance', 'ThreeByOne', '["pitching_distance_control"]', 'UserLed', 'ClubCarry', NULL, 'PercentageOfTargetDistance', NULL, 3,  1, 10, '{"pitching_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000003-0000-4000-8000-000000000004', NULL, 'Putting Distance',  'Putting',  'Transition', 'Shared', 'GridCell', 'grid_3x1_distance', 'ThreeByOne', '["putting_distance_control"]',  NULL,      'Fixed',     30,   'Fixed',                    NULL, 4,  1, 10, '{"putting_distance_control": {"Min": 20, "Scratch": 60, "Pro": 80}}', 'System', 'Active'),
-  ('a0000003-0000-4000-8000-000000000005', NULL, 'Chipping Distance', 'Chipping', 'Transition', 'Shared', 'GridCell', 'grid_3x1_distance', 'ThreeByOne', '["chipping_distance_control"]', 'UserLed', 'Fixed',     30,   'Fixed',                    NULL, 6,  1, 10, '{"chipping_distance_control": {"Min": 10, "Scratch": 50, "Pro": 70}}', 'System', 'Active'),
-  ('a0000003-0000-4000-8000-000000000006', NULL, 'Bunkers Distance',  'Bunkers',  'Transition', 'Shared', 'GridCell', 'grid_3x1_distance', 'ThreeByOne', '["bunkers_distance_control"]',  'UserLed', 'Fixed',     30,   'Fixed',                    NULL, 10, 1, 10, '{"bunkers_distance_control": {"Min": 10, "Scratch": 40, "Pro": 60}}', 'System', 'Active'),
-
--- 4.4 Distance Maximum — Raw Data Entry (3 drills)
--- Scoring Mode: Shared. Single subskill: Distance Maximum.
--- Structure: 1×10. Auto-select Driver.
-
-  ('a0000004-0000-4000-8000-000000000001', NULL, 'Driving Carry',      'Driving', 'Transition', 'Shared', 'RawDataEntry', 'raw_carry_distance',  NULL, '["driving_distance_maximum"]', NULL, NULL, NULL, NULL, NULL, NULL, 1, 10, '{"driving_distance_maximum": {"Min": 180, "Scratch": 250, "Pro": 300}}', 'System', 'Active'),
-  ('a0000004-0000-4000-8000-000000000002', NULL, 'Driving Ball Speed',  'Driving', 'Transition', 'Shared', 'RawDataEntry', 'raw_ball_speed',      NULL, '["driving_distance_maximum"]', NULL, NULL, NULL, NULL, NULL, NULL, 1, 10, '{"driving_distance_maximum": {"Min": 130, "Scratch": 155, "Pro": 170}}', 'System', 'Active'),
-  ('a0000004-0000-4000-8000-000000000003', NULL, 'Driving Club Speed',  'Driving', 'Transition', 'Shared', 'RawDataEntry', 'raw_club_head_speed', NULL, '["driving_distance_maximum"]', NULL, NULL, NULL, NULL, NULL, NULL, 1, 10, '{"driving_distance_maximum": {"Min": 85, "Scratch": 105, "Pro": 115}}', 'System', 'Active'),
-
--- 4.5 Shape Control — Binary Hit/Miss (3 drills)
--- Scoring Mode: Shared. Single subskill: Shape Control.
--- Structure: 1×10. Club Selection: UserLed.
-
-  ('a0000005-0000-4000-8000-000000000001', NULL, 'Irons Shape',   'Irons',   'Transition', 'Shared', 'BinaryHitMiss', 'binary_hit_miss', NULL, '["irons_shape_control"]',   'UserLed', NULL, NULL, NULL, NULL, NULL, 1, 10, '{"irons_shape_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000005-0000-4000-8000-000000000002', NULL, 'Driving Shape', 'Driving', 'Transition', 'Shared', 'BinaryHitMiss', 'binary_hit_miss', NULL, '["driving_shape_control"]', 'UserLed', NULL, NULL, NULL, NULL, NULL, 1, 10, '{"driving_shape_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000005-0000-4000-8000-000000000003', NULL, 'Woods Shape',   'Woods',   'Transition', 'Shared', 'BinaryHitMiss', 'binary_hit_miss', NULL, '["woods_shape_control"]',   'UserLed', NULL, NULL, NULL, NULL, NULL, 1, 10, '{"woods_shape_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-
--- 4.6 Flight Control — Binary Hit/Miss (2 drills)
--- Scoring Mode: Shared. Single subskill: Flight Control.
--- Structure: 1×10. Club Selection: UserLed.
-
-  ('a0000005-0000-4000-8000-000000000004', NULL, 'Pitching Flight', 'Pitching', 'Transition', 'Shared', 'BinaryHitMiss', 'binary_hit_miss', NULL, '["pitching_flight_control"]', 'UserLed', NULL, NULL, NULL, NULL, NULL, 1, 10, '{"pitching_flight_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active'),
-  ('a0000005-0000-4000-8000-000000000005', NULL, 'Chipping Flight', 'Chipping', 'Transition', 'Shared', 'BinaryHitMiss', 'binary_hit_miss', NULL, '["chipping_flight_control"]', 'UserLed', NULL, NULL, NULL, NULL, NULL, 1, 10, '{"chipping_flight_control": {"Min": 30, "Scratch": 70, "Pro": 90}}', 'System', 'Active')
-ON CONFLICT ("DrillID") DO NOTHING;
+-- No system drills seeded. Real drill catalogue will be populated
+-- in a future migration when the V1 drill library is finalised.
 
 -- ============================================================
 -- 5. Post-Seed Invariant Validation
@@ -198,32 +137,8 @@ BEGIN
   END IF;
 END $$;
 
--- Invariant 4: Exactly 28 System Drills seeded
-DO $$
-DECLARE
-  cnt INTEGER;
-BEGIN
-  SELECT COUNT(*) INTO cnt FROM "Drill" WHERE "Origin" = 'System';
-  IF cnt != 28 THEN
-    RAISE EXCEPTION 'System Drill count invariant violated: % rows, expected 28', cnt;
-  END IF;
-END $$;
-
--- Invariant 5: All drill SubskillMapping references exist in SubskillRef
-DO $$
-DECLARE
-  orphan TEXT;
-BEGIN
-  SELECT d."Name" INTO orphan
-  FROM "Drill" d,
-       jsonb_array_elements_text(d."SubskillMapping") AS subskill_id
-  WHERE d."Origin" = 'System'
-    AND subskill_id NOT IN (SELECT "SubskillID" FROM "SubskillRef")
-  LIMIT 1;
-  IF orphan IS NOT NULL THEN
-    RAISE EXCEPTION 'System Drill "%" references SubskillID not in SubskillRef', orphan;
-  END IF;
-END $$;
+-- Invariant 4: No system drills seeded (real drills added in future migration)
+-- Invariant 5: Subskill mapping validation deferred until drills are populated
 
 -- ============================================================
 -- SEED: SystemMaintenanceLock single row (Section 16, §16.4.4)

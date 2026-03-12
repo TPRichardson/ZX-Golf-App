@@ -51,6 +51,10 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
   /// When true, tapping a drill pops with the drillId instead of navigating.
   final bool pickMode;
 
+  /// When true, single-tap pops with a single drill ID string.
+  /// Used by calendar slot assignment.
+  final bool slotPickMode;
+
   /// When true, omits Scaffold/AppBar (embedded in a parent tab).
   final bool embedded;
 
@@ -62,6 +66,7 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
   const PracticePoolScreen({
     super.key,
     this.pickMode = false,
+    this.slotPickMode = false,
     this.embedded = false,
     this.existingDrillCount = 0,
     this.existingSets = 0,
@@ -111,17 +116,17 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     return Column(
       children: [
-        // Info bar (pick mode only — shows drill/set/shot counts).
-        if (widget.pickMode)
+        // Info bar (multi-pick mode only — shows drill/set/shot counts).
+        if (widget.pickMode && !widget.slotPickMode)
           poolAsync.when(
             data: (drills) => _buildInfoBar(drills),
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
           ),
-        if (widget.pickMode)
+        if (widget.pickMode && !widget.slotPickMode)
           const SizedBox(height: SpacingTokens.sm),
         // Page subtitle (non-pick mode only — pick mode has it in the AppBar).
-        if (!widget.pickMode)
+        if (!widget.pickMode && !widget.slotPickMode)
           Padding(
             padding: const EdgeInsets.fromLTRB(
               SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
@@ -152,7 +157,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                 ref.read(practicePoolGroupedProvider.notifier).state = v,
           ),
         ),
-        SizedBox(height: widget.pickMode ? SpacingTokens.md : SpacingTokens.sm),
+        SizedBox(height: (widget.pickMode || widget.slotPickMode) ? SpacingTokens.md : SpacingTokens.sm),
         // Drill list.
         Expanded(
           child: poolAsync.when(
@@ -191,24 +196,22 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               if (filtered.isEmpty) {
                 // No drills in library at all.
                 if (drills.isEmpty) {
-                  return Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const EmptyState(
-                          icon: Icons.sports_golf,
-                          message: 'No Drills in Library',
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const EmptyState(
+                        icon: Icons.sports_golf,
+                        message: 'No Drills in Library',
+                      ),
+                      const SizedBox(height: SpacingTokens.sm),
+                      Text(
+                        'Add drills to get started',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodyLgSize,
+                          color: ColorTokens.textTertiary,
                         ),
-                        const SizedBox(height: SpacingTokens.sm),
-                        Text(
-                          'Add drills to get started',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.bodyLgSize,
-                            color: ColorTokens.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
                 }
                 // Drills exist but none match the active filter.
@@ -331,6 +334,11 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     return DrillCard(
       drill: dwa.drill,
       onTap: () {
+        // Slot pick mode: single tap → pop immediately with drill ID.
+        if (widget.slotPickMode) {
+          Navigator.of(context).pop(drillId);
+          return;
+        }
         if (widget.pickMode) {
           setState(() {
             _selectedDrillCounts[drillId] = count + 1;
@@ -339,7 +347,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
         }
         _openDrillDetail(dwa);
       },
-      trailing: widget.pickMode
+      trailing: widget.pickMode && !widget.slotPickMode
           ? _DrillCountControl(
               count: count,
               onDecrement: () {
@@ -479,10 +487,17 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
       );
     }
 
+    final title = widget.slotPickMode
+        ? 'Add Drill to Slot'
+        : 'Manage Drill Library';
+
     return Scaffold(
       appBar: ZxAppBar(
-        title: 'Manage Drill Library',
-        actions: widget.pickMode
+        title: title,
+        titleSize: (widget.pickMode || widget.slotPickMode)
+            ? TypographyTokens.displayLgSize
+            : null,
+        actions: (widget.pickMode || widget.slotPickMode)
             ? null
             : [
                 IconButton(
@@ -505,9 +520,11 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
               ],
       ),
       body: _buildBody(context),
-      bottomNavigationBar: widget.pickMode
-          ? _buildPickModeBottomBar()
-          : _buildBottomBar(),
+      bottomNavigationBar: widget.slotPickMode
+          ? null
+          : widget.pickMode
+              ? _buildPickModeBottomBar()
+              : _buildBottomBar(),
     );
   }
 

@@ -597,7 +597,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   Future<void> _showDrillAssignDialog(CalendarDay day, int index) async {
     final drillId = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => const PracticePoolScreen(pickMode: true),
+        builder: (_) => const PracticePoolScreen(slotPickMode: true),
       ),
     );
 
