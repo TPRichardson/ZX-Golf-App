@@ -19,8 +19,10 @@
 
 ## Workflow Rules
 
-- **No compound shell commands.** Never chain commands with `&&`, `;`, or `||`. If you need to change directory and then run a command, issue them as two separate Bash tool calls. Compound commands trigger a security approval dialog on Windows.
-- **No compound shell commands.** Never chain commands with `&&`, `;`, or `||` — this triggers the security confirmation prompt on Windows. Issue each command as a separate Bash tool call. For git operations, use `git -C <path>` instead of `cd <path> && git ...`.
+- **NEVER use compound shell commands.** `&&`, `;`, and `||` are **forbidden** in all Bash tool calls. This is a hard rule, not a suggestion.
+  - **Wrong:** `cd /c/development/projects/claudecode/zx-golf-app && git status`
+  - **Right:** `git -C /c/development/projects/claudecode/zx-golf-app status`
+  - For non-git commands, issue separate Bash tool calls instead of chaining.
 - **Git workflow.** Batch changes into meaningful commits — do not commit/push after every small change. Stage only files relevant to the work done (don't include unrelated changes). Commit and push when explicitly asked.
 
 ---
