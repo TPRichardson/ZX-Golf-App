@@ -7,152 +7,179 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
-import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
-import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
 
-import 'drill_detail_screen.dart';
 import 'widgets/drill_card.dart';
 
-// Phase 3 — Standard Drills. Browse all 28 standard drills grouped by SkillArea.
+// Standard Drills — server-authoritative catalogue fetched from Supabase.
 // S14 §14.1 — Standard drill catalogue.
 
-class StandardDrillsScreen extends ConsumerWidget {
+class StandardDrillsScreen extends ConsumerStatefulWidget {
   /// When true, tapping a drill pops with the drillId instead of navigating.
   final bool pickMode;
 
   const StandardDrillsScreen({super.key, this.pickMode = false});
 
+  @override
+  ConsumerState<StandardDrillsScreen> createState() =>
+      _StandardDrillsScreenState();
+}
+
+class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = kDevUserId;
 
+  final Set<String> _selectedIds = {};
+  bool _isAdopting = false;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final standardDrillsAsync = ref.watch(standardDrillsProvider);
+  Widget build(BuildContext context) {
+    final catalogueAsync = ref.watch(standardDrillCatalogueProvider);
     final adoptedAsync = ref.watch(adoptedDrillsProvider(_userId));
 
     return Scaffold(
       appBar: const ZxAppBar(title: 'Standard Drills'),
-      body: standardDrillsAsync.when(
+      body: catalogueAsync.when(
         data: (drills) {
+          if (drills.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(SpacingTokens.xl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_off,
+                        size: 48, color: ColorTokens.textTertiary),
+                    const SizedBox(height: SpacingTokens.md),
+                    Text(
+                      'Connect to browse standard drills',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: ColorTokens.textSecondary,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           final adopted = adoptedAsync.valueOrNull ?? [];
-          final adoptedIds =
-              adopted.map((a) => a.drill.drillId).toSet();
+          final adoptedIds = adopted.map((a) => a.drill.drillId).toSet();
+
+          // Only show drills not already adopted.
+          final available =
+              drills.where((d) => !adoptedIds.contains(d.drillId)).toList();
+
+          // Clean up selections for drills that were adopted.
+          _selectedIds.removeWhere((id) => adoptedIds.contains(id));
+
+          if (available.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(SpacingTokens.xl),
+                child: Text(
+                  'All standard drills added',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: ColorTokens.textSecondary,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
 
           // Group by SkillArea.
           final grouped = <SkillArea, List<Drill>>{};
-          for (final drill in drills) {
+          for (final drill in available) {
             grouped.putIfAbsent(drill.skillArea, () => []).add(drill);
           }
 
-          return ListView(
-            padding: const EdgeInsets.all(SpacingTokens.md),
+          // Build drill-by-id map for adopt action.
+          final drillById = {for (final d in drills) d.drillId: d};
+
+          return Column(
             children: [
-              for (final area in SkillArea.values)
-                if (grouped.containsKey(area)) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: SpacingTokens.md,
-                      bottom: SpacingTokens.sm,
-                    ),
-                    child: Text(
-                      area.dbValue,
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: ColorTokens.textPrimary,
-                              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(SpacingTokens.md),
+                  children: [
+                    for (final area in SkillArea.values)
+                      if (grouped.containsKey(area)) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: SpacingTokens.md,
+                            bottom: SpacingTokens.sm,
+                          ),
+                          child: Text(
+                            area.dbValue,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(color: ColorTokens.textPrimary),
+                          ),
+                        ),
+                        for (final drill in grouped[area]!)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: SpacingTokens.sm,
+                            ),
+                            child: DrillCard(
+                              drill: drill,
+                              isSelected: _selectedIds.contains(drill.drillId),
+                              onTap: () {
+                                if (widget.pickMode) {
+                                  Navigator.of(context).pop(drill.drillId);
+                                  return;
+                                }
+                                setState(() {
+                                  if (_selectedIds.contains(drill.drillId)) {
+                                    _selectedIds.remove(drill.drillId);
+                                  } else {
+                                    _selectedIds.add(drill.drillId);
+                                  }
+                                });
+                              },
+                              trailing: _selectedIds.contains(drill.drillId)
+                                  ? IconButton(
+                                      icon: Icon(
+                                        Icons.remove_circle_outline,
+                                        color: ColorTokens.textTertiary,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedIds.remove(drill.drillId);
+                                        });
+                                      },
+                                      tooltip: 'Deselect',
+                                    )
+                                  : null,
+                            ),
+                          ),
+                      ],
+                  ],
+                ),
+              ),
+              if (_selectedIds.isNotEmpty)
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(SpacingTokens.md),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ZxPillButton(
+                        label: 'Add Active Drills',
+                        variant: ZxPillVariant.primary,
+                        isLoading: _isAdopting,
+                        onTap: _isAdopting
+                            ? null
+                            : () => _adoptSelected(drillById),
+                      ),
                     ),
                   ),
-                  for (final drill in grouped[area]!)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: SpacingTokens.sm,
-                      ),
-                      child: DrillCard(
-                        drill: drill,
-                        onTap: () {
-                          if (pickMode) {
-                            Navigator.of(context).pop(drill.drillId);
-                            return;
-                          }
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => DrillDetailScreen(
-                              drillId: drill.drillId,
-                              isCustom: false,
-                            ),
-                          ));
-                        },
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _StartDrillButton(
-                              drillId: drill.drillId,
-                              userId: _userId,
-                            ),
-                            _AdoptToggle(
-                              isAdopted: adoptedIds.contains(drill.drillId),
-                              onToggle: () async {
-                                final drillRepo =
-                                    ref.read(drillRepositoryProvider);
-                                if (adoptedIds.contains(drill.drillId)) {
-                                  await drillRepo.retireAdoption(
-                                      _userId, drill.drillId);
-                                } else {
-                                  try {
-                                    await drillRepo.adoptDrill(
-                                        _userId, drill.drillId);
-                                  } on ValidationException catch (e) {
-                                    if (!context.mounted) return;
-                                    showDialog(
-                                      context: context,
-                                      builder: (dialogCtx) => AlertDialog(
-                                        backgroundColor: ColorTokens.surfaceModal,
-                                        title: const Text('Missing Clubs',
-                                            style: TextStyle(
-                                                color: ColorTokens.textPrimary)),
-                                        content: Text(
-                                          e.message,
-                                          style: const TextStyle(
-                                              color: ColorTokens.textSecondary),
-                                        ),
-                                        actions: [
-                                          ZxPillButton(
-                                            label: 'Return to Drills',
-                                            variant: ZxPillVariant.tertiary,
-
-                                            onTap: () =>
-                                                Navigator.pop(dialogCtx),
-                                          ),
-                                          ZxPillButton(
-                                            label: 'Customise Golf Bag',
-                                            variant: ZxPillVariant.primary,
-
-                                            onTap: () {
-                                              Navigator.pop(dialogCtx);
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      const BagScreen(),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
+                ),
             ],
           );
         },
@@ -169,74 +196,55 @@ class StandardDrillsScreen extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _StartDrillButton extends ConsumerWidget {
-  final String drillId;
-  final String userId;
+  Future<void> _adoptSelected(Map<String, Drill> drillById) async {
+    setState(() => _isAdopting = true);
+    final drillRepo = ref.read(drillRepositoryProvider);
 
-  const _StartDrillButton({required this.drillId, required this.userId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      icon: Icon(
-        Icons.play_circle_outline,
-        color: ColorTokens.successDefault,
-      ),
-      onPressed: () async {
-        // Auto-adopt the drill if not already adopted.
-        final drillRepo = ref.read(drillRepositoryProvider);
-        try {
-          await drillRepo.adoptDrill(userId, drillId);
-        } on ValidationException {
-          // Missing clubs — proceed anyway, user can still practice.
-        } catch (_) {
-          // Already adopted or other non-fatal error.
-        }
-
-        if (!context.mounted) return;
-        final envSurface = await showEnvironmentSurfacePicker(context);
-        if (envSurface == null || !context.mounted) return;
-
-        final actions = ref.read(practiceActionsProvider);
-        final pb = await actions.startPracticeBlock(
-          userId,
-          initialDrillIds: [drillId],
-          surfaceType: envSurface.surface,
-        );
-
-        if (context.mounted) {
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => PracticeQueueScreen(
-              practiceBlockId: pb.practiceBlockId,
-              userId: userId,
+    try {
+      for (final id in _selectedIds.toList()) {
+        final drill = drillById[id];
+        if (drill == null) continue;
+        await drillRepo.adoptStandardDrill(_userId, drill);
+      }
+      setState(() {
+        _selectedIds.clear();
+        _isAdopting = false;
+      });
+    } on ValidationException catch (e) {
+      setState(() => _isAdopting = false);
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          backgroundColor: ColorTokens.surfaceModal,
+          title: const Text('Missing Clubs',
+              style: TextStyle(color: ColorTokens.textPrimary)),
+          content: Text(
+            e.message,
+            style: const TextStyle(color: ColorTokens.textSecondary),
+          ),
+          actions: [
+            ZxPillButton(
+              label: 'Return to Drills',
+              variant: ZxPillVariant.tertiary,
+              onTap: () => Navigator.pop(dialogCtx),
             ),
-          ));
-        }
-      },
-      tooltip: 'Start practice with this drill',
-    );
-  }
-}
-
-class _AdoptToggle extends StatelessWidget {
-  final bool isAdopted;
-  final VoidCallback onToggle;
-
-  const _AdoptToggle({required this.isAdopted, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        isAdopted ? Icons.check_circle : Icons.add_circle_outline,
-        color: isAdopted
-            ? ColorTokens.successDefault
-            : ColorTokens.textTertiary,
-      ),
-      onPressed: onToggle,
-      tooltip: isAdopted ? 'Remove from pool' : 'Add to pool',
-    );
+            ZxPillButton(
+              label: 'Customise Golf Bag',
+              variant: ZxPillVariant.primary,
+              onTap: () {
+                Navigator.pop(dialogCtx);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BagScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      setState(() => _isAdopting = false);
+    }
   }
 }

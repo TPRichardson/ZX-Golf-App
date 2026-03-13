@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -126,6 +126,10 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV7ToV8(m);
               case 8:
                 await _migrateV8ToV9(m);
+              case 9:
+                await _migrateV9ToV10(m);
+              case 10:
+                await _migrateV10ToV11(m);
             }
           }
         },
@@ -170,6 +174,23 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _migrateV8ToV9(Migrator m) async {
     await customStatement(
         'ALTER TABLE PracticeBlock ADD COLUMN EnvironmentType TEXT');
+  }
+
+  // Server-authoritative standard drills: add HasUnseenUpdate, remove local standard drills.
+  Future<void> _migrateV10ToV11(Migrator m) async {
+    await customStatement(
+        'ALTER TABLE UserDrillAdoption ADD COLUMN HasUnseenUpdate INTEGER NOT NULL DEFAULT 0');
+    // Standard drills are now server-authoritative — remove local copies.
+    await customStatement("DELETE FROM Drill WHERE UserID IS NULL");
+  }
+
+  // Add Description, TargetDistanceUnit, TargetSizeUnit to Drill table + seed first system drill.
+  Future<void> _migrateV9ToV10(Migrator m) async {
+    await customStatement('ALTER TABLE Drill ADD COLUMN Description TEXT');
+    await customStatement(
+        'ALTER TABLE Drill ADD COLUMN TargetDistanceUnit TEXT');
+    await customStatement('ALTER TABLE Drill ADD COLUMN TargetSizeUnit TEXT');
+    // System drills previously seeded here; now server-authoritative (v11 deletes them).
   }
 
   // Add SurfaceType column to PracticeBlock and Session tables.

@@ -16,6 +16,8 @@ class UserDrillAdoptions extends Table {
       .map(const AdoptionStatusConverter())();
   BoolColumn get isDeleted =>
       boolean().named('IsDeleted').withDefault(const Constant(false))();
+  BoolColumn get hasUnseenUpdate =>
+      boolean().named('HasUnseenUpdate').withDefault(const Constant(false))();
   DateTimeColumn get createdAt =>
       dateTime().named('CreatedAt').clientDefault(() => DateTime.now())();
   DateTimeColumn get updatedAt =>

@@ -47,6 +47,15 @@ class Drills extends Table {
   TextColumn get anchors =>
       text().named('Anchors').withDefault(const Constant('{}'))();
   RealColumn get target => real().named('Target').nullable()();
+  TextColumn get description => text().named('Description').nullable()();
+  TextColumn get targetDistanceUnit => text()
+      .named('TargetDistanceUnit')
+      .map(const DrillLengthUnitConverter())
+      .nullable()();
+  TextColumn get targetSizeUnit => text()
+      .named('TargetSizeUnit')
+      .map(const DrillLengthUnitConverter())
+      .nullable()();
   TextColumn get origin =>
       text().named('Origin').map(const DrillOriginConverter())();
   TextColumn get status => text()

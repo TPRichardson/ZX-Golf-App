@@ -28,6 +28,9 @@ void main() {
       expect(companion.requiredSetCount.value, drill.requiredSetCount);
       expect(
           companion.requiredAttemptsPerSet.value, drill.requiredAttemptsPerSet);
+      expect(companion.description.value, drill.description);
+      expect(companion.targetDistanceUnit.value, drill.targetDistanceUnit);
+      expect(companion.targetSizeUnit.value, drill.targetSizeUnit);
       expect(companion.origin.value, drill.origin);
       expect(companion.status.value, drill.status);
       expect(companion.isDeleted.value, drill.isDeleted);
@@ -63,6 +66,9 @@ void main() {
       expect(json['ClubSelectionMode'], isNull);
       expect(json['TargetDistanceMode'], isNull);
       expect(json['TargetSizeMode'], isNull);
+      expect(json['Description'], isNull);
+      expect(json['TargetDistanceUnit'], isNull);
+      expect(json['TargetSizeUnit'], isNull);
       expect(json['SubskillMapping'], isEmpty);
       expect(json['Anchors'], isEmpty);
 
@@ -72,6 +78,9 @@ void main() {
       expect(companion.clubSelectionMode.value, isNull);
       expect(companion.targetDistanceMode.value, isNull);
       expect(companion.targetSizeMode.value, isNull);
+      expect(companion.description.value, isNull);
+      expect(companion.targetDistanceUnit.value, isNull);
+      expect(companion.targetSizeUnit.value, isNull);
       expect(companion.subskillMapping.value, '[]');
       expect(companion.anchors.value, '{}');
     });

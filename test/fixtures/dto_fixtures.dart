@@ -39,6 +39,9 @@ Drill makeDrill({String? drillId, String? userId}) => Drill(
       requiredAttemptsPerSet: 10,
       anchors:
           '{"irons_direction_control":{"Min":30,"Scratch":70,"Pro":90}}',
+      description: 'Test drill setup instructions.',
+      targetDistanceUnit: DrillLengthUnit.yards,
+      targetSizeUnit: DrillLengthUnit.feet,
       origin: DrillOrigin.standard,
       status: DrillStatus.active,
       isDeleted: false,
@@ -66,6 +69,9 @@ Drill makeDrillMinimal() => Drill(
       requiredSetCount: 1,
       requiredAttemptsPerSet: null,
       anchors: '{}',
+      description: null,
+      targetDistanceUnit: null,
+      targetSizeUnit: null,
       origin: DrillOrigin.standard,
       status: DrillStatus.active,
       isDeleted: false,
@@ -154,6 +160,7 @@ UserDrillAdoption makeUserDrillAdoption() => UserDrillAdoption(
       drillId: 'd-001',
       status: AdoptionStatus.active,
       isDeleted: false,
+      hasUnseenUpdate: false,
       createdAt: _ts,
       updatedAt: _ts,
     );

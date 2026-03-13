@@ -53,6 +53,26 @@ void main() {
         userId, const UserClubsCompanion(clubType: Value(ClubType.w3)));
     await clubRepo.addClub(
         userId, const UserClubsCompanion(clubType: Value(ClubType.sw)));
+
+    // Seed a test standard drill (no longer auto-seeded; server-authoritative).
+    await db.into(db.drills).insert(DrillsCompanion.insert(
+      drillId: 'system-putting-gate-40cm',
+      name: '40cm Gate Drill',
+      skillArea: SkillArea.putting,
+      drillType: DrillType.transition,
+      scoringMode: const Value(ScoringMode.shared),
+      inputMode: InputMode.gridCell,
+      metricSchemaId: 'grid_1x3_direction',
+      gridType: const Value(GridType.oneByThree),
+      subskillMapping: const Value('["putting_direction_control"]'),
+      clubSelectionMode: const Value(ClubSelectionMode.userLed),
+      requiredSetCount: const Value(1),
+      requiredAttemptsPerSet: const Value(10),
+      anchors: const Value(
+          '{"putting_direction_control":{"Min":10,"Scratch":40,"Pro":85}}'),
+      origin: DrillOrigin.standard,
+      status: const Value(DrillStatus.active),
+    ));
   });
 
   tearDown(() async {
@@ -590,9 +610,9 @@ void main() {
   // Watch queries
   // ---------------------------------------------------------------------------
   group('Watch queries', () {
-    test('watchStandardDrills returns 28 seeded standard drills', () async {
+    test('watchStandardDrills returns test-seeded standard drill', () async {
       final drills = await repo.watchStandardDrills().first;
-      expect(drills.length, 28);
+      expect(drills.length, 1);
       for (final drill in drills) {
         expect(drill.origin, DrillOrigin.standard);
         expect(drill.userId, isNull);
@@ -602,10 +622,9 @@ void main() {
     test('watchAdoptedDrills returns adopted drills', () async {
       final systemDrills = await repo.watchStandardDrills().first;
       await repo.adoptDrill(userId, systemDrills[0].drillId);
-      await repo.adoptDrill(userId, systemDrills[1].drillId);
 
       final adopted = await repo.watchAdoptedDrills(userId).first;
-      expect(adopted.length, 2);
+      expect(adopted.length, 1);
     });
   });
 

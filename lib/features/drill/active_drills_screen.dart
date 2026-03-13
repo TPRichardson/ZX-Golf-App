@@ -12,6 +12,7 @@ import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/providers/drill_providers.dart';
+import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 
@@ -88,6 +89,10 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
   /// Multi-select state for pick mode (drill ID → count).
   final _selectedDrillCounts = <String, int>{};
 
+  /// Remove mode state.
+  bool _removeMode = false;
+  final Set<String> _removeDrillIds = {};
+
   /// Total number of drills selected (sum of all counts).
   int get _totalSelectedCount =>
       _selectedDrillCounts.values.fold(0, (a, b) => a + b);
@@ -133,7 +138,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
             ),
             child: Center(
               child: Text(
-                'Active Drills',
+                'My Active Drills',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: ColorTokens.textPrimary,
                     ),
@@ -333,7 +338,20 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
     final count = _selectedDrillCounts[drillId] ?? 0;
     return DrillCard(
       drill: dwa.drill,
+      hasUnseenUpdate: dwa.adoption?.hasUnseenUpdate ?? false,
+      subtitle: dwa.drill.origin == DrillOrigin.standard ? 'Standard' : 'Custom',
+      isDestructiveSelected: _removeMode && _removeDrillIds.contains(drillId),
       onTap: () {
+        if (_removeMode) {
+          setState(() {
+            if (_removeDrillIds.contains(drillId)) {
+              _removeDrillIds.remove(drillId);
+            } else {
+              _removeDrillIds.add(drillId);
+            }
+          });
+          return;
+        }
         // Slot pick mode: single tap → pop immediately with drill ID.
         if (widget.slotPickMode) {
           Navigator.of(context).pop(drillId);
@@ -347,21 +365,62 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
         }
         _openDrillDetail(dwa);
       },
-      trailing: widget.pickMode && !widget.slotPickMode
-          ? _DrillCountControl(
-              count: count,
-              onDecrement: () {
+      trailing: _removeMode
+          ? IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: _removeDrillIds.contains(drillId)
+                    ? ColorTokens.errorDestructive
+                    : ColorTokens.textTertiary,
+              ),
+              onPressed: () {
                 setState(() {
-                  if (count <= 1) {
-                    _selectedDrillCounts.remove(drillId);
+                  if (_removeDrillIds.contains(drillId)) {
+                    _removeDrillIds.remove(drillId);
                   } else {
-                    _selectedDrillCounts[drillId] = count - 1;
+                    _removeDrillIds.add(drillId);
                   }
                 });
               },
+              tooltip: _removeDrillIds.contains(drillId)
+                  ? 'Deselect'
+                  : 'Select for removal',
             )
-          : null,
+          : widget.pickMode && !widget.slotPickMode
+              ? _DrillCountControl(
+                  count: count,
+                  onDecrement: () {
+                    setState(() {
+                      if (count <= 1) {
+                        _selectedDrillCounts.remove(drillId);
+                      } else {
+                        _selectedDrillCounts[drillId] = count - 1;
+                      }
+                    });
+                  },
+                )
+              : null,
     );
+  }
+
+  Future<void> _removeSelectedDrills() async {
+    final drillRepo = ref.read(drillRepositoryProvider);
+    for (final drillId in _removeDrillIds.toList()) {
+      try {
+        await drillRepo.retireAdoption(_userId, drillId);
+      } catch (_) {
+        // Custom drills: retire instead.
+        try {
+          await drillRepo.retireDrill(_userId, drillId);
+        } catch (_) {}
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _removeMode = false;
+        _removeDrillIds.clear();
+      });
+    }
   }
 
   Future<void> _startPlannedPractice(List<String> drillIds) async {
@@ -417,6 +476,49 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
           .toList();
     });
 
+    final poolAsync = ref.watch(activeDrillsProvider(_userId));
+    final hasActiveDrills =
+        poolAsync.valueOrNull != null && poolAsync.valueOrNull!.isNotEmpty;
+
+    if (_removeMode) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SpacingTokens.md,
+          SpacingTokens.sm,
+          SpacingTokens.md,
+          SpacingTokens.sm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: ZxPillButton(
+                label: 'Cancel',
+                variant: ZxPillVariant.tertiary,
+                centered: true,
+                onTap: () {
+                  setState(() {
+                    _removeMode = false;
+                    _removeDrillIds.clear();
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: SpacingTokens.sm),
+            Expanded(
+              child: ZxPillButton(
+                label: _removeDrillIds.isEmpty
+                    ? 'Remove Drills'
+                    : 'Remove ${_removeDrillIds.length} Drill${_removeDrillIds.length == 1 ? '' : 's'}',
+                variant: ZxPillVariant.destructive,
+                centered: true,
+                onTap: _removeDrillIds.isEmpty ? null : _removeSelectedDrills,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         SpacingTokens.md,
@@ -429,19 +531,51 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-            child: ZxPillButton(
-              label: 'Add Drills',
-              icon: Icons.add,
-              size: ZxPillSize.md,
-              variant: ZxPillVariant.primary,
-              expanded: true,
-              centered: true,
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const AddDrillsScreen(),
-                ));
-              },
-            ),
+            child: hasActiveDrills
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: ZxPillButton(
+                          label: 'Remove Drills',
+                          icon: Icons.remove_circle_outline,
+                          size: ZxPillSize.md,
+                          variant: ZxPillVariant.destructive,
+                          centered: true,
+                          onTap: () {
+                            setState(() => _removeMode = true);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: SpacingTokens.sm),
+                      Expanded(
+                        child: ZxPillButton(
+                          label: 'Add More Drills',
+                          icon: Icons.add,
+                          size: ZxPillSize.md,
+                          variant: ZxPillVariant.primary,
+                          centered: true,
+                          onTap: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => const AddDrillsScreen(),
+                            ));
+                          },
+                        ),
+                      ),
+                    ],
+                  )
+                : ZxPillButton(
+                    label: 'Add More Drills',
+                    icon: Icons.add,
+                    size: ZxPillSize.md,
+                    variant: ZxPillVariant.primary,
+                    expanded: true,
+                    centered: true,
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const AddDrillsScreen(),
+                      ));
+                    },
+                  ),
           ),
           if (!hasActivePb) ...[
             Padding(
@@ -489,7 +623,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
 
     final title = widget.slotPickMode
         ? 'Add Drill to Slot'
-        : 'Active Drills';
+        : 'My Active Drills';
 
     return Scaffold(
       appBar: ZxAppBar(

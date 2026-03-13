@@ -36,6 +36,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   static const _userId = kDevUserId;
   Drill? _drill;
   bool _isLoading = true;
+  bool _isAdopted = false;
   Map<String, ({double min, double scratch, double pro})> _anchors = {};
 
   @override
@@ -45,8 +46,8 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   }
 
   Future<void> _loadDrill() async {
-    final drill =
-        await ref.read(drillRepositoryProvider).getById(widget.drillId);
+    final drillRepo = ref.read(drillRepositoryProvider);
+    final drill = await drillRepo.getById(widget.drillId);
     if (mounted) {
       setState(() {
         _drill = drill;
@@ -55,6 +56,19 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           _anchors = _parseAnchors(drill.anchors);
         }
       });
+      // Check adoption status and clear unseen update badge.
+      if (drill != null && drill.origin == DrillOrigin.standard) {
+        final adoption =
+            await drillRepo.getAdoption(_userId, widget.drillId);
+        if (mounted) {
+          setState(() => _isAdopted = adoption != null);
+        }
+        try {
+          await drillRepo.markUpdateSeen(_userId, widget.drillId);
+        } catch (_) {
+          // Non-critical — badge will clear on next open.
+        }
+      }
     }
   }
 
@@ -147,10 +161,36 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
               label: 'Club Selection',
               value: drill.clubSelectionMode!.dbValue,
             ),
+          if (drill.description != null) ...[
+            const SizedBox(height: SpacingTokens.sm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(SpacingTokens.sm),
+              decoration: BoxDecoration(
+                color: ColorTokens.surfaceRaised,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                border: Border.all(color: ColorTokens.surfaceBorder),
+              ),
+              child: Text(
+                drill.description!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ColorTokens.textSecondary,
+                    ),
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.sm),
+          ],
           if (drill.targetDistanceMode != null)
             DetailRow(
               label: 'Target Distance',
-              value: drill.targetDistanceMode!.dbValue,
+              value: _formatTargetValue(
+                  drill.targetDistanceValue, drill.targetDistanceUnit),
+            ),
+          if (drill.targetSizeWidth != null)
+            DetailRow(
+              label: 'Target Width',
+              value: _formatTargetValue(
+                  drill.targetSizeWidth, drill.targetSizeUnit),
             ),
 
           // Anchors section — system drills, read-only display.
@@ -198,30 +238,47 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           ],
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          SpacingTokens.md,
-          SpacingTokens.sm,
-          SpacingTokens.md,
-          SpacingTokens.md,
-        ),
-        child: ZxPillButton(
-          label: 'Start This Drill',
-          icon: Icons.play_arrow,
-          variant: ZxPillVariant.progress,
-          expanded: true,
-          centered: true,
-          onTap: () => _startPractice(drill),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.md,
+            SpacingTokens.sm,
+            SpacingTokens.md,
+            SpacingTokens.md,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ZxPillButton(
+                label: 'Start This Drill',
+                icon: Icons.play_arrow,
+                variant: ZxPillVariant.progress,
+                expanded: true,
+                centered: true,
+                onTap: () => _startPractice(drill),
+              ),
+              if (_isAdopted && isStandard) ...[
+                const SizedBox(height: SpacingTokens.sm),
+                ZxPillButton(
+                  label: 'Remove from Active Drills',
+                  variant: ZxPillVariant.destructive,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => _removeFromActive(drill),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Future<void> _startPractice(Drill drill) async {
-    // Auto-adopt system drills if not already adopted.
+    // Auto-adopt standard drills if not already adopted.
     if (drill.origin == DrillOrigin.standard) {
       try {
-        await ref.read(drillRepositoryProvider).adoptDrill(_userId, drill.drillId);
+        await ref.read(drillRepositoryProvider).adoptStandardDrill(_userId, drill);
       } catch (_) {
         // Already adopted or validation error — proceed anyway.
       }
@@ -245,6 +302,14 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           userId: _userId,
         ),
       ));
+    }
+  }
+
+  Future<void> _removeFromActive(Drill drill) async {
+    final drillRepo = ref.read(drillRepositoryProvider);
+    await drillRepo.retireAdoption(_userId, drill.drillId);
+    if (mounted) {
+      setState(() => _isAdopted = false);
     }
   }
 
@@ -287,6 +352,14 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       DrillType.transition => 'Transition',
       DrillType.pressure => 'Pressure',
     };
+  }
+
+  String _formatTargetValue(double? value, DrillLengthUnit? unit) {
+    if (value == null) return 'N/A';
+    final formatted = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(1);
+    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
   }
 
   String _formatSubskillId(String id) {

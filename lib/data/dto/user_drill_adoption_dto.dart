@@ -11,6 +11,7 @@ extension UserDrillAdoptionSyncDto on UserDrillAdoption {
         'DrillID': drillId,
         'Status': status.dbValue,
         'IsDeleted': isDeleted,
+        'HasUnseenUpdate': hasUnseenUpdate,
         'CreatedAt': createdAt.toUtc().toIso8601String(),
         'UpdatedAt': updatedAt.toUtc().toIso8601String(),
       };
@@ -25,6 +26,7 @@ UserDrillAdoptionsCompanion userDrillAdoptionFromSyncDto(
       status:
           Value(AdoptionStatus.fromString(json['Status'] as String)),
       isDeleted: Value(json['IsDeleted'] as bool),
+      hasUnseenUpdate: Value(json['HasUnseenUpdate'] as bool? ?? false),
       createdAt: Value(DateTime.parse(json['CreatedAt'] as String)),
       updatedAt: Value(DateTime.parse(json['UpdatedAt'] as String)),
     );

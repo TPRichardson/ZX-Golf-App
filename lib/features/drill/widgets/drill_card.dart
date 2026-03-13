@@ -10,18 +10,31 @@ class DrillCard extends StatelessWidget {
   final Drill drill;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool hasUnseenUpdate;
+  final bool isSelected;
+  final bool isDestructiveSelected;
+  final String? subtitle;
 
   const DrillCard({
     super.key,
     required this.drill,
     this.onTap,
     this.trailing,
+    this.hasUnseenUpdate = false,
+    this.isSelected = false,
+    this.isDestructiveSelected = false,
+    this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
     return ZxCard(
       onTap: onTap,
+      borderColor: isDestructiveSelected
+          ? ColorTokens.errorDestructive
+          : isSelected
+              ? ColorTokens.primaryDefault
+              : null,
       padding: const EdgeInsets.symmetric(
         horizontal: SpacingTokens.md,
         vertical: SpacingTokens.sm,
@@ -39,15 +52,48 @@ class DrillCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: SpacingTokens.md),
-          // Drill name.
+          // Drill name, subtitle, unseen update dot.
           Expanded(
-            child: Text(
-              drill.name,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodyLgSize,
-                fontWeight: FontWeight.w600,
-                color: ColorTokens.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        drill.name,
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodyLgSize,
+                          fontWeight: FontWeight.w600,
+                          color: isDestructiveSelected
+                            ? ColorTokens.errorDestructive
+                            : ColorTokens.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (hasUnseenUpdate) ...[
+                      const SizedBox(width: SpacingTokens.sm),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: ColorTokens.primaryDefault,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySmSize,
+                      color: ColorTokens.textTertiary,
+                    ),
+                  ),
+              ],
             ),
           ),
           ?trailing,

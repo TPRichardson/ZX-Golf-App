@@ -180,6 +180,14 @@ class ScheduleStatusConverter extends TypeConverter<ScheduleStatus, String> {
   String toSql(ScheduleStatus value) => value.dbValue;
 }
 
+class DrillLengthUnitConverter extends TypeConverter<DrillLengthUnit, String> {
+  const DrillLengthUnitConverter();
+  @override
+  DrillLengthUnit fromSql(String fromDb) => DrillLengthUnit.fromString(fromDb);
+  @override
+  String toSql(DrillLengthUnit value) => value.dbValue;
+}
+
 class MatrixTypeConverter extends TypeConverter<MatrixType, String> {
   const MatrixTypeConverter();
   @override

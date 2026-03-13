@@ -10,6 +10,7 @@ class ZxCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool showBorder;
   final EdgeInsetsGeometry? padding;
+  final Color? borderColor;
 
   const ZxCard({
     super.key,
@@ -17,6 +18,7 @@ class ZxCard extends StatelessWidget {
     this.onTap,
     this.showBorder = true,
     this.padding,
+    this.borderColor,
   });
 
   @override
@@ -28,7 +30,7 @@ class ZxCard extends StatelessWidget {
         color: ColorTokens.surfacePrimary,
         borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
         border: showBorder
-            ? Border.all(color: ColorTokens.surfaceBorder)
+            ? Border.all(color: borderColor ?? ColorTokens.surfaceBorder)
             : null,
       ),
       child: child,

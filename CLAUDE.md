@@ -91,12 +91,13 @@ When documents conflict, higher precedence wins:
 
 ## Current Build Phase
 
-> **Complete (V1 + Matrix & Gapping System)**
+> **Complete (V1 + Matrix & Gapping System + Server-Authoritative Drills)**
 >
 > All 8 core phases + 10 matrix phases implemented. Matrix & Gapping System adds
 > distance calibration workflows (Gapping Chart, Wedge Matrix, Chipping Matrix),
 > cross-run analytics with outlier trimming and weighted aggregation, and automated
-> insights. 1104 tests passing.
+> insights. Standard drills are server-authoritative (Supabase live query).
+> 1090 tests passing, 12 pre-existing C-1 scoring pipeline failures (phantom drill IDs).
 
 ---
 
@@ -475,6 +476,8 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | 2026-03-06 | Matrix M8 | Complete | MatrixReviewScreen with run history filters and ChoiceChip type selector, snapshot banner, tap navigation to type-specific review screens. 1028 total tests passing. |
 | 2026-03-06 | Matrix M9 | Complete | GappingReviewScreen (distance ladder + table + gap warnings), GappingComparisonScreen (multi-run overlay up to 3), WedgeReviewScreen (flight-coloured ladder + axis filtering), ChippingReviewScreen (accuracy overview + expandable club sections), CellDetailScreen (attempt list + edit/delete). 23 review tests (7 gapping + 5 wedge + 6 chipping + 5 cell detail), 1051 total tests passing. `flutter analyze` clean. |
 | 2026-03-06 | Matrix M10 | Complete | Outlier trimmer (10% symmetric trim §9.3.3), weighted aggregator (exp decay §9.4), matrix analytics engine (club distance, wedge coverage, chipping accuracy, distance trend — pure functions §9.5-9.9), insight generator (max 3, ranked by magnitude §9.10), analytics types, 8 Riverpod providers with weighted/raw toggle. 53 new tests (8 trimmer + 12 aggregator + 15 engine + 14 insight + 4 overview/trend), 1104 total tests passing. `flutter analyze` clean. |
+| 2026-03-13 | Drill Catalogue | Addendum | DrillLengthUnit enum + converter, 3 new Drill columns (Description, TargetDistanceUnit, TargetSizeUnit), schema v9→v10 migration, first standard drill seeded (40cm Gate Drill), DTO sync fields, repository immutable guards, execution screen target bar + info popup, drill detail description card + units, Supabase migration 013. Fixed 16 C-1 test failures; 12 remain (scoring pipeline phantom drill IDs). 1093 tests passing. `flutter analyze` clean. |
+| 2026-03-13 | Server-Auth Drills | Complete | Standard drills now server-authoritative (Supabase live query). Schema v10→v11 migration (HasUnseenUpdate column, delete local standard drills). `standardDrillCatalogueProvider` FutureProvider, `adoptStandardDrill` + `markUpdateSeen` repository methods. Sync upload excludes standard drills; download merge detects anchor changes and sets hasUnseenUpdate flag. DrillCard unseen update badge. StandardDrillsScreen offline empty state. Supabase migration 014. 1090 tests passing. `flutter analyze` clean. |
 
 ---
 
@@ -491,3 +494,5 @@ Propagation: Repository → throws `ZxGolfAppException` → Provider catches + e
 | Riverpod `.autoDispose` | 16 family providers across review, scoring, practice, planning, bag, and drill providers lack `.autoDispose`. Provider instances accumulate when family parameters change. | Adding `.autoDispose` risks breaking `ref.read()` call sites that access providers after the last watcher disposes. Requires case-by-case audit. Must be addressed before production release. | 2026-03-03 |
 | TD-02 `MatrixAxes` table | Generated data class renamed to `MatrixAxis` via `@DataClassName('MatrixAxis')`. | Drift generates 'MatrixAxe' from 'MatrixAxes', which is an incorrect singularization of the irregular plural 'Axes'. | 2026-03-06 |
 | S01 §1.11 Scoring model | Accumulation model replaces averaging. `SubskillPoints = (allocation / (5 × windowSize)) × (0.65 × P_sum + 0.35 × T_sum)`. Variable per-subskill window sizes in `SubskillRef.WindowSize` replace global `kMaxWindowOccupancy = 25`. | Averaging model meant 1 drill at 3/5 = same score as 25 drills at 3/5. Accumulation rewards practice volume. | 2026-03-09 |
+| C-1 scoring pipeline tests | 12 tests in full_rebuild_test, reflow_engine_internal_test, session_close_pipeline_test reference phantom drill IDs from the old 28-drill placeholder stubs. These drills were never actually seeded (stub was empty). | Tests need updating to use `seedTestDrill()` fixture or the real `system-putting-gate-40cm` drill. Pre-existing since Phase 2B. | 2026-03-13 |
+| S14 Standard Drill Catalogue | Standard drills require network connectivity to browse. Offline shows empty state. Adopted drills remain available offline for practice. | Server-authoritative model enables central updates without app releases. Fresh installs have zero standard drills until first browse/sync. | 2026-03-13 |

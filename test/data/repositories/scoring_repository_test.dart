@@ -457,10 +457,18 @@ void main() {
       expect(drill, isNull);
     });
 
-    test('getMetricSchemaForDrill returns seeded schema', () async {
-      // Use a seeded system drill.
-      final schema = await repo.getMetricSchemaForDrill(
-          'a0000002-0000-4000-8000-000000000001');
+    test('getMetricSchemaForDrill returns schema for inserted drill', () async {
+      // Insert a test drill referencing a seeded metric schema.
+      await db.into(db.drills).insert(DrillsCompanion.insert(
+        drillId: 'drill-schema-test',
+        name: 'Schema Test Drill',
+        skillArea: SkillArea.putting,
+        drillType: DrillType.transition,
+        inputMode: InputMode.gridCell,
+        metricSchemaId: 'grid_1x3_direction',
+        origin: DrillOrigin.custom,
+      ));
+      final schema = await repo.getMetricSchemaForDrill('drill-schema-test');
       expect(schema, isNotNull);
       expect(schema!.metricSchemaId, 'grid_1x3_direction');
     });

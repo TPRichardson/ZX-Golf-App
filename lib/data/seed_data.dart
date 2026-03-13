@@ -137,10 +137,10 @@ MetricSchemasCompanion _metricSchema(
       scoringAdapterBinding: scoringAdapterBinding,
     );
 
-// System drills — placeholder for real drill library population.
-// Real drills will be added here when the V1 drill catalogue is finalised.
+// Standard drills are server-authoritative — no local seeding.
+// ignore: unused_element
 Future<void> _seedSystemDrills(AppDatabase db) async {
-  // No system drills seeded yet.
+  // No-op: standard drills fetched from Supabase at runtime.
 }
 
 // 002_seed_reference_data.sql §5 — Post-seed invariant validation.
@@ -159,7 +159,7 @@ Future<void> _validateSeedInvariants(AppDatabase db) async {
   assert(subskillCount == 19,
       'SubskillRef count invariant: $subskillCount rows, expected 19');
 
-  // Invariant 3: System drill count (0 until real drills are populated)
+  // Invariant 3: No local standard drills (server-authoritative).
   final drillCount = await (db.selectOnly(db.drills)
         ..addColumns([db.drills.drillId.count()])
         ..where(db.drills.origin.equalsValue(DrillOrigin.standard)))

@@ -25,8 +25,8 @@ void main() {
   tearDown(() => db.close());
 
   group('Fresh database smoke test', () {
-    test('schema version is 9', () {
-      expect(db.schemaVersion, 9);
+    test('schema version is 11', () {
+      expect(db.schemaVersion, 11);
     });
 
     test('34 tables are created', () async {
@@ -75,42 +75,11 @@ void main() {
       expect(refs.length, 16);
     });
 
-    test('28 system drills seeded', () async {
+    test('0 local standard drills (server-authoritative)', () async {
       final drills = await (db.select(db.drills)
             ..where((t) => t.userId.isNull()))
           .get();
-      expect(drills.length, 28);
-    });
-
-    test('all 7 SkillAreas have at least one system drill', () async {
-      final drills = await (db.select(db.drills)
-            ..where((t) => t.userId.isNull()))
-          .get();
-      final areas = drills.map((d) => d.skillArea).toSet();
-      expect(areas, containsAll(SkillArea.values));
-    });
-
-    test('system drills have valid anchors JSON', () async {
-      final drills = await (db.select(db.drills)
-            ..where((t) => t.userId.isNull()))
-          .get();
-      for (final drill in drills) {
-        expect(drill.anchors, isNotNull,
-            reason: '${drill.name} should have anchors');
-        // TechniqueBlock drills have empty anchors (no scoring) — that's valid.
-        if (drill.drillType != DrillType.techniqueBlock) {
-          expect(drill.anchors, isNot('{}'),
-              reason: '${drill.name} should have non-empty anchors');
-        }
-      }
-    });
-
-    test('system drill names are unique', () async {
-      final drills = await (db.select(db.drills)
-            ..where((t) => t.userId.isNull()))
-          .get();
-      final names = drills.map((d) => d.name).toSet();
-      expect(names.length, 28, reason: 'All 28 drill names should be unique');
+      expect(drills.length, 0);
     });
 
     test('MetricSchemas seeded', () async {

@@ -11,6 +11,7 @@ import 'package:zx_golf_app/core/instrumentation/sync_diagnostics.dart';
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/dto/sync_dto.dart';
+import 'package:zx_golf_app/data/enums.dart';
 import 'merge_algorithm.dart';
 import 'sync_types.dart';
 import 'sync_write_gate.dart';
@@ -529,12 +530,15 @@ class SyncEngine {
       payload['User'] = users.map((e) => e.toSyncDto()).toList();
     }
 
-    // Drill
-    final drills = lastSync == null
+    // Drill — exclude standard drills (server-authoritative, never uploaded).
+    final allDrills = lastSync == null
         ? await _db.select(_db.drills).get()
         : await (_db.select(_db.drills)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
+    final drills = allDrills
+        .where((d) => d.origin != DrillOrigin.standard)
+        .toList();
     if (drills.isNotEmpty) {
       payload['Drill'] = drills.map((e) => e.toSyncDto()).toList();
     }
@@ -796,6 +800,8 @@ class SyncEngine {
       var mergedCount = 0;
       final affectedUserIds = <String>{};
       var tablesAffected = 0;
+      // Track standard drills whose anchors changed during merge.
+      final standardDrillsWithAnchorChanges = <String>{};
 
       // 2. For each table in upload order (parent before child):
       for (final tableName in tableUploadOrder) {
@@ -812,6 +818,26 @@ class SyncEngine {
           } else {
             // Fetch local row by PK, apply merge.
             final local = await _fetchLocalRow(tableName, remote);
+
+            // Detect anchor changes on standard drills before merge.
+            if (tableName == 'Drill' && local != null) {
+              final origin = remote['Origin'] as String?;
+              if (origin == 'System') {
+                final oldAnchors = local['Anchors'];
+                final newAnchors = remote['Anchors'];
+                final oldStr = oldAnchors is String
+                    ? oldAnchors
+                    : jsonEncode(oldAnchors);
+                final newStr = newAnchors is String
+                    ? newAnchors
+                    : jsonEncode(newAnchors);
+                if (oldStr != newStr) {
+                  final drillId = remote['DrillID'] as String;
+                  standardDrillsWithAnchorChanges.add(drillId);
+                }
+              }
+            }
+
             final merged = local == null
                 ? remote
                 : MergeAlgorithm.slotMergeTables.contains(tableName)
@@ -827,7 +853,22 @@ class SyncEngine {
         }
       }
 
+      // Flag adopted standard drills with anchor changes as hasUnseenUpdate.
+      if (standardDrillsWithAnchorChanges.isNotEmpty) {
+        for (final drillId in standardDrillsWithAnchorChanges) {
+          await (_db.update(_db.userDrillAdoptions)
+                ..where((t) =>
+                    t.drillId.equals(drillId) &
+                    t.isDeleted.equals(false)))
+              .write(UserDrillAdoptionsCompanion(
+            hasUnseenUpdate: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ));
+        }
+      }
+
       // 3. Post-merge pipeline: full rebuild for each affected user.
+      // Rebuild also covers standard drill anchor changes (reflow via full rebuild).
       final rebuildTriggered = affectedUserIds.isNotEmpty &&
           _reflowEngine != null;
       if (rebuildTriggered) {

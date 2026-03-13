@@ -353,6 +353,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           requiredSetCount: widget.drill.requiredSetCount,
           currentInstanceCount: 0,
           requiredAttemptsPerSet: widget.drill.requiredAttemptsPerSet,
+          onInfoTap: widget.drill.description != null
+              ? () => _showDrillInfo(context)
+              : null,
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -377,6 +380,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         requiredSetCount: _controller.requiredSetCount,
         currentInstanceCount: _controller.currentSetInstanceCount,
         requiredAttemptsPerSet: _controller.requiredAttemptsPerSet,
+        onInfoTap: widget.drill.description != null
+            ? () => _showDrillInfo(context)
+            : null,
       ),
       body: Column(
           children: [
@@ -709,7 +715,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     child: RotatedBox(
                       quarterTurns: 3,
                       child: Text(
-                        'X yds',
+                        _formatTargetDistance(),
                         style: TextStyle(
                           fontSize: TypographyTokens.bodySmSize,
                           fontWeight: FontWeight.w600,
@@ -789,7 +795,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'X yds',
+                  _formatTargetWidth(),
                   style: TextStyle(
                     fontSize: TypographyTokens.bodySmSize,
                     fontWeight: FontWeight.w600,
@@ -816,6 +822,66 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         ),
       ),
     );
+  }
+
+  void _showDrillInfo(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ShapeTokens.radiusModal),
+        ),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(SpacingTokens.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Setup Instructions',
+              style: TextStyle(
+                fontSize: TypographyTokens.displayLgSize,
+                fontWeight: TypographyTokens.displayLgWeight,
+                color: ColorTokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.md),
+            Text(
+              widget.drill.description!,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                color: ColorTokens.textSecondary,
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Format target distance value + unit for the vertical target bar.
+  String _formatTargetDistance() {
+    final value = widget.drill.targetDistanceValue;
+    final unit = widget.drill.targetDistanceUnit;
+    if (value == null) return '';
+    final formatted = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(1);
+    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+  }
+
+  /// Format target width value + unit for the horizontal target bar.
+  String _formatTargetWidth() {
+    final value = widget.drill.targetSizeWidth;
+    final unit = widget.drill.targetSizeUnit;
+    if (value == null) return '';
+    final formatted = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(1);
+    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
   }
 
   Widget _buildBottomBar() {

@@ -508,6 +508,60 @@ class DrillRepository {
     }
   }
 
+  // Adopt a server-authoritative standard drill. Upserts the drill locally
+  // for offline use, then creates/reactivates the adoption.
+  Future<UserDrillAdoption> adoptStandardDrill(
+      String userId, Drill serverDrill) async {
+    await _gate.awaitGateRelease();
+
+    // Upsert the server drill into local DB for offline availability.
+    await _db.into(_db.drills).insertOnConflictUpdate(DrillsCompanion.insert(
+      drillId: serverDrill.drillId,
+      name: serverDrill.name,
+      skillArea: serverDrill.skillArea,
+      drillType: serverDrill.drillType,
+      scoringMode: Value(serverDrill.scoringMode),
+      inputMode: serverDrill.inputMode,
+      metricSchemaId: serverDrill.metricSchemaId,
+      gridType: Value(serverDrill.gridType),
+      subskillMapping: Value(serverDrill.subskillMapping),
+      clubSelectionMode: Value(serverDrill.clubSelectionMode),
+      targetDistanceMode: Value(serverDrill.targetDistanceMode),
+      targetDistanceValue: Value(serverDrill.targetDistanceValue),
+      targetSizeMode: Value(serverDrill.targetSizeMode),
+      targetSizeWidth: Value(serverDrill.targetSizeWidth),
+      targetSizeDepth: Value(serverDrill.targetSizeDepth),
+      targetDistanceUnit: Value(serverDrill.targetDistanceUnit),
+      targetSizeUnit: Value(serverDrill.targetSizeUnit),
+      description: Value(serverDrill.description),
+      requiredSetCount: Value(serverDrill.requiredSetCount),
+      requiredAttemptsPerSet: Value(serverDrill.requiredAttemptsPerSet),
+      anchors: Value(serverDrill.anchors),
+      origin: serverDrill.origin,
+      status: Value(serverDrill.status),
+      isDeleted: Value(serverDrill.isDeleted),
+    ));
+
+    // S09 §9.3 — Bag gate: require at least one active club for this Skill Area.
+    await bag_gate.validateClubEligibility(
+        _db, userId, serverDrill.skillArea, serverDrill.drillType);
+
+    // Delegate to existing adoption logic (handles re-adopt, idempotency).
+    return adoptDrill(userId, serverDrill.drillId);
+  }
+
+  // Clear the unseen update flag on a drill adoption.
+  Future<void> markUpdateSeen(String userId, String drillId) async {
+    await _gate.awaitGateRelease();
+    await (_db.update(_db.userDrillAdoptions)
+          ..where(
+              (t) => t.userId.equals(userId) & t.drillId.equals(drillId)))
+        .write(UserDrillAdoptionsCompanion(
+      hasUnseenUpdate: const Value(false),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   // TD-03 §3.3.2 / TD-04 §2.5.1 — Retire adoption: Active→Retired.
   Future<UserDrillAdoption> retireAdoption(
     String userId,
@@ -591,6 +645,9 @@ class DrillRepository {
       targetSizeMode: Value(source.targetSizeMode),
       targetSizeWidth: Value(source.targetSizeWidth),
       targetSizeDepth: Value(source.targetSizeDepth),
+      targetDistanceUnit: Value(source.targetDistanceUnit),
+      targetSizeUnit: Value(source.targetSizeUnit),
+      description: Value(source.description),
       requiredSetCount: Value(source.requiredSetCount),
       requiredAttemptsPerSet: Value(source.requiredAttemptsPerSet),
       anchors: Value(source.anchors),
@@ -688,6 +745,15 @@ class DrillRepository {
     return adoption;
   }
 
+  /// Returns the active adoption for a user+drill, or null if not adopted.
+  Future<UserDrillAdoption?> getAdoption(String userId, String drillId) async {
+    return (_db.select(_db.userDrillAdoptions)
+          ..where((t) => t.userId.equals(userId))
+          ..where((t) => t.drillId.equals(drillId))
+          ..where((t) => t.isDeleted.equals(false)))
+        .getSingleOrNull();
+  }
+
   void _guardOwnership(Drill drill, String userId) {
     if (drill.origin == DrillOrigin.standard) return;
     if (drill.userId != userId) {
@@ -782,6 +848,18 @@ class DrillRepository {
       throw ValidationException(
         code: ValidationException.invalidStructure,
         message: 'TargetSizeDepth is immutable after drill creation',
+      );
+    }
+    if (data.targetDistanceUnit.present) {
+      throw ValidationException(
+        code: ValidationException.invalidStructure,
+        message: 'TargetDistanceUnit is immutable after drill creation',
+      );
+    }
+    if (data.targetSizeUnit.present) {
+      throw ValidationException(
+        code: ValidationException.invalidStructure,
+        message: 'TargetSizeUnit is immutable after drill creation',
       );
     }
     // TD-03 §5.3 — ScoringMode and InputMode are immutable post-creation.

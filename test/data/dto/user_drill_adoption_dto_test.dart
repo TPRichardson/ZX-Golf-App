@@ -15,6 +15,7 @@ void main() {
       expect(companion.drillId.value, adoption.drillId);
       expect(companion.status.value, AdoptionStatus.active);
       expect(companion.isDeleted.value, false);
+      expect(companion.hasUnseenUpdate.value, false);
     });
   });
 }

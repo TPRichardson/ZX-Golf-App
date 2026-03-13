@@ -352,6 +352,24 @@ enum SmallLengthUnit {
           orElse: () => throw ArgumentError('Invalid SmallLengthUnit: $value'));
 }
 
+/// Drill-identity length unit. Governs target distance/size display on drill definition.
+/// Separate from user-preference enums (DistanceUnit, SmallLengthUnit) which govern display.
+enum DrillLengthUnit {
+  mm('mm'),
+  cm('cm'),
+  m('m'),
+  inches('inches'),
+  feet('feet'),
+  yards('yards');
+
+  const DrillLengthUnit(this.dbValue);
+  final String dbValue;
+
+  static DrillLengthUnit fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid DrillLengthUnit: $value'));
+}
+
 /// Matrix §8.2.1 — Three matrix workflow types.
 enum MatrixType {
   gappingChart('GappingChart'),

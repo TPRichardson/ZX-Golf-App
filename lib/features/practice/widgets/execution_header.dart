@@ -14,6 +14,7 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
   final int requiredSetCount;
   final int currentInstanceCount;
   final int? requiredAttemptsPerSet;
+  final VoidCallback? onInfoTap;
 
   const ExecutionHeader({
     super.key,
@@ -22,6 +23,7 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.requiredSetCount,
     required this.currentInstanceCount,
     this.requiredAttemptsPerSet,
+    this.onInfoTap,
   });
 
   @override
@@ -55,6 +57,14 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
         ),
+        actions: [
+          if (onInfoTap != null)
+            IconButton(
+              icon: const Icon(Icons.info_outline,
+                  color: ColorTokens.textSecondary),
+              onPressed: onInfoTap,
+            ),
+        ],
         centerTitle: true,
         backgroundColor: ColorTokens.surfacePrimary,
         surfaceTintColor: Colors.transparent,
