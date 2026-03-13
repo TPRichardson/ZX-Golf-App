@@ -24,6 +24,7 @@
   - **Right:** `git -C /c/development/projects/claudecode/zx-golf-app status`
   - For non-git commands, issue separate Bash tool calls instead of chaining.
 - **Git workflow.** Batch changes into meaningful commits — do not commit/push after every small change. Stage only files relevant to the work done (don't include unrelated changes). Commit and push when explicitly asked.
+- **Push notifications.** Pushover notifications are configured via `~/.claude/pushover/notify.py`. The user controls this with "alerts on" / "alerts off". When **alerts are on**, send a notification on every pause where user input is needed — include a brief description of what's needed. When **alerts are off**, never send. Default is **off** unless the user says otherwise. Send via: `python ~/.claude/pushover/notify.py "Your message here"`. If `~/.claude/pushover/notify.py` does not exist on this machine, inform the user and point them to `~/.claude/pushover/SETUP.md` for installation instructions.
 
 ---
 
