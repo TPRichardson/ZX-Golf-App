@@ -91,7 +91,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     }
 
     final drill = _drill!;
-    final isSystem = drill.origin == DrillOrigin.system;
+    final isStandard = drill.origin == DrillOrigin.standard;
     final isScored = drill.drillType != DrillType.techniqueBlock;
 
     return Scaffold(
@@ -154,7 +154,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
             ),
 
           // Anchors section — system drills, read-only display.
-          if (isSystem && isScored) ...[
+          if (isStandard && isScored) ...[
             const SizedBox(height: SpacingTokens.lg),
             Text(
               'Scoring Anchors',
@@ -174,7 +174,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
             ],
           ],
           // Target section — custom drills only.
-          if (!isSystem && isScored) ...[
+          if (!isStandard && isScored) ...[
             const SizedBox(height: SpacingTokens.lg),
             Text(
               'Target',
@@ -219,7 +219,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
 
   Future<void> _startPractice(Drill drill) async {
     // Auto-adopt system drills if not already adopted.
-    if (drill.origin == DrillOrigin.system) {
+    if (drill.origin == DrillOrigin.standard) {
       try {
         await ref.read(drillRepositoryProvider).adoptDrill(_userId, drill.drillId);
       } catch (_) {

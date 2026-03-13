@@ -138,7 +138,7 @@ class SessionDetailScreen extends ConsumerWidget {
                         ),
                       ),
                     // 7C — Edit Drill cross-navigation for custom drills.
-                    if (detail.drillOrigin == DrillOrigin.userCustom)
+                    if (detail.drillOrigin == DrillOrigin.custom)
                       Padding(
                         padding: const EdgeInsets.only(
                             top: SpacingTokens.md),
@@ -245,7 +245,7 @@ final _sessionDetailProvider = FutureProvider.family<_SessionDetail?,
   return _SessionDetail(
     drillName: drill?.name ?? 'Unknown',
     drillId: session.drillId,
-    drillOrigin: drill?.origin ?? DrillOrigin.system,
+    drillOrigin: drill?.origin ?? DrillOrigin.standard,
     sessionScore: sessionScore,
     completionTimestamp: session.completionTimestamp,
     skillArea: drill?.skillArea.dbValue ?? 'Unknown',

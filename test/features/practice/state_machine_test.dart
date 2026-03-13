@@ -54,7 +54,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.binaryHitMiss,
       metricSchemaId: 'binary_hit_miss',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["putting_direction_control"]'),
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
@@ -305,7 +305,7 @@ void main() {
         drillType: DrillType.transition,
         inputMode: InputMode.binaryHitMiss,
         metricSchemaId: 'binary_hit_miss',
-        origin: DrillOrigin.system,
+        origin: DrillOrigin.standard,
         subskillMapping: const Value('["irons_direction_control"]'),
         anchors: const Value(
             '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),

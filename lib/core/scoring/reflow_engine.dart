@@ -977,7 +977,7 @@ class ReflowEngine {
     final adapterType = parseScoringAdapterBinding(schema.scoringAdapterBinding);
     final subskillMapping = _parseSubskillMapping(drill.subskillMapping);
     final isDualMapped = subskillMapping.length > 1;
-    final isCustomDrill = drill.origin == DrillOrigin.userCustom;
+    final isCustomDrill = drill.origin == DrillOrigin.custom;
 
     // Score instances — only for system drills.
     double sessionScore = 0.0;

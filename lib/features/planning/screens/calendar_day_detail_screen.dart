@@ -7,7 +7,7 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/drill_repository.dart';
-import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
+import 'package:zx_golf_app/features/drill/active_drills_screen.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -231,7 +231,7 @@ class _CalendarDayDetailScreenState
   Future<void> _showDrillAssignDialog(int index) async {
     final drillId = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => const PracticePoolScreen(slotPickMode: true),
+        builder: (_) => const ActiveDrillsScreen(slotPickMode: true),
       ),
     );
 

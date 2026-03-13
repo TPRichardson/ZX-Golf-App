@@ -58,7 +58,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.binaryHitMiss,
       metricSchemaId: 'grid_1x3_direction',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["putting_direction_control"]'),
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
@@ -73,7 +73,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.binaryHitMiss,
       metricSchemaId: 'grid_1x3_direction',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["putting_direction_control"]'),
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
@@ -175,14 +175,14 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('7C: Edit Drill cross-nav', () {
-    test('system drill has DrillOrigin.system', () async {
+    test('standard drill has DrillOrigin.standard', () async {
       final drill = await (db.select(db.drills)
             ..where((t) => t.drillId.equals(drillId1)))
           .getSingle();
-      expect(drill.origin, DrillOrigin.system);
+      expect(drill.origin, DrillOrigin.standard);
     });
 
-    test('user custom drill has DrillOrigin.userCustom', () async {
+    test('custom drill has DrillOrigin.custom', () async {
       await db.into(db.drills).insert(DrillsCompanion.insert(
         drillId: 'drill-custom',
         name: 'Custom Drill',
@@ -190,7 +190,7 @@ void main() {
         drillType: DrillType.transition,
         inputMode: InputMode.rawDataEntry,
         metricSchemaId: 'raw_carry_distance',
-        origin: DrillOrigin.userCustom,
+        origin: DrillOrigin.custom,
         subskillMapping: const Value('["putting_direction_control"]'),
         anchors: const Value(
             '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
@@ -200,7 +200,7 @@ void main() {
       final drill = await (db.select(db.drills)
             ..where((t) => t.drillId.equals('drill-custom')))
           .getSingle();
-      expect(drill.origin, DrillOrigin.userCustom);
+      expect(drill.origin, DrillOrigin.custom);
     });
   });
 

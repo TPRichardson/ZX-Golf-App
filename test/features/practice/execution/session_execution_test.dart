@@ -60,7 +60,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.gridCell,
       metricSchemaId: 'grid_1x3_direction',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["putting_direction_control"]'),
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
@@ -77,7 +77,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.gridCell,
       metricSchemaId: 'grid_1x3_direction',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["irons_direction_control"]'),
       anchors: const Value(
           '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
@@ -93,7 +93,7 @@ void main() {
       drillType: DrillType.techniqueBlock,
       inputMode: InputMode.rawDataEntry,
       metricSchemaId: 'technique_duration',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('[]'),
       requiredSetCount: const Value(1),
     ));
@@ -107,7 +107,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.rawDataEntry,
       metricSchemaId: 'raw_carry_distance',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["driving_distance_maximum"]'),
       anchors: const Value(
           '{"driving_distance_maximum": {"Min": 180, "Scratch": 250, "Pro": 300}}'),

@@ -162,7 +162,7 @@ Future<void> _validateSeedInvariants(AppDatabase db) async {
   // Invariant 3: System drill count (0 until real drills are populated)
   final drillCount = await (db.selectOnly(db.drills)
         ..addColumns([db.drills.drillId.count()])
-        ..where(db.drills.origin.equalsValue(DrillOrigin.system)))
+        ..where(db.drills.origin.equalsValue(DrillOrigin.standard)))
       .getSingle();
   final systemDrillCount =
       drillCount.read(db.drills.drillId.count()) ?? 0;

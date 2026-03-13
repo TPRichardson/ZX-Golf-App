@@ -62,7 +62,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.binaryHitMiss,
       metricSchemaId: 'grid_1x3_direction',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["putting_direction_control"]'),
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),
@@ -78,7 +78,7 @@ void main() {
       drillType: DrillType.transition,
       inputMode: InputMode.binaryHitMiss,
       metricSchemaId: 'grid_1x3_direction',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       subskillMapping: const Value('["putting_direction_control"]'),
       anchors: const Value(
           '{"putting_direction_control": {"Min": 20, "Scratch": 60, "Pro": 90}}'),

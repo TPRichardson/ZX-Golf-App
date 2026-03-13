@@ -60,7 +60,7 @@ void main() {
       metricSchemaId: 'binary_hit_miss',
       subskillMapping: const Value('["irons_direction_control"]'),
       anchors: const Value('{}'),
-      origin: DrillOrigin.userCustom,
+      origin: DrillOrigin.custom,
       status: const Value(DrillStatus.active),
     ));
 

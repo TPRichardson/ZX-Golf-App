@@ -97,9 +97,9 @@ class DrillRepository {
         }).toList());
   }
 
-  // TD-03 §3.3.2 — Reactive stream of user's practice pool.
-  // Adopted system drills + active custom drills.
-  Stream<List<DrillWithAdoption>> watchPracticePool(
+  // TD-03 §3.3.2 — Reactive stream of user's active drills.
+  // Adopted standard drills + active custom drills.
+  Stream<List<DrillWithAdoption>> watchActiveDrills(
     String userId, {
     SkillArea? filter,
   }) {
@@ -108,7 +108,7 @@ class DrillRepository {
       ..where((t) => t.userId.equals(userId))
       ..where((t) => t.isDeleted.equals(false))
       ..where((t) => t.status.equalsValue(DrillStatus.active))
-      ..where((t) => t.origin.equalsValue(DrillOrigin.userCustom));
+      ..where((t) => t.origin.equalsValue(DrillOrigin.custom));
     if (filter != null) {
       customQuery.where((t) => t.skillArea.equalsValue(filter));
     }
@@ -205,7 +205,7 @@ class DrillRepository {
     final companion = data.copyWith(
       drillId: Value(drillId),
       userId: Value(userId),
-      origin: const Value(DrillOrigin.userCustom),
+      origin: const Value(DrillOrigin.custom),
       status: const Value(DrillStatus.active),
       isDeleted: const Value(false),
     );
@@ -237,10 +237,10 @@ class DrillRepository {
     final existing = await _getActiveDrill(drillId);
 
     // Guard: must be user-owned custom drill.
-    if (existing.origin == DrillOrigin.system) {
+    if (existing.origin == DrillOrigin.standard) {
       throw ValidationException(
         code: ValidationException.invalidStructure,
-        message: 'Cannot update system drill',
+        message: 'Cannot update standard drill',
         context: {'drillId': drillId},
       );
     }
@@ -381,10 +381,10 @@ class DrillRepository {
     await _gate.awaitGateRelease();
     final existing = await _getActiveDrill(drillId);
 
-    if (existing.origin == DrillOrigin.system) {
+    if (existing.origin == DrillOrigin.standard) {
       throw ValidationException(
         code: ValidationException.invalidStructure,
-        message: 'Cannot delete system drill',
+        message: 'Cannot delete standard drill',
         context: {'drillId': drillId},
       );
     }
@@ -594,7 +594,7 @@ class DrillRepository {
       requiredSetCount: Value(source.requiredSetCount),
       requiredAttemptsPerSet: Value(source.requiredAttemptsPerSet),
       anchors: Value(source.anchors),
-      origin: DrillOrigin.userCustom,
+      origin: DrillOrigin.custom,
       status: Value(DrillStatus.active),
       isDeleted: const Value(false),
     );
@@ -626,8 +626,8 @@ class DrillRepository {
         .getSingleOrNull();
   }
 
-  // Spec: S04 §4.2 — System drills (UserID IS NULL, origin = system).
-  Stream<List<Drill>> watchSystemDrills() {
+  // Spec: S04 §4.2 — Standard drills (UserID IS NULL, origin = standard).
+  Stream<List<Drill>> watchStandardDrills() {
     return (_db.select(_db.drills)
           ..where((t) => t.userId.isNull())
           ..where((t) => t.isDeleted.equals(false))
@@ -689,7 +689,7 @@ class DrillRepository {
   }
 
   void _guardOwnership(Drill drill, String userId) {
-    if (drill.origin == DrillOrigin.system) return;
+    if (drill.origin == DrillOrigin.standard) return;
     if (drill.userId != userId) {
       throw ValidationException(
         code: ValidationException.invalidStructure,

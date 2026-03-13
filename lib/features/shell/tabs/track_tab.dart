@@ -4,7 +4,7 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
+import 'package:zx_golf_app/features/drill/active_drills_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_setup_screen.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
@@ -37,7 +37,7 @@ class TrackTab extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  PracticePoolScreen(embedded: true),
+                  ActiveDrillsScreen(embedded: true),
                   _MatrixTab(),
                 ],
               ),

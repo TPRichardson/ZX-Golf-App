@@ -20,14 +20,14 @@ import 'add_drills_screen.dart';
 import 'drill_detail_screen.dart';
 import 'widgets/drill_card.dart';
 
-/// 5E — Persistent filter state for Practice Pool (survives navigation).
-final practicePoolFilterProvider = StateProvider<SkillArea?>((ref) => null);
+/// 5E — Persistent filter state for Active Drills (survives navigation).
+final activeDrillsFilterProvider = StateProvider<SkillArea?>((ref) => null);
 
 /// Drill type filter (Transition/Pressure/Technique).
-final practicePoolTypeFilterProvider = StateProvider<DrillType?>((ref) => null);
+final activeDrillsTypeFilterProvider = StateProvider<DrillType?>((ref) => null);
 
 /// Toggle between grouped (by skill area) and flat list display.
-final practicePoolGroupedProvider = StateProvider<bool>((ref) => false);
+final activeDrillsGroupedProvider = StateProvider<bool>((ref) => false);
 
 /// Display order: driver at top → putter at bottom.
 const _skillAreaDisplayOrder = [
@@ -43,11 +43,11 @@ const _skillAreaDisplayOrder = [
 int _skillAreaSortKey(SkillArea area) =>
     _skillAreaDisplayOrder.indexOf(area);
 
-// Phase 3 — Practice Pool: user's active drill collection.
-// Adopted system drills + active custom drills.
+// Phase 3 — Active Drills: user's active drill collection.
+// Adopted standard drills + active custom drills.
 // S12 §12.3 — Track tab primary view.
 
-class PracticePoolScreen extends ConsumerStatefulWidget {
+class ActiveDrillsScreen extends ConsumerStatefulWidget {
   /// When true, tapping a drill pops with the drillId instead of navigating.
   final bool pickMode;
 
@@ -63,7 +63,7 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
   final int existingSets;
   final int existingShots;
 
-  const PracticePoolScreen({
+  const ActiveDrillsScreen({
     super.key,
     this.pickMode = false,
     this.slotPickMode = false,
@@ -74,11 +74,11 @@ class PracticePoolScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PracticePoolScreen> createState() =>
-      _PracticePoolScreenState();
+  ConsumerState<ActiveDrillsScreen> createState() =>
+      _ActiveDrillsScreenState();
 }
 
-class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
+class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => widget.embedded;
@@ -109,10 +109,10 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
   }
 
   Widget _buildBody(BuildContext context) {
-    final selectedFilter = ref.watch(practicePoolFilterProvider);
-    final typeFilter = ref.watch(practicePoolTypeFilterProvider);
-    final isGrouped = ref.watch(practicePoolGroupedProvider);
-    final poolAsync = ref.watch(practicePoolProvider(_userId));
+    final selectedFilter = ref.watch(activeDrillsFilterProvider);
+    final typeFilter = ref.watch(activeDrillsTypeFilterProvider);
+    final isGrouped = ref.watch(activeDrillsGroupedProvider);
+    final poolAsync = ref.watch(activeDrillsProvider(_userId));
 
     return Column(
       children: [
@@ -133,7 +133,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
             ),
             child: Center(
               child: Text(
-                'Manage Drill Library',
+                'Active Drills',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: ColorTokens.textPrimary,
                     ),
@@ -148,13 +148,13 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
           child: _UnifiedFilterBar(
             selectedSkill: selectedFilter,
             onSkillChanged: (area) =>
-                ref.read(practicePoolFilterProvider.notifier).state = area,
+                ref.read(activeDrillsFilterProvider.notifier).state = area,
             selectedType: typeFilter,
             onTypeChanged: (type) =>
-                ref.read(practicePoolTypeFilterProvider.notifier).state = type,
+                ref.read(activeDrillsTypeFilterProvider.notifier).state = type,
             isGrouped: isGrouped,
             onGroupToggle: (v) =>
-                ref.read(practicePoolGroupedProvider.notifier).state = v,
+                ref.read(activeDrillsGroupedProvider.notifier).state = v,
           ),
         ),
         SizedBox(height: (widget.pickMode || widget.slotPickMode) ? SpacingTokens.md : SpacingTokens.sm),
@@ -233,7 +233,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
                             icon: Icons.filter_list_off,
                             variant: ZxPillVariant.secondary,
                             onTap: () => ref
-                                .read(practicePoolFilterProvider.notifier)
+                                .read(activeDrillsFilterProvider.notifier)
                                 .state = null,
                           ),
                         ],
@@ -489,7 +489,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
 
     final title = widget.slotPickMode
         ? 'Add Drill to Slot'
-        : 'Manage Drill Library';
+        : 'Active Drills';
 
     return Scaffold(
       appBar: ZxAppBar(
@@ -649,7 +649,7 @@ class _PracticePoolScreenState extends ConsumerState<PracticePoolScreen>
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => DrillDetailScreen(
         drillId: dwa.drill.drillId,
-        isCustom: dwa.drill.origin == DrillOrigin.userCustom,
+        isCustom: dwa.drill.origin == DrillOrigin.custom,
       ),
     ));
   }
@@ -1049,4 +1049,3 @@ class _SkillAreaGroupState extends State<_SkillAreaGroup> {
     );
   }
 }
-

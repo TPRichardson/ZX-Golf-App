@@ -90,7 +90,7 @@ class _PracticeSummaryScreenState extends ConsumerState<PracticeSummaryScreen> {
 
       // Compute score for system drills.
       double? score;
-      if (drill.origin != DrillOrigin.userCustom) {
+      if (drill.origin != DrillOrigin.custom) {
         score = _computeSessionScore(drill, instances);
       }
 

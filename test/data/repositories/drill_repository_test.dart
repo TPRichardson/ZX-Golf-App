@@ -95,7 +95,7 @@ void main() {
       );
 
       expect(drill.status, DrillStatus.active);
-      expect(drill.origin, DrillOrigin.userCustom);
+      expect(drill.origin, DrillOrigin.custom);
       expect(drill.userId, userId);
       expect(drill.isDeleted, false);
     });
@@ -163,9 +163,9 @@ void main() {
       );
     });
 
-    test('deleteDrill throws on system drill', () async {
+    test('deleteDrill throws on standard drill', () async {
       // Get a system drill ID from seed data.
-      final systemDrills = await repo.watchSystemDrills().first;
+      final systemDrills = await repo.watchStandardDrills().first;
       expect(systemDrills, isNotEmpty);
       final systemDrill = systemDrills.first;
 
@@ -411,7 +411,7 @@ void main() {
     late String systemDrillId;
 
     setUp(() async {
-      final systemDrills = await repo.watchSystemDrills().first;
+      final systemDrills = await repo.watchStandardDrills().first;
       systemDrillId = systemDrills.first.drillId;
     });
 
@@ -531,8 +531,8 @@ void main() {
       );
     });
 
-    test('system drill update throws invalidStructure', () async {
-      final systemDrills = await repo.watchSystemDrills().first;
+    test('standard drill update throws invalidStructure', () async {
+      final systemDrills = await repo.watchStandardDrills().first;
       final systemDrill = systemDrills.first;
 
       expect(
@@ -571,13 +571,13 @@ void main() {
   // ---------------------------------------------------------------------------
   group('duplicateDrill', () {
     test('creates copy with new ID and UserCustom origin', () async {
-      final systemDrills = await repo.watchSystemDrills().first;
+      final systemDrills = await repo.watchStandardDrills().first;
       final source = systemDrills.first;
 
       final copy = await repo.duplicateDrill(userId, source.drillId);
 
       expect(copy.drillId, isNot(source.drillId));
-      expect(copy.origin, DrillOrigin.userCustom);
+      expect(copy.origin, DrillOrigin.custom);
       expect(copy.userId, userId);
       expect(copy.name, '${source.name} (Copy)');
       expect(copy.skillArea, source.skillArea);
@@ -590,17 +590,17 @@ void main() {
   // Watch queries
   // ---------------------------------------------------------------------------
   group('Watch queries', () {
-    test('watchSystemDrills returns 28 seeded system drills', () async {
-      final drills = await repo.watchSystemDrills().first;
+    test('watchStandardDrills returns 28 seeded standard drills', () async {
+      final drills = await repo.watchStandardDrills().first;
       expect(drills.length, 28);
       for (final drill in drills) {
-        expect(drill.origin, DrillOrigin.system);
+        expect(drill.origin, DrillOrigin.standard);
         expect(drill.userId, isNull);
       }
     });
 
     test('watchAdoptedDrills returns adopted drills', () async {
-      final systemDrills = await repo.watchSystemDrills().first;
+      final systemDrills = await repo.watchStandardDrills().first;
       await repo.adoptDrill(userId, systemDrills[0].drillId);
       await repo.adoptDrill(userId, systemDrills[1].drillId);
 
@@ -628,7 +628,7 @@ void main() {
 
     test('adoptDrill throws when no clubs for Skill Area', () async {
       // Find a system drill and try to adopt it as a user with no clubs.
-      final systemDrills = await repo.watchSystemDrills().first;
+      final systemDrills = await repo.watchStandardDrills().first;
       expect(
         () => repo.adoptDrill(otherUserId, systemDrills.first.drillId),
         throwsA(isA<ValidationException>()),

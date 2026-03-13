@@ -124,8 +124,8 @@ enum ClubType {
 
 /// TD-02 §6.1 — Origin of a drill definition.
 enum DrillOrigin {
-  system('System'),
-  userCustom('UserCustom');
+  standard('System'),
+  custom('UserCustom');
 
   const DrillOrigin(this.dbValue);
   final String dbValue;

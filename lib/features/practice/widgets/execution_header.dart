@@ -42,7 +42,7 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
             MaterialPageRoute(
               builder: (_) => DrillDetailScreen(
                 drillId: drill.drillId,
-                isCustom: drill.origin == DrillOrigin.userCustom,
+                isCustom: drill.origin == DrillOrigin.custom,
               ),
             ),
           ),

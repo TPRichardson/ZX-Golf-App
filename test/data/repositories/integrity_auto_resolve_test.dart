@@ -56,7 +56,7 @@ void main() {
       inputMode: InputMode.rawDataEntry,
       metricSchemaId: 'raw_carry_distance',
       subskillMapping: const Value('["irons_direction_control"]'),
-      origin: DrillOrigin.userCustom,
+      origin: DrillOrigin.custom,
       anchors: const Value(
           '{"irons_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}}'),
       requiredAttemptsPerSet: const Value(null),

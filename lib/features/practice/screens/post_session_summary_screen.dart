@@ -43,7 +43,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCustom = drill.origin == DrillOrigin.userCustom;
+    final isCustom = drill.origin == DrillOrigin.custom;
     final score = isCustom ? null : sessionScore;
 
     return Scaffold(

@@ -21,7 +21,7 @@ void main() {
     subskillMapping: '["putting_direction_control"]',
     requiredSetCount: 1,
     anchors: '{}',
-    origin: DrillOrigin.system,
+    origin: DrillOrigin.standard,
     status: DrillStatus.active,
     isDeleted: false,
     createdAt: now,

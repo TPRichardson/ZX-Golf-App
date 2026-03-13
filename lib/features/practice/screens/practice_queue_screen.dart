@@ -13,7 +13,7 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
-import 'package:zx_golf_app/features/drill/practice_pool_screen.dart';
+import 'package:zx_golf_app/features/drill/active_drills_screen.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
@@ -172,7 +172,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
     final drillIds = await Navigator.of(context).push<List<String>>(
       MaterialPageRoute(
-        builder: (_) => PracticePoolScreen(
+        builder: (_) => ActiveDrillsScreen(
           pickMode: true,
           existingDrillCount: existDrills,
           existingSets: existSets,

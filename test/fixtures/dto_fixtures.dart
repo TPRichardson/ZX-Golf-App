@@ -39,7 +39,7 @@ Drill makeDrill({String? drillId, String? userId}) => Drill(
       requiredAttemptsPerSet: 10,
       anchors:
           '{"irons_direction_control":{"Min":30,"Scratch":70,"Pro":90}}',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       status: DrillStatus.active,
       isDeleted: false,
       createdAt: _ts,
@@ -66,7 +66,7 @@ Drill makeDrillMinimal() => Drill(
       requiredSetCount: 1,
       requiredAttemptsPerSet: null,
       anchors: '{}',
-      origin: DrillOrigin.system,
+      origin: DrillOrigin.standard,
       status: DrillStatus.active,
       isDeleted: false,
       createdAt: _ts,

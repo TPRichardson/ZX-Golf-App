@@ -3,7 +3,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 
 import 'drill_create_screen.dart';
-import 'drill_library_screen.dart';
+import 'standard_drills_screen.dart';
 
 /// Chooser screen: Add ZX Drills or Create Custom Drill.
 class AddDrillsScreen extends StatelessWidget {
@@ -21,10 +21,10 @@ class AddDrillsScreen extends StatelessWidget {
             const SizedBox(height: SpacingTokens.lg),
             _ChoiceCard(
               icon: Icons.library_books,
-              title: 'Add ZX Drills',
+              title: 'Browse Standard Drills',
               subtitle: 'Add golf drills to your library from our catalogue, build your SkillScore',
               onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const DrillLibraryScreen(),
+                builder: (_) => const StandardDrillsScreen(),
               )),
             ),
             const SizedBox(height: SpacingTokens.md),

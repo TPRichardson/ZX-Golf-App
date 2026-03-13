@@ -18,26 +18,26 @@ import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'drill_detail_screen.dart';
 import 'widgets/drill_card.dart';
 
-// Phase 3 — System Drill Library. Browse all 28 system drills grouped by SkillArea.
-// S14 §14.1 — System drill catalogue.
+// Phase 3 — Standard Drills. Browse all 28 standard drills grouped by SkillArea.
+// S14 §14.1 — Standard drill catalogue.
 
-class DrillLibraryScreen extends ConsumerWidget {
+class StandardDrillsScreen extends ConsumerWidget {
   /// When true, tapping a drill pops with the drillId instead of navigating.
   final bool pickMode;
 
-  const DrillLibraryScreen({super.key, this.pickMode = false});
+  const StandardDrillsScreen({super.key, this.pickMode = false});
 
   // Phase 3 stub — replaced when auth is wired.
   static const _userId = kDevUserId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final systemDrillsAsync = ref.watch(systemDrillsProvider);
+    final standardDrillsAsync = ref.watch(standardDrillsProvider);
     final adoptedAsync = ref.watch(adoptedDrillsProvider(_userId));
 
     return Scaffold(
-      appBar: const ZxAppBar(title: 'System Library'),
-      body: systemDrillsAsync.when(
+      appBar: const ZxAppBar(title: 'Standard Drills'),
+      body: standardDrillsAsync.when(
         data: (drills) {
           final adopted = adoptedAsync.valueOrNull ?? [];
           final adoptedIds =

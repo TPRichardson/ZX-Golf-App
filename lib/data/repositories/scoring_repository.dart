@@ -219,7 +219,7 @@ class ScoringRepository {
           _db.sessions.isDeleted.equals(false) &
           _db.drills.isDeleted.equals(false) &
           _db.drills.drillType.equalsValue(drillType) &
-          _db.drills.origin.equalsValue(DrillOrigin.system) &
+          _db.drills.origin.equalsValue(DrillOrigin.standard) &
           _db.drills.subskillMapping.like('%$subskillId%'),
     );
 

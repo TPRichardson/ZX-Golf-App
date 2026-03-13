@@ -196,9 +196,9 @@ lib/
 │   │   └── widgets/                # [Phase 7C] Shell-level widgets
 │   │       └── dual_active_session_dialog.dart # Cross-device conflict dialog
 │   ├── drill/                      # [Phase 3] Drill browsing, creation, editing
-│   │   ├── practice_pool_screen.dart   # Main drill hub (Play → Practice tab)
-│   │   ├── add_drills_screen.dart      # Add Drills chooser (ZX library or custom)
-│   │   ├── drill_library_screen.dart   # System Drill catalogue (28 drills)
+│   │   ├── active_drills_screen.dart   # Main drill hub (Play → Practice tab)
+│   │   ├── add_drills_screen.dart      # Add Drills chooser (standard or custom)
+│   │   ├── standard_drills_screen.dart # Standard Drill catalogue (28 drills)
 │   │   ├── drill_detail_screen.dart    # View/edit drill properties + anchors
 │   │   ├── drill_create_screen.dart    # Multi-step custom drill creation
 │   │   └── widgets/
@@ -313,7 +313,7 @@ lib/
 │   ├── repository_providers.dart
 │   ├── scoring_providers.dart
 │   ├── sync_providers.dart         # [Phase 2.5+7A] Sync engine, orchestrator, connectivity, instrumentation
-│   ├── drill_providers.dart        # [Phase 3] System drills, adopted drills, practice pool
+│   ├── drill_providers.dart        # [Phase 3] Standard drills, adopted drills, active drills
 │   ├── bag_providers.dart          # [Phase 3] User bag, club mappings
 │   ├── planning_providers.dart     # [Phase 5] Routines, schedules, calendar, PlanningActions
 │   ├── review_providers.dart      # [Phase 6] Heatmap, window detail, weakness, sessions, adherence
