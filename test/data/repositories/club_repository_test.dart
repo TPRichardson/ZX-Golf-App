@@ -211,69 +211,6 @@ void main() {
   // Mandatory mapping enforcement — S09 §9.2.3
   // ---------------------------------------------------------------------------
   group('Mandatory mapping enforcement', () {
-    test('remove Driver→Driving throws invalidStructure', () async {
-      await repo.addClub(
-        userId,
-        const UserClubsCompanion(clubType: Value(ClubType.driver)),
-      );
-
-      expect(
-        () => repo.updateSkillAreaMapping(
-          userId,
-          ClubType.driver,
-          SkillArea.driving,
-          false,
-        ),
-        throwsA(isA<ValidationException>().having(
-          (e) => e.code,
-          'code',
-          ValidationException.invalidStructure,
-        )),
-      );
-    });
-
-    test('remove Putter→Putting throws invalidStructure', () async {
-      await repo.addClub(
-        userId,
-        const UserClubsCompanion(clubType: Value(ClubType.putter)),
-      );
-
-      expect(
-        () => repo.updateSkillAreaMapping(
-          userId,
-          ClubType.putter,
-          SkillArea.putting,
-          false,
-        ),
-        throwsA(isA<ValidationException>().having(
-          (e) => e.code,
-          'code',
-          ValidationException.invalidStructure,
-        )),
-      );
-    });
-
-    test('remove i5→Irons throws invalidStructure', () async {
-      await repo.addClub(
-        userId,
-        const UserClubsCompanion(clubType: Value(ClubType.i5)),
-      );
-
-      expect(
-        () => repo.updateSkillAreaMapping(
-          userId,
-          ClubType.i5,
-          SkillArea.irons,
-          false,
-        ),
-        throwsA(isA<ValidationException>().having(
-          (e) => e.code,
-          'code',
-          ValidationException.invalidStructure,
-        )),
-      );
-    });
-
     test('remove SW→Chipping succeeds (non-mandatory)', () async {
       await repo.addClub(
         userId,

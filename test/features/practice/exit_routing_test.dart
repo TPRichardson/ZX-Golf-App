@@ -86,10 +86,10 @@ void main() {
 
       // Verify we're on the summary screen.
       expect(find.text('Session Complete'), findsOneWidget);
-      expect(find.text('Practice Overview'), findsOneWidget);
+      expect(find.text('Back to Practice'), findsOneWidget);
 
-      // Tap Practice Overview — should pop back one route to Intermediate.
-      await tester.tap(find.text('Practice Overview'));
+      // Tap Back to Practice — should pop back one route to Intermediate.
+      await tester.tap(find.text('Back to Practice'));
       await tester.pumpAndSettle();
 
       // Verify we're at the Intermediate screen (not Home).
@@ -97,7 +97,8 @@ void main() {
       expect(find.text('Session Complete'), findsNothing);
     });
 
-    testWidgets('Close (X) button pops to first route', (tester) async {
+    testWidgets('Back to Practice pops to Home when one route deep',
+        (tester) async {
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp(
         home: Builder(
@@ -124,8 +125,8 @@ void main() {
 
       expect(find.text('Session Complete'), findsOneWidget);
 
-      // Tap close (X) icon button.
-      await tester.tap(find.byIcon(Icons.close));
+      // Tap Back to Practice — pops one route back to Home.
+      await tester.tap(find.text('Back to Practice'));
       await tester.pumpAndSettle();
 
       // Back at Home.
