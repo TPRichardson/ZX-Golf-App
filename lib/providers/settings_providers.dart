@@ -1,12 +1,19 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'repository_providers.dart';
 import 'sync_providers.dart';
 
 // S10 — Settings providers for user preferences.
+
+/// Current user ID — auth user ID when authenticated, dev fallback otherwise.
+final currentUserIdProvider = Provider<String>((ref) {
+  final authService = ref.watch(authServiceProvider);
+  return authService.currentUserId ?? kDevUserId;
+});
 
 /// S10 §10.1 — Current authenticated user record.
 final currentUserProvider = FutureProvider<User?>((ref) async {

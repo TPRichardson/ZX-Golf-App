@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/review/screens/subskill_detail_screen.dart';
@@ -32,7 +32,8 @@ class _ReviewDashboardScreenState
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin
-    final overallAsync = ref.watch(overallWindowScoreProvider(kDevUserId));
+    final userId = ref.watch(currentUserIdProvider);
+    final overallAsync = ref.watch(overallWindowScoreProvider(userId));
 
     return overallAsync.when(
       data: (overallScore) {
@@ -50,10 +51,11 @@ class _ReviewDashboardScreenState
   }
 
   Widget _buildDashboard(double overallScore) {
+    final userId = ref.watch(currentUserIdProvider);
     // TD-07 §13.5 — Dim scores when rebuild is needed.
     final isStale = ref.watch(rebuildNeededProvider).valueOrNull ?? false;
     final profileComplete =
-        ref.watch(profileCompletenessProvider(kDevUserId)).valueOrNull ?? 0.0;
+        ref.watch(profileCompletenessProvider(userId)).valueOrNull ?? 0.0;
 
     return ListView(
       padding: const EdgeInsets.all(SpacingTokens.md),
@@ -68,14 +70,14 @@ class _ReviewDashboardScreenState
         ),
         const SizedBox(height: SpacingTokens.sm),
         SkillAreaHeatmap(
-          userId: kDevUserId,
+          userId: userId,
           onExpandedChanged: (area) {
             setState(() => _expandedSkillArea = area);
           },
           onSubskillTap: (subskillId) {
             Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => SubskillDetailScreen(
-                userId: kDevUserId,
+                userId: userId,
                 subskillId: subskillId,
               ),
             ));
@@ -84,12 +86,12 @@ class _ReviewDashboardScreenState
         const SizedBox(height: SpacingTokens.md),
 
         // 3. Plan Adherence badge.
-        PlanAdherenceBadge(userId: kDevUserId),
+        PlanAdherenceBadge(userId: userId),
         const SizedBox(height: SpacingTokens.md),
 
         // 4. Trend Snapshot.
         TrendSnapshot(
-          userId: kDevUserId,
+          userId: userId,
           skillArea: _expandedSkillArea,
         ),
         const SizedBox(height: SpacingTokens.lg),
@@ -101,7 +103,7 @@ class _ReviewDashboardScreenState
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) =>
-                    const WeaknessRankingScreen(userId: kDevUserId),
+                    WeaknessRankingScreen(userId: userId),
               ));
             },
             style: OutlinedButton.styleFrom(

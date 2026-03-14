@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -22,11 +22,10 @@ const _kCardItemExtent = 108.0;
 class BagScreen extends ConsumerWidget {
   const BagScreen({super.key});
 
-  static const _userId = kDevUserId;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bagAsync = ref.watch(userBagProvider(_userId));
+    final userId = ref.watch(currentUserIdProvider);
+    final bagAsync = ref.watch(userBagProvider(userId));
 
     return Scaffold(
       appBar: ZxAppBar(
@@ -320,7 +319,7 @@ class BagScreen extends ConsumerWidget {
           final clubRepo = ref.read(clubRepositoryProvider);
           for (final type in selected) {
             await clubRepo.addClub(
-              _userId,
+              ref.read(currentUserIdProvider),
               UserClubsCompanion(clubType: drift.Value(type)),
             );
           }

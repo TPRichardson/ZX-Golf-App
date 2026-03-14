@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/detail_row.dart';
@@ -33,7 +33,6 @@ class DrillDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
-  static const _userId = kDevUserId;
   Drill? _drill;
   bool _isLoading = true;
   bool _isAdopted = false;
@@ -58,13 +57,14 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       });
       // Check adoption status and clear unseen update badge.
       if (drill != null && drill.origin == DrillOrigin.standard) {
+        final userId = ref.read(currentUserIdProvider);
         final adoption =
-            await drillRepo.getAdoption(_userId, widget.drillId);
+            await drillRepo.getAdoption(userId, widget.drillId);
         if (mounted) {
           setState(() => _isAdopted = adoption != null);
         }
         try {
-          await drillRepo.markUpdateSeen(_userId, widget.drillId);
+          await drillRepo.markUpdateSeen(userId, widget.drillId);
         } catch (_) {
           // Non-critical — badge will clear on next open.
         }
@@ -275,10 +275,11 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   }
 
   Future<void> _startPractice(Drill drill) async {
+    final userId = ref.read(currentUserIdProvider);
     // Auto-adopt standard drills if not already adopted.
     if (drill.origin == DrillOrigin.standard) {
       try {
-        await ref.read(drillRepositoryProvider).adoptStandardDrill(_userId, drill);
+        await ref.read(drillRepositoryProvider).adoptStandardDrill(userId, drill);
       } catch (_) {
         // Already adopted or validation error — proceed anyway.
       }
@@ -290,7 +291,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
 
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
-      _userId,
+      userId,
       initialDrillIds: [drill.drillId],
       surfaceType: envSurface.surface,
     );
@@ -299,33 +300,35 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
-          userId: _userId,
+          userId: userId,
         ),
       ));
     }
   }
 
   Future<void> _removeFromActive(Drill drill) async {
+    final userId = ref.read(currentUserIdProvider);
     final drillRepo = ref.read(drillRepositoryProvider);
-    await drillRepo.retireAdoption(_userId, drill.drillId);
+    await drillRepo.retireAdoption(userId, drill.drillId);
     if (mounted) {
       setState(() => _isAdopted = false);
     }
   }
 
   Future<void> _handleAction(String action) async {
+    final userId = ref.read(currentUserIdProvider);
     final drillRepo = ref.read(drillRepositoryProvider);
     final drill = _drill!;
 
     switch (action) {
       case 'retire':
-        await drillRepo.retireDrill(_userId, drill.drillId);
+        await drillRepo.retireDrill(userId, drill.drillId);
         await _loadDrill();
       case 'reactivate':
-        await drillRepo.reactivateDrill(_userId, drill.drillId);
+        await drillRepo.reactivateDrill(userId, drill.drillId);
         await _loadDrill();
       case 'duplicate':
-        await drillRepo.duplicateDrill(_userId, drill.drillId);
+        await drillRepo.duplicateDrill(userId, drill.drillId);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Drill duplicated')),
@@ -340,7 +343,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
           isDestructive: true,
         );
         if (confirmed) {
-          await drillRepo.deleteDrill(_userId, drill.drillId);
+          await drillRepo.deleteDrill(userId, drill.drillId);
           if (mounted) Navigator.pop(context);
         }
     }

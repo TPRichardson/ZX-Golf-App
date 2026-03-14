@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
@@ -29,16 +29,14 @@ class StandardDrillsScreen extends ConsumerStatefulWidget {
 }
 
 class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
-  // Phase 3 stub — replaced when auth is wired.
-  static const _userId = kDevUserId;
-
   final Set<String> _selectedIds = {};
   bool _isAdopting = false;
 
   @override
   Widget build(BuildContext context) {
+    final userId = ref.watch(currentUserIdProvider);
     final catalogueAsync = ref.watch(standardDrillCatalogueProvider);
-    final adoptedAsync = ref.watch(adoptedDrillsProvider(_userId));
+    final adoptedAsync = ref.watch(adoptedDrillsProvider(userId));
 
     return Scaffold(
       appBar: const ZxAppBar(title: 'Standard Drills'),
@@ -205,7 +203,7 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
       for (final id in _selectedIds.toList()) {
         final drill = drillById[id];
         if (drill == null) continue;
-        await drillRepo.adoptStandardDrill(_userId, drill);
+        await drillRepo.adoptStandardDrill(ref.read(currentUserIdProvider), drill);
       }
       setState(() {
         _selectedIds.clear();

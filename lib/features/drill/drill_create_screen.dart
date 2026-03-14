@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -24,8 +24,6 @@ class DrillCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
-  static const _userId = kDevUserId;
-
   int _step = 0;
   final _nameController = TextEditingController();
 
@@ -504,8 +502,9 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
         InputMode.rawDataEntry;
 
     try {
+      final userId = ref.read(currentUserIdProvider);
       await ref.read(drillRepositoryProvider).createCustomDrill(
-            _userId,
+            userId,
             DrillsCompanion(
               name: drift.Value(_nameController.text.trim()),
               skillArea: drift.Value(_skillArea!),
@@ -541,8 +540,9 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
         InputMode.rawDataEntry;
 
     try {
+      final userId = ref.read(currentUserIdProvider);
       final drill = await ref.read(drillRepositoryProvider).createCustomDrill(
-            _userId,
+            userId,
             DrillsCompanion(
               name: drift.Value(_nameController.text.trim()),
               skillArea: drift.Value(_skillArea!),
@@ -561,7 +561,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
 
       // Create PracticeBlock with the new drill.
       final actions = ref.read(practiceActionsProvider);
-      final pb = await actions.startPracticeBlock(_userId,
+      final pb = await actions.startPracticeBlock(userId,
           initialDrillIds: [drill.drillId]);
 
       if (!mounted) return;
@@ -573,7 +573,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
         MaterialPageRoute(
           builder: (_) => PracticeQueueScreen(
             practiceBlockId: pb.practiceBlockId,
-            userId: _userId,
+            userId: userId,
           ),
         ),
       );

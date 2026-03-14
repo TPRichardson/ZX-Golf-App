@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/formatters.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -29,8 +29,6 @@ class RoutineApplyScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
-  static const _userId = kDevUserId;
-
   Routine? _routine;
   List<RoutineEntry> _entries = [];
   CalendarDay? _targetDay;
@@ -48,9 +46,10 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
     final routine = await repo.getRoutineById(widget.routineId);
     if (routine == null || !mounted) return;
 
+    final userId = ref.read(currentUserIdProvider);
     final target = widget.targetDate ?? DateTime.now();
     final targetDate = DateTime(target.year, target.month, target.day);
-    final day = await repo.getOrCreateCalendarDay(_userId, targetDate);
+    final day = await repo.getOrCreateCalendarDay(userId, targetDate);
 
     final entries = _parseEntries(routine.entries);
 
@@ -274,9 +273,10 @@ class _RoutineApplyScreenState extends ConsumerState<RoutineApplyScreen> {
   Future<void> _confirm() async {
     setState(() => _applying = true);
     try {
+      final userId = ref.read(currentUserIdProvider);
       final actions = ref.read(planningActionsProvider);
       await actions.applyRoutine(
-        _userId,
+        userId,
         widget.routineId,
         _targetDay!.date,
         _resolvedDrillIds,

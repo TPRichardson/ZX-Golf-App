@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -24,8 +24,6 @@ class ClubDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
-  static const _userId = kDevUserId;
-
   UserClub? _club;
   bool _isLoading = true;
 
@@ -301,14 +299,16 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
   }
 
   Future<void> _retireClub() async {
-    await ref.read(clubRepositoryProvider).retireClub(_userId, widget.clubId);
+    final userId = ref.read(currentUserIdProvider);
+    await ref.read(clubRepositoryProvider).retireClub(userId, widget.clubId);
     await _loadClub();
   }
 
   Future<void> _reactivateClub() async {
+    final userId = ref.read(currentUserIdProvider);
     await ref
         .read(clubRepositoryProvider)
-        .reactivateClub(_userId, widget.clubId);
+        .reactivateClub(userId, widget.clubId);
     await _loadClub();
   }
 }

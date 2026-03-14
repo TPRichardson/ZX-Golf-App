@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -33,8 +33,9 @@ class _MatrixReviewScreenState extends ConsumerState<MatrixReviewScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final runsAsync = ref.watch(matrixRunsProvider(kDevUserId));
-    final snapshotsAsync = ref.watch(snapshotsProvider(kDevUserId));
+    final userId = ref.watch(currentUserIdProvider);
+    final runsAsync = ref.watch(matrixRunsProvider(userId));
+    final snapshotsAsync = ref.watch(snapshotsProvider(userId));
 
     return Column(
       children: [

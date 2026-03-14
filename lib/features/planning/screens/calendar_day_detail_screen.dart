@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/formatters.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -33,9 +33,6 @@ class CalendarDayDetailScreen extends ConsumerStatefulWidget {
 
 class _CalendarDayDetailScreenState
     extends ConsumerState<CalendarDayDetailScreen> {
-  // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
-  static const _userId = kDevUserId;
-
   CalendarDay? _day;
   List<Slot> _slots = [];
   final Map<String, String> _drillNames = {};
@@ -236,9 +233,10 @@ class _CalendarDayDetailScreenState
     );
 
     if (drillId != null && drillId.isNotEmpty) {
+      final userId = ref.read(currentUserIdProvider);
       final actions = ref.read(planningActionsProvider);
       await actions.assignDrillToSlot(
-        _userId, _day!.date, index, drillId);
+        userId, _day!.date, index, drillId);
       await _loadDay();
     }
   }
@@ -256,8 +254,9 @@ class _CalendarDayDetailScreenState
   }
 
   Future<void> _clearSlot(int index) async {
+    final userId = ref.read(currentUserIdProvider);
     final actions = ref.read(planningActionsProvider);
-    await actions.clearSlot(_userId, _day!.date, index);
+    await actions.clearSlot(userId, _day!.date, index);
     await _loadDay();
   }
 
@@ -293,9 +292,10 @@ class _CalendarDayDetailScreenState
     );
 
     if (result != null) {
+      final userId = ref.read(currentUserIdProvider);
       final actions = ref.read(planningActionsProvider);
       try {
-        await actions.updateSlotCapacity(_userId, _day!.date, result);
+        await actions.updateSlotCapacity(userId, _day!.date, result);
         await _loadDay();
       } catch (e) {
         if (mounted) {
@@ -309,14 +309,14 @@ class _CalendarDayDetailScreenState
 
   void _showRoutinePicker() => showRoutinePickerSheet(
         context, ref,
-        userId: _userId,
+        userId: ref.read(currentUserIdProvider),
         date: _day!.date,
         onApplied: _loadDay,
       );
 
   void _showSchedulePicker() => showSchedulePickerSheet(
         context, ref,
-        userId: _userId,
+        userId: ref.read(currentUserIdProvider),
         date: _day!.date,
         onApplied: _loadDay,
       );

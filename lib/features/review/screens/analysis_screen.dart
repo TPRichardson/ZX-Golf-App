@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
@@ -65,7 +65,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
       _resetFilters();
     }
 
-    final sessionsAsync = ref.watch(closedSessionsProvider(kDevUserId));
+    final userId = ref.watch(currentUserIdProvider);
+    final sessionsAsync = ref.watch(closedSessionsProvider(userId));
 
     return Column(
       children: [
@@ -113,7 +114,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
 
               // Use cached score map instead of parsing JSON in build.
               final scoreMapAsync =
-                  ref.watch(sessionScoreMapProvider(kDevUserId));
+                  ref.watch(sessionScoreMapProvider(userId));
               final scoreMap = scoreMapAsync.valueOrNull ?? {};
 
               if (inRange.isEmpty) {
@@ -179,7 +180,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                       onPressed: () {
                         Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => SessionHistoryScreen(
-                            userId: kDevUserId,
+                            userId: userId,
                             drillId: _selectedDrillId!,
                           ),
                         ));

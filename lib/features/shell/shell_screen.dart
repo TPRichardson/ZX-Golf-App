@@ -1,8 +1,9 @@
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
+import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
@@ -12,6 +13,7 @@ import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
@@ -49,9 +51,26 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     super.initState();
     // Phase 7A — Start sync orchestrator on app launch.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureUserProvisioned();
       ref.read(syncOrchestratorProvider).start();
       _checkDeferredSummary();
     });
+  }
+
+  /// Auto-provision a local User record when authenticated via OAuth.
+  Future<void> _ensureUserProvisioned() async {
+    final authService = ref.read(authServiceProvider);
+    final userId = authService.currentUserId;
+    if (userId == null) return;
+    final userRepo = ref.read(userRepositoryProvider);
+    final existing = await userRepo.getById(userId);
+    if (existing == null) {
+      final profile = ref.read(authProfileProvider);
+      await userRepo.create(UsersCompanion.insert(
+        userId: userId,
+        displayName: drift.Value(profile.displayName),
+      ));
+    }
   }
 
   // 6D — Check for deferred post-session summary after auto-end.
@@ -129,10 +148,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   }
 
   void _resumePractice(String practiceBlockId) {
+    final userId = ref.read(currentUserIdProvider);
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => PracticeQueueScreen(
         practiceBlockId: practiceBlockId,
-        userId: kDevUserId,
+        userId: userId,
       ),
     ));
   }
@@ -147,8 +167,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     );
     if (!confirmed || !mounted) return;
 
+    final userId = ref.read(currentUserIdProvider);
     final actions = ref.read(practiceActionsProvider);
-    await actions.discardPracticeBlock(practiceBlockId, kDevUserId);
+    await actions.discardPracticeBlock(practiceBlockId, userId);
   }
 
   @override
@@ -171,7 +192,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     final showHome = ref.watch(showHomeProvider);
 
     // Active practice block for persistent resume bar.
-    final activePb = ref.watch(activePracticeBlockProvider(kDevUserId));
+    final userId = ref.watch(currentUserIdProvider);
+    final activePb = ref.watch(activePracticeBlockProvider(userId));
     final activePbData = activePb.valueOrNull;
 
     // Auth state for top-bar sign-in action.
@@ -290,8 +312,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ),
             ],
           ),
-          // Floating resume bar when a practice block is active.
-          if (activePbData != null)
+          // Floating resume bar when a practice block is active
+          // but user is NOT on the execution screen.
+          if (activePbData != null &&
+              !ref.watch(practiceExecutionActiveProvider))
             Positioned(
               left: SpacingTokens.xl,
               right: SpacingTokens.xl,

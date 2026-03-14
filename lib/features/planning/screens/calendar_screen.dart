@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -33,9 +32,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-
-  // Phase 1 stub — replaced when auth is wired. Uses kDevUserId for consistency.
-  static const _userId = kDevUserId;
 
   // 2-week grid: week offset from current week (0 = this week).
   int _weekOffset = 0;
@@ -73,9 +69,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
 
   /// Fetch 60-day window to determine max slot count for heat colouring.
   Future<void> _computeHeatRange() async {
+    final userId = ref.read(currentUserIdProvider);
     final repo = ref.read(planningRepositoryProvider);
     final days = await repo.getCalendarDaysByUser(
-      _userId,
+      userId,
       from: _today.subtract(const Duration(days: 30)),
       to: _today.add(const Duration(days: 30)),
     );
@@ -116,6 +113,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin
+    final userId = ref.watch(currentUserIdProvider);
     final prefs = ref.watch(userPreferencesProvider);
     final rangeStart = _rangeStartFor(prefs.weekStartDay);
     final rangeEnd = _rangeEndFor(rangeStart);
@@ -124,7 +122,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final queryStart = _today.subtract(const Duration(days: 90));
     final queryEnd = _today.add(const Duration(days: 180));
     final daysAsync = ref.watch(calendarDaysProvider((
-      userId: _userId,
+      userId: userId,
       start: queryStart,
       end: queryEnd,
     )));
@@ -550,25 +548,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   /// Add a single slot to a day. If the day doesn't exist yet, creates it with 1 slot
   /// (bypasses default capacity pattern so user gets exactly what they asked for).
   Future<void> _addSlotForDate(DateTime date) async {
+    final userId = ref.read(currentUserIdProvider);
     final repo = ref.read(planningRepositoryProvider);
     final dateOnly = DateTime(date.year, date.month, date.day);
-    final existing = await repo.getCalendarDayByDate(_userId, dateOnly);
+    final existing = await repo.getCalendarDayByDate(userId, dateOnly);
     if (existing != null) {
       final currentSlots = parseSlotsFromJson(existing.slots);
       final actions = ref.read(planningActionsProvider);
-      await actions.updateSlotCapacity(_userId, dateOnly, currentSlots.length + 1);
+      await actions.updateSlotCapacity(userId, dateOnly, currentSlots.length + 1);
     } else {
       final actions = ref.read(planningActionsProvider);
-      await actions.updateSlotCapacity(_userId, dateOnly, 1);
+      await actions.updateSlotCapacity(userId, dateOnly, 1);
     }
   }
 
   /// Remove the last slot from a day (reduce capacity by 1).
   Future<void> _removeSlotForDate(DateTime date, int currentCount) async {
     if (currentCount <= 0) return;
+    final userId = ref.read(currentUserIdProvider);
     final actions = ref.read(planningActionsProvider);
     try {
-      await actions.updateSlotCapacity(_userId, date, currentCount - 1);
+      await actions.updateSlotCapacity(userId, date, currentCount - 1);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -579,10 +579,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   }
 
   void _showRoutinePicker(DateTime date) =>
-      showRoutinePickerSheet(context, ref, userId: _userId, date: date);
+      showRoutinePickerSheet(context, ref, userId: ref.read(currentUserIdProvider), date: date);
 
   void _showSchedulePicker(DateTime date) =>
-      showSchedulePickerSheet(context, ref, userId: _userId, date: date);
+      showSchedulePickerSheet(context, ref, userId: ref.read(currentUserIdProvider), date: date);
 
   /// Handle tap on an inline slot: empty → assign drill, filled → actions sheet.
   void _onInlineSlotTap(CalendarDay day, List<Slot> slots, int index) {
@@ -602,9 +602,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     );
 
     if (drillId != null && drillId.isNotEmpty) {
+      final userId = ref.read(currentUserIdProvider);
       final actions = ref.read(planningActionsProvider);
       await actions.assignDrillToSlot(
-          _userId, day.date, index, drillId);
+          userId, day.date, index, drillId);
       _computeHeatRange();
     }
   }
@@ -671,8 +672,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   }
 
   Future<void> _clearSlot(DateTime date, int index) async {
+    final userId = ref.read(currentUserIdProvider);
     final actions = ref.read(planningActionsProvider);
-    await actions.clearSlot(_userId, date, index);
+    await actions.clearSlot(userId, date, index);
     _computeHeatRange();
   }
 
@@ -686,9 +688,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final envSurface = await showEnvironmentSurfacePicker(context);
     if (envSurface == null || !mounted) return;
 
+    final userId = ref.read(currentUserIdProvider);
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
-      _userId,
+      userId,
       initialDrillIds: drillIds,
       surfaceType: envSurface.surface,
     );
@@ -697,7 +700,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
-          userId: _userId,
+          userId: userId,
         ),
       ));
     }
@@ -710,8 +713,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
   }
 
   Future<void> _createAndNavigate(DateTime date) async {
+    final userId = ref.read(currentUserIdProvider);
     final repo = ref.read(planningRepositoryProvider);
-    final day = await repo.getOrCreateCalendarDay(_userId, date);
+    final day = await repo.getOrCreateCalendarDay(userId, date);
 
     if (mounted) {
       Navigator.of(context).push(MaterialPageRoute(

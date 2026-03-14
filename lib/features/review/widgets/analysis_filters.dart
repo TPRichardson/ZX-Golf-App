@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/review/screens/analysis_screen.dart';
@@ -272,7 +272,7 @@ class AnalysisFilters extends ConsumerWidget {
   }
 
   Widget _buildDrillPicker(WidgetRef ref) {
-    final drillMapAsync = ref.watch(drillMapProvider(kDevUserId));
+    final drillMapAsync = ref.watch(drillMapProvider(ref.watch(currentUserIdProvider)));
 
     return drillMapAsync.when(
       data: (drillMap) {

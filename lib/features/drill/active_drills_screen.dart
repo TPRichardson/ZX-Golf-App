@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
@@ -15,6 +14,7 @@ import 'package:zx_golf_app/providers/drill_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 
 import '../bag/bag_screen.dart';
 import 'add_drills_screen.dart';
@@ -83,8 +83,6 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => widget.embedded;
-  // Phase 3 stub — replaced when auth is wired.
-  static const _userId = kDevUserId;
 
   /// Multi-select state for pick mode (drill ID → count).
   final _selectedDrillCounts = <String, int>{};
@@ -114,10 +112,11 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
   }
 
   Widget _buildBody(BuildContext context) {
+    final userId = ref.watch(currentUserIdProvider);
     final selectedFilter = ref.watch(activeDrillsFilterProvider);
     final typeFilter = ref.watch(activeDrillsTypeFilterProvider);
     final isGrouped = ref.watch(activeDrillsGroupedProvider);
-    final poolAsync = ref.watch(activeDrillsProvider(_userId));
+    final poolAsync = ref.watch(activeDrillsProvider(userId));
 
     return Column(
       children: [
@@ -404,14 +403,15 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
   }
 
   Future<void> _removeSelectedDrills() async {
+    final userId = ref.read(currentUserIdProvider);
     final drillRepo = ref.read(drillRepositoryProvider);
     for (final drillId in _removeDrillIds.toList()) {
       try {
-        await drillRepo.retireAdoption(_userId, drillId);
+        await drillRepo.retireAdoption(userId, drillId);
       } catch (_) {
         // Custom drills: retire instead.
         try {
-          await drillRepo.retireDrill(_userId, drillId);
+          await drillRepo.retireDrill(userId, drillId);
         } catch (_) {}
       }
     }
@@ -424,12 +424,13 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
   }
 
   Future<void> _startPlannedPractice(List<String> drillIds) async {
+    final userId = ref.read(currentUserIdProvider);
     final envSurface = await showEnvironmentSurfacePicker(context);
     if (envSurface == null || !mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
-      _userId,
+      userId,
       initialDrillIds: drillIds,
       surfaceType: envSurface.surface,
     );
@@ -438,33 +439,35 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
       Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
-          userId: _userId,
+          userId: userId,
         ),
       ));
     }
   }
 
   Future<void> _startCleanPractice() async {
+    final userId = ref.read(currentUserIdProvider);
     final envSurface = await showEnvironmentSurfacePicker(context);
     if (envSurface == null || !mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(_userId, surfaceType: envSurface.surface);
+    final pb = await actions.startPracticeBlock(userId, surfaceType: envSurface.surface);
 
     if (mounted) {
       Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
           practiceBlockId: pb.practiceBlockId,
-          userId: _userId,
+          userId: userId,
         ),
       ));
     }
   }
 
   Widget _buildBottomBar() {
-    final activePb = ref.watch(activePracticeBlockProvider(_userId));
+    final userId = ref.watch(currentUserIdProvider);
+    final activePb = ref.watch(activePracticeBlockProvider(userId));
     final hasActivePb = activePb.valueOrNull != null;
-    final todayAsync = ref.watch(todayCalendarDayProvider(_userId));
+    final todayAsync = ref.watch(todayCalendarDayProvider(userId));
 
     // Extract filled drill IDs from today's slots.
     List<String> filledDrillIds = [];
@@ -476,7 +479,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
           .toList();
     });
 
-    final poolAsync = ref.watch(activeDrillsProvider(_userId));
+    final poolAsync = ref.watch(activeDrillsProvider(userId));
     final hasActiveDrills =
         poolAsync.valueOrNull != null && poolAsync.valueOrNull!.isNotEmpty;
 

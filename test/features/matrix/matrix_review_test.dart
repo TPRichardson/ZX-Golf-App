@@ -5,6 +5,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/review/screens/matrix_review_screen.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 
 // Phase M8 — MatrixReviewScreen widget tests.
 
@@ -62,6 +63,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            currentUserIdProvider.overrideWithValue('test-user'),
             matrixRunsProvider.overrideWith(
               (ref, userId) => Stream.value(<MatrixRun>[]),
             ),
@@ -86,6 +88,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            currentUserIdProvider.overrideWithValue('test-user'),
             matrixRunsProvider.overrideWith(
               (ref, userId) => Stream.value(runs),
             ),
@@ -109,6 +112,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            currentUserIdProvider.overrideWithValue('test-user'),
             matrixRunsProvider.overrideWith(
               (ref, userId) => Stream.value(<MatrixRun>[]),
             ),
@@ -137,6 +141,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            currentUserIdProvider.overrideWithValue('test-user'),
             matrixRunsProvider.overrideWith(
               (ref, userId) => Stream.value(runs),
             ),
@@ -176,6 +181,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            currentUserIdProvider.overrideWithValue('test-user'),
             matrixRunsProvider.overrideWith(
               (ref, userId) => Stream.value(runs),
             ),

@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
@@ -22,14 +22,13 @@ class HomeDashboardScreen extends ConsumerWidget {
 
   const HomeDashboardScreen({super.key, this.onGoToTab});
 
-  static const _userId = kDevUserId;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final overallAsync = ref.watch(overallWindowScoreProvider(_userId));
-    final profileAsync = ref.watch(profileCompletenessProvider(_userId));
-    final todayAsync = ref.watch(todayCalendarDayProvider(_userId));
-    final activePb = ref.watch(activePracticeBlockProvider(_userId));
+    final userId = ref.watch(currentUserIdProvider);
+    final overallAsync = ref.watch(overallWindowScoreProvider(userId));
+    final profileAsync = ref.watch(profileCompletenessProvider(userId));
+    final todayAsync = ref.watch(todayCalendarDayProvider(userId));
+    final activePb = ref.watch(activePracticeBlockProvider(userId));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(SpacingTokens.md),
@@ -72,7 +71,7 @@ class HomeDashboardScreen extends ConsumerWidget {
           const SizedBox(height: SpacingTokens.xxl),
           // Action zone — thumb-friendly bottom buttons.
           _ActionZone(
-            userId: _userId,
+            userId: userId,
             todayAsync: todayAsync,
             activePb: activePb,
           ),

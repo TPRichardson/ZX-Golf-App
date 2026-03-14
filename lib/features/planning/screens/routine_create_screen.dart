@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
@@ -20,8 +20,6 @@ class RoutineCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutineCreateScreenState extends ConsumerState<RoutineCreateScreen> {
-  static const _userId = kDevUserId;
-
   final _nameController = TextEditingController();
   final _entries = <RoutineEntry>[];
 
@@ -174,8 +172,9 @@ class _RoutineCreateScreenState extends ConsumerState<RoutineCreateScreen> {
 
   Future<void> _save() async {
     final actions = ref.read(planningActionsProvider);
+    final userId = ref.read(currentUserIdProvider);
     await actions.createRoutine(
-      _userId,
+      userId,
       _nameController.text.trim(),
       _entries,
     );

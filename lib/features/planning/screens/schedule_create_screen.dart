@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
@@ -24,8 +24,6 @@ class ScheduleCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _ScheduleCreateScreenState extends ConsumerState<ScheduleCreateScreen> {
-  static const _userId = kDevUserId;
-
   final _nameController = TextEditingController();
   ScheduleAppMode _appMode = ScheduleAppMode.list;
 
@@ -297,8 +295,9 @@ class _ScheduleCreateScreenState extends ConsumerState<ScheduleCreateScreen> {
           jsonEncode(_templateDays.map((td) => td.toJson()).toList());
     }
 
+    final userId = ref.read(currentUserIdProvider);
     await actions.createSchedule(
-      _userId,
+      userId,
       _nameController.text.trim(),
       _appMode,
       entriesJson,
