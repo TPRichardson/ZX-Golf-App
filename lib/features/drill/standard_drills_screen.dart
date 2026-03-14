@@ -11,6 +11,7 @@ import 'package:zx_golf_app/providers/drill_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
+import 'package:zx_golf_app/features/settings/settings_screen.dart';
 
 import 'widgets/drill_card.dart';
 
@@ -212,12 +213,30 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
     } on ValidationException catch (e) {
       setState(() => _isAdopting = false);
       if (!mounted) return;
+      final isEquipmentError = e.context?['missing'] != null;
+      final isCarryError = e.context?['missingCarry'] != null;
+      final String title;
+      final String actionLabel;
+      final Widget actionScreen;
+      if (isEquipmentError) {
+        title = 'Missing Equipment';
+        actionLabel = 'Open Settings';
+        actionScreen = const SettingsScreen();
+      } else if (isCarryError) {
+        title = 'Missing Carry Distances';
+        actionLabel = 'Customise Golf Bag';
+        actionScreen = const BagScreen();
+      } else {
+        title = 'Missing Clubs';
+        actionLabel = 'Customise Golf Bag';
+        actionScreen = const BagScreen();
+      }
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
           backgroundColor: ColorTokens.surfaceModal,
-          title: const Text('Missing Clubs',
-              style: TextStyle(color: ColorTokens.textPrimary)),
+          title: Text(title,
+              style: const TextStyle(color: ColorTokens.textPrimary)),
           content: Text(
             e.message,
             style: const TextStyle(color: ColorTokens.textSecondary),
@@ -229,12 +248,12 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
               onTap: () => Navigator.pop(dialogCtx),
             ),
             ZxPillButton(
-              label: 'Customise Golf Bag',
+              label: actionLabel,
               variant: ZxPillVariant.primary,
               onTap: () {
                 Navigator.pop(dialogCtx);
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const BagScreen()),
+                  MaterialPageRoute(builder: (_) => actionScreen),
                 );
               },
             ),

@@ -56,6 +56,9 @@ class Drills extends Table {
       .named('TargetSizeUnit')
       .map(const DrillLengthUnitConverter())
       .nullable()();
+  TextColumn get requiredEquipment => text()
+      .named('RequiredEquipment')
+      .withDefault(const Constant('[]'))();
   TextColumn get origin =>
       text().named('Origin').map(const DrillOriginConverter())();
   TextColumn get status => text()

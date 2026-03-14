@@ -109,3 +109,16 @@ const kSyncMergeTimeoutThreshold = 3;
 
 // Phase 7C — Low storage warning threshold (100MB).
 const kLowStorageThresholdBytes = 100 * 1024 * 1024;
+
+// ---------------------------------------------------------------------------
+// Club tier target width percentages (% of carry distance)
+// ---------------------------------------------------------------------------
+
+// Short irons: PW, 9i, 8i — tightest dispersion expected.
+const kShortIronTargetWidthPercent = 5.0;
+
+// Mid irons: 7i, 6i, 5i — moderate dispersion.
+const kMidIronTargetWidthPercent = 7.0;
+
+// Long irons: 4i, 3i, 2i, 1i + all hybrids — widest acceptable dispersion.
+const kLongIronTargetWidthPercent = 9.0;

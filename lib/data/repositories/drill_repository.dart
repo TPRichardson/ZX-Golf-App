@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/scoring/reflow_engine.dart';
 import 'package:zx_golf_app/core/validation/bag_gate.dart' as bag_gate;
+import 'package:zx_golf_app/core/validation/carry_gate.dart' as carry_gate;
+import 'package:zx_golf_app/core/validation/equipment_gate.dart' as equipment_gate;
 import 'package:zx_golf_app/core/scoring/reflow_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -452,6 +454,16 @@ class DrillRepository {
     await bag_gate.validateClubEligibility(
         _db, userId, drill.skillArea, drill.drillType);
 
+    // Equipment gate: require all equipment listed in RequiredEquipment.
+    await equipment_gate.validateEquipmentEligibility(
+        _db, userId, drill.requiredEquipment);
+
+    // Carry gate: drills using ClubCarry targeting need carry distances.
+    if (drill.targetDistanceMode == TargetDistanceMode.clubCarry ||
+        drill.targetDistanceMode == TargetDistanceMode.percentageOfClubCarry) {
+      await carry_gate.validateCarryDistances(_db, userId, drill.skillArea);
+    }
+
     // Check for existing adoption.
     final existing = await (_db.select(_db.userDrillAdoptions)
           ..where((t) => t.userId.equals(userId))
@@ -537,16 +549,13 @@ class DrillRepository {
       requiredSetCount: Value(serverDrill.requiredSetCount),
       requiredAttemptsPerSet: Value(serverDrill.requiredAttemptsPerSet),
       anchors: Value(serverDrill.anchors),
+      requiredEquipment: Value(serverDrill.requiredEquipment),
       origin: serverDrill.origin,
       status: Value(serverDrill.status),
       isDeleted: Value(serverDrill.isDeleted),
     ));
 
-    // S09 §9.3 — Bag gate: require at least one active club for this Skill Area.
-    await bag_gate.validateClubEligibility(
-        _db, userId, serverDrill.skillArea, serverDrill.drillType);
-
-    // Delegate to existing adoption logic (handles re-adopt, idempotency).
+    // Delegate to existing adoption logic (handles bag gate + equipment gate).
     return adoptDrill(userId, serverDrill.drillId);
   }
 
@@ -651,6 +660,7 @@ class DrillRepository {
       requiredSetCount: Value(source.requiredSetCount),
       requiredAttemptsPerSet: Value(source.requiredAttemptsPerSet),
       anchors: Value(source.anchors),
+      requiredEquipment: Value(source.requiredEquipment),
       origin: DrillOrigin.custom,
       status: Value(DrillStatus.active),
       isDeleted: const Value(false),

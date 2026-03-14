@@ -16,11 +16,22 @@ final currentUserIdProvider = Provider<String>((ref) {
 });
 
 /// S10 §10.1 — Current authenticated user record.
+/// Creates a dev user row if none exists (dev bypass mode).
 final currentUserProvider = FutureProvider<User?>((ref) async {
-  final authService = ref.watch(authServiceProvider);
-  final userId = authService.currentUserId;
-  if (userId == null) return null;
-  return ref.watch(userRepositoryProvider).getById(userId);
+  final userId = ref.watch(currentUserIdProvider);
+  final repo = ref.watch(userRepositoryProvider);
+  final existing = await repo.getById(userId);
+  if (existing != null) return existing;
+  // Dev bypass: create a local-only user row so preferences can be saved.
+  if (userId == kDevUserId) {
+    return repo.create(UsersCompanion.insert(
+      userId: kDevUserId,
+      displayName: const Value('Dev User'),
+      email: const Value('dev@local'),
+      timezone: const Value('UTC'),
+    ));
+  }
+  return null;
 });
 
 /// Auth profile from Supabase — display name, email, avatar from Google OAuth.
@@ -52,13 +63,12 @@ final userPreferencesProvider = Provider<UserPreferences>((ref) {
 });
 
 /// S10 §10.2 — Save updated preferences to the user record.
+/// Writes to local DB immediately (offline-first). Sync uploads later.
 Future<void> updatePreferences(
   WidgetRef ref,
   UserPreferences prefs,
 ) async {
-  final authService = ref.read(authServiceProvider);
-  final userId = authService.currentUserId;
-  if (userId == null) return;
+  final userId = ref.read(currentUserIdProvider);
   await ref.read(userRepositoryProvider).update(
         userId,
         UsersCompanion(unitPreferences: Value(prefs.toJson())),

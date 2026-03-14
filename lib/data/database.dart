@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -132,6 +132,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV10ToV11(m);
               case 11:
                 await _migrateV11ToV12(m);
+              case 12:
+                await _migrateV12ToV13(m);
             }
           }
         },
@@ -218,6 +220,12 @@ class AppDatabase extends _$AppDatabase {
     // Update SubskillMapping JSON in Drill table (contains subskill ID strings).
     await customStatement(
         "UPDATE Drill SET SubskillMapping = REPLACE(SubskillMapping, 'irons_', 'approach_') WHERE SubskillMapping LIKE '%irons_%'");
+  }
+
+  // Add RequiredEquipment JSON column to Drill table.
+  Future<void> _migrateV12ToV13(Migrator m) async {
+    await customStatement(
+        "ALTER TABLE Drill ADD COLUMN RequiredEquipment TEXT NOT NULL DEFAULT '[]'");
   }
 
   // Add Description, TargetDistanceUnit, TargetSizeUnit to Drill table + seed first system drill.

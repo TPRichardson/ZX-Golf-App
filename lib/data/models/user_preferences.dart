@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/models/equipment.dart';
 
 // S10 §10.6–10.10 — User preferences model.
 // Serialized to/from the Users.unitPreferences JSON column (TEXT, default '{}').
@@ -30,6 +31,9 @@ class UserPreferences {
   /// Week start day: 1 = Monday (ISO 8601), 7 = Sunday.
   final int weekStartDay;
 
+  /// Equipment available to the user for practice.
+  final List<Equipment> equipment;
+
   const UserPreferences({
     this.distanceUnit = DistanceUnit.yards,
     this.smallLengthUnit = SmallLengthUnit.inches,
@@ -39,6 +43,7 @@ class UserPreferences {
     this.reminderEnabled = false,
     this.reminderTime,
     this.weekStartDay = 1,
+    this.equipment = const [],
   });
 
   factory UserPreferences.fromJson(String json) {
@@ -61,6 +66,7 @@ class UserPreferences {
         reminderEnabled: (map['reminderEnabled'] as bool?) ?? false,
         reminderTime: map['reminderTime'] as String?,
         weekStartDay: (map['weekStartDay'] as num?)?.toInt() ?? 1,
+        equipment: _parseEquipment(map['equipment'] as List<dynamic>?),
       );
     } on FormatException {
       return const UserPreferences();
@@ -79,6 +85,8 @@ class UserPreferences {
       'reminderEnabled': reminderEnabled,
       if (reminderTime != null) 'reminderTime': reminderTime,
       'weekStartDay': weekStartDay,
+      if (equipment.isNotEmpty)
+        'equipment': equipment.map((e) => e.toMap()).toList(),
     };
     return jsonEncode(map);
   }
@@ -92,6 +100,7 @@ class UserPreferences {
     bool? reminderEnabled,
     String? reminderTime,
     int? weekStartDay,
+    List<Equipment>? equipment,
   }) {
     return UserPreferences(
       distanceUnit: distanceUnit ?? this.distanceUnit,
@@ -105,6 +114,7 @@ class UserPreferences {
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderTime: reminderTime ?? this.reminderTime,
       weekStartDay: weekStartDay ?? this.weekStartDay,
+      equipment: equipment ?? this.equipment,
     );
   }
 
@@ -127,4 +137,21 @@ class UserPreferences {
     if (raw == null || raw.length != 7) return const [3, 3, 3, 3, 3, 0, 0];
     return raw.map((e) => (e as num).toInt().clamp(0, 10)).toList();
   }
+
+  static List<Equipment> _parseEquipment(List<dynamic>? raw) {
+    if (raw == null) return const [];
+    final result = <Equipment>[];
+    for (final item in raw) {
+      try {
+        result.add(Equipment.fromMap(item as Map<String, dynamic>));
+      } on ArgumentError {
+        // Skip invalid entries.
+      }
+    }
+    return result;
+  }
+
+  /// Whether the user has a specific equipment type.
+  bool hasEquipment(EquipmentType type) =>
+      Equipment.hasType(equipment, type);
 }

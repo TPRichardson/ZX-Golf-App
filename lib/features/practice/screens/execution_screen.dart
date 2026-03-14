@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/validation/club_tiers.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_helpers.dart';
@@ -75,6 +76,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   final List<_ShotEntry> _shotLog = [];
   final _shotListController = ScrollController();
 
+  /// Carry distances keyed by ClubType dbValue (e.g. 'i7' → 155.0).
+  /// Populated during init for drills using ClubCarry targeting.
+  final Map<String, double> _clubCarryDistances = {};
+
   @override
   void initState() {
     super.initState();
@@ -99,6 +104,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
     await _controller.initialize();
     await _loadClubs();
+    await _loadCarryDistances();
     // Rebuild shot log from existing instances in the current set.
     await _restoreShotLog();
     // Load environment type from practice block.
@@ -165,6 +171,56 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           ? names[_random.nextInt(names.length)]
           : names.first;
     }
+  }
+
+  /// Load carry distances for each active club in this drill's skill area.
+  /// Only needed for drills using ClubCarry/PercentageOfClubCarry targeting.
+  Future<void> _loadCarryDistances() async {
+    final distMode = widget.drill.targetDistanceMode;
+    if (distMode != TargetDistanceMode.clubCarry &&
+        distMode != TargetDistanceMode.percentageOfClubCarry) {
+      return;
+    }
+    final clubRepo = ref.read(clubRepositoryProvider);
+    final clubs = await ref
+        .read(clubsForSkillAreaProvider(
+            (widget.userId, widget.drill.skillArea))
+            .future);
+    for (final club in clubs) {
+      final profile = await clubRepo.getActiveProfile(club.clubId);
+      if (profile?.carryDistance != null) {
+        _clubCarryDistances[club.clubType.dbValue] = profile!.carryDistance!;
+      }
+    }
+  }
+
+  /// Get the carry distance for the currently selected club.
+  double? get _currentCarryDistance => _clubCarryDistances[_selectedClub];
+
+  /// Compute the target width for the currently selected club.
+  /// Uses club tier percentage of carry distance.
+  double? get _currentTargetWidth {
+    final carry = _currentCarryDistance;
+    if (carry == null) return null;
+
+    // If drill specifies a fixed TargetSizeWidth, use that percentage.
+    final fixedPercent = widget.drill.targetSizeWidth;
+    if (fixedPercent != null) {
+      return carry * fixedPercent / 100.0;
+    }
+
+    // Otherwise use club-tier banded percentage.
+    if (widget.drill.targetSizeMode ==
+        TargetSizeMode.percentageOfTargetDistance) {
+      try {
+        final clubType = ClubType.fromString(_selectedClub);
+        final percent = targetWidthPercentForClub(clubType);
+        return carry * percent / 100.0;
+      } on ArgumentError {
+        return null;
+      }
+    }
+    return null;
   }
 
   @override
@@ -774,9 +830,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final gridType = widget.drill.gridType;
 
     // For 1x3 (direction): the center 1/3 is the hit zone.
-    // For 3x1 (distance): not applicable for width.
+    // For 3x1 (distance): show width bar if computed target width is available
+    //   (e.g. PercentageOfTargetDistance drills with club-tier banding).
     // For 3x3: center column is the hit zone (1/3 width).
-    if (gridType == GridType.threeByOne) return const SizedBox.shrink();
+    if (gridType == GridType.threeByOne && _currentTargetWidth == null) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
@@ -877,18 +936,36 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 
   /// Format target distance value + unit for the vertical target bar.
+  /// For ClubCarry mode, uses the selected club's carry distance.
   String _formatTargetDistance() {
-    final value = widget.drill.targetDistanceValue;
-    final unit = widget.drill.targetDistanceUnit;
+    double? value;
+    DrillLengthUnit? unit;
+
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry ||
+        widget.drill.targetDistanceMode ==
+            TargetDistanceMode.percentageOfClubCarry) {
+      value = _currentCarryDistance;
+      // Carry distances are stored in yards by default.
+      unit = DrillLengthUnit.yards;
+    } else {
+      value = widget.drill.targetDistanceValue;
+      unit = widget.drill.targetDistanceUnit;
+    }
+
     if (value == null) return '';
-    final formatted = value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toStringAsFixed(1);
-    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+    final rounded = value.round();
+    return unit != null ? '$rounded ${unit.dbValue}' : '$rounded';
   }
 
   /// Format target width value + unit for the horizontal target bar.
+  /// For PercentageOfTargetDistance mode, computes from carry + club tier.
   String _formatTargetWidth() {
+    final computed = _currentTargetWidth;
+    if (computed != null) {
+      final rounded = computed.round();
+      return '$rounded yds';
+    }
+
     final value = widget.drill.targetSizeWidth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';

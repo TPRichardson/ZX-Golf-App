@@ -370,6 +370,20 @@ enum DrillLengthUnit {
           orElse: () => throw ArgumentError('Invalid DrillLengthUnit: $value'));
 }
 
+/// Equipment types available for practice.
+enum EquipmentType {
+  launchMonitor('LaunchMonitor'),
+  alignmentSticks('AlignmentSticks'),
+  puttingGate('PuttingGate');
+
+  const EquipmentType(this.dbValue);
+  final String dbValue;
+
+  static EquipmentType fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid EquipmentType: $value'));
+}
+
 /// Matrix §8.2.1 — Three matrix workflow types.
 enum MatrixType {
   gappingChart('GappingChart'),

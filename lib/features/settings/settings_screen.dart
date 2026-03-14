@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/models/equipment.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
@@ -124,6 +125,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _toggleSmallLengthUnit(ref, prefs),
           ),
 
+          // --- Equipment Section ---
+          _SectionHeader(title: 'Equipment'),
+          _SwitchTile(
+            label: 'Launch Monitor',
+            value: prefs.hasEquipment(EquipmentType.launchMonitor),
+            onChanged: (v) => _toggleEquipment(
+                ref, prefs, EquipmentType.launchMonitor, v),
+          ),
+          if (prefs.hasEquipment(EquipmentType.launchMonitor))
+            ..._launchMonitorDetails(ref, prefs),
+          _SwitchTile(
+            label: 'Alignment Sticks',
+            value: prefs.hasEquipment(EquipmentType.alignmentSticks),
+            onChanged: (v) => _toggleEquipment(
+                ref, prefs, EquipmentType.alignmentSticks, v),
+          ),
+          _SwitchTile(
+            label: 'Putting Gate',
+            value: prefs.hasEquipment(EquipmentType.puttingGate),
+            onChanged: (v) => _toggleEquipment(
+                ref, prefs, EquipmentType.puttingGate, v),
+          ),
+          if (prefs.hasEquipment(EquipmentType.puttingGate))
+            ..._puttingGateDetails(ref, prefs),
+
           // --- Execution Section ---
           _SectionHeader(title: 'Execution'),
           _NavigationTile(
@@ -218,6 +244,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _toggleEquipment(
+      WidgetRef ref, UserPreferences prefs, EquipmentType type, bool add) {
+    final updated = List<Equipment>.from(prefs.equipment);
+    if (add) {
+      if (!prefs.hasEquipment(type)) {
+        updated.add(Equipment(type: type));
+      }
+    } else {
+      updated.removeWhere((e) => e.type == type);
+    }
+    updatePreferences(ref, prefs.copyWith(equipment: updated));
+  }
+
+  Equipment? _findEquipment(UserPreferences prefs, EquipmentType type) {
+    try {
+      return prefs.equipment.firstWhere((e) => e.type == type);
+    } on StateError {
+      return null;
+    }
+  }
+
+  void _updateEquipmentProperties(
+      WidgetRef ref, UserPreferences prefs, EquipmentType type,
+      Map<String, dynamic> properties) {
+    final updated = prefs.equipment.map((e) {
+      if (e.type == type) return e.copyWith(properties: properties);
+      return e;
+    }).toList();
+    updatePreferences(ref, prefs.copyWith(equipment: updated));
+  }
+
+  List<Widget> _launchMonitorDetails(WidgetRef ref, UserPreferences prefs) {
+    final lm = _findEquipment(prefs, EquipmentType.launchMonitor);
+    return [
+      _EditableTile(
+        label: 'Brand',
+        value: lm?.brand ?? '',
+        hint: 'e.g. Garmin, Trackman',
+        onSubmitted: (v) => _updateEquipmentProperties(
+          ref, prefs, EquipmentType.launchMonitor,
+          {...?lm?.properties, 'brand': v},
+        ),
+      ),
+      _EditableTile(
+        label: 'Model',
+        value: lm?.model ?? '',
+        hint: 'e.g. Approach R10',
+        onSubmitted: (v) => _updateEquipmentProperties(
+          ref, prefs, EquipmentType.launchMonitor,
+          {...?lm?.properties, 'model': v},
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _puttingGateDetails(WidgetRef ref, UserPreferences prefs) {
+    final gate = _findEquipment(prefs, EquipmentType.puttingGate);
+    return [
+      _EditableTile(
+        label: 'Gate Width',
+        value: gate?.widthCm?.toString() ?? '',
+        hint: 'Width in cm',
+        keyboardType: TextInputType.number,
+        onSubmitted: (v) {
+          final width = double.tryParse(v);
+          if (width != null && width > 0) {
+            _updateEquipmentProperties(
+              ref, prefs, EquipmentType.puttingGate,
+              {'widthCm': width},
+            );
+          }
+        },
+      ),
+    ];
   }
 
   void _toggleDistanceUnit(WidgetRef ref, UserPreferences prefs) {
@@ -479,6 +581,111 @@ class _ActionTile extends StatelessWidget {
         ),
       ),
       onTap: onTap,
+    );
+  }
+}
+
+class _EditableTile extends StatefulWidget {
+  final String label;
+  final String value;
+  final String? hint;
+  final TextInputType keyboardType;
+  final ValueChanged<String> onSubmitted;
+  const _EditableTile({
+    required this.label,
+    required this.value,
+    this.hint,
+    this.keyboardType = TextInputType.text,
+    required this.onSubmitted,
+  });
+
+  @override
+  State<_EditableTile> createState() => _EditableTileState();
+}
+
+class _EditableTileState extends State<_EditableTile> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_EditableTile old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value && _controller.text != widget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md,
+        vertical: SpacingTokens.xs,
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: SpacingTokens.lg),
+          SizedBox(
+            width: 80,
+            child: Text(
+              widget.label,
+              style: const TextStyle(
+                color: ColorTokens.textSecondary,
+                fontSize: TypographyTokens.bodySmSize,
+              ),
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.sm),
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              keyboardType: widget.keyboardType,
+              style: const TextStyle(
+                color: ColorTokens.textPrimary,
+                fontSize: TypographyTokens.bodySmSize,
+              ),
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                hintStyle: const TextStyle(color: ColorTokens.textTertiary),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.sm,
+                  vertical: SpacingTokens.sm,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: ColorTokens.textTertiary),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: ColorTokens.textTertiary),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: ColorTokens.primaryDefault),
+                ),
+              ),
+              onSubmitted: widget.onSubmitted,
+              onTapOutside: (_) {
+                if (_controller.text != widget.value) {
+                  widget.onSubmitted(_controller.text);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
