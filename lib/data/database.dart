@@ -280,7 +280,9 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
+    // Use AppSupport (AppData/Roaming on Windows) not Documents,
+    // to avoid OneDrive sync locking the SQLite file.
+    final dbFolder = await getApplicationSupportDirectory();
     final file = File(p.join(dbFolder.path, 'zx_golf_app.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
