@@ -155,7 +155,7 @@ void main() {
 
       final modes = {
         SkillArea.driving: ClubSelectionMode.guided,
-        SkillArea.irons: ClubSelectionMode.userLed,
+        SkillArea.approach: ClubSelectionMode.userLed,
         SkillArea.putting: ClubSelectionMode.random,
       };
       final prefs = const UserPreferences()

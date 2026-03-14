@@ -56,21 +56,21 @@ void main() {
       // Subskill B: Min=100, Scratch=250, Pro=400 (hard to score high on with same data)
       await seedTestDrill(db,
           drillId: 'drill-multi-output',
-          skillArea: SkillArea.irons,
+          skillArea: SkillArea.approach,
           drillType: DrillType.transition,
           metricSchemaId: 'raw_carry_distance',
           inputMode: InputMode.rawDataEntry,
           subskillMapping: [
-            'irons_direction_control',
-            'irons_distance_control',
+            'approach_direction_control',
+            'approach_distance_control',
           ],
           anchors: {
-            'irons_direction_control': {
+            'approach_direction_control': {
               'Min': 20,
               'Scratch': 60,
               'Pro': 80,
             },
-            'irons_distance_control': {
+            'approach_distance_control': {
               'Min': 100,
               'Scratch': 250,
               'Pro': 400,
@@ -97,12 +97,12 @@ void main() {
 
       final windowA = windows
           .where((w) =>
-              w.subskill == 'irons_direction_control' &&
+              w.subskill == 'approach_direction_control' &&
               w.practiceType == DrillType.transition)
           .toList();
       final windowB = windows
           .where((w) =>
-              w.subskill == 'irons_distance_control' &&
+              w.subskill == 'approach_distance_control' &&
               w.practiceType == DrillType.transition)
           .toList();
 
@@ -136,21 +136,21 @@ void main() {
         () async {
       await seedTestDrill(db,
           drillId: 'drill-multi-rebuild',
-          skillArea: SkillArea.irons,
+          skillArea: SkillArea.approach,
           drillType: DrillType.transition,
           metricSchemaId: 'raw_carry_distance',
           inputMode: InputMode.rawDataEntry,
           subskillMapping: [
-            'irons_direction_control',
-            'irons_distance_control',
+            'approach_direction_control',
+            'approach_distance_control',
           ],
           anchors: {
-            'irons_direction_control': {
+            'approach_direction_control': {
               'Min': 20,
               'Scratch': 60,
               'Pro': 80,
             },
-            'irons_distance_control': {
+            'approach_distance_control': {
               'Min': 100,
               'Scratch': 250,
               'Pro': 400,
@@ -177,12 +177,12 @@ void main() {
 
       final entriesA = parseWindowEntries(windows
           .firstWhere((w) =>
-              w.subskill == 'irons_direction_control' &&
+              w.subskill == 'approach_direction_control' &&
               w.practiceType == DrillType.transition)
           .entries);
       final entriesB = parseWindowEntries(windows
           .firstWhere((w) =>
-              w.subskill == 'irons_distance_control' &&
+              w.subskill == 'approach_distance_control' &&
               w.practiceType == DrillType.transition)
           .entries);
 

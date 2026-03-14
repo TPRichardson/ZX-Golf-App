@@ -20,7 +20,7 @@ void main() {
     });
 
     test('TC-9.1.2: Single Subskill Only → 26.95', () {
-      // One Session for irons_direction_control (Transition), score 3.5.
+      // One Session for approach_direction_control (Transition), score 3.5.
       // All else empty. Overall = 26.95.
       final result = scoreOverall([
         26.95, // Irons (only direction control populated)

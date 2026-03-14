@@ -54,11 +54,11 @@ void main() {
     await db.into(db.drills).insertOnConflictUpdate(DrillsCompanion.insert(
       drillId: 'drill-1',
       name: 'Test Drill',
-      skillArea: SkillArea.irons,
+      skillArea: SkillArea.approach,
       drillType: DrillType.transition,
       inputMode: InputMode.binaryHitMiss,
       metricSchemaId: 'binary_hit_miss',
-      subskillMapping: const Value('["irons_direction_control"]'),
+      subskillMapping: const Value('["approach_direction_control"]'),
       anchors: const Value('{}'),
       origin: DrillOrigin.custom,
       status: const Value(DrillStatus.active),

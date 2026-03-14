@@ -34,7 +34,7 @@ final activeDrillsGroupedProvider = StateProvider<bool>((ref) => false);
 const _skillAreaDisplayOrder = [
   SkillArea.driving,
   SkillArea.woods,
-  SkillArea.irons,
+  SkillArea.approach,
   SkillArea.bunkers,
   SkillArea.pitching,
   SkillArea.chipping,

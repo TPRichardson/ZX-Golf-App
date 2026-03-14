@@ -62,7 +62,7 @@ void main() {
   }) async {
     await seedTestDrill(db,
         drillId: drillId,
-        skillArea: SkillArea.irons,
+        skillArea: SkillArea.approach,
         drillType: drillType,
         metricSchemaId: 'grid_1x3_direction',
         subskillMapping: [subskill],
@@ -93,7 +93,7 @@ void main() {
         () async {
       await seedDirectionSession(
         drillId: 'drill-sr1',
-        subskill: 'irons_direction_control',
+        subskill: 'approach_direction_control',
         sessionId: 'session-sr1',
         pbId: 'pb-sr1',
       );
@@ -101,7 +101,7 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: userId,
-        affectedSubskillIds: {'irons_direction_control'},
+        affectedSubskillIds: {'approach_direction_control'},
         sessionId: 'session-sr1',
         drillId: 'drill-sr1',
       );
@@ -115,7 +115,7 @@ void main() {
           await scoringRepo.watchWindowStatesByUser(userId).first;
       final transitionWindows = windows
           .where((w) =>
-              w.subskill == 'irons_direction_control' &&
+              w.subskill == 'approach_direction_control' &&
               w.practiceType == DrillType.transition)
           .toList();
       expect(transitionWindows, hasLength(1));
@@ -125,7 +125,7 @@ void main() {
       final subScores =
           await scoringRepo.watchSubskillScoresByUser(userId).first;
       final matching = subScores
-          .where((s) => s.subskill == 'irons_direction_control')
+          .where((s) => s.subskill == 'approach_direction_control')
           .toList();
       expect(matching, hasLength(1));
 
@@ -139,16 +139,16 @@ void main() {
       // Create a dual-mapped drill.
       await seedTestDrill(db,
           drillId: 'drill-dm',
-          skillArea: SkillArea.irons,
+          skillArea: SkillArea.approach,
           drillType: DrillType.transition,
           metricSchemaId: 'grid_1x3_direction',
           subskillMapping: [
-            'irons_distance_control',
-            'irons_direction_control'
+            'approach_distance_control',
+            'approach_direction_control'
           ],
           anchors: {
-            'irons_distance_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
-            'irons_direction_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+            'approach_distance_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+            'approach_direction_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
           });
 
       await seedPracticeBlock(db, userId, practiceBlockId: 'pb-dm');
@@ -164,8 +164,8 @@ void main() {
         type: ReflowTriggerType.sessionClose,
         userId: userId,
         affectedSubskillIds: {
-          'irons_distance_control',
-          'irons_direction_control',
+          'approach_distance_control',
+          'approach_direction_control',
         },
         sessionId: 'session-dm',
         drillId: 'drill-dm',
@@ -179,9 +179,9 @@ void main() {
       final subScores =
           await scoringRepo.watchSubskillScoresByUser(userId).first;
       final distMatch =
-          subScores.where((s) => s.subskill == 'irons_distance_control');
+          subScores.where((s) => s.subskill == 'approach_distance_control');
       final dirMatch =
-          subScores.where((s) => s.subskill == 'irons_direction_control');
+          subScores.where((s) => s.subskill == 'approach_direction_control');
       expect(distMatch, hasLength(1));
       expect(dirMatch, hasLength(1));
     });
@@ -190,7 +190,7 @@ void main() {
         () async {
       await seedDirectionSession(
         drillId: 'drill-det',
-        subskill: 'irons_direction_control',
+        subskill: 'approach_direction_control',
         sessionId: 'session-det',
         pbId: 'pb-det',
       );
@@ -198,7 +198,7 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: userId,
-        affectedSubskillIds: {'irons_direction_control'},
+        affectedSubskillIds: {'approach_direction_control'},
       );
 
       // Run reflow twice.
@@ -216,9 +216,9 @@ void main() {
 
       // Both runs should produce identical scores.
       final score1 = scores1
-          .firstWhere((s) => s.subskill == 'irons_direction_control');
+          .firstWhere((s) => s.subskill == 'approach_direction_control');
       final score2 = scores2
-          .firstWhere((s) => s.subskill == 'irons_direction_control');
+          .firstWhere((s) => s.subskill == 'approach_direction_control');
       expect(score1.subskillPoints, score2.subskillPoints);
       expect(score1.weightedAverage, score2.weightedAverage);
       expect(overall1!.overallScore, overall2!.overallScore);
@@ -228,7 +228,7 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: userId,
-        affectedSubskillIds: {'irons_direction_control'},
+        affectedSubskillIds: {'approach_direction_control'},
       );
 
       final result = await engine.executeReflow(trigger);
@@ -237,7 +237,7 @@ void main() {
       final subScores =
           await scoringRepo.watchSubskillScoresByUser(userId).first;
       final matching = subScores
-          .where((s) => s.subskill == 'irons_direction_control')
+          .where((s) => s.subskill == 'approach_direction_control')
           .toList();
       expect(matching, hasLength(1));
       expect(matching.first.weightedAverage, 0);
@@ -249,7 +249,7 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: userId,
-        affectedSubskillIds: {'irons_direction_control'},
+        affectedSubskillIds: {'approach_direction_control'},
       );
 
       final result = await engine.executeReflow(trigger);
@@ -264,7 +264,7 @@ void main() {
     test('reflow emits ReflowComplete event log entry', () async {
       await seedDirectionSession(
         drillId: 'drill-ev',
-        subskill: 'irons_direction_control',
+        subskill: 'approach_direction_control',
         sessionId: 'session-ev',
         pbId: 'pb-ev',
       );
@@ -272,7 +272,7 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: userId,
-        affectedSubskillIds: {'irons_direction_control'},
+        affectedSubskillIds: {'approach_direction_control'},
       );
 
       await engine.executeReflow(trigger);

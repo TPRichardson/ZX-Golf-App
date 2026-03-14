@@ -49,14 +49,14 @@ void main() {
     await db.into(db.drills).insertOnConflictUpdate(DrillsCompanion.insert(
       drillId: 'unstruct-drill',
       name: 'Unstructured Drill',
-      skillArea: SkillArea.irons,
+      skillArea: SkillArea.approach,
       drillType: DrillType.transition,
       inputMode: InputMode.rawDataEntry,
       metricSchemaId: 'raw_carry_distance',
-      subskillMapping: const Value('["irons_direction_control"]'),
+      subskillMapping: const Value('["approach_direction_control"]'),
       origin: DrillOrigin.custom,
       anchors: const Value(
-          '{"irons_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}}'),
+          '{"approach_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}}'),
       requiredAttemptsPerSet: const Value(null),
     ));
   });

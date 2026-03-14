@@ -53,7 +53,7 @@ void main() {
         () async {
       final companion = DrillsCompanion(
         name: const Value('Pressure No Subskills'),
-        skillArea: const Value(SkillArea.irons),
+        skillArea: const Value(SkillArea.approach),
         drillType: const Value(DrillType.pressure),
         inputMode: const Value(InputMode.rawDataEntry),
         metricSchemaId: const Value('raw_carry_distance'),
@@ -71,12 +71,12 @@ void main() {
         () async {
       final companion = DrillsCompanion(
         name: const Value('Pressure Too Many'),
-        skillArea: const Value(SkillArea.irons),
+        skillArea: const Value(SkillArea.approach),
         drillType: const Value(DrillType.pressure),
         inputMode: const Value(InputMode.rawDataEntry),
         metricSchemaId: const Value('raw_carry_distance'),
         subskillMapping: const Value(
-            '["irons_direction_control","irons_distance_control","irons_consistency"]'),
+            '["approach_direction_control","approach_distance_control","approach_consistency"]'),
         anchors: const Value('{}'),
       );
 
@@ -89,13 +89,13 @@ void main() {
     test('Pressure drill with 1 subskill succeeds', () async {
       final companion = DrillsCompanion(
         name: const Value('Pressure Single'),
-        skillArea: const Value(SkillArea.irons),
+        skillArea: const Value(SkillArea.approach),
         drillType: const Value(DrillType.pressure),
         inputMode: const Value(InputMode.rawDataEntry),
         metricSchemaId: const Value('raw_carry_distance'),
-        subskillMapping: const Value('["irons_direction_control"]'),
+        subskillMapping: const Value('["approach_direction_control"]'),
         anchors: const Value(
-            '{"irons_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}}'),
+            '{"approach_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}}'),
       );
 
       final drill = await repo.createCustomDrill(userId, companion);
@@ -105,14 +105,14 @@ void main() {
     test('Pressure drill with 2 subskills succeeds', () async {
       final companion = DrillsCompanion(
         name: const Value('Pressure Dual'),
-        skillArea: const Value(SkillArea.irons),
+        skillArea: const Value(SkillArea.approach),
         drillType: const Value(DrillType.pressure),
         inputMode: const Value(InputMode.rawDataEntry),
         metricSchemaId: const Value('raw_carry_distance'),
         subskillMapping: const Value(
-            '["irons_direction_control","irons_distance_control"]'),
+            '["approach_direction_control","approach_distance_control"]'),
         anchors: const Value(
-            '{"irons_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}, "irons_distance_control": {"Min": 5, "Scratch": 30, "Pro": 60}}'),
+            '{"approach_direction_control": {"Min": 10, "Scratch": 50, "Pro": 90}, "approach_distance_control": {"Min": 5, "Scratch": 30, "Pro": 60}}'),
       );
 
       final drill = await repo.createCustomDrill(userId, companion);
@@ -123,11 +123,11 @@ void main() {
         () async {
       final companion = DrillsCompanion(
         name: const Value('Technique With Subskills'),
-        skillArea: const Value(SkillArea.irons),
+        skillArea: const Value(SkillArea.approach),
         drillType: const Value(DrillType.techniqueBlock),
         inputMode: const Value(InputMode.rawDataEntry),
         metricSchemaId: const Value('technique_duration'),
-        subskillMapping: const Value('["irons_direction_control"]'),
+        subskillMapping: const Value('["approach_direction_control"]'),
         requiredSetCount: const Value(1),
         requiredAttemptsPerSet: const Value(null),
       );

@@ -13,7 +13,7 @@ void main() {
       expect(companion.mappingId.value, mapping.mappingId);
       expect(companion.userId.value, mapping.userId);
       expect(companion.clubType.value, ClubType.i7);
-      expect(companion.skillArea.value, SkillArea.irons);
+      expect(companion.skillArea.value, SkillArea.approach);
       expect(companion.isMandatory.value, true);
     });
 

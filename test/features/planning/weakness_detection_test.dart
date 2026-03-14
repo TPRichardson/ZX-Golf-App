@@ -123,9 +123,9 @@ void main() {
       DrillWithScore(
         drillId: 'drill-3',
         name: 'Charlie Drill',
-        skillArea: SkillArea.irons,
+        skillArea: SkillArea.approach,
         drillType: DrillType.transition,
-        subskillIds: {'irons_distance'},
+        subskillIds: {'approach_distance'},
         averageScore: 3.0,
         lastPracticed: DateTime(2026, 2, 25),
       ),
@@ -143,8 +143,8 @@ void main() {
         isIncomplete: false,
       ),
       const RankedSubskill(
-        subskillId: 'irons_distance',
-        skillArea: SkillArea.irons,
+        subskillId: 'approach_distance',
+        skillArea: SkillArea.approach,
         transitionAverage: 3.0,
         pressureAverage: 3.5,
         weightedAverage: 3.3,
@@ -175,9 +175,9 @@ void main() {
         {},
       );
 
-      // irons_distance has lower WeaknessIndex; drill-3 is only match → selected.
+      // approach_distance has lower WeaknessIndex; drill-3 is only match → selected.
       // Actually both putting drills have higher WI. Strength sorts ascending WI.
-      // irons_distance WI=0.17 < putting_distance WI=0.33
+      // approach_distance WI=0.17 < putting_distance WI=0.33
       // So drill-3 (irons) ranks first.
       expect(result, 'drill-3');
     });
@@ -185,7 +185,7 @@ void main() {
     test('skill area filter narrows pool', () {
       final result = engine.selectDrill(
         const GenerationCriterion(
-          skillArea: SkillArea.irons,
+          skillArea: SkillArea.approach,
           mode: GenerationMode.weakest,
         ),
         pool,

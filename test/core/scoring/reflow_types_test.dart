@@ -25,11 +25,11 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: 'user-1',
-        affectedSubskillIds: {'irons_distance_control'},
+        affectedSubskillIds: {'approach_distance_control'},
       );
       expect(trigger.type, ReflowTriggerType.sessionClose);
       expect(trigger.userId, 'user-1');
-      expect(trigger.affectedSubskillIds, {'irons_distance_control'});
+      expect(trigger.affectedSubskillIds, {'approach_distance_control'});
       expect(trigger.sessionId, isNull);
       expect(trigger.drillId, isNull);
     });
@@ -38,7 +38,7 @@ void main() {
       final trigger = ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: 'user-1',
-        affectedSubskillIds: {'irons_distance_control'},
+        affectedSubskillIds: {'approach_distance_control'},
         sessionId: 'session-1',
         drillId: 'drill-1',
       );
@@ -51,18 +51,18 @@ void main() {
         final a = ReflowTrigger(
           type: ReflowTriggerType.sessionClose,
           userId: 'user-1',
-          affectedSubskillIds: {'irons_distance_control'},
+          affectedSubskillIds: {'approach_distance_control'},
         );
         final b = ReflowTrigger(
           type: ReflowTriggerType.anchorEdit,
           userId: 'user-1',
-          affectedSubskillIds: {'irons_direction_control', 'irons_shape_control'},
+          affectedSubskillIds: {'approach_direction_control', 'approach_shape_control'},
         );
         final merged = a.mergeWith(b);
         expect(merged.affectedSubskillIds, {
-          'irons_distance_control',
-          'irons_direction_control',
-          'irons_shape_control',
+          'approach_distance_control',
+          'approach_direction_control',
+          'approach_shape_control',
         });
         expect(merged.userId, 'user-1');
       });
@@ -170,7 +170,7 @@ void main() {
         drillId: 'drill-1',
         sessionScore: 3.5,
         integrityBreach: false,
-        subskillIds: {'irons_distance_control'},
+        subskillIds: {'approach_distance_control'},
         drillType: 'Transition',
         isDualMapped: false,
       );
@@ -178,7 +178,7 @@ void main() {
       expect(result.drillId, 'drill-1');
       expect(result.sessionScore, 3.5);
       expect(result.integrityBreach, isFalse);
-      expect(result.subskillIds, {'irons_distance_control'});
+      expect(result.subskillIds, {'approach_distance_control'});
       expect(result.drillType, 'Transition');
       expect(result.isDualMapped, isFalse);
     });
@@ -189,7 +189,7 @@ void main() {
         drillId: 'drill-2',
         sessionScore: 2.0,
         integrityBreach: true,
-        subskillIds: {'irons_distance_control', 'irons_direction_control'},
+        subskillIds: {'approach_distance_control', 'approach_direction_control'},
         drillType: 'Pressure',
         isDualMapped: true,
       );

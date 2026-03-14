@@ -65,7 +65,7 @@ void main() {
       final result = await engine.closeSession('session-grid', userId);
       expect(result.sessionScore, greaterThan(0));
       expect(result.integrityBreach, isFalse);
-      expect(result.subskillIds, {'irons_direction_control'});
+      expect(result.subskillIds, {'approach_direction_control'});
       expect(result.drillType, 'Transition');
       expect(result.isDualMapped, isFalse);
 
@@ -102,7 +102,7 @@ void main() {
 
       final result = await engine.closeSession('session-binary', userId);
       expect(result.sessionScore, greaterThan(0));
-      expect(result.subskillIds, {'irons_shape_control'});
+      expect(result.subskillIds, {'approach_shape_control'});
     });
 
     test('raw-data session close: per-instance scoring', () async {
@@ -292,16 +292,16 @@ void main() {
       // Create a dual-mapped user drill.
       await seedTestDrill(db,
           drillId: 'drill-dual-close',
-          skillArea: SkillArea.irons,
+          skillArea: SkillArea.approach,
           drillType: DrillType.transition,
           metricSchemaId: 'grid_1x3_direction',
           subskillMapping: [
-            'irons_distance_control',
-            'irons_direction_control'
+            'approach_distance_control',
+            'approach_direction_control'
           ],
           anchors: {
-            'irons_distance_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
-            'irons_direction_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+            'approach_distance_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+            'approach_direction_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
           });
 
       final pbId =
@@ -324,8 +324,8 @@ void main() {
       final windows =
           await scoringRepo.watchWindowStatesByUser(userId).first;
       for (final subskill in [
-        'irons_distance_control',
-        'irons_direction_control'
+        'approach_distance_control',
+        'approach_direction_control'
       ]) {
         final matching = windows.where((w) =>
             w.subskill == subskill &&

@@ -4,7 +4,7 @@
 /// S02 §2.1 — Seven canonical skill areas.
 enum SkillArea {
   driving('Driving'),
-  irons('Irons'),
+  approach('Approach'),
   putting('Putting'),
   pitching('Pitching'),
   chipping('Chipping'),

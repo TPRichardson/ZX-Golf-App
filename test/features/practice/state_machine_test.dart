@@ -301,14 +301,14 @@ void main() {
       await db.into(db.drills).insert(DrillsCompanion.insert(
         drillId: 'drill-sm-2',
         name: 'SM Drill 2',
-        skillArea: SkillArea.irons,
+        skillArea: SkillArea.approach,
         drillType: DrillType.transition,
         inputMode: InputMode.binaryHitMiss,
         metricSchemaId: 'binary_hit_miss',
         origin: DrillOrigin.standard,
-        subskillMapping: const Value('["irons_direction_control"]'),
+        subskillMapping: const Value('["approach_direction_control"]'),
         anchors: const Value(
-            '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
+            '{"approach_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
         requiredSetCount: const Value(1),
       ));
 

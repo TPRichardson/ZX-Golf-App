@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -130,6 +130,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV9ToV10(m);
               case 10:
                 await _migrateV10ToV11(m);
+              case 11:
+                await _migrateV11ToV12(m);
             }
           }
         },
@@ -182,6 +184,40 @@ class AppDatabase extends _$AppDatabase {
         'ALTER TABLE UserDrillAdoption ADD COLUMN HasUnseenUpdate INTEGER NOT NULL DEFAULT 0');
     // Standard drills are now server-authoritative — remove local copies.
     await customStatement("DELETE FROM Drill WHERE UserID IS NULL");
+  }
+
+  // Rename SkillArea 'Irons' → 'Approach' and subskill IDs 'irons_*' → 'approach_*'.
+  Future<void> _migrateV11ToV12(Migrator m) async {
+    // Update SkillArea TEXT in all 6 tables that store it.
+    for (final table in [
+      'Drill',
+      'SubskillRef',
+      'MaterialisedSkillAreaScore',
+      'MaterialisedSubskillScore',
+      'MaterialisedWindowState',
+      'UserSkillAreaClubMapping',
+    ]) {
+      await customStatement(
+          "UPDATE $table SET SkillArea = 'Approach' WHERE SkillArea = 'Irons'");
+    }
+    // Rename subskill IDs.
+    await customStatement(
+        "UPDATE SubskillRef SET SubskillID = 'approach_distance_control' WHERE SubskillID = 'irons_distance_control'");
+    await customStatement(
+        "UPDATE SubskillRef SET SubskillID = 'approach_direction_control' WHERE SubskillID = 'irons_direction_control'");
+    await customStatement(
+        "UPDATE SubskillRef SET SubskillID = 'approach_shape_control' WHERE SubskillID = 'irons_shape_control'");
+    // Update Subskill foreign keys in materialised tables.
+    for (final table in [
+      'MaterialisedSubskillScore',
+      'MaterialisedWindowState',
+    ]) {
+      await customStatement(
+          "UPDATE $table SET Subskill = REPLACE(Subskill, 'irons_', 'approach_') WHERE Subskill LIKE 'irons_%'");
+    }
+    // Update SubskillMapping JSON in Drill table (contains subskill ID strings).
+    await customStatement(
+        "UPDATE Drill SET SubskillMapping = REPLACE(SubskillMapping, 'irons_', 'approach_') WHERE SubskillMapping LIKE '%irons_%'");
   }
 
   // Add Description, TargetDistanceUnit, TargetSizeUnit to Drill table + seed first system drill.

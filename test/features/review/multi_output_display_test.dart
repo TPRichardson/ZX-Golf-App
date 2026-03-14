@@ -15,7 +15,7 @@ void main() {
       // Simulate a single-mapped session appearing in one window.
       final windows = [
         _makeWindow(
-          subskill: 'irons_direction_control',
+          subskill: 'approach_direction_control',
           entries: [
             WindowEntry(
               sessionId: 'session-1',
@@ -37,7 +37,7 @@ void main() {
       // Simulate a dual-mapped session appearing in two different subskill windows.
       final windows = [
         _makeWindow(
-          subskill: 'irons_direction_control',
+          subskill: 'approach_direction_control',
           entries: [
             WindowEntry(
               sessionId: 'session-dual',
@@ -49,7 +49,7 @@ void main() {
           ],
         ),
         _makeWindow(
-          subskill: 'irons_distance_control',
+          subskill: 'approach_distance_control',
           entries: [
             WindowEntry(
               sessionId: 'session-dual',
@@ -71,7 +71,7 @@ void main() {
     test('mixed sessions: single and dual-mapped coexist correctly', () {
       final windows = [
         _makeWindow(
-          subskill: 'irons_direction_control',
+          subskill: 'approach_direction_control',
           entries: [
             WindowEntry(
               sessionId: 'session-single',
@@ -90,7 +90,7 @@ void main() {
           ],
         ),
         _makeWindow(
-          subskill: 'irons_distance_control',
+          subskill: 'approach_distance_control',
           entries: [
             WindowEntry(
               sessionId: 'session-dual',
@@ -130,7 +130,7 @@ MaterialisedWindowState _makeWindow({
 
   return MaterialisedWindowState(
     userId: 'test-user',
-    skillArea: SkillArea.irons,
+    skillArea: SkillArea.approach,
     subskill: subskill,
     practiceType: DrillType.transition,
     entries: entriesJson,

@@ -30,7 +30,7 @@ class SkillAreaHeatmap extends ConsumerStatefulWidget {
 class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
   SkillArea? _expandedArea;
 
-  static const _row1 = [SkillArea.irons];
+  static const _row1 = [SkillArea.approach];
   static const _row1Flex = [100];
   static const _row2 = [SkillArea.driving, SkillArea.pitching, SkillArea.woods];
   static const _row2Flex = [50, 30, 20];

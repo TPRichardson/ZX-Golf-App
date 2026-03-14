@@ -90,8 +90,8 @@ void main() {
     test('upsert and watch window state', () async {
       await repo.upsertWindowState(MaterialisedWindowStatesCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_distance_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_distance_control',
         practiceType: DrillType.transition,
         entries: const Value('[]'),
         totalOccupancy: const Value(5.0),
@@ -102,22 +102,22 @@ void main() {
       final results =
           await repo.watchWindowStatesByUser(userId).first;
       expect(results, hasLength(1));
-      expect(results.first.subskill, 'irons_distance_control');
+      expect(results.first.subskill, 'approach_distance_control');
       expect(results.first.windowAverage, 3.5);
     });
 
     test('upsert overwrites existing row', () async {
       await repo.upsertWindowState(MaterialisedWindowStatesCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_distance_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_distance_control',
         practiceType: DrillType.transition,
         windowAverage: const Value(3.0),
       ));
       await repo.upsertWindowState(MaterialisedWindowStatesCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_distance_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_distance_control',
         practiceType: DrillType.transition,
         windowAverage: const Value(4.0),
       ));
@@ -131,14 +131,14 @@ void main() {
     test('deleteWindowStatesForUser removes all rows', () async {
       await repo.upsertWindowState(MaterialisedWindowStatesCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_distance_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_distance_control',
         practiceType: DrillType.transition,
       ));
       await repo.upsertWindowState(MaterialisedWindowStatesCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_direction_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_direction_control',
         practiceType: DrillType.pressure,
       ));
 
@@ -219,20 +219,20 @@ void main() {
     test('removes all 4 materialised table rows for user', () async {
       await repo.upsertWindowState(MaterialisedWindowStatesCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_distance_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_distance_control',
         practiceType: DrillType.transition,
       ));
       await repo.upsertSubskillScore(
           MaterialisedSubskillScoresCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
-        subskill: 'irons_distance_control',
+        skillArea: SkillArea.approach,
+        subskill: 'approach_distance_control',
       ));
       await repo.upsertSkillAreaScore(
           MaterialisedSkillAreaScoresCompanion.insert(
         userId: userId,
-        skillArea: SkillArea.irons,
+        skillArea: SkillArea.approach,
       ));
       await repo.upsertOverallScore(MaterialisedOverallScoresCompanion.insert(
         userId: userId,
@@ -277,7 +277,7 @@ void main() {
       await db.into(db.drills).insertOnConflictUpdate(DrillsCompanion.insert(
             drillId: drillId,
             name: 'Test Drill $drillId',
-            skillArea: SkillArea.irons,
+            skillArea: SkillArea.approach,
             drillType: drillType,
             inputMode: InputMode.gridCell,
             metricSchemaId: metricSchemaId,
@@ -285,7 +285,7 @@ void main() {
             origin: DrillOrigin.standard,
             isDeleted: Value(drillIsDeleted),
             anchors:
-                const Value('{"irons_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
+                const Value('{"approach_distance_control": {"Min": 30, "Scratch": 70, "Pro": 90}}'),
           ));
 
       await db.into(db.sessions).insertOnConflictUpdate(
@@ -326,14 +326,14 @@ void main() {
         drillId: 'drill-q1',
         sessionId: 'session-q1',
         practiceBlockId: 'block-q1',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.transition,
         sessionStatus: SessionStatus.closed,
       );
 
       final results = await repo.getClosedSessionsForSubskill(
         userId,
-        'irons_distance_control',
+        'approach_distance_control',
         DrillType.transition,
       );
       expect(results, hasLength(1));
@@ -346,14 +346,14 @@ void main() {
         drillId: 'drill-q2',
         sessionId: 'session-q2',
         practiceBlockId: 'block-q2',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.transition,
         sessionStatus: SessionStatus.active,
       );
 
       final results = await repo.getClosedSessionsForSubskill(
         userId,
-        'irons_distance_control',
+        'approach_distance_control',
         DrillType.transition,
       );
       expect(results, isEmpty);
@@ -364,7 +364,7 @@ void main() {
         drillId: 'drill-q3',
         sessionId: 'session-q3',
         practiceBlockId: 'block-q3',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.transition,
         sessionStatus: SessionStatus.closed,
         sessionIsDeleted: true,
@@ -372,7 +372,7 @@ void main() {
 
       final results = await repo.getClosedSessionsForSubskill(
         userId,
-        'irons_distance_control',
+        'approach_distance_control',
         DrillType.transition,
       );
       expect(results, isEmpty);
@@ -383,7 +383,7 @@ void main() {
         drillId: 'drill-q4',
         sessionId: 'session-q4',
         practiceBlockId: 'block-q4',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.transition,
         sessionStatus: SessionStatus.closed,
         drillIsDeleted: true,
@@ -391,7 +391,7 @@ void main() {
 
       final results = await repo.getClosedSessionsForSubskill(
         userId,
-        'irons_distance_control',
+        'approach_distance_control',
         DrillType.transition,
       );
       expect(results, isEmpty);
@@ -402,21 +402,21 @@ void main() {
         drillId: 'drill-q5',
         sessionId: 'session-q5',
         practiceBlockId: 'block-q5',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.pressure,
         sessionStatus: SessionStatus.closed,
       );
 
       final transition = await repo.getClosedSessionsForSubskill(
         userId,
-        'irons_distance_control',
+        'approach_distance_control',
         DrillType.transition,
       );
       expect(transition, isEmpty);
 
       final pressure = await repo.getClosedSessionsForSubskill(
         userId,
-        'irons_distance_control',
+        'approach_distance_control',
         DrillType.pressure,
       );
       expect(pressure, hasLength(1));
@@ -427,7 +427,7 @@ void main() {
         drillId: 'drill-qi',
         sessionId: 'session-qi',
         practiceBlockId: 'block-qi',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.transition,
         sessionStatus: SessionStatus.closed,
         instanceCount: 5,
@@ -442,7 +442,7 @@ void main() {
         drillId: 'drill-qd',
         sessionId: 'session-qd',
         practiceBlockId: 'block-qd',
-        subskillMapping: '["irons_distance_control"]',
+        subskillMapping: '["approach_distance_control"]',
         drillType: DrillType.transition,
         sessionStatus: SessionStatus.closed,
       );
@@ -475,7 +475,7 @@ void main() {
 
     test('getSubskillRefs returns correct subset', () async {
       final refs = await repo.getSubskillRefs(
-          {'irons_distance_control', 'irons_direction_control'});
+          {'approach_distance_control', 'approach_direction_control'});
       expect(refs, hasLength(2));
     });
 

@@ -433,7 +433,7 @@ class ClubCard extends ConsumerWidget {
     return switch (area) {
       SkillArea.driving => 'Dr',
       SkillArea.woods => 'Wo',
-      SkillArea.irons => 'Ir',
+      SkillArea.approach => 'Ap',
       SkillArea.pitching => 'Pi',
       SkillArea.chipping => 'Ch',
       SkillArea.bunkers => 'Bu',
@@ -938,7 +938,7 @@ class _ClubSkillAreaDialog extends ConsumerWidget {
             for (final area in const [
               SkillArea.driving,
               SkillArea.woods,
-              SkillArea.irons,
+              SkillArea.approach,
               SkillArea.pitching,
               SkillArea.chipping,
               SkillArea.bunkers,

@@ -26,16 +26,16 @@ class ClubRepository {
   static const _mandatoryMappings = <ClubType, Set<SkillArea>>{
     ClubType.driver: {SkillArea.driving},
     ClubType.putter: {SkillArea.putting},
-    // Irons i1–i9 are mandatory for Irons skill area.
-    ClubType.i1: {SkillArea.irons},
-    ClubType.i2: {SkillArea.irons},
-    ClubType.i3: {SkillArea.irons},
-    ClubType.i4: {SkillArea.irons},
-    ClubType.i5: {SkillArea.irons},
-    ClubType.i6: {SkillArea.irons},
-    ClubType.i7: {SkillArea.irons},
-    ClubType.i8: {SkillArea.irons},
-    ClubType.i9: {SkillArea.irons},
+    // Irons i1–i9 are mandatory for Approach skill area.
+    ClubType.i1: {SkillArea.approach},
+    ClubType.i2: {SkillArea.approach},
+    ClubType.i3: {SkillArea.approach},
+    ClubType.i4: {SkillArea.approach},
+    ClubType.i5: {SkillArea.approach},
+    ClubType.i6: {SkillArea.approach},
+    ClubType.i7: {SkillArea.approach},
+    ClubType.i8: {SkillArea.approach},
+    ClubType.i9: {SkillArea.approach},
   };
 
   // S09 §9.2.3 — Default modifiable mappings by club type category.

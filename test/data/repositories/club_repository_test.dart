@@ -147,7 +147,7 @@ void main() {
       expect(i7Mappings.length, 3);
 
       final ironsMandatory = i7Mappings.where(
-          (m) => m.skillArea == SkillArea.irons && m.isMandatory);
+          (m) => m.skillArea == SkillArea.approach && m.isMandatory);
       expect(ironsMandatory, hasLength(1));
 
       final chipping =
@@ -336,7 +336,7 @@ void main() {
 
       // Irons skill area should include i7 and i8, not Driver.
       final ironsClubs =
-          await repo.watchClubsForSkillArea(userId, SkillArea.irons).first;
+          await repo.watchClubsForSkillArea(userId, SkillArea.approach).first;
       final clubTypes = ironsClubs.map((c) => c.clubType).toSet();
       expect(clubTypes, contains(ClubType.i7));
       expect(clubTypes, contains(ClubType.i8));
@@ -351,7 +351,7 @@ void main() {
       await repo.retireClub(userId, club.clubId);
 
       final ironsClubs =
-          await repo.watchClubsForSkillArea(userId, SkillArea.irons).first;
+          await repo.watchClubsForSkillArea(userId, SkillArea.approach).first;
       expect(ironsClubs, isEmpty);
     });
   });

@@ -59,14 +59,14 @@ abstract final class ColorTokens {
   static const skillChipping = Color(0xFFE67E22);
   static const skillPitching = Color(0xFFE05858);
   static const skillBunkers = Color(0xFFC74882);
-  static const skillIrons = Color(0xFF8E5BB5);
+  static const skillApproach = Color(0xFF8E5BB5);
   static const skillWoods = Color(0xFF5B6ABF);
   static const skillDriving = Color(0xFF3A7BD5);
 
   // Club category colours — aligned with skill area gradient.
   static const clubPutter = skillPutting;
   static const clubWedge = skillPitching;
-  static const clubIron = skillIrons;
+  static const clubIron = skillApproach;
   static const clubHybrid = skillChipping;
   static const clubWood = skillWoods;
   static const clubDriver = skillDriving;
@@ -157,7 +157,7 @@ abstract final class ColorTokens {
       SkillArea.chipping => skillChipping,
       SkillArea.pitching => skillPitching,
       SkillArea.bunkers => skillBunkers,
-      SkillArea.irons => skillIrons,
+      SkillArea.approach => skillApproach,
       SkillArea.woods => skillWoods,
       SkillArea.driving => skillDriving,
     };

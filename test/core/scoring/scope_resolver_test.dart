@@ -13,11 +13,11 @@ void main() {
         userId: userId,
         sessionId: 'session-1',
         drillId: 'drill-1',
-        subskillMappingJson: '["irons_distance_control"]',
+        subskillMappingJson: '["approach_distance_control"]',
       );
       expect(trigger.type, ReflowTriggerType.sessionClose);
       expect(trigger.userId, userId);
-      expect(trigger.affectedSubskillIds, {'irons_distance_control'});
+      expect(trigger.affectedSubskillIds, {'approach_distance_control'});
       expect(trigger.sessionId, 'session-1');
       expect(trigger.drillId, 'drill-1');
     });
@@ -28,11 +28,11 @@ void main() {
         sessionId: 'session-2',
         drillId: 'drill-2',
         subskillMappingJson:
-            '["irons_distance_control", "irons_direction_control"]',
+            '["approach_distance_control", "approach_direction_control"]',
       );
       expect(trigger.affectedSubskillIds, {
-        'irons_distance_control',
-        'irons_direction_control',
+        'approach_distance_control',
+        'approach_direction_control',
       });
     });
 
@@ -65,7 +65,7 @@ void main() {
       final trigger = ScopeResolver.fromInstanceEdit(
         userId: userId,
         drillId: 'drill-1',
-        subskillMappingJson: '["irons_distance_control"]',
+        subskillMappingJson: '["approach_distance_control"]',
       );
       expect(trigger.type, ReflowTriggerType.instanceEdit);
     });
@@ -76,7 +76,7 @@ void main() {
       final trigger = ScopeResolver.fromInstanceDeletion(
         userId: userId,
         drillId: 'drill-1',
-        subskillMappingJson: '["irons_distance_control"]',
+        subskillMappingJson: '["approach_distance_control"]',
       );
       expect(trigger.type, ReflowTriggerType.instanceDeletion);
     });
@@ -99,9 +99,9 @@ void main() {
       final trigger = ScopeResolver.fromAllocationChange(
         userId: userId,
         subskillIdsInArea: {
-          'irons_distance_control',
-          'irons_direction_control',
-          'irons_shape_control',
+          'approach_distance_control',
+          'approach_direction_control',
+          'approach_shape_control',
         },
       );
       expect(trigger.type, ReflowTriggerType.allocationChange);
@@ -112,9 +112,9 @@ void main() {
   group('forFullRebuild', () {
     test('includes all 19 subskills', () {
       final allIds = {
-        'irons_distance_control',
-        'irons_direction_control',
-        'irons_shape_control',
+        'approach_distance_control',
+        'approach_direction_control',
+        'approach_shape_control',
         'driving_distance_maximum',
         'driving_direction_control',
         'driving_shape_control',

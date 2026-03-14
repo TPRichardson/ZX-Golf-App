@@ -159,7 +159,7 @@ void main() {
         await engine.executeReflow(ReflowTrigger(
           type: ReflowTriggerType.sessionClose,
           userId: userId,
-          affectedSubskillIds: {'irons_direction_control'},
+          affectedSubskillIds: {'approach_direction_control'},
         ));
         sw.stop();
         durations.add(sw.elapsed);

@@ -82,12 +82,12 @@ void main() {
   // Helper to create a minimal custom drill companion.
   DrillsCompanion customDrillCompanion({
     String name = 'Test Custom Drill',
-    SkillArea skillArea = SkillArea.irons,
+    SkillArea skillArea = SkillArea.approach,
     DrillType drillType = DrillType.transition,
     String metricSchemaId = 'grid_1x3_direction',
-    String subskillMapping = '["irons_direction_control"]',
+    String subskillMapping = '["approach_direction_control"]',
     String anchors =
-        '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}',
+        '{"approach_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}',
     int requiredSetCount = 1,
     int? requiredAttemptsPerSet = 10,
   }) {
@@ -352,7 +352,7 @@ void main() {
         customDrill.drillId,
         const DrillsCompanion(
           anchors: Value(
-            '{"irons_direction_control": {"Min": 25, "Scratch": 65, "Pro": 85}}',
+            '{"approach_direction_control": {"Min": 25, "Scratch": 65, "Pro": 85}}',
           ),
         ),
       );
@@ -377,7 +377,7 @@ void main() {
           drill.drillId,
           const DrillsCompanion(
             anchors: Value(
-              '{"irons_direction_control": {"Min": 20, "Scratch": 60, "Pro": 80}}',
+              '{"approach_direction_control": {"Min": 20, "Scratch": 60, "Pro": 80}}',
             ),
           ),
         ),
@@ -395,7 +395,7 @@ void main() {
           userId,
           customDrillCompanion(
             anchors:
-                '{"irons_direction_control": {"Min": 70, "Scratch": 70, "Pro": 90}}',
+                '{"approach_direction_control": {"Min": 70, "Scratch": 70, "Pro": 90}}',
           ),
         ),
         throwsA(isA<ValidationException>().having(
@@ -412,7 +412,7 @@ void main() {
           userId,
           customDrillCompanion(
             anchors:
-                '{"irons_direction_control": {"Min": 30, "Scratch": 90, "Pro": 90}}',
+                '{"approach_direction_control": {"Min": 30, "Scratch": 90, "Pro": 90}}',
           ),
         ),
         throwsA(isA<ValidationException>().having(
@@ -511,15 +511,15 @@ void main() {
     });
 
     test('cross-SkillArea SubskillMapping throws invalidStructure', () async {
-      // irons_direction_control belongs to Irons, not Driving.
+      // approach_direction_control belongs to Irons, not Driving.
       expect(
         () => repo.createCustomDrill(
           userId,
           customDrillCompanion(
             skillArea: SkillArea.driving,
-            subskillMapping: '["irons_direction_control"]',
+            subskillMapping: '["approach_direction_control"]',
             anchors:
-                '{"irons_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}',
+                '{"approach_direction_control": {"Min": 30, "Scratch": 70, "Pro": 90}}',
           ),
         ),
         throwsA(isA<ValidationException>().having(

@@ -47,11 +47,11 @@ void main() {
       guard.defer(ReflowTrigger(
         type: ReflowTriggerType.sessionClose,
         userId: 'user-1',
-        affectedSubskillIds: {'irons_distance_control'},
+        affectedSubskillIds: {'approach_distance_control'},
       ));
       final coalesced = guard.release();
       expect(coalesced, isNotNull);
-      expect(coalesced!.affectedSubskillIds, {'irons_distance_control'});
+      expect(coalesced!.affectedSubskillIds, {'approach_distance_control'});
       expect(coalesced.type, ReflowTriggerType.sessionClose);
     });
 

@@ -40,11 +40,11 @@ void main() {
       final drill = makeDrill();
       final json = drill.toSyncDto();
       expect(json['SubskillMapping'], isA<List>());
-      expect(json['SubskillMapping'][0], 'irons_direction_control');
+      expect(json['SubskillMapping'][0], 'approach_direction_control');
 
       final companion = drillFromSyncDto(json);
       final decoded = jsonDecode(companion.subskillMapping.value);
-      expect(decoded, ['irons_direction_control']);
+      expect(decoded, ['approach_direction_control']);
     });
 
     test('Anchors JSONB round-trips as object', () {
@@ -54,7 +54,7 @@ void main() {
 
       final companion = drillFromSyncDto(json);
       final decoded = jsonDecode(companion.anchors.value);
-      expect(decoded['irons_direction_control']['Min'], 30);
+      expect(decoded['approach_direction_control']['Min'], 30);
     });
 
     test('minimal drill with all nullable enums null', () {
