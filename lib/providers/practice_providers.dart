@@ -21,6 +21,10 @@ import 'sync_providers.dart';
 /// Set to true on app launch and after post-session Done; false when navigating to tabs.
 final showHomeProvider = StateProvider<bool>((ref) => true);
 
+/// Tracks whether an execution screen is currently mounted.
+/// Shell hides the "Practice in progress" bar when true.
+final practiceExecutionActiveProvider = StateProvider<bool>((ref) => false);
+
 /// S13 §13.5.3 — Singleton TimerService.
 final timerServiceProvider = Provider<TimerService>((ref) {
   final service = TimerService();

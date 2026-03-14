@@ -106,7 +106,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         .read(practiceRepositoryProvider)
         .getPracticeBlockById(widget.session.practiceBlockId);
     _environmentType = block?.environmentType;
-    if (mounted) setState(() => _initialized = true);
+    if (mounted) {
+      ref.read(practiceExecutionActiveProvider.notifier).state = true;
+      setState(() => _initialized = true);
+    }
   }
 
   /// Restore the shot log from persisted instances in the current set.
@@ -166,6 +169,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   @override
   void dispose() {
+    ref.read(practiceExecutionActiveProvider.notifier).state = false;
     _delegate.dispose();
     _shotListController.dispose();
     super.dispose();
@@ -591,6 +595,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
   }
 
+  /// Abbreviate long club names for compact display.
+  static String _abbreviateClub(String name) {
+    return switch (name) {
+      'Driver' => 'Dr',
+      'Putter' => 'Pu',
+      'Chipper' => 'Ch',
+      _ => name,
+    };
+  }
+
   /// Full-width club bar — tap to open grid picker. Centered, large text.
   Widget _buildClubBar({bool canChange = true}) {
     final isRandom =
@@ -624,7 +638,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               Text(
                 modeLabel,
                 style: TextStyle(
-                  fontSize: TypographyTokens.displayLgSize,
+                  fontSize: TypographyTokens.bodyLgSize,
                   color: ColorTokens.textTertiary,
                 ),
               ),
@@ -644,7 +658,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                   ),
                 ),
                 child: Text(
-                  _selectedClub,
+                  _abbreviateClub(_selectedClub),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: TypographyTokens.displayXlSize,

@@ -57,11 +57,15 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
       drill: widget.drill,
     );
     await _controller.initialize();
-    if (mounted) setState(() => _initialized = true);
+    if (mounted) {
+      ref.read(practiceExecutionActiveProvider.notifier).state = true;
+      setState(() => _initialized = true);
+    }
   }
 
   @override
   void dispose() {
+    ref.read(practiceExecutionActiveProvider.notifier).state = false;
     _timer?.cancel();
     super.dispose();
   }
