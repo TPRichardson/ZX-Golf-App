@@ -478,6 +478,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                 children: [
                   // Target width indicator bar (horizontal, for 1x3/3x3 grids).
                   _buildTargetWidthBar(),
+                  const SizedBox(height: 4),
                   Expanded(
                     child: _wrapWithVerticalTargetBar(
                       _delegate.buildInputArea(

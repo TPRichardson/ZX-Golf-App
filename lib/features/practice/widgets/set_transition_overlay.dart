@@ -14,37 +14,47 @@ class SetTransitionOverlay {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black54,
+      barrierColor: ColorTokens.surfaceBase.withValues(alpha: 0.7),
       builder: (ctx) => Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpacingTokens.xl,
-            vertical: SpacingTokens.lg,
-          ),
-          decoration: BoxDecoration(
-            color: ColorTokens.surfaceModal,
-            borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Set ${completedSetIndex + 1} Complete',
-                style: TextStyle(
-                  fontSize: TypographyTokens.headerSize,
-                  fontWeight: TypographyTokens.headerWeight,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SpacingTokens.xxl,
+              vertical: SpacingTokens.xl,
+            ),
+            decoration: BoxDecoration(
+              color: ColorTokens.surfaceRaised,
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+              border: Border.all(color: ColorTokens.surfaceBorder),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
                   color: ColorTokens.successDefault,
+                  size: 36,
                 ),
-              ),
-              const SizedBox(height: SpacingTokens.sm),
-              Text(
-                'Starting Set ${completedSetIndex + 2}',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodyLgSize,
-                  color: ColorTokens.textSecondary,
+                const SizedBox(height: SpacingTokens.md),
+                Text(
+                  'Set ${completedSetIndex + 1} Complete',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.displayLgSize,
+                    fontWeight: TypographyTokens.displayLgWeight,
+                    color: ColorTokens.textPrimary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: SpacingTokens.sm),
+                Text(
+                  'Starting Set ${completedSetIndex + 2}',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodyLgSize,
+                    color: ColorTokens.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
