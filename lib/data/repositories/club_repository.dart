@@ -86,6 +86,19 @@ class ClubRepository {
     final clubId = _uuid.v4();
     final clubType = data.clubType.value;
 
+    // Prevent duplicate club types per user.
+    final existing = await (_db.select(_db.userClubs)
+          ..where((t) => t.userId.equals(userId))
+          ..where((t) => t.clubType.equalsValue(clubType)))
+        .getSingleOrNull();
+    if (existing != null) {
+      throw ValidationException(
+        code: ValidationException.duplicateEntry,
+        message: 'Club type ${clubType.dbValue} already in bag',
+        context: {'clubType': clubType.dbValue},
+      );
+    }
+
     final companion = data.copyWith(
       clubId: Value(clubId),
       userId: Value(userId),
@@ -191,6 +204,67 @@ class ClubRepository {
     }
 
     return _updateClubStatus(clubId, UserClubStatus.active);
+  }
+
+  /// Check whether any instances reference this club type for the given user.
+  Future<bool> hasInstancesForClub(String userId, ClubType clubType) async {
+    // Join Instance → Set → Session → PracticeBlock to filter by userId.
+    final query = _db.selectOnly(_db.instances)
+      ..addColumns([_db.instances.instanceId])
+      ..join([
+        innerJoin(_db.sets, _db.sets.setId.equalsExp(_db.instances.setId)),
+        innerJoin(
+            _db.sessions, _db.sessions.sessionId.equalsExp(_db.sets.sessionId)),
+        innerJoin(_db.practiceBlocks,
+            _db.practiceBlocks.practiceBlockId
+                .equalsExp(_db.sessions.practiceBlockId)),
+      ])
+      ..where(_db.practiceBlocks.userId.equals(userId))
+      ..where(_db.instances.selectedClub.equals(clubType.dbValue))
+      ..where(_db.instances.isDeleted.equals(false))
+      ..limit(1);
+    final rows = await query.get();
+    return rows.isNotEmpty;
+  }
+
+  /// Delete a club and its associated profiles and mappings.
+  /// Only allowed when no instances reference this club type.
+  Future<void> deleteClub(String userId, String clubId) async {
+    await _gate.awaitGateRelease();
+    final club = await _getClub(clubId);
+
+    if (club.userId != userId) {
+      throw ValidationException(
+        code: ValidationException.invalidStructure,
+        message: 'Cannot delete club owned by another user',
+        context: {'clubId': clubId},
+      );
+    }
+
+    final hasInstances = await hasInstancesForClub(userId, club.clubType);
+    if (hasInstances) {
+      throw ValidationException(
+        code: ValidationException.invalidStructure,
+        message: 'Cannot delete a club that has recorded instances',
+        context: {'clubId': clubId, 'clubType': club.clubType.dbValue},
+      );
+    }
+
+    await _db.transaction(() async {
+      // Delete performance profiles.
+      await (_db.delete(_db.clubPerformanceProfiles)
+            ..where((t) => t.clubId.equals(clubId)))
+          .go();
+      // Delete skill area mappings.
+      await (_db.delete(_db.userSkillAreaClubMappings)
+            ..where((t) => t.userId.equals(userId))
+            ..where((t) => t.clubType.equalsValue(club.clubType)))
+          .go();
+      // Delete the club.
+      await (_db.delete(_db.userClubs)
+            ..where((t) => t.clubId.equals(clubId)))
+          .go();
+    });
   }
 
   // ---------------------------------------------------------------------------

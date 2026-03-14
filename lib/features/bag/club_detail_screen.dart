@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
@@ -26,6 +27,7 @@ class ClubDetailScreen extends ConsumerStatefulWidget {
 class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
   UserClub? _club;
   bool _isLoading = true;
+  bool _canDelete = false;
 
   final _makeController = TextEditingController();
   final _modelController = TextEditingController();
@@ -52,10 +54,20 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
         .getSingleOrNull();
     final profile = await clubRepo.getActiveProfile(widget.clubId);
 
+    // Check if club can be deleted (no instances logged).
+    bool canDelete = false;
+    if (club != null) {
+      final userId = ref.read(currentUserIdProvider);
+      final hasInstances =
+          await clubRepo.hasInstancesForClub(userId, club.clubType);
+      canDelete = !hasInstances;
+    }
+
     if (mounted) {
       setState(() {
         _club = club;
         _isLoading = false;
+        _canDelete = canDelete;
 
         if (club != null) {
           _makeController.text = club.make ?? '';
@@ -122,6 +134,13 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
               tooltip: 'Reactivate Club',
               onPressed: _reactivateClub,
             ),
+          if (_canDelete)
+            IconButton(
+              icon: Icon(Icons.delete_outline,
+                  color: ColorTokens.errorDestructive),
+              tooltip: 'Delete Club',
+              onPressed: _deleteClub,
+            ),
         ],
       ),
       body: ListView(
@@ -177,15 +196,6 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
             keyboardType: TextInputType.number,
             hintText: 'Degrees',
           ),
-          const SizedBox(height: SpacingTokens.md),
-          ZxPillButton(
-            label: 'Save Details',
-            variant: ZxPillVariant.primary,
-            expanded: true,
-            centered: true,
-            onTap: _saveDetails,
-          ),
-
           const SizedBox(height: SpacingTokens.xl),
 
           // Performance profile.
@@ -227,22 +237,27 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: SpacingTokens.md),
-          ZxPillButton(
-            label: 'Update Profile',
-            variant: ZxPillVariant.secondary,
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(SpacingTokens.md),
+          child: ZxPillButton(
+            label: 'Save',
+            variant: ZxPillVariant.primary,
             expanded: true,
             centered: true,
-            onTap: _updateProfile,
+            onTap: _saveAll,
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Future<void> _saveDetails() async {
+  Future<void> _saveAll() async {
     try {
-      await ref.read(clubRepositoryProvider).updateClub(
+      final clubRepo = ref.read(clubRepositoryProvider);
+      await clubRepo.updateClub(
             widget.clubId,
             UserClubsCompanion(
               make: drift.Value(_makeController.text.isEmpty
@@ -254,23 +269,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
               loft: drift.Value(double.tryParse(_loftController.text)),
             ),
           );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Club details saved')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _updateProfile() async {
-    try {
-      await ref.read(clubRepositoryProvider).addPerformanceProfile(
+      await clubRepo.addPerformanceProfile(
             widget.clubId,
             ClubPerformanceProfilesCompanion(
               effectiveFromDate: drift.Value(DateTime.now()),
@@ -286,7 +285,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Performance profile updated')),
+          const SnackBar(content: Text('Club saved')),
         );
       }
     } catch (e) {
@@ -302,6 +301,21 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
     final userId = ref.read(currentUserIdProvider);
     await ref.read(clubRepositoryProvider).retireClub(userId, widget.clubId);
     await _loadClub();
+  }
+
+  Future<void> _deleteClub() async {
+    final confirmed = await showSoftConfirmation(
+      context,
+      title: 'Delete Club',
+      message:
+          'This will permanently remove this club and its performance profiles.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final userId = ref.read(currentUserIdProvider);
+    await ref.read(clubRepositoryProvider).deleteClub(userId, widget.clubId);
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> _reactivateClub() async {

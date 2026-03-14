@@ -80,10 +80,21 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Populated during init for drills using ClubCarry targeting.
   final Map<String, double> _clubCarryDistances = {};
 
+  /// Toggle: show total target width vs ± half-width from center.
+  bool _showHalfWidth = false;
+
   @override
   void initState() {
     super.initState();
     _delegate = _createDelegate();
+    // For 1x3 grids, remove top padding — target bar spacing handles it.
+    if (_delegate is GridCellDelegate &&
+        widget.drill.gridType == GridType.oneByThree) {
+      (_delegate as GridCellDelegate).overridePadding =
+          const EdgeInsets.fromLTRB(
+            SpacingTokens.lg, 0, SpacingTokens.lg, SpacingTokens.lg,
+          );
+    }
     _initController();
   }
 
@@ -477,6 +488,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               child: Column(
                 children: [
                   // Target width indicator bar (horizontal, for 1x3/3x3 grids).
+                  const SizedBox(height: 4),
                   _buildTargetWidthBar(),
                   const SizedBox(height: 4),
                   Expanded(
@@ -555,10 +567,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                               },
                             ),
                     ),
+                    // Divider above shot count + undo row.
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: ColorTokens.textTertiary.withValues(alpha: 0.3),
+                    ),
                     // Shot count + undo row.
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                        SpacingTokens.md, 0, SpacingTokens.md, SpacingTokens.sm,
+                        SpacingTokens.md, 2, SpacingTokens.md, 2,
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -838,62 +856,121 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       return const SizedBox.shrink();
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
-      child: SizedBox(
-        height: 28,
-        child: Row(
-          children: [
-            // Left miss zone.
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: ColorTokens.missDefault.withValues(alpha: 0.15),
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(ShapeTokens.radiusGrid),
-                  ),
-                  border: Border.all(
-                    color: ColorTokens.missDefault.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-            ),
-            // Center hit zone — shows target width.
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: ColorTokens.successDefault.withValues(alpha: 0.15),
-                  border: Border.all(
-                    color: ColorTokens.successDefault.withValues(alpha: 0.5),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _formatTargetWidth(),
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySmSize,
-                    fontWeight: FontWeight.w600,
-                    color: ColorTokens.successDefault,
+    final widthLabel = _showHalfWidth
+        ? _formatTargetWidthHalf()
+        : _formatTargetWidth();
+
+    return GestureDetector(
+      onTap: () => setState(() => _showHalfWidth = !_showHalfWidth),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
+        child: SizedBox(
+          height: 28,
+          child: Row(
+            children: [
+              // Left miss zone.
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: ColorTokens.missDefault.withValues(alpha: 0.15),
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(ShapeTokens.radiusGrid),
+                    ),
+                    border: Border.all(
+                      color: ColorTokens.missDefault.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Right miss zone.
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: ColorTokens.missDefault.withValues(alpha: 0.15),
-                  borderRadius: const BorderRadius.horizontal(
-                    right: Radius.circular(ShapeTokens.radiusGrid),
-                  ),
-                  border: Border.all(
-                    color: ColorTokens.missDefault.withValues(alpha: 0.3),
+              // Center hit zone — shows target width or ± half-width split.
+              Expanded(
+                child: _showHalfWidth
+                    ? _buildSplitHitZone()
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: ColorTokens.successDefault
+                              .withValues(alpha: 0.15),
+                          border: Border.all(
+                            color: ColorTokens.successDefault
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          widthLabel,
+                          style: TextStyle(
+                            fontSize: TypographyTokens.bodySmSize,
+                            fontWeight: FontWeight.w600,
+                            color: ColorTokens.successDefault,
+                          ),
+                        ),
+                      ),
+              ),
+              // Right miss zone.
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: ColorTokens.missDefault.withValues(alpha: 0.15),
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(ShapeTokens.radiusGrid),
+                    ),
+                    border: Border.all(
+                      color: ColorTokens.missDefault.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Split hit zone: two halves with a center divider, each showing ±half.
+  Widget _buildSplitHitZone() {
+    final halfLabel = _formatTargetWidthHalf();
+    final borderColor = ColorTokens.successDefault.withValues(alpha: 0.5);
+    final bgColor = ColorTokens.successDefault.withValues(alpha: 0.15);
+    final textStyle = TextStyle(
+      fontSize: TypographyTokens.bodySize,
+      fontWeight: FontWeight.w600,
+      color: ColorTokens.successDefault,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          // Left half: ← label
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('< ', style: textStyle),
+                Text(halfLabel, style: textStyle),
+              ],
+            ),
+          ),
+          // Center divider line.
+          Container(
+            width: 2,
+            color: ColorTokens.successDefault.withValues(alpha: 0.6),
+          ),
+          // Right half: label →
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(halfLabel, style: textStyle),
+                Text(' >', style: textStyle),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -974,6 +1051,37 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         ? value.toInt().toString()
         : value.toStringAsFixed(1);
     return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+  }
+
+  /// Format target width as half value for the split display.
+  String _formatTargetWidthHalf() {
+    final computed = _currentTargetWidth;
+    if (computed != null) {
+      final half = (computed / 2).round();
+      return '${half}y';
+    }
+
+    final value = widget.drill.targetSizeWidth;
+    final unit = widget.drill.targetSizeUnit;
+    if (value == null) return '';
+    final half = value / 2;
+    final formatted = half == half.roundToDouble()
+        ? half.toInt().toString()
+        : half.toStringAsFixed(1);
+    return '$formatted${_shortUnit(unit)}';
+  }
+
+  /// Short unit suffix for compact display.
+  static String _shortUnit(DrillLengthUnit? unit) {
+    return switch (unit) {
+      DrillLengthUnit.yards => 'y',
+      DrillLengthUnit.m => 'm',
+      DrillLengthUnit.feet => 'ft',
+      DrillLengthUnit.cm => 'cm',
+      DrillLengthUnit.mm => 'mm',
+      DrillLengthUnit.inches => 'in',
+      null => '',
+    };
   }
 
   Widget _buildBottomBar() {

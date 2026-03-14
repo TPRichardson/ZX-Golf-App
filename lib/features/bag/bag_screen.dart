@@ -210,7 +210,13 @@ class BagScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddClubDialog(context, ref),
+        onPressed: () {
+          final existingTypes = bagAsync.valueOrNull
+                  ?.map((c) => c.clubType)
+                  .toSet() ??
+              <ClubType>{};
+          _showAddClubDialog(context, ref, existingTypes);
+        },
         backgroundColor: ColorTokens.primaryDefault,
         child: const Icon(Icons.add, color: ColorTokens.textPrimary),
       ),
@@ -308,12 +314,14 @@ class BagScreen extends ConsumerWidget {
     'Putter': [ClubType.putter],
   };
 
-  void _showAddClubDialog(BuildContext context, WidgetRef ref) {
+  void _showAddClubDialog(
+      BuildContext context, WidgetRef ref, Set<ClubType> existingTypes) {
     showDialog(
       context: context,
       builder: (ctx) => _AddClubsDialog(
         commonClubs: _commonClubs,
         fullClubGroups: _fullClubGroups,
+        existingTypes: existingTypes,
         onAdd: (selected) async {
           Navigator.pop(ctx);
           final clubRepo = ref.read(clubRepositoryProvider);
@@ -333,11 +341,13 @@ class BagScreen extends ConsumerWidget {
 class _AddClubsDialog extends StatefulWidget {
   final List<ClubType> commonClubs;
   final Map<String, List<ClubType>> fullClubGroups;
+  final Set<ClubType> existingTypes;
   final ValueChanged<Set<ClubType>> onAdd;
 
   const _AddClubsDialog({
     required this.commonClubs,
     required this.fullClubGroups,
+    required this.existingTypes,
     required this.onAdd,
   });
 
@@ -404,11 +414,13 @@ class _AddClubsDialogState extends State<_AddClubsDialog> {
               _ClubGrid(
                 clubs: widget.commonClubs,
                 selected: _selected,
+                existingTypes: widget.existingTypes,
                 onToggle: _toggle,
               ),
               _FullClubList(
                 groups: widget.fullClubGroups,
                 selected: _selected,
+                existingTypes: widget.existingTypes,
                 expanded: _expanded,
                 onToggle: _toggle,
                 onToggleGroup: (group) => setState(() {
@@ -446,11 +458,13 @@ class _AddClubsDialogState extends State<_AddClubsDialog> {
 class _ClubGrid extends StatelessWidget {
   final List<ClubType> clubs;
   final Set<ClubType> selected;
+  final Set<ClubType> existingTypes;
   final ValueChanged<ClubType> onToggle;
 
   const _ClubGrid({
     required this.clubs,
     required this.selected,
+    required this.existingTypes,
     required this.onToggle,
   });
 
@@ -466,33 +480,37 @@ class _ClubGrid extends StatelessWidget {
       itemCount: clubs.length,
       itemBuilder: (context, index) {
         final club = clubs[index];
+        final isOwned = existingTypes.contains(club);
         final isSelected = selected.contains(club);
         return InkWell(
-          onTap: () => onToggle(club),
+          onTap: isOwned ? null : () => onToggle(club),
           borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? ColorTokens.primaryDefault.withValues(alpha: 0.2)
-                  : ColorTokens.surfaceRaised,
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-              border: Border.all(
+          child: Opacity(
+            opacity: isOwned ? 0.35 : 1.0,
+            child: Container(
+              decoration: BoxDecoration(
                 color: isSelected
-                    ? ColorTokens.primaryDefault
-                    : ColorTokens.surfaceBorder,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                club.dbValue,
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ? ColorTokens.primaryDefault.withValues(alpha: 0.2)
+                    : ColorTokens.surfaceRaised,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+                border: Border.all(
                   color: isSelected
                       ? ColorTokens.primaryDefault
-                      : ColorTokens.textPrimary,
+                      : ColorTokens.surfaceBorder,
                 ),
-                textAlign: TextAlign.center,
+              ),
+              child: Center(
+                child: Text(
+                  club.dbValue,
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? ColorTokens.primaryDefault
+                        : ColorTokens.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),
@@ -506,6 +524,7 @@ class _ClubGrid extends StatelessWidget {
 class _FullClubList extends StatelessWidget {
   final Map<String, List<ClubType>> groups;
   final Set<ClubType> selected;
+  final Set<ClubType> existingTypes;
   final Set<String> expanded;
   final ValueChanged<ClubType> onToggle;
   final ValueChanged<String> onToggleGroup;
@@ -513,6 +532,7 @@ class _FullClubList extends StatelessWidget {
   const _FullClubList({
     required this.groups,
     required this.selected,
+    required this.existingTypes,
     required this.expanded,
     required this.onToggle,
     required this.onToggleGroup,
@@ -532,11 +552,14 @@ class _FullClubList extends StatelessWidget {
     // Single-club categories — tap cell directly.
     if (clubs.length == 1) {
       final club = clubs.first;
+      final isOwned = existingTypes.contains(club);
       final isSelected = selected.contains(club);
       return Padding(
         padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-        child: InkWell(
-          onTap: () => onToggle(club),
+        child: Opacity(
+          opacity: isOwned ? 0.35 : 1.0,
+          child: InkWell(
+          onTap: isOwned ? null : () => onToggle(club),
           borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -565,6 +588,7 @@ class _FullClubList extends StatelessWidget {
               ),
             ),
           ),
+        ),
         ),
       );
     }
@@ -641,9 +665,12 @@ class _FullClubList extends StatelessWidget {
                 crossAxisSpacing: SpacingTokens.sm,
                 childAspectRatio: 2.0,
                 children: clubs.map((club) {
+                  final isOwned = existingTypes.contains(club);
                   final isSelected = selected.contains(club);
-                  return InkWell(
-                    onTap: () => onToggle(club),
+                  return Opacity(
+                    opacity: isOwned ? 0.35 : 1.0,
+                    child: InkWell(
+                    onTap: isOwned ? null : () => onToggle(club),
                     borderRadius:
                         BorderRadius.circular(ShapeTokens.radiusGrid),
                     child: Container(
@@ -675,6 +702,7 @@ class _FullClubList extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
                   );
                 }).toList(),
               ),

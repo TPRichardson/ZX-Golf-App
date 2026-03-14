@@ -77,7 +77,10 @@ class GridCellDelegate extends ExecutionInputDelegate {
     LogInstanceCallback onLogInstance,
   ) {
     final isVert = _isVertical;
-    return Center(
+    // 1x3: align top so cells sit flush below the target width bar.
+    // 3x1: center vertically.
+    return Align(
+      alignment: isVert ? Alignment.center : Alignment.topCenter,
       child: isVert
           ? Column(
               mainAxisSize: MainAxisSize.min,

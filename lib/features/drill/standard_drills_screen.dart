@@ -169,7 +169,8 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
                     child: SizedBox(
                       width: double.infinity,
                       child: ZxPillButton(
-                        label: 'Add Active Drills',
+                        label: 'Add ${_selectedIds.length} Drill${_selectedIds.length == 1 ? '' : 's'}',
+                        icon: Icons.add,
                         variant: ZxPillVariant.primary,
                         isLoading: _isAdopting,
                         onTap: _isAdopting
