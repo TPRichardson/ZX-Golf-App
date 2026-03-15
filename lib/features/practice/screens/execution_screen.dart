@@ -63,6 +63,9 @@ class ExecutionScreen extends ConsumerStatefulWidget {
   ConsumerState<ExecutionScreen> createState() => _ExecutionScreenState();
 }
 
+/// Minimum height per grid cell row before the shot log is hidden.
+const _kMinGridCellHeight = 48.0;
+
 class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   late SessionExecutionController _controller;
   late ExecutionInputDelegate _delegate;
@@ -92,7 +95,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         widget.drill.gridType == GridType.oneByThree) {
       (_delegate as GridCellDelegate).overridePadding =
           const EdgeInsets.fromLTRB(
-            SpacingTokens.lg, 0, SpacingTokens.lg, SpacingTokens.lg,
+            SpacingTokens.lg, 0, SpacingTokens.lg, 0,
           );
     }
     _initController();
@@ -465,45 +468,60 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               onSurfaceTap: _changeSurfaceType,
             ),
             const SizedBox(height: SpacingTokens.sm),
-            // Shot log + Club bar section (~2/3 of remaining space).
-            _buildShotLogSection(),
-            // Gap 42 — Inline lock indicator.
-            if (isLocked)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.md),
-                child: Text(
-                  'Updating scores\u2026',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySize,
-                    color: ColorTokens.textTertiary,
-                  ),
-                ),
-              ),
-            // Input area — varies by delegate (~65% of remaining space).
-            // Target width bar sits just above the input for 1x3/3x3 grids.
-            // For 3x1 grids, a vertical target depth bar sits on the left.
+            // Shot log + input area — LayoutBuilder measures available
+            // height and hides the shot log when grid cells would be
+            // shorter than _kMinGridCellHeight.
             Expanded(
-              flex: 65,
-              child: Column(
-                children: [
-                  // Target width indicator bar (horizontal, for 1x3/3x3 grids).
-                  const SizedBox(height: 4),
-                  _buildTargetWidthBar(),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: _wrapWithVerticalTargetBar(
-                      _delegate.buildInputArea(
-                        context: context,
-                        executionContext: executionContext,
-                        onLogInstance: _onLogInstance,
-                        requestRebuild: () => setState(() {}),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final showShotLog = _shouldShowShotLog(constraints.maxHeight);
+                  return Column(
+                    children: [
+                      // Shot log + Club bar section.
+                      if (showShotLog) _buildShotLogSection(),
+                      // Gap 42 — Inline lock indicator.
+                      if (isLocked)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: SpacingTokens.md),
+                          child: Text(
+                            'Updating scores\u2026',
+                            style: TextStyle(
+                              fontSize: TypographyTokens.bodySize,
+                              color: ColorTokens.textTertiary,
+                            ),
+                          ),
+                        ),
+                      // Input area — varies by delegate.
+                      // Target width bar sits just above the input for 1x3/3x3 grids.
+                      // For 3x1 grids, a vertical target depth bar sits on the left.
+                      Expanded(
+                        flex: showShotLog ? 65 : 1,
+                        child: Column(
+                          children: [
+                            // Target width indicator bar (horizontal, for 1x3/3x3 grids).
+                            const SizedBox(height: 4),
+                            _buildTargetWidthBar(),
+                            const SizedBox(height: 4),
+                            Expanded(
+                              child: _wrapWithVerticalTargetBar(
+                                _delegate.buildInputArea(
+                                  context: context,
+                                  executionContext: executionContext,
+                                  onLogInstance: _onLogInstance,
+                                  requestRebuild: () => setState(() {}),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
+            const SizedBox(height: 8),
             _buildBottomBar(),
           ],
         ),
@@ -512,6 +530,19 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Club bar (full width) + shot log (full width) stacked section.
   /// Uses Expanded so the input area below gets ~1/3 of the screen.
+  /// Returns false when available height is too small for the grid cells
+  /// at their minimum height — the shot log should be hidden.
+  bool _shouldShowShotLog(double availableHeight) {
+    final is3x3 = widget.drill.gridType == GridType.threeByThree;
+    if (!is3x3) return true;
+    // 3 rows of cells + 2 gaps + target bar (~30px) + spacing (8px).
+    // If 65% of available height can't fit 3 rows at min height, hide log.
+    final gridAreaHeight = availableHeight * 0.65;
+    final gridContentHeight = gridAreaHeight - 38; // target bar + spacing
+    final cellHeight = (gridContentHeight - 2 * SpacingTokens.sm) / 3;
+    return cellHeight >= _kMinGridCellHeight;
+  }
+
   Widget _buildShotLogSection() {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
@@ -751,8 +782,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Wraps the input area with a vertical target depth bar for 3x1 grids.
   Widget _wrapWithVerticalTargetBar(Widget inputArea) {
-    if (widget.drill.inputMode != InputMode.gridCell ||
-        widget.drill.gridType != GridType.threeByOne) {
+    if (widget.drill.inputMode != InputMode.gridCell) return inputArea;
+    final gridType = widget.drill.gridType;
+    if (gridType != GridType.threeByOne && gridType != GridType.threeByThree) {
       return inputArea;
     }
 
@@ -760,7 +792,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     if (_delegate is GridCellDelegate) {
       (_delegate as GridCellDelegate).overridePadding =
           const EdgeInsets.fromLTRB(
-            SpacingTokens.xs, SpacingTokens.md, SpacingTokens.lg, SpacingTokens.lg,
+            SpacingTokens.xs, 0, SpacingTokens.lg, 0,
           );
     }
 
@@ -770,8 +802,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         Padding(
           padding: const EdgeInsets.only(
             left: SpacingTokens.lg,
-            top: SpacingTokens.md,
-            bottom: SpacingTokens.lg,
           ),
           child: SizedBox(
             width: 28,
@@ -791,7 +821,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     ),
                   ),
                 ),
-                // Hit zone (middle) — shows target depth.
+                // Hit zone (middle) — shows target distance.
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -832,8 +862,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
             ),
           ),
         ),
-        const SizedBox(width: SpacingTokens.xs),
-        // Input area fills the rest.
+        // Input area fills the rest (grid's own left padding provides the gap).
         Expanded(child: inputArea),
       ],
     );

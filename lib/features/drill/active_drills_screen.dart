@@ -527,7 +527,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
         SpacingTokens.md,
         SpacingTokens.sm,
         SpacingTokens.md,
-        SpacingTokens.sm,
+        0,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -539,7 +539,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                     children: [
                       Expanded(
                         child: ZxPillButton(
-                          label: 'Remove Drills',
+                          label: 'Remove',
                           icon: Icons.remove_circle_outline,
                           size: ZxPillSize.md,
                           variant: ZxPillVariant.destructive,
@@ -552,7 +552,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                       const SizedBox(width: SpacingTokens.sm),
                       Expanded(
                         child: ZxPillButton(
-                          label: 'Add More Drills',
+                          label: 'Add More',
                           icon: Icons.add,
                           size: ZxPillSize.md,
                           variant: ZxPillVariant.primary,
@@ -567,7 +567,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                     ],
                   )
                 : ZxPillButton(
-                    label: 'Add More Drills',
+                    label: 'Add More',
                     icon: Icons.add,
                     size: ZxPillSize.md,
                     variant: ZxPillVariant.primary,

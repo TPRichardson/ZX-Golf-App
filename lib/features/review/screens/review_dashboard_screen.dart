@@ -9,6 +9,7 @@ import 'package:zx_golf_app/features/review/widgets/overall_score_display.dart';
 import 'package:zx_golf_app/features/review/widgets/plan_adherence_badge.dart';
 import 'package:zx_golf_app/features/review/widgets/skill_area_heatmap.dart';
 import 'package:zx_golf_app/features/review/widgets/trend_snapshot.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
 
 // S12 §12.6.1 — Dashboard screen: Overall Score + Heatmap + Trend + CTA.
@@ -97,32 +98,19 @@ class _ReviewDashboardScreenState
         const SizedBox(height: SpacingTokens.lg),
 
         // 5. CTA: Weakness Ranking.
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) =>
-                    WeaknessRankingScreen(userId: userId),
-              ));
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ColorTokens.primaryDefault,
-              side: const BorderSide(color: ColorTokens.primaryDefault),
-              padding: const EdgeInsets.symmetric(
-                vertical: SpacingTokens.sm + 2,
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.trending_down),
-                SizedBox(width: SpacingTokens.sm),
-                Text('View Weakness Ranking'),
-              ],
-            ),
-          ),
+        ZxPillButton(
+          label: 'View Weakness Ranking',
+          icon: Icons.trending_down,
+          size: ZxPillSize.md,
+          variant: ZxPillVariant.secondary,
+          expanded: true,
+          centered: true,
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) =>
+                  WeaknessRankingScreen(userId: userId),
+            ));
+          },
         ),
       ],
     );

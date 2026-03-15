@@ -62,7 +62,7 @@ class GridCellDelegate extends ExecutionInputDelegate {
         opacity: executionContext.isLocked ? 0.4 : 1.0,
         child: Padding(
           padding: overridePadding ?? const EdgeInsets.fromLTRB(
-            SpacingTokens.lg, SpacingTokens.md, SpacingTokens.lg, SpacingTokens.lg,
+            SpacingTokens.lg, 0, SpacingTokens.lg, 0,
           ),
           child: is3x3 ? _build3x3Grid(cells, executionContext, onLogInstance)
               : _build1x3Or3x1(cells, executionContext, onLogInstance),
@@ -111,18 +111,26 @@ class GridCellDelegate extends ExecutionInputDelegate {
     ExecutionContext ctx,
     LogInstanceCallback onLogInstance,
   ) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: SpacingTokens.sm,
-        crossAxisSpacing: SpacingTokens.sm,
-      ),
-      itemCount: 9,
-      itemBuilder: (context, index) {
-        return _buildLabeledCell(cells[index], false, ctx, onLogInstance);
-      },
+    return Column(
+      children: [
+        for (int row = 0; row < 3; row++) ...[
+          if (row > 0) const SizedBox(height: SpacingTokens.sm),
+          Expanded(
+            child: Row(
+              children: [
+                for (int col = 0; col < 3; col++) ...[
+                  if (col > 0) const SizedBox(width: SpacingTokens.sm),
+                  Expanded(
+                    child: _buildLabeledCell(
+                      cells[row * 3 + col], false, ctx, onLogInstance,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -147,7 +155,6 @@ class GridCellDelegate extends ExecutionInputDelegate {
             ? ColorTokens.successActive.withValues(alpha: 0.3)
             : ColorTokens.missActive.withValues(alpha: 0.3),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 60),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
             border: Border.all(color: borderColor),
