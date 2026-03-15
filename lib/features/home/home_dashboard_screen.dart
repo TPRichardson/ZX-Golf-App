@@ -218,23 +218,22 @@ class _ActionZone extends ConsumerWidget {
                 vertical: SpacingTokens.sm + 2,
               ),
               decoration: BoxDecoration(
-                color: ColorTokens.successDefault.withValues(alpha: 0.1),
+                color: ColorTokens.successDefault,
                 borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-                border: Border.all(
-                    color: ColorTokens.successDefault.withValues(alpha: 0.25)),
+                border: Border.all(color: ColorTokens.successDefault),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.play_arrow,
-                      size: 16, color: ColorTokens.successDefault),
+                      size: 16, color: ColorTokens.textPrimary),
                   const SizedBox(width: SpacingTokens.xs),
                   Text(
                     'Resume Practice',
                     style: TextStyle(
                       fontSize: TypographyTokens.bodySize,
-                      fontWeight: FontWeight.w500,
-                      color: ColorTokens.successDefault,
+                      fontWeight: FontWeight.w800,
+                      color: ColorTokens.textPrimary,
                     ),
                   ),
                 ],

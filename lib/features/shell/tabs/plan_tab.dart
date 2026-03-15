@@ -16,31 +16,32 @@ class PlanTab extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Plan Training'),
-          backgroundColor: ColorTokens.surfacePrimary,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          shape: ZxTabBar.connectedHeaderShape,
-          actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.settings,
-                size: 20,
-                color: ColorTokens.textSecondary,
-              ),
-              tooltip: 'Plan Settings',
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) =>
-                    const SettingsScreen(scrollToSection: 'calendar'),
-              )),
-            ),
-          ],
-        ),
+        primary: false,
         body: Column(
-          children: const [
-            ZxTabBar(tabs: [
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              decoration: const BoxDecoration(
+                color: ColorTokens.surfacePrimary,
+                border: Border(
+                  top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                  left: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                  right: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                ),
+              ),
+              child: const Center(
+                child: Text(
+                  'Plan Training',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.headerSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            const ZxTabBar(tabs: [
               Tab(text: 'Calendar'),
               Tab(text: 'Create'),
             ]),

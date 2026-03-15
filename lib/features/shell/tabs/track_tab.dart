@@ -19,18 +19,32 @@ class TrackTab extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Play', style: TextStyle(fontWeight: FontWeight.w600)),
-          backgroundColor: ColorTokens.surfacePrimary,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          shape: ZxTabBar.connectedHeaderShape,
-          actions: const [],
-        ),
-        body: const Column(
+        primary: false,
+        body: Column(
           children: [
-            ZxTabBar(tabs: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              decoration: const BoxDecoration(
+                color: ColorTokens.surfacePrimary,
+                border: Border(
+                  top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                  left: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                  right: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                ),
+              ),
+              child: const Center(
+                child: Text(
+                  'Play',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.headerSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            const ZxTabBar(tabs: [
               Tab(text: 'Practice'),
               Tab(text: 'Gapping'),
             ]),

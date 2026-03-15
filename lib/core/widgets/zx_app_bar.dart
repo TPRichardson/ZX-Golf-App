@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/features/bag/bag_screen.dart';
+import 'package:zx_golf_app/features/settings/settings_screen.dart';
 
 // S15 §15.8 — Custom app bar matching dark theme.
 
@@ -37,6 +40,89 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: ColorTokens.surfacePrimary,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+    );
+  }
+}
+
+/// Shared top bar with home, golf bag, and account icons.
+/// Used by both the shell screen and practice queue screen.
+class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
+  final VoidCallback onHomeTap;
+  final bool isHomeHighlighted;
+  final bool isAuthenticated;
+  final PreferredSizeWidget? bottom;
+
+  const ZxShellTopBar({
+    super.key,
+    required this.onHomeTap,
+    this.isHomeHighlighted = false,
+    this.isAuthenticated = false,
+    this.bottom,
+  });
+
+  @override
+  Size get preferredSize => Size.fromHeight(
+      64 + (bottom?.preferredSize.height ?? 0));
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: 64,
+      centerTitle: false,
+      titleSpacing: 0,
+      title: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: SpacingTokens.xs),
+            child: IconButton(
+              icon: Icon(
+                Icons.home,
+                size: 46,
+                color: isHomeHighlighted
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.textSecondary,
+              ),
+              onPressed: onHomeTap,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: SvgPicture.asset(
+              'assets/icons/golf-bag-tpr-3club.svg',
+              width: 35,
+              height: 35,
+              colorFilter: const ColorFilter.mode(
+                ColorTokens.textSecondary,
+                BlendMode.srcIn,
+              ),
+            ),
+            tooltip: 'Golf Bag',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BagScreen()),
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.account_circle_outlined,
+              size: 40,
+              color: isAuthenticated
+                  ? ColorTokens.textSecondary
+                  : ColorTokens.textTertiary,
+            ),
+            tooltip: isAuthenticated ? 'Account' : 'Not signed in',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: ColorTokens.surfaceBase,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      bottom: bottom,
     );
   }
 }

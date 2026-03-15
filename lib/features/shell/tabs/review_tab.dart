@@ -16,17 +16,32 @@ class ReviewTab extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Review Training'),
-          backgroundColor: ColorTokens.surfacePrimary,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          shape: ZxTabBar.connectedHeaderShape,
-        ),
-        body: const Column(
+        primary: false,
+        body: Column(
           children: [
-            ZxTabBar(tabs: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              decoration: const BoxDecoration(
+                color: ColorTokens.surfacePrimary,
+                border: Border(
+                  top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                  left: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                  right: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                ),
+              ),
+              child: const Center(
+                child: Text(
+                  'Review Training',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.headerSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            const ZxTabBar(tabs: [
               Tab(text: 'Dashboard'),
               Tab(text: 'Analysis'),
               Tab(text: 'Gapping'),

@@ -146,9 +146,9 @@ class ZxPillButton extends StatelessWidget {
     }
     return switch (variant) {
       ZxPillVariant.progress => (
-          foreground: ColorTokens.successDefault,
-          background: ColorTokens.successDefault.withValues(alpha: 0.1),
-          border: ColorTokens.successDefault.withValues(alpha: 0.25),
+          foreground: ColorTokens.textPrimary,
+          background: ColorTokens.successDefault,
+          border: ColorTokens.successDefault,
         ),
       ZxPillVariant.primary => (
           foreground: ColorTokens.textPrimary,

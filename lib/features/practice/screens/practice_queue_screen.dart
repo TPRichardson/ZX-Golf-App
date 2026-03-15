@@ -11,6 +11,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/practice_repository.dart';
 import 'package:zx_golf_app/features/drill/active_drills_screen.dart';
@@ -44,6 +45,9 @@ class PracticeQueueScreen extends ConsumerStatefulWidget {
 
 class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   bool _endingBlock = false;
+  DateTime? _startTimestamp;
+  EnvironmentType? _environmentType;
+  SurfaceType? _surfaceType;
   final _scrollController = ScrollController();
 
   /// Key for the UP NEXT divider to scroll to.
@@ -634,12 +638,14 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     final pbStream =
         ref.watch(practiceBlockWithEntriesProvider(widget.practiceBlockId));
 
+    final bi = ref.watch(syncBannerInputProvider);
+    final isAuthenticated = bi.isAuthenticated;
+
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
-      appBar: ZxAppBar(
-        title: 'Practice',
-      ),
-      body: pbStream.when(
+      body: SafeArea(
+        bottom: false,
+        child: pbStream.when(
         data: (pbWithEntries) {
           if (pbWithEntries == null) {
             return const Center(
@@ -653,6 +659,21 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
           final entries = pbWithEntries.entries;
           final pb = pbWithEntries.practiceBlock;
 
+          // Cache values for the header bar.
+          if (_startTimestamp != pb.startTimestamp ||
+              _environmentType != pb.environmentType ||
+              _surfaceType != pb.surfaceType) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _startTimestamp = pb.startTimestamp;
+                  _environmentType = pb.environmentType;
+                  _surfaceType = pb.surfaceType;
+                });
+              }
+            });
+          }
+
           // Partition entries: completed first, then pending/active.
           final completed = entries
               .where(
@@ -665,42 +686,64 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
 
           return Column(
             children: [
-              // Clock + Finish Practice bar.
+              ZxShellTopBar(
+                onHomeTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+                isAuthenticated: isAuthenticated,
+              ),
+              // Practice header bar — title, clock, environment/surface.
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.md,
-                  vertical: SpacingTokens.sm,
-                ),
+                width: double.infinity,
                 decoration: const BoxDecoration(
-                  color: ColorTokens.surfaceRaised,
+                  color: ColorTokens.surfacePrimary,
                   border: Border(
-                    bottom: BorderSide(color: ColorTokens.surfaceBorder),
+                    top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                    left: BorderSide(color: ColorTokens.primaryDefault, width: 2),
+                    right: BorderSide(color: ColorTokens.primaryDefault, width: 2),
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ElapsedTimeBadge(
-                      startTimestamp: pb.startTimestamp,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        SpacingTokens.md, SpacingTokens.sm, SpacingTokens.md, 0,
+                      ),
+                      child: Row(
+                        children: [
+                          if (_startTimestamp != null)
+                            _ElapsedTimeBadge(startTimestamp: _startTimestamp!),
+                          const Expanded(
+                            child: Center(
+                              child: Text(
+                                'Practice',
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.headerSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_startTimestamp != null)
+                            const SizedBox(width: 70),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
-                    ZxPillButton(
-                      label: 'Finish Practice',
-                      icon: Icons.check_circle_outline,
-                      variant: ZxPillVariant.primary,
-                      isLoading: _endingBlock,
-                      onTap: _endingBlock
-                          ? null
-                          : () => _endPracticeBlock(entries),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: SpacingTokens.md),
+                      child: PracticeStatsBar(
+                        environmentType: _environmentType,
+                        surfaceType: _surfaceType,
+                        onEnvironmentTap: _surfaceType != null
+                            ? () => _changeEnvironment(_surfaceType!)
+                            : null,
+                        onSurfaceTap: _environmentType != null
+                            ? () => _changeSurface(_environmentType!)
+                            : null,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              // Stats bar — environment, surface, location.
-              PracticeStatsBar(
-                environmentType: pb.environmentType,
-                surfaceType: pb.surfaceType,
-                onEnvironmentTap: () => _changeEnvironment(pb.surfaceType),
-                onSurfaceTap: () => _changeSurface(pb.environmentType),
               ),
               // Entry list or empty state.
               Expanded(
@@ -720,6 +763,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             style: const TextStyle(color: ColorTokens.errorDestructive),
           ),
         ),
+      ),
       ),
     );
   }
@@ -810,9 +854,9 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: SpacingTokens.sm),
                   child: Text(
-                    hasActive ? 'IN PROGRESS' : 'UP NEXT',
+                    hasActive ? 'In Progress' : 'Up Next',
                     style: TextStyle(
-                      fontSize: TypographyTokens.displayLgSize,
+                      fontSize: TypographyTokens.headerSize,
                       fontWeight: FontWeight.w600,
                       color: hasActive
                           ? ColorTokens.primaryDefault
@@ -835,6 +879,56 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
         // Pending / active section.
         for (final ewd in pending)
           _buildPendingEntry(ewd, hasActive),
+        // Add Routine / Add Drills — only when no drill is active.
+        if (!hasActive)
+          Padding(
+            padding: const EdgeInsets.only(top: SpacingTokens.md),
+            child: Row(
+              children: [
+                Expanded(child: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'saveAsRoutine') {
+                      _saveAsRoutine([...completed, ...pending]);
+                    } else if (value == 'importRoutine') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Import routine coming soon')),
+                      );
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'importRoutine',
+                      child: Text('Add Routine'),
+                    ),
+                    PopupMenuItem(
+                      value: 'saveAsRoutine',
+                      child: Text('Save as Routine'),
+                    ),
+                  ],
+                  child: ZxPillButton(
+                    label: 'Add Routine',
+                    icon: Icons.playlist_add,
+                    variant: ZxPillVariant.secondary,
+                    expanded: true,
+                    centered: true,
+                    onTap: null,
+                  ),
+                )),
+                const SizedBox(width: SpacingTokens.sm),
+                Expanded(
+                  child: ZxPillButton(
+                    label: 'Add Drills',
+                    icon: Icons.playlist_add,
+                    variant: ZxPillVariant.secondary,
+                    expanded: true,
+                    centered: true,
+                    onTap: _addDrill,
+                  ),
+                ),
+              ],
+            ),
+          ),
         // Bottom spacer ensures UP NEXT stays in a consistent position
         // even when there aren't enough pending drills to fill the screen.
         SizedBox(height: MediaQuery.of(context).size.height * 0.5),
@@ -887,7 +981,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
         SpacingTokens.md + MediaQuery.of(context).padding.bottom,
       ),
       decoration: const BoxDecoration(
-        color: ColorTokens.surfaceRaised,
+        color: ColorTokens.surfacePrimary,
         border: Border(
           top: BorderSide(color: ColorTokens.surfaceBorder),
         ),
@@ -895,57 +989,6 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Routines + Add Drill row — hidden while a drill is active.
-          if (!hasActive) ...[
-            Row(
-              children: [
-                // Routines popup button.
-                Expanded(child: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'saveAsRoutine') {
-                      _saveAsRoutine(entries);
-                    } else if (value == 'importRoutine') {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Import routine coming soon')),
-                      );
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'importRoutine',
-                      child: Text('Add Routine'),
-                    ),
-                    PopupMenuItem(
-                      value: 'saveAsRoutine',
-                      child: Text('Save as Routine'),
-                    ),
-                  ],
-                  child: ZxPillButton(
-                    label: 'Add Routine',
-                    icon: Icons.playlist_add,
-                    variant: ZxPillVariant.secondary,
-                    expanded: true,
-                    centered: true,
-                    onTap: null,
-                  ),
-                )),
-                const SizedBox(width: SpacingTokens.sm),
-                // Add Drill button.
-                Expanded(
-                  child: ZxPillButton(
-                    label: 'Add Drills',
-                    icon: Icons.playlist_add,
-                    variant: ZxPillVariant.primary,
-                    expanded: true,
-                    centered: true,
-                    onTap: _addDrill,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: SpacingTokens.sm),
-          ],
           // Resume Active Drill — only shown when a drill is active.
           if (hasActive) ...[
             ZxPillButton(
@@ -958,38 +1001,93 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
             ),
             const SizedBox(height: SpacingTokens.sm),
           ],
-          // Settings + Discard row.
+          // Settings + Next Drill / Discard Active row.
           Row(
             children: [
               if (!hasActive) ...[
-                Expanded(
-                  child: ZxPillButton(
-                    label: 'Settings',
-                    icon: Icons.settings_outlined,
-                    variant: ZxPillVariant.tertiary,
-                    expanded: true,
-                    centered: true,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Practice settings coming soon')),
-                      );
-                    },
+                GestureDetector(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Practice settings coming soon')),
+                    );
+                  },
+                  child: Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: ColorTokens.textTertiary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                      border: Border.all(
+                        color: ColorTokens.textTertiary.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Icon(Icons.settings_outlined,
+                        size: 22,
+                        color: ColorTokens.textTertiary),
                   ),
                 ),
                 const SizedBox(width: SpacingTokens.sm),
               ],
+              if (hasActive)
+                Expanded(
+                  child: ZxPillButton(
+                    label: 'Discard Active Drill',
+                    icon: Icons.delete_outline,
+                    variant: ZxPillVariant.destructive,
+                    expanded: true,
+                    centered: true,
+                    onTap: () => _discardActiveSession(activeEntry),
+                  ),
+                )
+              else if (pending.where(
+                  (e) => e.entry.entryType == PracticeEntryType.pendingDrill).isNotEmpty)
+                Expanded(
+                  child: ZxPillButton(
+                    label: 'Next Drill',
+                    icon: Icons.play_arrow,
+                    variant: ZxPillVariant.progress,
+                    expanded: true,
+                    centered: true,
+                    onTap: () => _startSession(pending.firstWhere(
+                        (e) => e.entry.entryType == PracticeEntryType.pendingDrill)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: SpacingTokens.sm),
+          // Finish Practice + Discard row.
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _discardPracticeBlock,
+                child: Container(
+                  width: 55,
+                  height: 55,
+                  decoration: BoxDecoration(
+                    color: ColorTokens.errorDestructive.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                    border: Border.all(
+                      color: ColorTokens.errorDestructive.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Icon(Icons.delete_outline,
+                      size: 22,
+                      color: ColorTokens.errorDestructive),
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.sm),
               Expanded(
                 child: ZxPillButton(
-                  label: hasActive ? 'Discard Active Drill' : 'Discard Practice',
-                  icon: Icons.delete_outline,
-                  variant: ZxPillVariant.destructive,
+                  label: 'Finish Practice',
+                  icon: Icons.check_circle_outline,
+                  variant: ZxPillVariant.primary,
                   expanded: true,
                   centered: true,
-                  iconRight: true,
-                  onTap: hasActive
-                      ? () => _discardActiveSession(activeEntry)
-                      : _discardPracticeBlock,
+                  isLoading: _endingBlock,
+                  onTap: _endingBlock
+                      ? null
+                      : () => _endPracticeBlock(entries),
                 ),
               ),
             ],

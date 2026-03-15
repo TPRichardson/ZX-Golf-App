@@ -519,26 +519,32 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
-            child: ZxPillButton(
-              label: 'Add Routine',
-              icon: Icons.add,
-              size: ZxPillSize.md,
-              variant: ZxPillVariant.primary,
-              expanded: true,
-              centered: true,
-              onTap: () => _showRoutinePicker(_selectedDay!),
-            ),
-          ),
-          ZxPillButton(
-            label: 'Add Schedule',
-            icon: Icons.add,
-            size: ZxPillSize.md,
-            variant: ZxPillVariant.primary,
-            expanded: true,
-            centered: true,
-            onTap: () => _showSchedulePicker(_selectedDay!),
+          Row(
+            children: [
+              Expanded(
+                child: ZxPillButton(
+                  label: 'Add Routine',
+                  icon: Icons.add,
+                  size: ZxPillSize.md,
+                  variant: ZxPillVariant.secondary,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => _showRoutinePicker(_selectedDay!),
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.sm),
+              Expanded(
+                child: ZxPillButton(
+                  label: 'Add Schedule',
+                  icon: Icons.add,
+                  size: ZxPillSize.md,
+                  variant: ZxPillVariant.secondary,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => _showSchedulePicker(_selectedDay!),
+                ),
+              ),
+            ],
           ),
         ],
       ),

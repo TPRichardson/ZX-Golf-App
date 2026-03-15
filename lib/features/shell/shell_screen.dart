@@ -7,10 +7,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:zx_golf_app/features/auth/sign_in_screen.dart';
-import 'package:zx_golf_app/features/bag/bag_screen.dart';
-import 'package:zx_golf_app/features/settings/settings_screen.dart';
+import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
@@ -215,83 +212,17 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       child: Listener(
         onPointerDown: (_) => ref.read(syncOrchestratorProvider).recordUserActivity(),
         child: Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 72,
-        title: const SizedBox.shrink(),
-        backgroundColor: ColorTokens.surfaceBase,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: SpacingTokens.xs),
-          child: IconButton(
-            icon: Icon(
-              Icons.home,
-              size: 46,
-              color: showHome
-                  ? ColorTokens.primaryDefault
-                  : ColorTokens.textSecondary,
-            ),
-            onPressed: _goHome,
-          ),
-        ),
-        leadingWidth: 60,
-        actions: [
-          // Golf Bag button.
-          IconButton(
-            icon: SvgPicture.asset(
-              'assets/icons/golf-bag-tpr-3club.svg',
-              width: 35,
-              height: 35,
-              colorFilter: const ColorFilter.mode(
-                ColorTokens.textSecondary,
-                BlendMode.srcIn,
-              ),
-            ),
-            tooltip: 'Golf Bag',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const BagScreen()),
-            ),
-          ),
-          // Sign In prompt when not authenticated.
-          if (!isAuthenticated)
-            TextButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const SignInScreen(),
-                ),
-              ),
-              style: TextButton.styleFrom(
-                foregroundColor: ColorTokens.primaryDefault,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.xs,
-                ),
-              ),
-              child: const Text(
-                'Sign In',
-                style: TextStyle(fontSize: TypographyTokens.headerSize),
-              ),
-            ),
-          // Account button — always visible.
-          IconButton(
-            icon: Icon(
-              Icons.account_circle_outlined,
-              size: 40,
-              color: isAuthenticated
-                  ? ColorTokens.textSecondary
-                  : ColorTokens.textTertiary,
-            ),
-            tooltip: isAuthenticated ? 'Account' : 'Not signed in',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
         children: [
           Column(
             children: [
+              ZxShellTopBar(
+                onHomeTap: _goHome,
+                isHomeHighlighted: showHome,
+                isAuthenticated: isAuthenticated,
+              ),
               // Gap 43 — Maintenance banner (trigger deferred to post-V1).
               const SystemMaintenanceBanner(),
               Expanded(
@@ -312,70 +243,81 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ),
             ],
           ),
-          // Floating resume bar when a practice block is active
+        ],
+      ),
+      ),
+      bottomNavigationBar: Material(
+        color: ColorTokens.surfacePrimary,
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Resume bar when a practice block is active
           // but user is NOT on the execution screen.
           if (activePbData != null &&
               !ref.watch(practiceExecutionActiveProvider))
-            Positioned(
-              left: SpacingTokens.xl,
-              right: SpacingTokens.xl,
-              bottom: SpacingTokens.md,
-              child: GestureDetector(
-                onTap: () => _resumePractice(activePbData.practiceBlockId),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.md,
-                    vertical: SpacingTokens.sm + SpacingTokens.xs,
+            GestureDetector(
+              onTap: () => _resumePractice(activePbData.practiceBlockId),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpacingTokens.md,
+                  vertical: SpacingTokens.md,
+                ),
+                decoration: const BoxDecoration(
+                  color: ColorTokens.surfaceRaised,
+                  border: Border(
+                    bottom: BorderSide(color: ColorTokens.surfaceBorder),
                   ),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.surfaceRaised,
-                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.fiber_manual_record,
-                        size: 14,
-                        color: ColorTokens.successDefault,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const _PulsingDot(),
+                          const SizedBox(width: SpacingTokens.sm),
+                          Text(
+                            'Practice Session Live',
+                            style: TextStyle(
+                              fontSize: TypographyTokens.headerSize,
+                              fontWeight: FontWeight.w600,
+                              color: ColorTokens.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: SpacingTokens.sm),
-                      Expanded(
-                        child: Text(
-                          'Practice in progress',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.headerSize,
-                            fontWeight: FontWeight.w600,
-                            color: ColorTokens.textPrimary,
+                    ),
+                    GestureDetector(
+                      onTap: () => _discardPracticeBlock(
+                        activePbData.practiceBlockId,
+                      ),
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: ColorTokens.errorDestructive
+                              .withValues(alpha: 0.15),
+                          borderRadius:
+                              BorderRadius.circular(ShapeTokens.radiusCard),
+                          border: Border.all(
+                            color: ColorTokens.errorDestructive
+                                .withValues(alpha: 0.4),
                           ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _discardPracticeBlock(
-                          activePbData.practiceBlockId,
-                        ),
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: ColorTokens.errorDestructive.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                          ),
-                          child: Icon(
-                            Icons.delete_outline,
-                            size: 22,
-                            color: ColorTokens.errorDestructive,
-                          ),
+                        child: Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: ColorTokens.errorDestructive,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBarTheme(
+          NavigationBarTheme(
             data: NavigationBarThemeData(
               backgroundColor: ColorTokens.surfacePrimary,
               surfaceTintColor: Colors.transparent,
@@ -428,7 +370,54 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               ],
             ),
           ),
+        ],
       ),
+      ),
+      ),
+      ),
+    );
+  }
+}
+
+/// Gently pulsing green dot for the "Practice in progress" bar.
+class _PulsingDot extends StatefulWidget {
+  const _PulsingDot();
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 1.0, end: 0.3).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: Icon(
+        Icons.fiber_manual_record,
+        size: 14,
+        color: ColorTokens.successDefault,
       ),
     );
   }

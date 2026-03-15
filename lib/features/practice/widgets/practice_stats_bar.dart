@@ -28,7 +28,7 @@ class PracticeStatsBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        SpacingTokens.md, SpacingTokens.md, SpacingTokens.md, 0,
+        SpacingTokens.md, SpacingTokens.sm, SpacingTokens.md, 0,
       ),
       child: Row(
         children: [
