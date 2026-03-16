@@ -85,13 +85,16 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
         alignment: Alignment.bottomCenter,
         children: [
           if (title != null)
-            Text(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
               title!,
               style: const TextStyle(
-                fontSize: TypographyTokens.displayLgSize,
+                fontSize: TypographyTokens.displayMdSize,
                 fontWeight: TypographyTokens.displayXlWeight,
                 color: ColorTokens.textPrimary,
               ),
+            ),
             ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -110,11 +113,13 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               const Spacer(),
-          IconButton(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: IconButton(
             icon: SvgPicture.asset(
               'assets/icons/golf-bag-tpr-3club.svg',
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               colorFilter: ColorFilter.mode(
                 isBagHighlighted
                     ? ColorTokens.primaryDefault
@@ -127,6 +132,7 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
               context,
               MaterialPageRoute(builder: (_) => const BagScreen()),
             ),
+          ),
           ),
           IconButton(
             icon: Icon(

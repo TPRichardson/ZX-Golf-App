@@ -176,6 +176,9 @@ abstract final class TypographyTokens {
   static const displayLgHeight = 28.0 / 24.0;
   static const displayLgWeight = FontWeight.w600;
 
+  // Display MD: 24px, SemiBold
+  static const displayMdSize = 24.0;
+
   // Header section: 20px, Medium
   static const headerSize = 20.0;
   static const headerHeight = 24.0 / 20.0;
