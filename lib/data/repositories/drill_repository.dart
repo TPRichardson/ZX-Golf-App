@@ -550,6 +550,8 @@ class DrillRepository {
       requiredAttemptsPerSet: Value(serverDrill.requiredAttemptsPerSet),
       anchors: Value(serverDrill.anchors),
       requiredEquipment: Value(serverDrill.requiredEquipment),
+      recommendedEquipment: Value(serverDrill.recommendedEquipment),
+      windowCap: Value(serverDrill.windowCap),
       origin: serverDrill.origin,
       status: Value(serverDrill.status),
       isDeleted: Value(serverDrill.isDeleted),

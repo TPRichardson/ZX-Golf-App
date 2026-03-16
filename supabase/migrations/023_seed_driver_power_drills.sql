@@ -33,7 +33,7 @@ INSERT INTO "Drill" (
   NULL,
   'Record your driver club head speed (mph) over 3 sets of 3 swings. Requires a launch monitor.',
   NULL, NULL,
-  '["launchMonitor"]'::JSONB,
+  '["LaunchMonitor"]'::JSONB,
   '[]'::JSONB,
   3,
   'System', 'Active', false, NOW(), NOW()
@@ -71,7 +71,7 @@ INSERT INTO "Drill" (
   NULL,
   'Record your driver ball speed (mph) over 3 sets of 3 swings. Requires a launch monitor.',
   NULL, NULL,
-  '["launchMonitor"]'::JSONB,
+  '["LaunchMonitor"]'::JSONB,
   '[]'::JSONB,
   5,
   'System', 'Active', false, NOW(), NOW()
