@@ -1124,12 +1124,15 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         children: [
           // Left half: ← label
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('< ', style: textStyle),
-                Text(halfLabel, style: textStyle),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('< ', style: textStyle),
+                  Text(halfLabel, style: textStyle),
+                ],
+              ),
             ),
           ),
           // Center divider line.
@@ -1139,12 +1142,15 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           ),
           // Right half: label →
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(halfLabel, style: textStyle),
-                Text(' >', style: textStyle),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(halfLabel, style: textStyle),
+                  Text(' >', style: textStyle),
+                ],
+              ),
             ),
           ),
         ],
