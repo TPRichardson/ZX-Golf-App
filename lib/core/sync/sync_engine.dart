@@ -557,52 +557,85 @@ class SyncEngine {
       payload['Drill'] = drills.map((e) => e.toSyncDto()).toList();
     }
 
-    // PracticeBlock
-    final blocks = lastSync == null
-        ? await _db.select(_db.practiceBlocks).get()
-        : await (_db.select(_db.practiceBlocks)
-              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
-            .get();
+    // PracticeBlock — only upload finished blocks (endTimestamp set).
+    final blockQuery = _db.select(_db.practiceBlocks)
+      ..where((t) => t.endTimestamp.isNotNull());
+    if (lastSync != null) {
+      blockQuery.where((t) => t.updatedAt.isBiggerThanValue(lastSync));
+    }
+    final blocks = await blockQuery.get();
     if (blocks.isNotEmpty) {
       payload['PracticeBlock'] = blocks.map((e) => e.toSyncDto()).toList();
     }
 
-    // Session
-    final sessions = lastSync == null
+    // Collect active (unfinished) block IDs to exclude their child data.
+    final activeBlockIds = (await (_db.select(_db.practiceBlocks)
+          ..where((t) => t.endTimestamp.isNull())
+          ..where((t) => t.isDeleted.equals(false)))
+        .get())
+        .map((b) => b.practiceBlockId)
+        .toSet();
+
+    // Session — exclude sessions belonging to active blocks.
+    final allSessions = lastSync == null
         ? await _db.select(_db.sessions).get()
         : await (_db.select(_db.sessions)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
+    final sessions = allSessions
+        .where((s) => !activeBlockIds.contains(s.practiceBlockId))
+        .toList();
     if (sessions.isNotEmpty) {
       payload['Session'] = sessions.map((e) => e.toSyncDto()).toList();
     }
 
-    // Set
-    final sets = lastSync == null
+    // Collect session IDs that are excluded (belong to active blocks).
+    final excludedSessionIds = allSessions
+        .where((s) => activeBlockIds.contains(s.practiceBlockId))
+        .map((s) => s.sessionId)
+        .toSet();
+
+    // Set — exclude sets belonging to excluded sessions.
+    final allSets = lastSync == null
         ? await _db.select(_db.sets).get()
         : await (_db.select(_db.sets)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
+    final sets = allSets
+        .where((s) => !excludedSessionIds.contains(s.sessionId))
+        .toList();
     if (sets.isNotEmpty) {
       payload['Set'] = sets.map((e) => e.toSyncDto()).toList();
     }
 
-    // Instance
-    final instances = lastSync == null
+    // Collect set IDs that are excluded.
+    final excludedSetIds = allSets
+        .where((s) => excludedSessionIds.contains(s.sessionId))
+        .map((s) => s.setId)
+        .toSet();
+
+    // Instance — exclude instances belonging to excluded sets.
+    final allInstances = lastSync == null
         ? await _db.select(_db.instances).get()
         : await (_db.select(_db.instances)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
+    final instances = allInstances
+        .where((i) => !excludedSetIds.contains(i.setId))
+        .toList();
     if (instances.isNotEmpty) {
       payload['Instance'] = instances.map((e) => e.toSyncDto()).toList();
     }
 
-    // PracticeEntry
-    final entries = lastSync == null
+    // PracticeEntry — exclude entries belonging to active blocks.
+    final allEntries = lastSync == null
         ? await _db.select(_db.practiceEntries).get()
         : await (_db.select(_db.practiceEntries)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
+    final entries = allEntries
+        .where((e) => !activeBlockIds.contains(e.practiceBlockId))
+        .toList();
     if (entries.isNotEmpty) {
       payload['PracticeEntry'] = entries.map((e) => e.toSyncDto()).toList();
     }
