@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
+import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
@@ -67,12 +68,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: ColorTokens.surfacePrimary,
-      ),
-      body: ListView(
-        controller: _scrollController,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            ZxShellTopBar(
+              onHomeTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              isAccountHighlighted: true,
+              title: 'Settings',
+            ),
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
         children: [
           // --- Profile Section ---
           _SectionHeader(title: 'Profile'),
@@ -247,6 +254,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: SpacingTokens.xxl),
         ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

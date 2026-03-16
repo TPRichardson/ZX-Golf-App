@@ -4,6 +4,7 @@
 // TechniqueBlockScreen remains separate (timer-based, no per-instance recording).
 
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -34,6 +35,9 @@ import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/scoring_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
+
+/// True on Android/iOS where vibration and wakelock are supported.
+final bool _isMobilePlatform = Platform.isAndroid || Platform.isIOS;
 
 /// Tracked shot entry for the shot log.
 class _ShotEntry {
@@ -150,7 +154,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     _screenAlwaysOn = prefs.screenAlwaysOn;
     _showHalfWidth = prefs.targetBarSplitView;
     _showHalfDepth = prefs.targetBarSplitView;
-    if (_screenAlwaysOn) WakelockPlus.enable();
+    if (_screenAlwaysOn && _isMobilePlatform) WakelockPlus.enable();
     if (mounted) {
       _executionActiveNotifier.state = true;
       setState(() => _initialized = true);
@@ -286,7 +290,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _executionActiveNotifier.state = false;
     });
-    WakelockPlus.disable();
+    if (_isMobilePlatform) WakelockPlus.disable();
     _delegate.dispose();
     _shotListController.dispose();
     super.dispose();
@@ -898,25 +902,29 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       _showHalfWidth = prefs.targetBarSplitView;
       _showHalfDepth = prefs.targetBarSplitView;
     });
-    if (_screenAlwaysOn) {
-      WakelockPlus.enable();
-    } else {
-      WakelockPlus.disable();
+    if (_isMobilePlatform) {
+      if (_screenAlwaysOn) {
+        WakelockPlus.enable();
+      } else {
+        WakelockPlus.disable();
+      }
     }
   }
 
   /// Play haptic and/or sound feedback on shot input per user preferences.
   void _playShotFeedback() {
     final prefs = ref.read(userPreferencesProvider);
-    switch (prefs.shotInputVibration) {
-      case 'soft':
-        Vibration.vibrate(duration: 20, amplitude: 40);
-      case 'medium':
-        Vibration.vibrate(duration: 30, amplitude: 128);
-      case 'hard':
-        Vibration.vibrate(duration: 50, amplitude: 255);
-      default:
-        break; // 'off'
+    if (_isMobilePlatform) {
+      switch (prefs.shotInputVibration) {
+        case 'soft':
+          Vibration.vibrate(duration: 20, amplitude: 40);
+        case 'medium':
+          Vibration.vibrate(duration: 30, amplitude: 128);
+        case 'hard':
+          Vibration.vibrate(duration: 50, amplitude: 255);
+        default:
+          break; // 'off'
+      }
     }
     if (prefs.shotInputSound) {
       SystemSound.play(SystemSoundType.click);

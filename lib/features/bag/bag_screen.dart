@@ -10,7 +10,6 @@ import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'club_detail_screen.dart';
-import 'skill_area_mapping_screen.dart';
 import 'training_kit_tab.dart';
 import 'training_kit_item_detail_screen.dart';
 import 'widgets/club_card.dart';
@@ -58,40 +57,34 @@ class _BagScreenState extends ConsumerState<BagScreen>
     final bagAsync = ref.watch(userBagProvider(userId));
 
     return Scaffold(
-      appBar: ZxAppBar(
-        title: 'Equipment',
-        titleSize: TypographyTokens.displayLgSize,
-        actions: [
-          if (_tabController.index == 0)
-            IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Skill Area Mappings',
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const SkillAreaMappingScreen(),
-                ));
-              },
+      backgroundColor: ColorTokens.surfaceBase,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            ZxShellTopBar(
+              onHomeTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              isBagHighlighted: true,
+              title: 'Equipment',
             ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: ColorTokens.primaryDefault,
-          unselectedLabelColor: ColorTokens.textTertiary,
-          indicatorColor: ColorTokens.primaryDefault,
-          indicatorSize: TabBarIndicatorSize.tab,
-          dividerColor: ColorTokens.surfaceBorder,
-          tabs: const [
-            Tab(text: 'Golf Bag'),
-            Tab(text: 'Training Kit'),
+            ZxSimpleTabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Golf Bag'),
+                Tab(text: 'Training Kit'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _GolfBagTab(bagAsync: bagAsync),
+                  const TrainingKitTab(),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _GolfBagTab(bagAsync: bagAsync),
-          const TrainingKitTab(),
-        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

@@ -42,6 +42,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     ReviewTab(),
   ];
 
+  static const _tabTitles = ['Plan', 'Play', 'Review'];
+
   @override
   void initState() {
     super.initState();
@@ -207,6 +209,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 onHomeTap: _goHome,
                 isHomeHighlighted: showHome,
                 isAuthenticated: isAuthenticated,
+                title: showHome ? 'Home' : _tabTitles[_currentIndex],
               ),
               // Gap 43 — Maintenance banner (trigger deferred to post-V1).
               const SystemMaintenanceBanner(),

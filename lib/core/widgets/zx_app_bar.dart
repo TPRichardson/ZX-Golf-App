@@ -53,15 +53,21 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
 class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onHomeTap;
   final bool isHomeHighlighted;
+  final bool isBagHighlighted;
+  final bool isAccountHighlighted;
   final bool isAuthenticated;
   final PreferredSizeWidget? bottom;
+  final String? title;
 
   const ZxShellTopBar({
     super.key,
     required this.onHomeTap,
     this.isHomeHighlighted = false,
+    this.isBagHighlighted = false,
+    this.isAccountHighlighted = false,
     this.isAuthenticated = false,
     this.bottom,
+    this.title,
   });
 
   @override
@@ -75,29 +81,44 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 64,
       centerTitle: false,
       titleSpacing: 0,
-      title: Row(
+      title: Stack(
+        alignment: Alignment.bottomCenter,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: SpacingTokens.xs),
-            child: IconButton(
-              icon: Icon(
-                Icons.home,
-                size: 48,
-                color: isHomeHighlighted
-                    ? ColorTokens.primaryDefault
-                    : ColorTokens.textSecondary,
+          if (title != null)
+            Text(
+              title!,
+              style: const TextStyle(
+                fontSize: TypographyTokens.displayLgSize,
+                fontWeight: TypographyTokens.displayXlWeight,
+                color: ColorTokens.textPrimary,
               ),
-              onPressed: onHomeTap,
             ),
-          ),
-          const Spacer(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: SpacingTokens.xs),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.home,
+                    size: 48,
+                    color: isHomeHighlighted
+                        ? ColorTokens.primaryDefault
+                        : ColorTokens.textSecondary,
+                  ),
+                  onPressed: onHomeTap,
+                ),
+              ),
+              const Spacer(),
           IconButton(
             icon: SvgPicture.asset(
               'assets/icons/golf-bag-tpr-3club.svg',
               width: 36,
               height: 36,
-              colorFilter: const ColorFilter.mode(
-                ColorTokens.textSecondary,
+              colorFilter: ColorFilter.mode(
+                isBagHighlighted
+                    ? ColorTokens.primaryDefault
+                    : ColorTokens.textSecondary,
                 BlendMode.srcIn,
               ),
             ),
@@ -111,9 +132,11 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
             icon: Icon(
               Icons.account_circle_outlined,
               size: 40,
-              color: isAuthenticated
-                  ? ColorTokens.textSecondary
-                  : ColorTokens.textTertiary,
+              color: isAccountHighlighted
+                  ? ColorTokens.primaryDefault
+                  : isAuthenticated
+                      ? ColorTokens.textSecondary
+                      : ColorTokens.textTertiary,
             ),
             tooltip: isAuthenticated ? 'Account' : 'Not signed in',
             onPressed: () => Navigator.push(
@@ -121,12 +144,39 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
           ),
+            ],
+          ),
         ],
       ),
       backgroundColor: ColorTokens.surfaceBase,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       bottom: bottom,
+    );
+  }
+}
+
+/// Simple tab bar with cyan underline indicator and standard ZX styling.
+/// Used by shell tabs (Plan/Play/Review) and Equipment screen.
+class ZxSimpleTabBar extends StatelessWidget implements PreferredSizeWidget {
+  final List<Tab> tabs;
+  final TabController? controller;
+
+  const ZxSimpleTabBar({super.key, required this.tabs, this.controller});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return TabBar(
+      controller: controller,
+      labelColor: ColorTokens.primaryDefault,
+      unselectedLabelColor: ColorTokens.textTertiary,
+      indicatorColor: ColorTokens.primaryDefault,
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: ColorTokens.surfaceBorder,
+      tabs: tabs,
     );
   }
 }
