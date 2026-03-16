@@ -953,14 +953,16 @@ class PracticeRepository {
     final sessionId = _uuid.v4();
     final pb = await getPracticeBlockById(entry.practiceBlockId);
 
-    // Resolve surface: explicit override > block default.
+    // Resolve environment and surface: inherit from block at session start.
     final resolvedSurface = surfaceType ?? pb!.surfaceType;
+    final resolvedEnvironment = pb.environmentType;
 
     // Create Session. S04 §4.3 — Persist UserDeclaration when provided.
     final session = await createSession(SessionsCompanion.insert(
       sessionId: sessionId,
       drillId: entry.drillId,
-      practiceBlockId: pb!.practiceBlockId,
+      practiceBlockId: pb.practiceBlockId,
+      environmentType: Value(resolvedEnvironment),
       surfaceType: Value(resolvedSurface),
       userDeclaration: userDeclaration != null
           ? Value(userDeclaration)
@@ -998,6 +1000,16 @@ class PracticeRepository {
     await _gate.awaitGateRelease();
     await updateSession(sessionId, SessionsCompanion(
       surfaceType: Value(surfaceType),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  /// Update the environment type for a session.
+  Future<void> updateSessionEnvironment(
+      String sessionId, EnvironmentType environmentType) async {
+    await _gate.awaitGateRelease();
+    await updateSession(sessionId, SessionsCompanion(
+      environmentType: Value(environmentType),
       updatedAt: Value(DateTime.now()),
     ));
   }

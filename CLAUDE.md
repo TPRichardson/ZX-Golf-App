@@ -49,6 +49,7 @@ When documents conflict, higher precedence wins:
 - **No invented architecture.** Do not introduce new architectural layers, abstraction tiers, service wrappers, or structural patterns not explicitly defined in a TD document. Flag as an open issue if you believe one is needed (TD-08 §4.2 Rule 5).
 - **CLAUDE.md scope restriction.** This file may only summarise existing spec/TD rules or record deviations. It must not create new behavioural rules or undocumented conventions (TD-08 §4.2 Rule 6).
 - **SyncWriteGate awareness.** All Repository writes must be structured for gate compatibility from Phase 1 onward: writes through transactions, no long-held write locks, no assumptions about uninterrupted write access (TD-03 §2.1.1).
+- **Sync-aware schema changes.** When any data model change touches Drift tables (adding/removing/renaming columns, changing types), always check and update: (1) Supabase migration in `supabase/migrations/`, (2) Dart sync DTO in `lib/data/dto/`, (3) Supabase sync upload/download functions if the affected table is synced. Sync is in production — all three layers must stay aligned.
 - **Cross-screen deduplication.** When implementing 3+ screens with the same parent concept, extract shared scaffolding into a single host widget with swappable content.
 
 ---

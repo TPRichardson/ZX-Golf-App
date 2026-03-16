@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -134,6 +134,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV11ToV12(m);
               case 12:
                 await _migrateV12ToV13(m);
+              case 13:
+                await _migrateV13ToV14(m);
             }
           }
         },
@@ -226,6 +228,13 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _migrateV12ToV13(Migrator m) async {
     await customStatement(
         "ALTER TABLE Drill ADD COLUMN RequiredEquipment TEXT NOT NULL DEFAULT '[]'");
+  }
+
+  // Add EnvironmentType column to Session table so each session records
+  // its own environment independently of the practice block.
+  Future<void> _migrateV13ToV14(Migrator m) async {
+    await customStatement(
+        'ALTER TABLE Session ADD COLUMN EnvironmentType TEXT');
   }
 
   // Add Description, TargetDistanceUnit, TargetSizeUnit to Drill table + seed first system drill.

@@ -4170,6 +4170,15 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     defaultValue: const Constant(false),
   );
   @override
+  late final GeneratedColumnWithTypeConverter<EnvironmentType?, String>
+  environmentType = GeneratedColumn<String>(
+    'EnvironmentType',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<EnvironmentType?>($SessionsTable.$converterenvironmentTypen);
+  @override
   late final GeneratedColumnWithTypeConverter<SurfaceType?, String>
   surfaceType = GeneratedColumn<String>(
     'SurfaceType',
@@ -4248,6 +4257,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     status,
     integrityFlag,
     integritySuppressed,
+    environmentType,
     surfaceType,
     userDeclaration,
     sessionDuration,
@@ -4396,6 +4406,12 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.bool,
         data['${effectivePrefix}IntegritySuppressed'],
       )!,
+      environmentType: $SessionsTable.$converterenvironmentTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}EnvironmentType'],
+        ),
+      ),
       surfaceType: $SessionsTable.$convertersurfaceTypen.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -4432,6 +4448,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
 
   static TypeConverter<SessionStatus, String> $converterstatus =
       const SessionStatusConverter();
+  static TypeConverter<EnvironmentType, String> $converterenvironmentType =
+      const EnvironmentTypeConverter();
+  static TypeConverter<EnvironmentType?, String?> $converterenvironmentTypen =
+      NullAwareTypeConverter.wrap($converterenvironmentType);
   static TypeConverter<SurfaceType, String> $convertersurfaceType =
       const SurfaceTypeConverter();
   static TypeConverter<SurfaceType?, String?> $convertersurfaceTypen =
@@ -4446,6 +4466,7 @@ class Session extends DataClass implements Insertable<Session> {
   final SessionStatus status;
   final bool integrityFlag;
   final bool integritySuppressed;
+  final EnvironmentType? environmentType;
   final SurfaceType? surfaceType;
   final String? userDeclaration;
   final int? sessionDuration;
@@ -4460,6 +4481,7 @@ class Session extends DataClass implements Insertable<Session> {
     required this.status,
     required this.integrityFlag,
     required this.integritySuppressed,
+    this.environmentType,
     this.surfaceType,
     this.userDeclaration,
     this.sessionDuration,
@@ -4483,6 +4505,11 @@ class Session extends DataClass implements Insertable<Session> {
     }
     map['IntegrityFlag'] = Variable<bool>(integrityFlag);
     map['IntegritySuppressed'] = Variable<bool>(integritySuppressed);
+    if (!nullToAbsent || environmentType != null) {
+      map['EnvironmentType'] = Variable<String>(
+        $SessionsTable.$converterenvironmentTypen.toSql(environmentType),
+      );
+    }
     if (!nullToAbsent || surfaceType != null) {
       map['SurfaceType'] = Variable<String>(
         $SessionsTable.$convertersurfaceTypen.toSql(surfaceType),
@@ -4511,6 +4538,9 @@ class Session extends DataClass implements Insertable<Session> {
       status: Value(status),
       integrityFlag: Value(integrityFlag),
       integritySuppressed: Value(integritySuppressed),
+      environmentType: environmentType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(environmentType),
       surfaceType: surfaceType == null && nullToAbsent
           ? const Value.absent()
           : Value(surfaceType),
@@ -4543,6 +4573,9 @@ class Session extends DataClass implements Insertable<Session> {
       integritySuppressed: serializer.fromJson<bool>(
         json['integritySuppressed'],
       ),
+      environmentType: serializer.fromJson<EnvironmentType?>(
+        json['environmentType'],
+      ),
       surfaceType: serializer.fromJson<SurfaceType?>(json['surfaceType']),
       userDeclaration: serializer.fromJson<String?>(json['userDeclaration']),
       sessionDuration: serializer.fromJson<int?>(json['sessionDuration']),
@@ -4562,6 +4595,7 @@ class Session extends DataClass implements Insertable<Session> {
       'status': serializer.toJson<SessionStatus>(status),
       'integrityFlag': serializer.toJson<bool>(integrityFlag),
       'integritySuppressed': serializer.toJson<bool>(integritySuppressed),
+      'environmentType': serializer.toJson<EnvironmentType?>(environmentType),
       'surfaceType': serializer.toJson<SurfaceType?>(surfaceType),
       'userDeclaration': serializer.toJson<String?>(userDeclaration),
       'sessionDuration': serializer.toJson<int?>(sessionDuration),
@@ -4579,6 +4613,7 @@ class Session extends DataClass implements Insertable<Session> {
     SessionStatus? status,
     bool? integrityFlag,
     bool? integritySuppressed,
+    Value<EnvironmentType?> environmentType = const Value.absent(),
     Value<SurfaceType?> surfaceType = const Value.absent(),
     Value<String?> userDeclaration = const Value.absent(),
     Value<int?> sessionDuration = const Value.absent(),
@@ -4595,6 +4630,9 @@ class Session extends DataClass implements Insertable<Session> {
     status: status ?? this.status,
     integrityFlag: integrityFlag ?? this.integrityFlag,
     integritySuppressed: integritySuppressed ?? this.integritySuppressed,
+    environmentType: environmentType.present
+        ? environmentType.value
+        : this.environmentType,
     surfaceType: surfaceType.present ? surfaceType.value : this.surfaceType,
     userDeclaration: userDeclaration.present
         ? userDeclaration.value
@@ -4623,6 +4661,9 @@ class Session extends DataClass implements Insertable<Session> {
       integritySuppressed: data.integritySuppressed.present
           ? data.integritySuppressed.value
           : this.integritySuppressed,
+      environmentType: data.environmentType.present
+          ? data.environmentType.value
+          : this.environmentType,
       surfaceType: data.surfaceType.present
           ? data.surfaceType.value
           : this.surfaceType,
@@ -4648,6 +4689,7 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('status: $status, ')
           ..write('integrityFlag: $integrityFlag, ')
           ..write('integritySuppressed: $integritySuppressed, ')
+          ..write('environmentType: $environmentType, ')
           ..write('surfaceType: $surfaceType, ')
           ..write('userDeclaration: $userDeclaration, ')
           ..write('sessionDuration: $sessionDuration, ')
@@ -4667,6 +4709,7 @@ class Session extends DataClass implements Insertable<Session> {
     status,
     integrityFlag,
     integritySuppressed,
+    environmentType,
     surfaceType,
     userDeclaration,
     sessionDuration,
@@ -4685,6 +4728,7 @@ class Session extends DataClass implements Insertable<Session> {
           other.status == this.status &&
           other.integrityFlag == this.integrityFlag &&
           other.integritySuppressed == this.integritySuppressed &&
+          other.environmentType == this.environmentType &&
           other.surfaceType == this.surfaceType &&
           other.userDeclaration == this.userDeclaration &&
           other.sessionDuration == this.sessionDuration &&
@@ -4701,6 +4745,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<SessionStatus> status;
   final Value<bool> integrityFlag;
   final Value<bool> integritySuppressed;
+  final Value<EnvironmentType?> environmentType;
   final Value<SurfaceType?> surfaceType;
   final Value<String?> userDeclaration;
   final Value<int?> sessionDuration;
@@ -4716,6 +4761,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.status = const Value.absent(),
     this.integrityFlag = const Value.absent(),
     this.integritySuppressed = const Value.absent(),
+    this.environmentType = const Value.absent(),
     this.surfaceType = const Value.absent(),
     this.userDeclaration = const Value.absent(),
     this.sessionDuration = const Value.absent(),
@@ -4732,6 +4778,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.status = const Value.absent(),
     this.integrityFlag = const Value.absent(),
     this.integritySuppressed = const Value.absent(),
+    this.environmentType = const Value.absent(),
     this.surfaceType = const Value.absent(),
     this.userDeclaration = const Value.absent(),
     this.sessionDuration = const Value.absent(),
@@ -4750,6 +4797,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<String>? status,
     Expression<bool>? integrityFlag,
     Expression<bool>? integritySuppressed,
+    Expression<String>? environmentType,
     Expression<String>? surfaceType,
     Expression<String>? userDeclaration,
     Expression<int>? sessionDuration,
@@ -4768,6 +4816,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (integrityFlag != null) 'IntegrityFlag': integrityFlag,
       if (integritySuppressed != null)
         'IntegritySuppressed': integritySuppressed,
+      if (environmentType != null) 'EnvironmentType': environmentType,
       if (surfaceType != null) 'SurfaceType': surfaceType,
       if (userDeclaration != null) 'UserDeclaration': userDeclaration,
       if (sessionDuration != null) 'SessionDuration': sessionDuration,
@@ -4786,6 +4835,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Value<SessionStatus>? status,
     Value<bool>? integrityFlag,
     Value<bool>? integritySuppressed,
+    Value<EnvironmentType?>? environmentType,
     Value<SurfaceType?>? surfaceType,
     Value<String?>? userDeclaration,
     Value<int?>? sessionDuration,
@@ -4802,6 +4852,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       status: status ?? this.status,
       integrityFlag: integrityFlag ?? this.integrityFlag,
       integritySuppressed: integritySuppressed ?? this.integritySuppressed,
+      environmentType: environmentType ?? this.environmentType,
       surfaceType: surfaceType ?? this.surfaceType,
       userDeclaration: userDeclaration ?? this.userDeclaration,
       sessionDuration: sessionDuration ?? this.sessionDuration,
@@ -4840,6 +4891,11 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (integritySuppressed.present) {
       map['IntegritySuppressed'] = Variable<bool>(integritySuppressed.value);
     }
+    if (environmentType.present) {
+      map['EnvironmentType'] = Variable<String>(
+        $SessionsTable.$converterenvironmentTypen.toSql(environmentType.value),
+      );
+    }
     if (surfaceType.present) {
       map['SurfaceType'] = Variable<String>(
         $SessionsTable.$convertersurfaceTypen.toSql(surfaceType.value),
@@ -4876,6 +4932,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('status: $status, ')
           ..write('integrityFlag: $integrityFlag, ')
           ..write('integritySuppressed: $integritySuppressed, ')
+          ..write('environmentType: $environmentType, ')
           ..write('surfaceType: $surfaceType, ')
           ..write('userDeclaration: $userDeclaration, ')
           ..write('sessionDuration: $sessionDuration, ')
@@ -21191,6 +21248,7 @@ typedef $$SessionsTableCreateCompanionBuilder =
       Value<SessionStatus> status,
       Value<bool> integrityFlag,
       Value<bool> integritySuppressed,
+      Value<EnvironmentType?> environmentType,
       Value<SurfaceType?> surfaceType,
       Value<String?> userDeclaration,
       Value<int?> sessionDuration,
@@ -21208,6 +21266,7 @@ typedef $$SessionsTableUpdateCompanionBuilder =
       Value<SessionStatus> status,
       Value<bool> integrityFlag,
       Value<bool> integritySuppressed,
+      Value<EnvironmentType?> environmentType,
       Value<SurfaceType?> surfaceType,
       Value<String?> userDeclaration,
       Value<int?> sessionDuration,
@@ -21260,6 +21319,12 @@ class $$SessionsTableFilterComposer
   ColumnFilters<bool> get integritySuppressed => $composableBuilder(
     column: $table.integritySuppressed,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<EnvironmentType?, EnvironmentType, String>
+  get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnWithTypeConverterFilters<SurfaceType?, SurfaceType, String>
@@ -21338,6 +21403,11 @@ class $$SessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get surfaceType => $composableBuilder(
     column: $table.surfaceType,
     builder: (column) => ColumnOrderings(column),
@@ -21407,6 +21477,12 @@ class $$SessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumnWithTypeConverter<EnvironmentType?, String>
+  get environmentType => $composableBuilder(
+    column: $table.environmentType,
+    builder: (column) => column,
+  );
+
   GeneratedColumnWithTypeConverter<SurfaceType?, String> get surfaceType =>
       $composableBuilder(
         column: $table.surfaceType,
@@ -21468,6 +21544,7 @@ class $$SessionsTableTableManager
                 Value<SessionStatus> status = const Value.absent(),
                 Value<bool> integrityFlag = const Value.absent(),
                 Value<bool> integritySuppressed = const Value.absent(),
+                Value<EnvironmentType?> environmentType = const Value.absent(),
                 Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<String?> userDeclaration = const Value.absent(),
                 Value<int?> sessionDuration = const Value.absent(),
@@ -21483,6 +21560,7 @@ class $$SessionsTableTableManager
                 status: status,
                 integrityFlag: integrityFlag,
                 integritySuppressed: integritySuppressed,
+                environmentType: environmentType,
                 surfaceType: surfaceType,
                 userDeclaration: userDeclaration,
                 sessionDuration: sessionDuration,
@@ -21500,6 +21578,7 @@ class $$SessionsTableTableManager
                 Value<SessionStatus> status = const Value.absent(),
                 Value<bool> integrityFlag = const Value.absent(),
                 Value<bool> integritySuppressed = const Value.absent(),
+                Value<EnvironmentType?> environmentType = const Value.absent(),
                 Value<SurfaceType?> surfaceType = const Value.absent(),
                 Value<String?> userDeclaration = const Value.absent(),
                 Value<int?> sessionDuration = const Value.absent(),
@@ -21515,6 +21594,7 @@ class $$SessionsTableTableManager
                 status: status,
                 integrityFlag: integrityFlag,
                 integritySuppressed: integritySuppressed,
+                environmentType: environmentType,
                 surfaceType: surfaceType,
                 userDeclaration: userDeclaration,
                 sessionDuration: sessionDuration,

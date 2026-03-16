@@ -19,6 +19,10 @@ class Sessions extends Table {
       boolean().named('IntegrityFlag').withDefault(const Constant(false))();
   BoolColumn get integritySuppressed =>
       boolean().named('IntegritySuppressed').withDefault(const Constant(false))();
+  TextColumn get environmentType => text()
+      .named('EnvironmentType')
+      .map(const EnvironmentTypeConverter())
+      .nullable()();
   TextColumn get surfaceType => text()
       .named('SurfaceType')
       .map(const SurfaceTypeConverter())

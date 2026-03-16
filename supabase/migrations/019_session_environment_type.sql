@@ -1,0 +1,833 @@
+-- ============================================================
+-- ZX Golf App — Environment Type on Session + Sync Patch
+-- Migration: 019_session_environment_type.sql
+-- 1. Adds EnvironmentType column to Session table.
+-- 2. Patches sync_upload to include EnvironmentType + SurfaceType
+--    for both PracticeBlock and Session (SurfaceType was added to
+--    tables in 008 but never added to the sync functions).
+-- 3. Patches sync_download to include the same columns.
+-- ============================================================
+
+ALTER TABLE "Session" ADD COLUMN "EnvironmentType" environment_type;
+
+-- ============================================================
+-- Patch sync_upload — full function replacement
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION sync_upload(
+  schema_version TEXT,
+  device_id TEXT,
+  changes JSONB
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_server_ts TIMESTAMPTZ := NOW();
+  v_rejected JSONB := '[]'::JSONB;
+  v_row JSONB;
+  v_existing RECORD;
+BEGIN
+  -- TD-03 §5.2 — Schema version gate.
+  IF schema_version != '1' THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'SCHEMA_VERSION_MISMATCH',
+      'error_message', format('Server expects schema version 1, got %s', schema_version),
+      'server_timestamp', v_server_ts
+    );
+  END IF;
+
+  -- Extract authenticated user ID.
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'AUTH_REQUIRED',
+      'error_message', 'Authentication required for sync',
+      'server_timestamp', v_server_ts
+    );
+  END IF;
+
+  -- === User ===
+  IF changes ? 'User' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'User')
+    LOOP
+      INSERT INTO "User" ("UserID", "DisplayName", "Email", "Timezone", "WeekStartDay", "UnitPreferences", "CreatedAt")
+      VALUES (
+        v_user_id,
+        v_row->>'DisplayName',
+        v_row->>'Email',
+        COALESCE(v_row->>'Timezone', 'UTC'),
+        COALESCE((v_row->>'WeekStartDay')::INTEGER, 1),
+        COALESCE(v_row->'UnitPreferences', '{}'::JSONB),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("UserID") DO UPDATE SET
+        "DisplayName" = EXCLUDED."DisplayName",
+        "Email" = EXCLUDED."Email",
+        "Timezone" = EXCLUDED."Timezone",
+        "WeekStartDay" = EXCLUDED."WeekStartDay",
+        "UnitPreferences" = EXCLUDED."UnitPreferences";
+    END LOOP;
+  END IF;
+
+  -- === Drill ===
+  -- TD-03 §5.2.4 — Structural immutability guard for existing drills.
+  IF changes ? 'Drill' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'Drill')
+    LOOP
+      SELECT "SkillArea", "DrillType", "InputMode", "MetricSchemaID", "SubskillMapping", "Origin"
+      INTO v_existing
+      FROM "Drill"
+      WHERE "DrillID" = (v_row->>'DrillID')::UUID;
+
+      IF FOUND THEN
+        -- Reject if structural fields changed.
+        IF v_existing."SkillArea"::TEXT != v_row->>'SkillArea'
+           OR v_existing."DrillType"::TEXT != v_row->>'DrillType'
+           OR v_existing."InputMode"::TEXT != v_row->>'InputMode'
+           OR v_existing."MetricSchemaID" != v_row->>'MetricSchemaID'
+           OR v_existing."SubskillMapping"::TEXT != (v_row->'SubskillMapping')::TEXT
+           OR v_existing."Origin"::TEXT != v_row->>'Origin'
+        THEN
+          v_rejected := v_rejected || jsonb_build_array(jsonb_build_object(
+            'table', 'Drill',
+            'id', v_row->>'DrillID',
+            'reason', 'STRUCTURAL_IMMUTABILITY_VIOLATION'
+          ));
+          CONTINUE;
+        END IF;
+      END IF;
+
+      INSERT INTO "Drill" (
+        "DrillID", "UserID", "Name", "SkillArea", "DrillType", "ScoringMode",
+        "InputMode", "MetricSchemaID", "GridType", "SubskillMapping",
+        "ClubSelectionMode", "TargetDistanceMode", "TargetDistanceValue",
+        "TargetSizeMode", "TargetSizeWidth", "TargetSizeDepth",
+        "RequiredSetCount", "RequiredAttemptsPerSet", "Anchors",
+        "Origin", "Status", "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'DrillID')::UUID,
+        CASE WHEN v_row->>'UserID' IS NULL THEN NULL ELSE (v_row->>'UserID')::UUID END,
+        v_row->>'Name',
+        (v_row->>'SkillArea')::skill_area,
+        (v_row->>'DrillType')::drill_type,
+        CASE WHEN v_row->>'ScoringMode' IS NULL THEN NULL ELSE (v_row->>'ScoringMode')::scoring_mode END,
+        (v_row->>'InputMode')::input_mode,
+        v_row->>'MetricSchemaID',
+        CASE WHEN v_row->>'GridType' IS NULL THEN NULL ELSE (v_row->>'GridType')::grid_type END,
+        COALESCE(v_row->'SubskillMapping', '[]'::JSONB),
+        CASE WHEN v_row->>'ClubSelectionMode' IS NULL THEN NULL ELSE (v_row->>'ClubSelectionMode')::club_selection_mode END,
+        CASE WHEN v_row->>'TargetDistanceMode' IS NULL THEN NULL ELSE (v_row->>'TargetDistanceMode')::target_distance_mode END,
+        (v_row->>'TargetDistanceValue')::DECIMAL,
+        CASE WHEN v_row->>'TargetSizeMode' IS NULL THEN NULL ELSE (v_row->>'TargetSizeMode')::target_size_mode END,
+        (v_row->>'TargetSizeWidth')::DECIMAL,
+        (v_row->>'TargetSizeDepth')::DECIMAL,
+        COALESCE((v_row->>'RequiredSetCount')::INTEGER, 1),
+        (v_row->>'RequiredAttemptsPerSet')::INTEGER,
+        COALESCE(v_row->'Anchors', '{}'::JSONB),
+        (v_row->>'Origin')::drill_origin,
+        COALESCE((v_row->>'Status')::drill_status, 'Active'),
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("DrillID") DO UPDATE SET
+        "Name" = EXCLUDED."Name",
+        "ScoringMode" = EXCLUDED."ScoringMode",
+        "GridType" = EXCLUDED."GridType",
+        "ClubSelectionMode" = EXCLUDED."ClubSelectionMode",
+        "TargetDistanceMode" = EXCLUDED."TargetDistanceMode",
+        "TargetDistanceValue" = EXCLUDED."TargetDistanceValue",
+        "TargetSizeMode" = EXCLUDED."TargetSizeMode",
+        "TargetSizeWidth" = EXCLUDED."TargetSizeWidth",
+        "TargetSizeDepth" = EXCLUDED."TargetSizeDepth",
+        "RequiredSetCount" = EXCLUDED."RequiredSetCount",
+        "RequiredAttemptsPerSet" = EXCLUDED."RequiredAttemptsPerSet",
+        "Anchors" = EXCLUDED."Anchors",
+        "Status" = EXCLUDED."Status",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === PracticeBlock (patched: +EnvironmentType, +SurfaceType) ===
+  IF changes ? 'PracticeBlock' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'PracticeBlock')
+    LOOP
+      INSERT INTO "PracticeBlock" (
+        "PracticeBlockID", "UserID", "SourceRoutineID", "DrillOrder",
+        "StartTimestamp", "EndTimestamp", "ClosureType",
+        "EnvironmentType", "SurfaceType",
+        "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'PracticeBlockID')::UUID, v_user_id,
+        CASE WHEN v_row->>'SourceRoutineID' IS NULL THEN NULL ELSE (v_row->>'SourceRoutineID')::UUID END,
+        COALESCE(v_row->'DrillOrder', '[]'::JSONB),
+        (v_row->>'StartTimestamp')::TIMESTAMPTZ,
+        (v_row->>'EndTimestamp')::TIMESTAMPTZ,
+        CASE WHEN v_row->>'ClosureType' IS NULL THEN NULL ELSE (v_row->>'ClosureType')::closure_type END,
+        CASE WHEN v_row->>'EnvironmentType' IS NULL THEN NULL ELSE (v_row->>'EnvironmentType')::environment_type END,
+        CASE WHEN v_row->>'SurfaceType' IS NULL THEN NULL ELSE (v_row->>'SurfaceType')::surface_type END,
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("PracticeBlockID") DO UPDATE SET
+        "SourceRoutineID" = EXCLUDED."SourceRoutineID",
+        "DrillOrder" = EXCLUDED."DrillOrder",
+        "StartTimestamp" = EXCLUDED."StartTimestamp",
+        "EndTimestamp" = EXCLUDED."EndTimestamp",
+        "ClosureType" = EXCLUDED."ClosureType",
+        "EnvironmentType" = EXCLUDED."EnvironmentType",
+        "SurfaceType" = EXCLUDED."SurfaceType",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === Session (patched: +EnvironmentType, +SurfaceType) ===
+  IF changes ? 'Session' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'Session')
+    LOOP
+      INSERT INTO "Session" (
+        "SessionID", "DrillID", "PracticeBlockID", "CompletionTimestamp",
+        "Status", "IntegrityFlag", "IntegritySuppressed",
+        "EnvironmentType", "SurfaceType",
+        "UserDeclaration", "SessionDuration", "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'SessionID')::UUID, (v_row->>'DrillID')::UUID,
+        (v_row->>'PracticeBlockID')::UUID,
+        (v_row->>'CompletionTimestamp')::TIMESTAMPTZ,
+        COALESCE((v_row->>'Status')::session_status, 'Active'),
+        COALESCE((v_row->>'IntegrityFlag')::BOOLEAN, false),
+        COALESCE((v_row->>'IntegritySuppressed')::BOOLEAN, false),
+        CASE WHEN v_row->>'EnvironmentType' IS NULL THEN NULL ELSE (v_row->>'EnvironmentType')::environment_type END,
+        CASE WHEN v_row->>'SurfaceType' IS NULL THEN NULL ELSE (v_row->>'SurfaceType')::surface_type END,
+        v_row->>'UserDeclaration',
+        (v_row->>'SessionDuration')::INTEGER,
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("SessionID") DO UPDATE SET
+        "CompletionTimestamp" = EXCLUDED."CompletionTimestamp",
+        "Status" = EXCLUDED."Status",
+        "IntegrityFlag" = EXCLUDED."IntegrityFlag",
+        "IntegritySuppressed" = EXCLUDED."IntegritySuppressed",
+        "EnvironmentType" = EXCLUDED."EnvironmentType",
+        "SurfaceType" = EXCLUDED."SurfaceType",
+        "UserDeclaration" = EXCLUDED."UserDeclaration",
+        "SessionDuration" = EXCLUDED."SessionDuration",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === Set (child) ===
+  IF changes ? 'Set' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'Set')
+    LOOP
+      INSERT INTO "Set" ("SetID", "SessionID", "SetIndex", "IsDeleted", "CreatedAt")
+      VALUES (
+        (v_row->>'SetID')::UUID, (v_row->>'SessionID')::UUID,
+        (v_row->>'SetIndex')::INTEGER,
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("SetID") DO UPDATE SET
+        "SetIndex" = EXCLUDED."SetIndex",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === Instance (child) ===
+  IF changes ? 'Instance' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'Instance')
+    LOOP
+      INSERT INTO "Instance" (
+        "InstanceID", "SetID", "SelectedClub", "RawMetrics", "Timestamp",
+        "ResolvedTargetDistance", "ResolvedTargetWidth", "ResolvedTargetDepth",
+        "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'InstanceID')::UUID, (v_row->>'SetID')::UUID,
+        (v_row->>'SelectedClub')::UUID,
+        COALESCE(v_row->'RawMetrics', '{}'::JSONB),
+        (v_row->>'Timestamp')::TIMESTAMPTZ,
+        (v_row->>'ResolvedTargetDistance')::DECIMAL,
+        (v_row->>'ResolvedTargetWidth')::DECIMAL,
+        (v_row->>'ResolvedTargetDepth')::DECIMAL,
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("InstanceID") DO UPDATE SET
+        "SelectedClub" = EXCLUDED."SelectedClub",
+        "RawMetrics" = EXCLUDED."RawMetrics",
+        "Timestamp" = EXCLUDED."Timestamp",
+        "ResolvedTargetDistance" = EXCLUDED."ResolvedTargetDistance",
+        "ResolvedTargetWidth" = EXCLUDED."ResolvedTargetWidth",
+        "ResolvedTargetDepth" = EXCLUDED."ResolvedTargetDepth",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === PracticeEntry (child) ===
+  IF changes ? 'PracticeEntry' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'PracticeEntry')
+    LOOP
+      INSERT INTO "PracticeEntry" (
+        "PracticeEntryID", "PracticeBlockID", "DrillID", "SessionID",
+        "EntryType", "PositionIndex", "CreatedAt"
+      ) VALUES (
+        (v_row->>'PracticeEntryID')::UUID, (v_row->>'PracticeBlockID')::UUID,
+        (v_row->>'DrillID')::UUID,
+        CASE WHEN v_row->>'SessionID' IS NULL THEN NULL ELSE (v_row->>'SessionID')::UUID END,
+        COALESCE((v_row->>'EntryType')::practice_entry_type, 'PendingDrill'),
+        (v_row->>'PositionIndex')::INTEGER,
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("PracticeEntryID") DO UPDATE SET
+        "DrillID" = EXCLUDED."DrillID",
+        "SessionID" = EXCLUDED."SessionID",
+        "EntryType" = EXCLUDED."EntryType",
+        "PositionIndex" = EXCLUDED."PositionIndex";
+    END LOOP;
+  END IF;
+
+  -- === UserDrillAdoption ===
+  IF changes ? 'UserDrillAdoption' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'UserDrillAdoption')
+    LOOP
+      INSERT INTO "UserDrillAdoption" (
+        "UserDrillAdoptionID", "UserID", "DrillID", "Status", "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'UserDrillAdoptionID')::UUID, v_user_id,
+        (v_row->>'DrillID')::UUID,
+        COALESCE((v_row->>'Status')::adoption_status, 'Active'),
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("UserDrillAdoptionID") DO UPDATE SET
+        "Status" = EXCLUDED."Status",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === UserClub ===
+  IF changes ? 'UserClub' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'UserClub')
+    LOOP
+      INSERT INTO "UserClub" (
+        "ClubID", "UserID", "ClubType", "Make", "Model", "Loft", "Status", "CreatedAt"
+      ) VALUES (
+        (v_row->>'ClubID')::UUID, v_user_id,
+        (v_row->>'ClubType')::club_type,
+        v_row->>'Make', v_row->>'Model',
+        (v_row->>'Loft')::DECIMAL,
+        COALESCE((v_row->>'Status')::user_club_status, 'Active'),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("ClubID") DO UPDATE SET
+        "ClubType" = EXCLUDED."ClubType",
+        "Make" = EXCLUDED."Make",
+        "Model" = EXCLUDED."Model",
+        "Loft" = EXCLUDED."Loft",
+        "Status" = EXCLUDED."Status";
+    END LOOP;
+  END IF;
+
+  -- === ClubPerformanceProfile (child of UserClub) ===
+  IF changes ? 'ClubPerformanceProfile' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'ClubPerformanceProfile')
+    LOOP
+      INSERT INTO "ClubPerformanceProfile" (
+        "ProfileID", "ClubID", "EffectiveFromDate",
+        "CarryDistance", "DispersionLeft", "DispersionRight",
+        "DispersionShort", "DispersionLong", "CreatedAt"
+      ) VALUES (
+        (v_row->>'ProfileID')::UUID, (v_row->>'ClubID')::UUID,
+        (v_row->>'EffectiveFromDate')::DATE,
+        (v_row->>'CarryDistance')::DECIMAL,
+        (v_row->>'DispersionLeft')::DECIMAL,
+        (v_row->>'DispersionRight')::DECIMAL,
+        (v_row->>'DispersionShort')::DECIMAL,
+        (v_row->>'DispersionLong')::DECIMAL,
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("ProfileID") DO UPDATE SET
+        "EffectiveFromDate" = EXCLUDED."EffectiveFromDate",
+        "CarryDistance" = EXCLUDED."CarryDistance",
+        "DispersionLeft" = EXCLUDED."DispersionLeft",
+        "DispersionRight" = EXCLUDED."DispersionRight",
+        "DispersionShort" = EXCLUDED."DispersionShort",
+        "DispersionLong" = EXCLUDED."DispersionLong";
+    END LOOP;
+  END IF;
+
+  -- === UserSkillAreaClubMapping ===
+  IF changes ? 'UserSkillAreaClubMapping' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'UserSkillAreaClubMapping')
+    LOOP
+      INSERT INTO "UserSkillAreaClubMapping" (
+        "MappingID", "UserID", "ClubType", "SkillArea", "IsMandatory", "CreatedAt"
+      ) VALUES (
+        (v_row->>'MappingID')::UUID, v_user_id,
+        (v_row->>'ClubType')::club_type,
+        (v_row->>'SkillArea')::skill_area,
+        COALESCE((v_row->>'IsMandatory')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("MappingID") DO UPDATE SET
+        "ClubType" = EXCLUDED."ClubType",
+        "SkillArea" = EXCLUDED."SkillArea",
+        "IsMandatory" = EXCLUDED."IsMandatory";
+    END LOOP;
+  END IF;
+
+  -- === Routine ===
+  IF changes ? 'Routine' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'Routine')
+    LOOP
+      INSERT INTO "Routine" (
+        "RoutineID", "UserID", "Name", "Entries", "Status", "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'RoutineID')::UUID, v_user_id,
+        v_row->>'Name',
+        COALESCE(v_row->'Entries', '[]'::JSONB),
+        COALESCE((v_row->>'Status')::routine_status, 'Active'),
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("RoutineID") DO UPDATE SET
+        "Name" = EXCLUDED."Name",
+        "Entries" = EXCLUDED."Entries",
+        "Status" = EXCLUDED."Status",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === Schedule ===
+  IF changes ? 'Schedule' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'Schedule')
+    LOOP
+      INSERT INTO "Schedule" (
+        "ScheduleID", "UserID", "Name", "ApplicationMode", "Entries",
+        "Status", "IsDeleted", "CreatedAt"
+      ) VALUES (
+        (v_row->>'ScheduleID')::UUID, v_user_id,
+        v_row->>'Name',
+        (v_row->>'ApplicationMode')::schedule_app_mode,
+        COALESCE(v_row->'Entries', '[]'::JSONB),
+        COALESCE((v_row->>'Status')::schedule_status, 'Active'),
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("ScheduleID") DO UPDATE SET
+        "Name" = EXCLUDED."Name",
+        "ApplicationMode" = EXCLUDED."ApplicationMode",
+        "Entries" = EXCLUDED."Entries",
+        "Status" = EXCLUDED."Status",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  -- === CalendarDay ===
+  IF changes ? 'CalendarDay' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'CalendarDay')
+    LOOP
+      INSERT INTO "CalendarDay" (
+        "CalendarDayID", "UserID", "Date", "SlotCapacity", "Slots", "CreatedAt"
+      ) VALUES (
+        (v_row->>'CalendarDayID')::UUID, v_user_id,
+        (v_row->>'Date')::DATE,
+        COALESCE((v_row->>'SlotCapacity')::INTEGER, 0),
+        COALESCE(v_row->'Slots', '[]'::JSONB),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("CalendarDayID") DO UPDATE SET
+        "Date" = EXCLUDED."Date",
+        "SlotCapacity" = EXCLUDED."SlotCapacity",
+        "Slots" = EXCLUDED."Slots";
+    END LOOP;
+  END IF;
+
+  -- === RoutineInstance ===
+  IF changes ? 'RoutineInstance' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'RoutineInstance')
+    LOOP
+      INSERT INTO "RoutineInstance" (
+        "RoutineInstanceID", "RoutineID", "UserID", "CalendarDayDate",
+        "OwnedSlots", "CreatedAt"
+      ) VALUES (
+        (v_row->>'RoutineInstanceID')::UUID,
+        CASE WHEN v_row->>'RoutineID' IS NULL THEN NULL ELSE (v_row->>'RoutineID')::UUID END,
+        v_user_id,
+        (v_row->>'CalendarDayDate')::DATE,
+        COALESCE(v_row->'OwnedSlots', '[]'::JSONB),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("RoutineInstanceID") DO UPDATE SET
+        "RoutineID" = EXCLUDED."RoutineID",
+        "CalendarDayDate" = EXCLUDED."CalendarDayDate",
+        "OwnedSlots" = EXCLUDED."OwnedSlots";
+    END LOOP;
+  END IF;
+
+  -- === ScheduleInstance ===
+  IF changes ? 'ScheduleInstance' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'ScheduleInstance')
+    LOOP
+      INSERT INTO "ScheduleInstance" (
+        "ScheduleInstanceID", "ScheduleID", "UserID",
+        "StartDate", "EndDate", "OwnedSlots", "CreatedAt"
+      ) VALUES (
+        (v_row->>'ScheduleInstanceID')::UUID,
+        CASE WHEN v_row->>'ScheduleID' IS NULL THEN NULL ELSE (v_row->>'ScheduleID')::UUID END,
+        v_user_id,
+        (v_row->>'StartDate')::DATE,
+        (v_row->>'EndDate')::DATE,
+        COALESCE(v_row->'OwnedSlots', '[]'::JSONB),
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("ScheduleInstanceID") DO UPDATE SET
+        "ScheduleID" = EXCLUDED."ScheduleID",
+        "StartDate" = EXCLUDED."StartDate",
+        "EndDate" = EXCLUDED."EndDate",
+        "OwnedSlots" = EXCLUDED."OwnedSlots";
+    END LOOP;
+  END IF;
+
+  -- === EventLog (append-only — INSERT only, no UPDATE) ===
+  IF changes ? 'EventLog' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'EventLog')
+    LOOP
+      INSERT INTO "EventLog" (
+        "EventLogID", "UserID", "DeviceID", "EventTypeID",
+        "Timestamp", "AffectedEntityIDs", "AffectedSubskills",
+        "Metadata", "CreatedAt"
+      ) VALUES (
+        (v_row->>'EventLogID')::UUID, v_user_id,
+        v_row->>'DeviceID',
+        v_row->>'EventTypeID',
+        (v_row->>'Timestamp')::TIMESTAMPTZ,
+        v_row->'AffectedEntityIDs',
+        v_row->'AffectedSubskills',
+        v_row->'Metadata',
+        COALESCE((v_row->>'CreatedAt')::TIMESTAMPTZ, v_server_ts)
+      )
+      ON CONFLICT ("EventLogID") DO NOTHING;
+    END LOOP;
+  END IF;
+
+  -- === UserDevice ===
+  IF changes ? 'UserDevice' THEN
+    FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'UserDevice')
+    LOOP
+      INSERT INTO "UserDevice" (
+        "DeviceID", "UserID", "DeviceLabel", "RegisteredAt",
+        "LastSyncAt", "IsDeleted"
+      ) VALUES (
+        (v_row->>'DeviceID')::UUID, v_user_id,
+        v_row->>'DeviceLabel',
+        COALESCE((v_row->>'RegisteredAt')::TIMESTAMPTZ, v_server_ts),
+        (v_row->>'LastSyncAt')::TIMESTAMPTZ,
+        COALESCE((v_row->>'IsDeleted')::BOOLEAN, false)
+      )
+      ON CONFLICT ("DeviceID") DO UPDATE SET
+        "DeviceLabel" = EXCLUDED."DeviceLabel",
+        "LastSyncAt" = EXCLUDED."LastSyncAt",
+        "IsDeleted" = EXCLUDED."IsDeleted";
+    END LOOP;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'server_timestamp', v_server_ts,
+    'rejected_rows', v_rejected
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object(
+    'success', false,
+    'error_code', 'SERVER_ERROR',
+    'error_message', SQLERRM,
+    'server_timestamp', NOW()
+  );
+END;
+$$;
+
+-- ============================================================
+-- Patch sync_download — full function replacement
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION sync_download(
+  schema_version TEXT,
+  last_sync_timestamp TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID;
+  v_server_ts TIMESTAMPTZ := NOW();
+  v_changes JSONB := '{}'::JSONB;
+  v_rows JSONB;
+BEGIN
+  -- TD-03 §5.2 — Schema version gate.
+  IF schema_version != '1' THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'SCHEMA_VERSION_MISMATCH',
+      'error_message', format('Server expects schema version 1, got %s', schema_version),
+      'server_timestamp', v_server_ts
+    );
+  END IF;
+
+  -- Extract authenticated user ID.
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'AUTH_REQUIRED',
+      'error_message', 'Authentication required for sync',
+      'server_timestamp', v_server_ts
+    );
+  END IF;
+
+  -- === User ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "UserID", "DisplayName", "Email", "Timezone", "WeekStartDay",
+           "UnitPreferences", "CreatedAt", "UpdatedAt"
+    FROM "User"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('User', v_rows); END IF;
+
+  -- === Drill (owned by user OR system drills) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "DrillID", "UserID", "Name", "SkillArea", "DrillType", "ScoringMode",
+           "InputMode", "MetricSchemaID", "GridType", "SubskillMapping",
+           "ClubSelectionMode", "TargetDistanceMode", "TargetDistanceValue",
+           "TargetSizeMode", "TargetSizeWidth", "TargetSizeDepth",
+           "RequiredSetCount", "RequiredAttemptsPerSet", "Anchors",
+           "Origin", "Status", "IsDeleted", "CreatedAt", "UpdatedAt"
+    FROM "Drill"
+    WHERE ("UserID" = v_user_id OR "UserID" IS NULL)
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('Drill', v_rows); END IF;
+
+  -- === PracticeBlock (patched: +EnvironmentType, +SurfaceType) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "PracticeBlockID", "UserID", "SourceRoutineID", "DrillOrder",
+           "StartTimestamp", "EndTimestamp", "ClosureType",
+           "EnvironmentType", "SurfaceType",
+           "IsDeleted", "CreatedAt", "UpdatedAt"
+    FROM "PracticeBlock"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('PracticeBlock', v_rows); END IF;
+
+  -- === Session (patched: +EnvironmentType, +SurfaceType) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT s."SessionID", s."DrillID", s."PracticeBlockID",
+           s."CompletionTimestamp", s."Status", s."IntegrityFlag",
+           s."IntegritySuppressed",
+           s."EnvironmentType", s."SurfaceType",
+           s."UserDeclaration", s."SessionDuration",
+           s."IsDeleted", s."CreatedAt", s."UpdatedAt"
+    FROM "Session" s
+    JOIN "PracticeBlock" pb ON pb."PracticeBlockID" = s."PracticeBlockID"
+    WHERE pb."UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR s."UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('Session', v_rows); END IF;
+
+  -- === Set (child — JOIN through Session -> PracticeBlock) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT st."SetID", st."SessionID", st."SetIndex",
+           st."IsDeleted", st."CreatedAt", st."UpdatedAt"
+    FROM "Set" st
+    JOIN "Session" s ON s."SessionID" = st."SessionID"
+    JOIN "PracticeBlock" pb ON pb."PracticeBlockID" = s."PracticeBlockID"
+    WHERE pb."UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR st."UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('Set', v_rows); END IF;
+
+  -- === Instance (child — JOIN through Set -> Session -> PracticeBlock) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT i."InstanceID", i."SetID", i."SelectedClub", i."RawMetrics",
+           i."Timestamp", i."ResolvedTargetDistance", i."ResolvedTargetWidth",
+           i."ResolvedTargetDepth", i."IsDeleted", i."CreatedAt", i."UpdatedAt"
+    FROM "Instance" i
+    JOIN "Set" st ON st."SetID" = i."SetID"
+    JOIN "Session" s ON s."SessionID" = st."SessionID"
+    JOIN "PracticeBlock" pb ON pb."PracticeBlockID" = s."PracticeBlockID"
+    WHERE pb."UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR i."UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('Instance', v_rows); END IF;
+
+  -- === PracticeEntry (child — JOIN through PracticeBlock) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT pe."PracticeEntryID", pe."PracticeBlockID", pe."DrillID",
+           pe."SessionID", pe."EntryType", pe."PositionIndex",
+           pe."CreatedAt", pe."UpdatedAt"
+    FROM "PracticeEntry" pe
+    JOIN "PracticeBlock" pb ON pb."PracticeBlockID" = pe."PracticeBlockID"
+    WHERE pb."UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR pe."UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('PracticeEntry', v_rows); END IF;
+
+  -- === UserDrillAdoption ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "UserDrillAdoptionID", "UserID", "DrillID", "Status",
+           "IsDeleted", "CreatedAt", "UpdatedAt"
+    FROM "UserDrillAdoption"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('UserDrillAdoption', v_rows); END IF;
+
+  -- === UserClub ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "ClubID", "UserID", "ClubType", "Make", "Model", "Loft",
+           "Status", "CreatedAt", "UpdatedAt"
+    FROM "UserClub"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('UserClub', v_rows); END IF;
+
+  -- === ClubPerformanceProfile (child — JOIN through UserClub) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT cpp."ProfileID", cpp."ClubID", cpp."EffectiveFromDate",
+           cpp."CarryDistance", cpp."DispersionLeft", cpp."DispersionRight",
+           cpp."DispersionShort", cpp."DispersionLong",
+           cpp."CreatedAt", cpp."UpdatedAt"
+    FROM "ClubPerformanceProfile" cpp
+    JOIN "UserClub" uc ON uc."ClubID" = cpp."ClubID"
+    WHERE uc."UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR cpp."UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('ClubPerformanceProfile', v_rows); END IF;
+
+  -- === UserSkillAreaClubMapping ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "MappingID", "UserID", "ClubType", "SkillArea", "IsMandatory",
+           "CreatedAt", "UpdatedAt"
+    FROM "UserSkillAreaClubMapping"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('UserSkillAreaClubMapping', v_rows); END IF;
+
+  -- === Routine ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "RoutineID", "UserID", "Name", "Entries", "Status",
+           "IsDeleted", "CreatedAt", "UpdatedAt"
+    FROM "Routine"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('Routine', v_rows); END IF;
+
+  -- === Schedule ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "ScheduleID", "UserID", "Name", "ApplicationMode", "Entries",
+           "Status", "IsDeleted", "CreatedAt", "UpdatedAt"
+    FROM "Schedule"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('Schedule', v_rows); END IF;
+
+  -- === CalendarDay ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "CalendarDayID", "UserID", "Date", "SlotCapacity", "Slots",
+           "CreatedAt", "UpdatedAt"
+    FROM "CalendarDay"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('CalendarDay', v_rows); END IF;
+
+  -- === RoutineInstance ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "RoutineInstanceID", "RoutineID", "UserID", "CalendarDayDate",
+           "OwnedSlots", "CreatedAt", "UpdatedAt"
+    FROM "RoutineInstance"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('RoutineInstance', v_rows); END IF;
+
+  -- === ScheduleInstance ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "ScheduleInstanceID", "ScheduleID", "UserID",
+           "StartDate", "EndDate", "OwnedSlots",
+           "CreatedAt", "UpdatedAt"
+    FROM "ScheduleInstance"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('ScheduleInstance', v_rows); END IF;
+
+  -- === EventLog (uses CreatedAt, not UpdatedAt — append-only) ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "EventLogID", "UserID", "DeviceID", "EventTypeID",
+           "Timestamp", "AffectedEntityIDs", "AffectedSubskills",
+           "Metadata", "CreatedAt"
+    FROM "EventLog"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "CreatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('EventLog', v_rows); END IF;
+
+  -- === UserDevice ===
+  SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::JSONB) INTO v_rows
+  FROM (
+    SELECT "DeviceID", "UserID", "DeviceLabel", "RegisteredAt",
+           "LastSyncAt", "IsDeleted", "UpdatedAt"
+    FROM "UserDevice"
+    WHERE "UserID" = v_user_id
+      AND (last_sync_timestamp IS NULL OR "UpdatedAt" > last_sync_timestamp)
+  ) t;
+  IF v_rows != '[]'::JSONB THEN v_changes := v_changes || jsonb_build_object('UserDevice', v_rows); END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'server_timestamp', v_server_ts,
+    'changes', v_changes
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object(
+    'success', false,
+    'error_code', 'SERVER_ERROR',
+    'error_message', SQLERRM,
+    'server_timestamp', NOW()
+  );
+END;
+$$;

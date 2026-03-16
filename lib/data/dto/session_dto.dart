@@ -14,6 +14,7 @@ extension SessionSyncDto on Session {
         'Status': status.dbValue,
         'IntegrityFlag': integrityFlag,
         'IntegritySuppressed': integritySuppressed,
+        'EnvironmentType': environmentType?.dbValue,
         'SurfaceType': surfaceType?.dbValue,
         'UserDeclaration': userDeclaration,
         'SessionDuration': sessionDuration,
@@ -35,6 +36,9 @@ SessionsCompanion sessionFromSyncDto(Map<String, dynamic> json) =>
           Value(SessionStatus.fromString(json['Status'] as String)),
       integrityFlag: Value(json['IntegrityFlag'] as bool),
       integritySuppressed: Value(json['IntegritySuppressed'] as bool),
+      environmentType: Value(json['EnvironmentType'] != null
+          ? EnvironmentType.fromString(json['EnvironmentType'] as String)
+          : null),
       surfaceType: Value(json['SurfaceType'] != null
           ? SurfaceType.fromString(json['SurfaceType'] as String)
           : null),
