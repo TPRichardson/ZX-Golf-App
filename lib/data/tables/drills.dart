@@ -68,6 +68,7 @@ class Drills extends Table {
       .named('Status')
       .withDefault(const Constant('Active'))
       .map(const DrillStatusConverter())();
+  IntColumn get windowCap => integer().named('WindowCap').nullable()();
   BoolColumn get isDeleted =>
       boolean().named('IsDeleted').withDefault(const Constant(false))();
   DateTimeColumn get createdAt =>

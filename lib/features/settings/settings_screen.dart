@@ -9,7 +9,6 @@ import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'execution_defaults_screen.dart';
-import 'calendar_defaults_screen.dart';
 
 // S10 — Settings hub screen. Accessed via gear icon in ShellScreen AppBar.
 
@@ -156,17 +155,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             value: prefs.weekStartDay == 7 ? 'Sunday' : 'Monday',
             onTap: () => _toggleWeekStartDay(ref, prefs),
           ),
-          _NavigationTile(
-            label: 'Default Slot Capacity',
-            subtitle: '7-day pattern',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CalendarDefaultsScreen(),
-              ),
-            ),
-          ),
-
           // --- Analytics Section ---
           _SectionHeader(title: 'Analytics'),
           _ToggleTile(

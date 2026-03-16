@@ -2,13 +2,11 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
-import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/core/validation/bag_gate.dart' as bag_gate;
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
 
@@ -70,40 +68,21 @@ class PlanningRepository {
         .getSingleOrNull();
   }
 
-  // S08 §8.13.1 — Get or create CalendarDay with slot capacity from user preferences.
-  // S10 §10.8 — Uses the user's 7-day defaultSlotCapacityPattern (Mon=0..Sun=6).
+  // S08 §8.13.1 — Get or create CalendarDay with zero slots.
+  // User adds slots manually to any day they want to plan.
   Future<CalendarDay> getOrCreateCalendarDay(String userId, DateTime date) async {
     await _gate.awaitGateRelease();
     final dateOnly = DateTime(date.year, date.month, date.day);
     final existing = await getCalendarDayByDate(userId, dateOnly);
     if (existing != null) return existing;
 
-    // Read user's preferred slot capacity for this day of week.
-    final capacity = await _slotCapacityForDay(userId, dateOnly);
-    final slots = List<Slot>.generate(capacity, (_) => const Slot());
     return createCalendarDay(CalendarDaysCompanion(
       calendarDayId: Value(_uuid.v4()),
       userId: Value(userId),
       date: Value(dateOnly),
-      slotCapacity: Value(capacity),
-      slots: Value(serializeSlots(slots)),
+      slotCapacity: const Value(0),
+      slots: Value(serializeSlots(const [])),
     ));
-  }
-
-  /// Read the user's defaultSlotCapacityPattern from their preferences
-  /// and return the capacity for the given date's day of week.
-  /// Falls back to kDefaultSlotCapacity if user record not found.
-  Future<int> _slotCapacityForDay(String userId, DateTime date) async {
-    final user = await (_db.select(_db.users)
-          ..where((t) => t.userId.equals(userId)))
-        .getSingleOrNull();
-    if (user == null) return kDefaultSlotCapacity;
-    final prefs = UserPreferences.fromJson(user.unitPreferences);
-    final pattern = prefs.defaultSlotCapacityPattern;
-    // DateTime.weekday: Monday=1..Sunday=7 → pattern index 0..6.
-    final dayIndex = date.weekday - 1;
-    if (dayIndex < 0 || dayIndex >= pattern.length) return kDefaultSlotCapacity;
-    return pattern[dayIndex];
   }
 
   // S08 §8.13.2 — Update all slots for a CalendarDay.

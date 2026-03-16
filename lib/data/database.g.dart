@@ -1959,6 +1959,17 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
         requiredDuringInsert: false,
         defaultValue: const Constant('Active'),
       ).withConverter<DrillStatus>($DrillsTable.$converterstatus);
+  static const VerificationMeta _windowCapMeta = const VerificationMeta(
+    'windowCap',
+  );
+  @override
+  late final GeneratedColumn<int> windowCap = GeneratedColumn<int>(
+    'WindowCap',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -2027,6 +2038,7 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
     recommendedEquipment,
     origin,
     status,
+    windowCap,
     isDeleted,
     createdAt,
     updatedAt,
@@ -2167,6 +2179,12 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
           data['RecommendedEquipment']!,
           _recommendedEquipmentMeta,
         ),
+      );
+    }
+    if (data.containsKey('WindowCap')) {
+      context.handle(
+        _windowCapMeta,
+        windowCap.isAcceptableOrUnknown(data['WindowCap']!, _windowCapMeta),
       );
     }
     if (data.containsKey('IsDeleted')) {
@@ -2328,6 +2346,10 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
           data['${effectivePrefix}Status'],
         )!,
       ),
+      windowCap: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}WindowCap'],
+      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}IsDeleted'],
@@ -2422,6 +2444,7 @@ class Drill extends DataClass implements Insertable<Drill> {
   final String recommendedEquipment;
   final DrillOrigin origin;
   final DrillStatus status;
+  final int? windowCap;
   final bool isDeleted;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -2453,6 +2476,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     required this.recommendedEquipment,
     required this.origin,
     required this.status,
+    this.windowCap,
     required this.isDeleted,
     required this.createdAt,
     required this.updatedAt,
@@ -2549,6 +2573,9 @@ class Drill extends DataClass implements Insertable<Drill> {
         $DrillsTable.$converterstatus.toSql(status),
       );
     }
+    if (!nullToAbsent || windowCap != null) {
+      map['WindowCap'] = Variable<int>(windowCap);
+    }
     map['IsDeleted'] = Variable<bool>(isDeleted);
     map['CreatedAt'] = Variable<DateTime>(createdAt);
     map['UpdatedAt'] = Variable<DateTime>(updatedAt);
@@ -2612,6 +2639,9 @@ class Drill extends DataClass implements Insertable<Drill> {
       recommendedEquipment: Value(recommendedEquipment),
       origin: Value(origin),
       status: Value(status),
+      windowCap: windowCap == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windowCap),
       isDeleted: Value(isDeleted),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -2667,6 +2697,7 @@ class Drill extends DataClass implements Insertable<Drill> {
       ),
       origin: serializer.fromJson<DrillOrigin>(json['origin']),
       status: serializer.fromJson<DrillStatus>(json['status']),
+      windowCap: serializer.fromJson<int?>(json['windowCap']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -2709,6 +2740,7 @@ class Drill extends DataClass implements Insertable<Drill> {
       'recommendedEquipment': serializer.toJson<String>(recommendedEquipment),
       'origin': serializer.toJson<DrillOrigin>(origin),
       'status': serializer.toJson<DrillStatus>(status),
+      'windowCap': serializer.toJson<int?>(windowCap),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -2743,6 +2775,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     String? recommendedEquipment,
     DrillOrigin? origin,
     DrillStatus? status,
+    Value<int?> windowCap = const Value.absent(),
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -2792,6 +2825,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     recommendedEquipment: recommendedEquipment ?? this.recommendedEquipment,
     origin: origin ?? this.origin,
     status: status ?? this.status,
+    windowCap: windowCap.present ? windowCap.value : this.windowCap,
     isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -2857,6 +2891,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           : this.recommendedEquipment,
       origin: data.origin.present ? data.origin.value : this.origin,
       status: data.status.present ? data.status.value : this.status,
+      windowCap: data.windowCap.present ? data.windowCap.value : this.windowCap,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2893,6 +2928,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           ..write('recommendedEquipment: $recommendedEquipment, ')
           ..write('origin: $origin, ')
           ..write('status: $status, ')
+          ..write('windowCap: $windowCap, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -2929,6 +2965,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     recommendedEquipment,
     origin,
     status,
+    windowCap,
     isDeleted,
     createdAt,
     updatedAt,
@@ -2964,6 +3001,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           other.recommendedEquipment == this.recommendedEquipment &&
           other.origin == this.origin &&
           other.status == this.status &&
+          other.windowCap == this.windowCap &&
           other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -2997,6 +3035,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
   final Value<String> recommendedEquipment;
   final Value<DrillOrigin> origin;
   final Value<DrillStatus> status;
+  final Value<int?> windowCap;
   final Value<bool> isDeleted;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -3029,6 +3068,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     this.recommendedEquipment = const Value.absent(),
     this.origin = const Value.absent(),
     this.status = const Value.absent(),
+    this.windowCap = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -3062,6 +3102,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     this.recommendedEquipment = const Value.absent(),
     required DrillOrigin origin,
     this.status = const Value.absent(),
+    this.windowCap = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -3101,6 +3142,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     Expression<String>? recommendedEquipment,
     Expression<String>? origin,
     Expression<String>? status,
+    Expression<int>? windowCap,
     Expression<bool>? isDeleted,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -3137,6 +3179,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
         'RecommendedEquipment': recommendedEquipment,
       if (origin != null) 'Origin': origin,
       if (status != null) 'Status': status,
+      if (windowCap != null) 'WindowCap': windowCap,
       if (isDeleted != null) 'IsDeleted': isDeleted,
       if (createdAt != null) 'CreatedAt': createdAt,
       if (updatedAt != null) 'UpdatedAt': updatedAt,
@@ -3172,6 +3215,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     Value<String>? recommendedEquipment,
     Value<DrillOrigin>? origin,
     Value<DrillStatus>? status,
+    Value<int?>? windowCap,
     Value<bool>? isDeleted,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -3206,6 +3250,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
       recommendedEquipment: recommendedEquipment ?? this.recommendedEquipment,
       origin: origin ?? this.origin,
       status: status ?? this.status,
+      windowCap: windowCap ?? this.windowCap,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -3331,6 +3376,9 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
         $DrillsTable.$converterstatus.toSql(status.value),
       );
     }
+    if (windowCap.present) {
+      map['WindowCap'] = Variable<int>(windowCap.value);
+    }
     if (isDeleted.present) {
       map['IsDeleted'] = Variable<bool>(isDeleted.value);
     }
@@ -3376,6 +3424,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
           ..write('recommendedEquipment: $recommendedEquipment, ')
           ..write('origin: $origin, ')
           ..write('status: $status, ')
+          ..write('windowCap: $windowCap, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -20878,6 +20927,7 @@ typedef $$DrillsTableCreateCompanionBuilder =
       Value<String> recommendedEquipment,
       required DrillOrigin origin,
       Value<DrillStatus> status,
+      Value<int?> windowCap,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -20912,6 +20962,7 @@ typedef $$DrillsTableUpdateCompanionBuilder =
       Value<String> recommendedEquipment,
       Value<DrillOrigin> origin,
       Value<DrillStatus> status,
+      Value<int?> windowCap,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -21078,6 +21129,11 @@ class $$DrillsTableFilterComposer
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
 
+  ColumnFilters<int> get windowCap => $composableBuilder(
+    column: $table.windowCap,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
     builder: (column) => ColumnFilters(column),
@@ -21238,6 +21294,11 @@ class $$DrillsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get windowCap => $composableBuilder(
+    column: $table.windowCap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
@@ -21382,6 +21443,9 @@ class $$DrillsTableAnnotationComposer
   GeneratedColumnWithTypeConverter<DrillStatus, String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
+  GeneratedColumn<int> get windowCap =>
+      $composableBuilder(column: $table.windowCap, builder: (column) => column);
+
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 
@@ -21450,6 +21514,7 @@ class $$DrillsTableTableManager
                 Value<String> recommendedEquipment = const Value.absent(),
                 Value<DrillOrigin> origin = const Value.absent(),
                 Value<DrillStatus> status = const Value.absent(),
+                Value<int?> windowCap = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -21482,6 +21547,7 @@ class $$DrillsTableTableManager
                 recommendedEquipment: recommendedEquipment,
                 origin: origin,
                 status: status,
+                windowCap: windowCap,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -21519,6 +21585,7 @@ class $$DrillsTableTableManager
                 Value<String> recommendedEquipment = const Value.absent(),
                 required DrillOrigin origin,
                 Value<DrillStatus> status = const Value.absent(),
+                Value<int?> windowCap = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -21551,6 +21618,7 @@ class $$DrillsTableTableManager
                 recommendedEquipment: recommendedEquipment,
                 origin: origin,
                 status: status,
+                windowCap: windowCap,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

@@ -47,6 +47,7 @@ class HitRateSessionInput {
 /// S01 §1.9 — A single entry in a subskill window.
 class WindowEntry {
   final String sessionId;
+  final String drillId;
   final DateTime completionTimestamp;
   final double score;
   final double occupancy;
@@ -54,6 +55,7 @@ class WindowEntry {
 
   const WindowEntry({
     required this.sessionId,
+    this.drillId = '',
     required this.completionTimestamp,
     required this.score,
     required this.occupancy,
@@ -63,6 +65,7 @@ class WindowEntry {
   /// Returns a copy with updated occupancy.
   WindowEntry copyWith({double? occupancy}) => WindowEntry(
         sessionId: sessionId,
+        drillId: drillId,
         completionTimestamp: completionTimestamp,
         score: score,
         occupancy: occupancy ?? this.occupancy,

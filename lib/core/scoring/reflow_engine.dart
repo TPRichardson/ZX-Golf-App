@@ -276,6 +276,7 @@ class ReflowEngine {
 
       entries.add(WindowEntry(
         sessionId: swd.session.sessionId,
+        drillId: swd.drill.drillId,
         completionTimestamp: swd.session.completionTimestamp ?? DateTime.now(),
         score: sessionScore,
         occupancy: occupancy,
@@ -283,8 +284,15 @@ class ReflowEngine {
       ));
     }
 
+    // Per-drill window cap before roll-off.
+    final drillWindowCaps = <String, int?>{
+      for (final swd in sessionsWithDrills)
+        swd.drill.drillId: swd.drill.windowCap,
+    };
+    final capped = _applyPerDrillWindowCap(entries, drillWindowCaps);
+
     // TD-04 §3.2 Step 5 — Partial roll-off before composing.
-    final adjusted = _applyPartialRollOff(entries,
+    final adjusted = _applyPartialRollOff(capped,
         maxOccupancy: subskillRef.windowSize.toDouble());
 
     // Compose the window using the pure stateless composer.
@@ -306,6 +314,39 @@ class ReflowEngine {
     );
 
     return entries.length;
+  }
+
+  /// Per-drill window cap: for each drill with a non-null WindowCap,
+  /// keep only the [cap] most recent entries (sorted DESC by timestamp).
+  List<WindowEntry> _applyPerDrillWindowCap(
+    List<WindowEntry> entries,
+    Map<String, int?> drillWindowCaps,
+  ) {
+    // Skip if no caps are defined.
+    if (drillWindowCaps.values.every((c) => c == null)) return entries;
+
+    final sorted = List<WindowEntry>.from(entries)
+      ..sort((a, b) {
+        final ts = b.completionTimestamp.compareTo(a.completionTimestamp);
+        if (ts != 0) return ts;
+        return b.sessionId.compareTo(a.sessionId);
+      });
+
+    final drillCounts = <String, int>{};
+    final result = <WindowEntry>[];
+    for (final entry in sorted) {
+      final cap = drillWindowCaps[entry.drillId];
+      if (cap == null) {
+        result.add(entry);
+      } else {
+        final count = drillCounts[entry.drillId] ?? 0;
+        if (count < cap) {
+          result.add(entry);
+          drillCounts[entry.drillId] = count + 1;
+        }
+      }
+    }
+    return result;
   }
 
   /// TD-04 §3.2 Step 5 — Partial roll-off: sort DESC, walk forward accumulating
@@ -642,12 +683,14 @@ class ReflowEngine {
     final drillAnchorsCache = <String, Map<String, Anchors>>{};
     final drillTypeCache = <String, DrillType>{};
     final drillSchemaIdCache = <String, String>{};
+    final drillWindowCapCache = <String, int?>{};
     for (final drill in allDrillsMap.values) {
       drillSubskillCache[drill.drillId] =
           _parseSubskillMapping(drill.subskillMapping);
       drillAnchorsCache[drill.drillId] = _parseAnchorsMap(drill.anchors);
       drillTypeCache[drill.drillId] = drill.drillType;
       drillSchemaIdCache[drill.drillId] = drill.metricSchemaId;
+      drillWindowCapCache[drill.drillId] = drill.windowCap;
     }
 
     // Pre-parse adapter types per schema.
@@ -773,6 +816,7 @@ class ReflowEngine {
 
           entries.add(WindowEntry(
             sessionId: ls.sessionId,
+            drillId: ls.drillId,
             completionTimestamp: ls.completionTimestamp ?? DateTime.now(),
             score: sessionScore,
             occupancy: occupancy,
@@ -782,7 +826,10 @@ class ReflowEngine {
 
         totalWindowEntries += entries.length;
 
-        final adjusted = _applyPartialRollOff(entries,
+        // Per-drill window cap before roll-off.
+        final capped = _applyPerDrillWindowCap(entries, drillWindowCapCache);
+
+        final adjusted = _applyPartialRollOff(capped,
             maxOccupancy: ref.windowSize.toDouble());
         final windowState = composeWindow(adjusted,
             maxOccupancy: ref.windowSize.toDouble());
@@ -1212,6 +1259,7 @@ class ReflowEngine {
     return jsonEncode(entries
         .map((e) => {
               'sessionId': e.sessionId,
+              'drillId': e.drillId,
               'completionTimestamp': e.completionTimestamp.toIso8601String(),
               'score': e.score,
               'occupancy': e.occupancy,
@@ -1226,6 +1274,7 @@ class ReflowEngine {
       final map = e as Map<String, dynamic>;
       return WindowEntry(
         sessionId: map['sessionId'] as String,
+        drillId: map['drillId'] as String? ?? '',
         completionTimestamp: DateTime.parse(map['completionTimestamp'] as String),
         score: (map['score'] as num).toDouble(),
         occupancy: (map['occupancy'] as num).toDouble(),

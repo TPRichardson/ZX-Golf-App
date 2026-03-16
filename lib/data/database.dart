@@ -97,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -143,6 +143,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV14ToV15(m);
               case 15:
                 await _migrateV15ToV16(m);
+              case 16:
+                await _migrateV16ToV17(m);
             }
           }
         },
@@ -259,6 +261,17 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _migrateV15ToV16(Migrator m) async {
     // No-op: SQLite TEXT columns accept NULL regardless of schema declaration.
     // The Drift codegen handles the nullable type at the Dart level.
+  }
+
+  Future<void> _migrateV16ToV17(Migrator m) async {
+    await customStatement('ALTER TABLE Drill ADD COLUMN WindowCap INTEGER');
+    // Seed total distance MetricSchema.
+    await customStatement(
+      "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
+      "HardMinInput, HardMaxInput, ValidationRules, ScoringAdapterBinding) "
+      "VALUES ('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', "
+      "0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",
+    );
   }
 
   // Training Kit table + RecommendedEquipment column on Drill.

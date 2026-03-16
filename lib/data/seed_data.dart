@@ -109,6 +109,7 @@ Future<void> _seedMetricSchemas(AppDatabase db) async {
     _metricSchema('grid_3x3_multioutput', '3×3 Multi-Output Grid', InputMode.gridCell, null, null, '{"gridType": "ThreeByThree"}', 'HitRateInterpolation'),
     _metricSchema('binary_hit_miss', 'Binary Hit/Miss', InputMode.binaryHitMiss, null, null, '{}', 'HitRateInterpolation'),
     _metricSchema('raw_carry_distance', 'Carry Distance (yards)', InputMode.rawDataEntry, 0, 500, '{"unit": "yards"}', 'LinearInterpolation'),
+    _metricSchema('raw_total_distance', 'Total Distance (yards)', InputMode.rawDataEntry, 0, 500, '{"unit": "yards"}', 'LinearInterpolation'),
     _metricSchema('raw_ball_speed', 'Ball Speed (mph)', InputMode.rawDataEntry, 0, 250, '{"unit": "mph"}', 'LinearInterpolation'),
     _metricSchema('raw_club_head_speed', 'Club Head Speed (mph)', InputMode.rawDataEntry, 0, 200, '{"unit": "mph"}', 'LinearInterpolation'),
     _metricSchema('technique_duration', 'Technique Block Duration', InputMode.rawDataEntry, 0, 43200, '{"unit": "seconds"}', 'None'),
@@ -176,6 +177,6 @@ Future<void> _validateSeedInvariants(AppDatabase db) async {
 
   // Invariant 5: 8 metric schemas
   final metricSchemaCount = await db.metricSchemas.count().getSingle();
-  assert(metricSchemaCount == 8,
-      'MetricSchema count invariant: $metricSchemaCount rows, expected 8');
+  assert(metricSchemaCount == 9,
+      'MetricSchema count invariant: $metricSchemaCount rows, expected 9');
 }

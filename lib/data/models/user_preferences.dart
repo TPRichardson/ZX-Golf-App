@@ -19,9 +19,6 @@ class UserPreferences {
   /// S10 §10.7 — Default ClubSelectionMode per SkillArea.
   final Map<SkillArea, ClubSelectionMode> defaultClubSelectionModes;
 
-  /// S10 §10.8 — 7-day slot capacity pattern (Mon–Sun).
-  final List<int> defaultSlotCapacityPattern;
-
   /// S10 §10.10 — Whether daily reminder notifications are enabled.
   final bool reminderEnabled;
 
@@ -48,7 +45,6 @@ class UserPreferences {
     this.smallLengthUnit = SmallLengthUnit.inches,
     this.defaultAnalysisResolution = 'weekly',
     this.defaultClubSelectionModes = const {},
-    this.defaultSlotCapacityPattern = const [3, 3, 3, 3, 3, 0, 0],
     this.reminderEnabled = false,
     this.reminderTime,
     this.weekStartDay = 1,
@@ -73,8 +69,6 @@ class UserPreferences {
             (map['defaultAnalysisResolution'] as String?) ?? 'weekly',
         defaultClubSelectionModes: _parseClubModes(
             map['defaultClubSelectionModes'] as Map<String, dynamic>?),
-        defaultSlotCapacityPattern: _parseCapacityPattern(
-            map['defaultSlotCapacityPattern'] as List<dynamic>?),
         reminderEnabled: (map['reminderEnabled'] as bool?) ?? false,
         reminderTime: map['reminderTime'] as String?,
         weekStartDay: (map['weekStartDay'] as num?)?.toInt() ?? 1,
@@ -97,7 +91,6 @@ class UserPreferences {
       'defaultClubSelectionModes': defaultClubSelectionModes.map(
         (k, v) => MapEntry(k.dbValue, v.dbValue),
       ),
-      'defaultSlotCapacityPattern': defaultSlotCapacityPattern,
       'reminderEnabled': reminderEnabled,
       if (reminderTime != null) 'reminderTime': reminderTime,
       'weekStartDay': weekStartDay,
@@ -114,7 +107,6 @@ class UserPreferences {
     SmallLengthUnit? smallLengthUnit,
     String? defaultAnalysisResolution,
     Map<SkillArea, ClubSelectionMode>? defaultClubSelectionModes,
-    List<int>? defaultSlotCapacityPattern,
     bool? reminderEnabled,
     String? reminderTime,
     int? weekStartDay,
@@ -130,8 +122,6 @@ class UserPreferences {
           defaultAnalysisResolution ?? this.defaultAnalysisResolution,
       defaultClubSelectionModes:
           defaultClubSelectionModes ?? this.defaultClubSelectionModes,
-      defaultSlotCapacityPattern:
-          defaultSlotCapacityPattern ?? this.defaultSlotCapacityPattern,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderTime: reminderTime ?? this.reminderTime,
       weekStartDay: weekStartDay ?? this.weekStartDay,
@@ -157,8 +147,4 @@ class UserPreferences {
     return result;
   }
 
-  static List<int> _parseCapacityPattern(List<dynamic>? raw) {
-    if (raw == null || raw.length != 7) return const [3, 3, 3, 3, 3, 0, 0];
-    return raw.map((e) => (e as num).toInt().clamp(0, 10)).toList();
-  }
 }
