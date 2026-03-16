@@ -693,14 +693,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
               // Practice header bar — title, clock, environment/surface.
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: ColorTokens.surfacePrimary,
-                  border: Border(
-                    top: BorderSide(color: ColorTokens.primaryDefault, width: 2),
-                    left: BorderSide(color: ColorTokens.primaryDefault, width: 2),
-                    right: BorderSide(color: ColorTokens.primaryDefault, width: 2),
-                  ),
-                ),
+                color: ColorTokens.surfacePrimary,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -725,7 +718,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                             ),
                           ),
                           if (_startTimestamp != null)
-                            const SizedBox(width: 70),
+                            const SizedBox(width: 72),
                         ],
                       ),
                     ),
@@ -734,12 +727,8 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                       child: PracticeStatsBar(
                         environmentType: _environmentType,
                         surfaceType: _surfaceType,
-                        onEnvironmentTap: _surfaceType != null
-                            ? () => _changeEnvironment(_surfaceType!)
-                            : null,
-                        onSurfaceTap: _environmentType != null
-                            ? () => _changeSurface(_environmentType!)
-                            : null,
+                        onEnvironmentTap: () => _changeEnvironment(_surfaceType),
+                        onSurfaceTap: () => _changeSurface(_environmentType),
                       ),
                     ),
                   ],
@@ -1013,8 +1002,8 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                     );
                   },
                   child: Container(
-                    width: 55,
-                    height: 55,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
                       color: ColorTokens.textTertiary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
@@ -1023,7 +1012,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                       ),
                     ),
                     child: Icon(Icons.settings_outlined,
-                        size: 22,
+                        size: 24,
                         color: ColorTokens.textTertiary),
                   ),
                 ),
@@ -1062,8 +1051,8 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
               GestureDetector(
                 onTap: _discardPracticeBlock,
                 child: Container(
-                  width: 55,
-                  height: 55,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: ColorTokens.errorDestructive.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
@@ -1072,7 +1061,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                     ),
                   ),
                   child: Icon(Icons.delete_outline,
-                      size: 22,
+                      size: 24,
                       color: ColorTokens.errorDestructive),
                 ),
               ),
@@ -1147,7 +1136,7 @@ class _ElapsedTimeBadgeState extends State<_ElapsedTimeBadge> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.timer_outlined, size: 14, color: ColorTokens.textTertiary),
+        Icon(Icons.timer_outlined, size: 16, color: ColorTokens.textTertiary),
         const SizedBox(width: SpacingTokens.xs),
         Text(
           _formatElapsed(_elapsed),

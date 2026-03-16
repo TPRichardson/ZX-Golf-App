@@ -308,7 +308,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                         ),
                         child: Icon(
                           Icons.delete_outline,
-                          size: 18,
+                          size: 16,
                           color: ColorTokens.errorDestructive,
                         ),
                       ),
@@ -416,7 +416,7 @@ class _PulsingDotState extends State<_PulsingDot>
       opacity: _opacity,
       child: Icon(
         Icons.fiber_manual_record,
-        size: 14,
+        size: 16,
         color: ColorTokens.successDefault,
       ),
     );

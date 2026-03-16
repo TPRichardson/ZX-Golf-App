@@ -78,7 +78,7 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
             child: IconButton(
               icon: Icon(
                 Icons.home,
-                size: 46,
+                size: 48,
                 color: isHomeHighlighted
                     ? ColorTokens.primaryDefault
                     : ColorTokens.textSecondary,
@@ -90,8 +90,8 @@ class ZxShellTopBar extends StatelessWidget implements PreferredSizeWidget {
           IconButton(
             icon: SvgPicture.asset(
               'assets/icons/golf-bag-tpr-3club.svg',
-              width: 35,
-              height: 35,
+              width: 36,
+              height: 36,
               colorFilter: const ColorFilter.mode(
                 ColorTokens.textSecondary,
                 BlendMode.srcIn,

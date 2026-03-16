@@ -31,6 +31,7 @@ class HomeDashboardScreen extends ConsumerWidget {
     final activePb = ref.watch(activePracticeBlockProvider(userId));
 
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(SpacingTokens.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
