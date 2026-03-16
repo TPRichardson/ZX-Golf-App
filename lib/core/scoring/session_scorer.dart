@@ -20,6 +20,25 @@ double scoreRawDataSession(List<RawInstanceInput> instances, Anchors anchors) {
   return sum / instances.length;
 }
 
+/// Best-of-set scoring: groups instances by set, takes max value per set,
+/// averages the maxes, then interpolates. Returns 0.0 if empty.
+/// [instancesBySet] maps setId → list of raw numeric values.
+double scoreBestOfSetSession(
+    Map<String, List<double>> instancesBySet, Anchors anchors) {
+  if (instancesBySet.isEmpty) return 0.0;
+  validateAnchors(anchors);
+
+  final bestPerSet = <double>[];
+  for (final values in instancesBySet.values) {
+    if (values.isEmpty) continue;
+    bestPerSet.add(values.reduce((a, b) => a > b ? a : b));
+  }
+  if (bestPerSet.isEmpty) return 0.0;
+
+  final avg = bestPerSet.reduce((a, b) => a + b) / bestPerSet.length;
+  return interpolate(avg, anchors);
+}
+
 /// Spec: S01 §1.4 — Scores a grid/binary session from aggregate hit-rate %.
 /// Computes hit-rate = (totalHits / totalAttempts) × 100, then interpolates.
 /// Returns 0.0 if totalAttempts == 0.

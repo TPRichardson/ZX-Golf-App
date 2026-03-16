@@ -22,6 +22,9 @@ enum ScoringAdapterType {
   /// Raw data drills: score from per-instance numeric value.
   linearInterpolation,
 
+  /// Best-of-set drills: max value per set → average across sets → interpolate.
+  bestOfSetLinearInterpolation,
+
   /// Technique blocks: no scoring.
   none,
 }

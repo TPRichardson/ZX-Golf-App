@@ -110,6 +110,21 @@ class AppDatabase extends _$AppDatabase {
         // Column additions are safe. Column type changes require explicit transforms.
         // Materialised tables can be truncated and rebuilt.
         // Raw execution data is sacred — never delete/truncate.
+        beforeOpen: (details) async {
+          // Ensure all MetricSchemas exist (covers devices that upgraded
+          // before the driver schemas were added to the migration).
+          for (final s in [
+            "('driver_club_speed', 'Driver Club Speed (mph)', 'RawDataEntry', 50, 150, '{\"unit\": \"mph\"}', 'BestOfSetLinearInterpolation')",
+            "('driver_ball_speed', 'Driver Ball Speed (mph)', 'RawDataEntry', 80, 200, '{\"unit\": \"mph\"}', 'BestOfSetLinearInterpolation')",
+            "('driver_total_distance', 'Driver Total Distance (yds)', 'RawDataEntry', 100, 400, '{\"unit\": \"yards\"}', 'BestOfSetLinearInterpolation')",
+            "('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', 0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",
+          ]) {
+            await customStatement(
+              "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
+              "HardMinInput, HardMaxInput, ValidationRules, ScoringAdapterBinding) VALUES $s",
+            );
+          }
+        },
         onUpgrade: (Migrator m, int from, int to) async {
           for (var version = from; version < to; version++) {
             switch (version) {
@@ -265,13 +280,18 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _migrateV16ToV17(Migrator m) async {
     await customStatement('ALTER TABLE Drill ADD COLUMN WindowCap INTEGER');
-    // Seed total distance MetricSchema.
-    await customStatement(
-      "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
-      "HardMinInput, HardMaxInput, ValidationRules, ScoringAdapterBinding) "
-      "VALUES ('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', "
-      "0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",
-    );
+    // Seed new MetricSchemas.
+    for (final s in [
+      "('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', 0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",
+      "('driver_club_speed', 'Driver Club Speed (mph)', 'RawDataEntry', 50, 150, '{\"unit\": \"mph\"}', 'BestOfSetLinearInterpolation')",
+      "('driver_ball_speed', 'Driver Ball Speed (mph)', 'RawDataEntry', 80, 200, '{\"unit\": \"mph\"}', 'BestOfSetLinearInterpolation')",
+      "('driver_total_distance', 'Driver Total Distance (yds)', 'RawDataEntry', 100, 400, '{\"unit\": \"yards\"}', 'BestOfSetLinearInterpolation')",
+    ]) {
+      await customStatement(
+        "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
+        "HardMinInput, HardMaxInput, ValidationRules, ScoringAdapterBinding) VALUES $s",
+      );
+    }
   }
 
   // Training Kit table + RecommendedEquipment column on Drill.

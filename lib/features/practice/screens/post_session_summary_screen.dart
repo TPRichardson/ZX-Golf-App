@@ -283,6 +283,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
       DrillType.techniqueBlock => 'Technique',
       DrillType.transition => 'Transition',
       DrillType.pressure => 'Pressure',
+      DrillType.benchmark => 'Benchmark',
     };
   }
 
@@ -291,6 +292,7 @@ class PostSessionSummaryScreen extends ConsumerWidget {
       DrillType.techniqueBlock => ColorTokens.textTertiary,
       DrillType.transition => ColorTokens.primaryDefault,
       DrillType.pressure => ColorTokens.warningIntegrity,
+      DrillType.benchmark => ColorTokens.successDefault,
     };
   }
 }
@@ -533,6 +535,34 @@ class _HitRateAnchorBar extends StatelessWidget {
           return const SizedBox.shrink();
         }
         final instances = snapshot.data!;
+        final isValueDrill = drill.inputMode == InputMode.rawDataEntry ||
+            drill.inputMode == InputMode.continuousMeasurement;
+
+        if (isValueDrill) {
+          // Value-based drill: compute best-of-set average or simple average.
+          final bySet = <String, List<double>>{};
+          for (final instance in instances) {
+            try {
+              final raw = jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
+              final value = (raw['value'] as num?)?.toDouble();
+              if (value != null) {
+                bySet.putIfAbsent(instance.setId, () => []).add(value);
+              }
+            } catch (_) {}
+          }
+          if (bySet.isEmpty) return const SizedBox.shrink();
+          // Best per set, then average.
+          final bestPerSet = bySet.values
+              .map((vals) => vals.reduce((a, b) => a > b ? a : b))
+              .toList();
+          final avg = bestPerSet.reduce((a, b) => a + b) / bestPerSet.length;
+          return AnchorScoreBar(
+            userValue: avg,
+            anchorsJson: drill.anchors,
+          );
+        }
+
+        // Hit-rate drill.
         int hits = 0;
         for (final instance in instances) {
           try {

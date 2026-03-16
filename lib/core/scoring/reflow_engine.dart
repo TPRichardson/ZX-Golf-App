@@ -410,7 +410,15 @@ class ReflowEngine {
     final anchors = anchorsMap[targetSubskill];
     if (anchors == null) return 0.0;
 
-    if (adapterType == ScoringAdapterType.linearInterpolation) {
+    if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
+      // Best-of-set: group by set, max per set, average, interpolate.
+      final bySet = <String, List<double>>{};
+      for (final i in instances) {
+        bySet.putIfAbsent(i.setId, () => [])
+            .add(_extractNumericValue(i.rawMetrics));
+      }
+      return scoreBestOfSetSession(bySet, anchors);
+    } else if (adapterType == ScoringAdapterType.linearInterpolation) {
       // Raw data drill: score per-instance then average.
       final inputs = instances
           .map((i) => RawInstanceInput(_extractNumericValue(i.rawMetrics)))
@@ -713,8 +721,10 @@ class ReflowEngine {
         <String, Map<DrillType, List<LightSession>>>{};
     for (final ls in allLightSessions) {
       final subskillIds = drillSubskillCache[ls.drillId];
-      final drillType = drillTypeCache[ls.drillId];
+      var drillType = drillTypeCache[ls.drillId];
       if (subskillIds == null || drillType == null) continue;
+      // Benchmark drills score in the Transition window.
+      if (drillType == DrillType.benchmark) drillType = DrillType.transition;
       for (final subskillId in subskillIds) {
         sessionIndex
             .putIfAbsent(subskillId, () => {})
@@ -746,6 +756,10 @@ class ReflowEngine {
     timer.reset();
     final instanceMetrics =
         await _scoringRepo.getInstanceMetricsForSessions(
+            neededSessionIds.toList());
+    // Also fetch set-grouped metrics for best-of-set scoring.
+    final instanceMetricsBySet =
+        await _scoringRepo.getInstanceMetricsBySetForSessions(
             neededSessionIds.toList());
     _instrumentation.emit('bulk.instances', timer.elapsed, {
       'sessionCount': neededSessionIds.length,
@@ -792,7 +806,16 @@ class ReflowEngine {
           if (anchors == null) continue;
 
           double sessionScore;
-          if (adapterType == ScoringAdapterType.linearInterpolation) {
+          if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
+            final setGrouped = instanceMetricsBySet[ls.sessionId] ?? {};
+            final bySet = <String, List<double>>{};
+            for (final entry in setGrouped.entries) {
+              bySet[entry.key] = entry.value
+                  .map((m) => _extractNumericValue(m))
+                  .toList();
+            }
+            sessionScore = scoreBestOfSetSession(bySet, anchors);
+          } else if (adapterType == ScoringAdapterType.linearInterpolation) {
             final inputs = metrics
                 .map((m) => RawInstanceInput(_extractNumericValue(m)))
                 .toList();

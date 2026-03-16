@@ -604,6 +604,44 @@ class SyncEngine {
     final sets = allSets
         .where((s) => !excludedSessionIds.contains(s.sessionId))
         .toList();
+
+    // Ensure parent sessions for uploading sets are included (FK integrity).
+    final uploadingSessionIds = sessions.map((s) => s.sessionId).toSet();
+    final missingSessionIds = sets
+        .map((s) => s.sessionId)
+        .where((id) => !uploadingSessionIds.contains(id))
+        .toSet();
+    if (missingSessionIds.isNotEmpty) {
+      final missingSessions = await (_db.select(_db.sessions)
+            ..where((t) => t.sessionId.isIn(missingSessionIds)))
+          .get();
+      final filtered = missingSessions
+          .where((s) => !activeBlockIds.contains(s.practiceBlockId));
+      for (final s in filtered) {
+        sessions.add(s);
+      }
+      // Also ensure parent blocks are included.
+      final uploadingBlockIds = blocks.map((b) => b.practiceBlockId).toSet();
+      final missingBlockIds = filtered
+          .map((s) => s.practiceBlockId)
+          .where((id) => !uploadingBlockIds.contains(id))
+          .toSet();
+      if (missingBlockIds.isNotEmpty) {
+        final missingBlocks = await (_db.select(_db.practiceBlocks)
+              ..where((t) => t.practiceBlockId.isIn(missingBlockIds))
+              ..where((t) => t.endTimestamp.isNotNull()))
+            .get();
+        blocks.addAll(missingBlocks);
+      }
+      // Rebuild payload for Session and PracticeBlock.
+      if (sessions.isNotEmpty) {
+        payload['Session'] = sessions.map((e) => e.toSyncDto()).toList();
+      }
+      if (blocks.isNotEmpty) {
+        payload['PracticeBlock'] = blocks.map((e) => e.toSyncDto()).toList();
+      }
+    }
+
     if (sets.isNotEmpty) {
       payload['Set'] = sets.map((e) => e.toSyncDto()).toList();
     }

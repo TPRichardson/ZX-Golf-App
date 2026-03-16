@@ -590,6 +590,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
       DrillType.techniqueBlock => 'Technique Block',
       DrillType.transition => 'Transition',
       DrillType.pressure => 'Pressure',
+      DrillType.benchmark => 'Benchmark',
     };
   }
 
@@ -598,6 +599,7 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
       DrillType.techniqueBlock => 'Unscored practice for building mechanics',
       DrillType.transition => 'Scored practice for developing consistency',
       DrillType.pressure => 'High-stakes scored practice',
+      DrillType.benchmark => 'Measure raw performance metrics',
     };
   }
 

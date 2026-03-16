@@ -11,7 +11,6 @@ import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
-import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -220,6 +219,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
                 min: entry.value.min,
                 scratch: entry.value.scratch,
                 pro: entry.value.pro,
+                unit: _anchorUnit(drill),
               ),
               const SizedBox(height: SpacingTokens.sm),
             ],
@@ -359,23 +359,13 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       userId: userId,
     );
 
-    await Navigator.of(context).push(
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => screen),
     );
 
     // After execution returns, auto-discard session if empty.
     if (!mounted) return;
     await _discardSessionIfEmpty(entry.practiceEntryId, session.sessionId);
-
-    // Navigate to the practice queue for the remainder of the block.
-    if (mounted) {
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => PracticeQueueScreen(
-          practiceBlockId: pb.practiceBlockId,
-          userId: userId,
-        ),
-      ));
-    }
   }
 
   /// Discard a session if it has zero instances recorded.
@@ -512,6 +502,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       DrillType.techniqueBlock => 'Technique Block',
       DrillType.transition => 'Transition',
       DrillType.pressure => 'Pressure',
+      DrillType.benchmark => 'Benchmark',
     };
   }
 
@@ -543,6 +534,16 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     );
   }
 
+  String _anchorUnit(Drill drill) {
+    return switch (drill.metricSchemaId) {
+      'driver_club_speed' || 'driver_ball_speed' ||
+      'raw_club_head_speed' || 'raw_ball_speed' => 'mph',
+      'driver_total_distance' || 'raw_total_distance' ||
+      'raw_carry_distance' => 'yds',
+      _ => '%',
+    };
+  }
+
   String _formatSubskillId(String id) {
     return id
         .replaceAll('_', ' ')
@@ -554,18 +555,20 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   }
 }
 
-/// Read-only anchor display — shows Min / Scratch / Pro values with % suffix.
+/// Read-only anchor display — shows Min / Scratch / Pro values.
 class _AnchorDisplay extends StatelessWidget {
   final String label;
   final double min;
   final double scratch;
   final double pro;
+  final String unit;
 
   const _AnchorDisplay({
     required this.label,
     required this.min,
     required this.scratch,
     required this.pro,
+    this.unit = '%',
   });
 
   @override
@@ -590,11 +593,11 @@ class _AnchorDisplay extends StatelessWidget {
           const SizedBox(height: SpacingTokens.xs),
           Row(
             children: [
-              _AnchorValue(label: 'Min', value: min),
+              _AnchorValue(label: 'Min', value: min, unit: unit),
               const SizedBox(width: SpacingTokens.lg),
-              _AnchorValue(label: 'Scratch', value: scratch),
+              _AnchorValue(label: 'Scratch', value: scratch, unit: unit),
               const SizedBox(width: SpacingTokens.lg),
-              _AnchorValue(label: 'Pro', value: pro),
+              _AnchorValue(label: 'Pro', value: pro, unit: unit),
             ],
           ),
         ],
@@ -606,8 +609,9 @@ class _AnchorDisplay extends StatelessWidget {
 class _AnchorValue extends StatelessWidget {
   final String label;
   final double value;
+  final String unit;
 
-  const _AnchorValue({required this.label, required this.value});
+  const _AnchorValue({required this.label, required this.value, this.unit = '%'});
 
   @override
   Widget build(BuildContext context) {
@@ -621,7 +625,7 @@ class _AnchorValue extends StatelessWidget {
               ),
         ),
         Text(
-          '${value.toStringAsFixed(0)}%',
+          '${value.toStringAsFixed(0)}$unit',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: ColorTokens.textSecondary,
                 fontFeatures: const [FontFeature.tabularFigures()],

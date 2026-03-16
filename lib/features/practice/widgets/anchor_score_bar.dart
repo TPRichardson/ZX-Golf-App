@@ -6,16 +6,26 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 
-/// Horizontal bar showing Min, Scratch, and Pro anchor positions on a 0–100 scale,
-/// with the user's hit rate plotted on it. The bar gradient goes red → amber → green.
+/// Horizontal bar showing Min, Scratch, and Pro anchor positions,
+/// with the user's performance plotted on it. The bar gradient goes red → amber → green.
+///
+/// Two modes:
+/// - **Percentage mode** (default): 0–100 scale, anchors are percentages.
+/// - **Value mode**: when [userValue] is provided, the bar scales from
+///   Min to 105% of Pro, with the user's raw value plotted.
 class AnchorScoreBar extends StatelessWidget {
-  /// User's actual hit rate percentage (0–100).
+  /// User's actual hit rate percentage (0–100). Used in percentage mode.
   final double userHitRatePct;
+
+  /// User's raw performance value (e.g., 95 mph). When set, uses value mode.
+  final double? userValue;
+
   final String? anchorsJson;
 
   const AnchorScoreBar({
     super.key,
-    required this.userHitRatePct,
+    this.userHitRatePct = 0,
+    this.userValue,
     this.anchorsJson,
   });
 
@@ -45,20 +55,36 @@ class AnchorScoreBar extends StatelessWidget {
     final mn = minAnchor;
     final sc = scratchAnchor;
     final pr = proAnchor;
-    final userPct = userHitRatePct.clamp(0.0, 100.0);
+
+    // Value mode: scale from min to 105% of pro.
+    final isValueMode = userValue != null;
+    final scaleMin = isValueMode ? mn : 0.0;
+    final scaleMax = isValueMode ? pr * 1.05 : 100.0;
+    final scaleRange = scaleMax - scaleMin;
+    final userVal = isValueMode
+        ? userValue!.clamp(scaleMin, scaleMax)
+        : userHitRatePct.clamp(0.0, 100.0);
+
+    double toFraction(double v) =>
+        scaleRange > 0 ? ((v - scaleMin) / scaleRange).clamp(0.0, 1.0) : 0.0;
+
+    final mnFrac = toFraction(mn);
+    final scFrac = toFraction(sc);
+    final prFrac = toFraction(pr);
+    final userFrac = toFraction(userVal);
 
     return Column(
       children: [
         const SizedBox(height: SpacingTokens.md),
         SizedBox(
-          height: 56,
+          height: isValueMode ? 72 : 56,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final minPos = (mn / 100.0 * width).clamp(0.0, width);
-              final scratchPos = (sc / 100.0 * width).clamp(0.0, width);
-              final proPos = (pr / 100.0 * width).clamp(0.0, width);
-              final userPos = (userPct / 100.0 * width).clamp(0.0, width);
+              final minPos = (mnFrac * width).clamp(0.0, width);
+              final scratchPos = (scFrac * width).clamp(0.0, width);
+              final proPos = (prFrac * width).clamp(0.0, width);
+              final userPos = (userFrac * width).clamp(0.0, width);
 
               return Stack(
                 clipBehavior: Clip.none,
@@ -67,17 +93,17 @@ class AnchorScoreBar extends StatelessWidget {
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: 20,
+                    top: isValueMode ? 24 : 20,
                     child: Container(
                       height: 8,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4),
                         gradient: LinearGradient(
                           stops: [
-                            (mn / 100.0),
-                            (mn / 100.0),
-                            ((mn + sc) / 200.0),
-                            (pr / 100.0).clamp(0.0, 1.0),
+                            mnFrac,
+                            mnFrac,
+                            (mnFrac + scFrac) / 2,
+                            prFrac,
                           ],
                           colors: const [
                             ColorTokens.ragRed, // Red (0 to Min)
@@ -94,23 +120,44 @@ class AnchorScoreBar extends StatelessWidget {
                     position: minPos,
                     label: 'Min',
                     color: ColorTokens.ragRed,
+                    topOffset: isValueMode ? 20 : 16,
                   ),
                   // Scratch marker.
                   _AnchorMarker(
                     position: scratchPos,
                     label: 'Scratch',
                     color: ColorTokens.ragAmber,
+                    topOffset: isValueMode ? 20 : 16,
                   ),
                   // Pro marker.
                   _AnchorMarker(
                     position: proPos,
                     label: 'Pro',
                     color: ColorTokens.ragGreen,
+                    topOffset: isValueMode ? 20 : 16,
                   ),
+                  // User value label above the marker.
+                  if (isValueMode)
+                    Positioned(
+                      left: userPos - 20,
+                      top: 0,
+                      child: SizedBox(
+                        width: 40,
+                        child: Text(
+                          '${userVal.round()}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: TypographyTokens.bodySize,
+                            fontWeight: FontWeight.w600,
+                            color: ColorTokens.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
                   // User score marker.
                   Positioned(
                     left: userPos - 6,
-                    top: 14,
+                    top: isValueMode ? 20 : 14,
                     child: Container(
                       width: 12,
                       height: 20,
@@ -142,18 +189,20 @@ class _AnchorMarker extends StatelessWidget {
   final double position;
   final String label;
   final Color color;
+  final double topOffset;
 
   const _AnchorMarker({
     required this.position,
     required this.label,
     required this.color,
+    this.topOffset = 16,
   });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
       left: position - 1,
-      top: 16,
+      top: topOffset,
       child: Column(
         children: [
           Container(
@@ -165,7 +214,7 @@ class _AnchorMarker extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: TypographyTokens.bodySmSize,
+              fontSize: TypographyTokens.bodySize,
               fontWeight: FontWeight.w500,
               color: color,
             ),

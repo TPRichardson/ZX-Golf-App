@@ -23,7 +23,8 @@ enum SkillArea {
 enum DrillType {
   techniqueBlock('TechniqueBlock'),
   transition('Transition'),
-  pressure('Pressure');
+  pressure('Pressure'),
+  benchmark('Benchmark');
 
   const DrillType(this.dbValue);
   final String dbValue;

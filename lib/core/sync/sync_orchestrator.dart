@@ -99,14 +99,17 @@ class SyncOrchestrator {
   Future<void> _executeTrigger(SyncTrigger reason) async {
     if (!_started) return;
 
-    // TD-03 §5.1 — Feature flag guard.
-    if (!_engine.syncEnabled) {
+    // TD-03 §5.1 — Feature flag guard. Force sync bypasses.
+    if (!_engine.syncEnabled && reason != SyncTrigger.forceFullSync) {
       debugPrint('[SyncOrchestrator] Skipped (sync_disabled) trigger=${reason.name}');
       _diagnostics.emit('sync_skipped', Duration.zero, {
         'reason': 'sync_disabled',
         'trigger': reason.name,
       });
       return;
+    }
+    if (reason == SyncTrigger.forceFullSync) {
+      _engine.resetFailureCounter();
     }
 
     // Auth guard: only sync when authenticated.

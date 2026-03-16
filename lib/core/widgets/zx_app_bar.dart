@@ -182,6 +182,14 @@ class ZxSimpleTabBar extends StatelessWidget implements PreferredSizeWidget {
       indicatorColor: ColorTokens.primaryDefault,
       indicatorSize: TabBarIndicatorSize.tab,
       dividerColor: ColorTokens.surfaceBorder,
+      labelStyle: const TextStyle(
+        fontSize: TypographyTokens.bodyLgSize,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelStyle: const TextStyle(
+        fontSize: TypographyTokens.bodyLgSize,
+        fontWeight: FontWeight.w400,
+      ),
       tabs: tabs,
     );
   }

@@ -36,6 +36,9 @@ ScoringAdapterType parseScoringAdapterBinding(String binding) {
     case 'linearInterpolation':
     case 'LinearInterpolation':
       return ScoringAdapterType.linearInterpolation;
+    case 'bestOfSetLinearInterpolation':
+    case 'BestOfSetLinearInterpolation':
+      return ScoringAdapterType.bestOfSetLinearInterpolation;
     case 'none':
     case 'None':
       return ScoringAdapterType.none;

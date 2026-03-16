@@ -218,7 +218,10 @@ class ScoringRepository {
           _db.sessions.status.equalsValue(SessionStatus.closed) &
           _db.sessions.isDeleted.equals(false) &
           _db.drills.isDeleted.equals(false) &
-          _db.drills.drillType.equalsValue(drillType) &
+          (drillType == DrillType.transition
+              ? (_db.drills.drillType.equalsValue(DrillType.transition) |
+                  _db.drills.drillType.equalsValue(DrillType.benchmark))
+              : _db.drills.drillType.equalsValue(drillType)) &
           _db.drills.origin.equalsValue(DrillOrigin.standard) &
           _db.drills.subskillMapping.like('%$subskillId%'),
     );
@@ -482,6 +485,43 @@ class ScoringRepository {
         final sessionId = row.read<String>('SessionID');
         final rawMetrics = row.read<String>('RawMetrics');
         result.putIfAbsent(sessionId, () => []).add(rawMetrics);
+      }
+    }
+    return result;
+  }
+
+  /// Get instance metrics grouped by set for best-of-set scoring.
+  /// Returns Map<sessionId, Map<setId, List<rawMetrics>>>.
+  Future<Map<String, Map<String, List<String>>>>
+      getInstanceMetricsBySetForSessions(List<String> sessionIds) async {
+    if (sessionIds.isEmpty) return {};
+
+    const chunkSize = 500;
+    final result = <String, Map<String, List<String>>>{};
+
+    for (var i = 0; i < sessionIds.length; i += chunkSize) {
+      final chunk = sessionIds.sublist(
+          i, i + chunkSize > sessionIds.length ? sessionIds.length : i + chunkSize);
+      final placeholders = List.filled(chunk.length, '?').join(', ');
+      final variables = chunk.map((id) => Variable.withString(id)).toList();
+
+      final rows = await _db.customSelect(
+        'SELECT st.SessionID, st.SetID, i.RawMetrics '
+        'FROM Instance i '
+        'INNER JOIN "Set" st ON st.SetID = i.SetID '
+        'WHERE st.SessionID IN ($placeholders) AND i.IsDeleted = 0 '
+        'ORDER BY st.SetIndex, i.Timestamp',
+        variables: variables,
+      ).get();
+
+      for (final row in rows) {
+        final sessionId = row.read<String>('SessionID');
+        final setId = row.read<String>('SetID');
+        final rawMetrics = row.read<String>('RawMetrics');
+        result
+            .putIfAbsent(sessionId, () => {})
+            .putIfAbsent(setId, () => [])
+            .add(rawMetrics);
       }
     }
     return result;

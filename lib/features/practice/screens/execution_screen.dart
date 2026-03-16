@@ -129,7 +129,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       InputMode.gridCell => GridCellDelegate(drill: widget.drill),
       InputMode.binaryHitMiss => BinaryHitMissDelegate(),
       InputMode.continuousMeasurement => ContinuousMeasurementDelegate(),
-      InputMode.rawDataEntry => RawDataEntryDelegate(),
+      InputMode.rawDataEntry => RawDataEntryDelegate(drill: widget.drill),
     };
   }
 
@@ -235,7 +235,14 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Display label for the currently selected club.
   String get _selectedClubLabel {
-    if (_selectedClubId == null) return '';
+    if (_selectedClubId == null) {
+      // Driving drills with no club selection default to "Driver".
+      if (widget.drill.clubSelectionMode == null &&
+          widget.drill.skillArea == SkillArea.driving) {
+        return 'Driver';
+      }
+      return '';
+    }
     return _clubIdToLabel[_selectedClubId] ?? '';
   }
 
@@ -533,10 +540,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final showShotLog = _shouldShowShotLog(constraints.maxHeight);
+                  final isCompact = constraints.maxHeight < 500;
                   return Column(
                     children: [
                       // Shot log + Club bar section.
-                      if (showShotLog) _buildShotLogSection(),
+                      if (showShotLog) _buildShotLogSection(compact: isCompact),
                       // Gap 42 — Inline lock indicator.
                       if (isLocked)
                         Padding(
@@ -557,7 +565,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       // vertical target bar wrapper doesn't lag by one frame.
                       ..._applyVerticalBarPaddingOverride(),
                       Expanded(
-                        flex: showShotLog ? 65 : 1,
+                        flex: showShotLog
+                            ? (isCompact ? 50 : 65)
+                            : 1,
                         child: Column(
                           children: [
                             // Target width indicator bar (horizontal, for 1x3/3x3 grids).
@@ -604,11 +614,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     return cellHeight >= _kMinGridCellHeight;
   }
 
-  Widget _buildShotLogSection() {
+  Widget _buildShotLogSection({bool compact = false}) {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
     return Expanded(
-      flex: 35,
+      flex: compact ? 50 : 35,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
@@ -745,7 +755,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       ClubSelectionMode.userLed => 'Players Choice',
       ClubSelectionMode.random => 'Fixed Random',
       ClubSelectionMode.guided => 'Fixed Sequence',
-      _ => '',
+      null => widget.drill.skillArea == SkillArea.driving ? 'Fixed' : '',
     };
 
     return IntrinsicHeight(
@@ -754,118 +764,121 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       children: [
         // Left half — target distance.
         Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Distance',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySmSize,
-                  color: ColorTokens.textTertiary,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(SpacingTokens.xs),
+            decoration: BoxDecoration(
+              color: ColorTokens.surfaceRaised,
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+              border: Border.all(color: ColorTokens.surfaceBorder),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Distance',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: SpacingTokens.xs),
-              Expanded(
-                child: Container(
+                Text(
+                  'Target Distance',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySize,
+                    fontStyle: FontStyle.italic,
+                    color: ColorTokens.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.xs),
+                Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(SpacingTokens.xs),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.surfaceRaised,
-                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                    border: Border.all(color: ColorTokens.surfaceBorder),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpacingTokens.md,
+                    vertical: SpacingTokens.xs,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Target Distance',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.bodySize,
-                          color: ColorTokens.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(height: SpacingTokens.xs),
-                      Text(
-                        _formatTargetDistance(),
-                        style: TextStyle(
-                          fontSize: TypographyTokens.displayLgSize,
-                          fontWeight: FontWeight.w600,
-                          color: ColorTokens.textPrimary,
-                        ),
-                      ),
-                    ],
+                  decoration: BoxDecoration(
+                    color: ColorTokens.textTertiary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                    border: Border.all(
+                      color: ColorTokens.textTertiary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    _formatTargetDistance(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: TypographyTokens.headerSize,
+                      fontWeight: FontWeight.w600,
+                      color: ColorTokens.textPrimary,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(width: SpacingTokens.sm),
         // Right half — club selection.
         Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Club',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySmSize,
-                  color: ColorTokens.textTertiary,
-                ),
+          child: GestureDetector(
+            onTap: isTappable ? _pickClub : null,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(SpacingTokens.xs),
+              decoration: BoxDecoration(
+                color: ColorTokens.surfaceRaised,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                border: Border.all(color: ColorTokens.surfaceBorder),
               ),
-              const SizedBox(height: SpacingTokens.xs),
-              GestureDetector(
-                onTap: isTappable ? _pickClub : null,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(SpacingTokens.xs),
-                  decoration: BoxDecoration(
-                    color: ColorTokens.surfaceRaised,
-                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                    border: Border.all(color: ColorTokens.surfaceBorder),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Club',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      fontWeight: FontWeight.w600,
+                      color: ColorTokens.textPrimary,
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (modeLabel.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: SpacingTokens.xs),
-                          child: Text(
-                            modeLabel,
-                            style: TextStyle(
-                              fontSize: TypographyTokens.bodySize,
-                              color: ColorTokens.textTertiary,
-                            ),
-                          ),
-                        ),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: SpacingTokens.md,
-                          vertical: SpacingTokens.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: ColorTokens.primaryDefault.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                          border: Border.all(
-                            color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: Text(
-                          _abbreviateClub(_selectedClubLabel),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: TypographyTokens.displayLgSize,
-                            fontWeight: FontWeight.w600,
-                            color: ColorTokens.primaryDefault,
-                          ),
-                        ),
+                  if (modeLabel.isNotEmpty)
+                    Text(
+                      modeLabel,
+                      style: TextStyle(
+                        fontSize: TypographyTokens.bodySize,
+                        fontStyle: FontStyle.italic,
+                        color: ColorTokens.textTertiary,
                       ),
-                    ],
+                    ),
+                  const SizedBox(height: SpacingTokens.xs),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.md,
+                      vertical: SpacingTokens.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ColorTokens.primaryDefault.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                      border: Border.all(
+                        color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Text(
+                      _abbreviateClub(_selectedClubLabel),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: TypographyTokens.headerSize,
+                        fontWeight: FontWeight.w600,
+                        color: ColorTokens.primaryDefault,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],
@@ -1228,7 +1241,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       unit = widget.drill.targetDistanceUnit;
     }
 
-    if (value == null) return '';
+    if (value == null) return 'None';
     final rounded = value.round();
     return unit != null ? '$rounded ${unit.dbValue}' : '$rounded';
   }

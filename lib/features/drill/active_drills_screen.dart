@@ -878,6 +878,7 @@ class _UnifiedFilterBar extends StatelessWidget {
         DrillType.transition => 'Transition',
         DrillType.pressure => 'Pressure',
         DrillType.techniqueBlock => 'Technique',
+        DrillType.benchmark => 'Benchmark',
       };
 
   Widget _divider() => Container(
