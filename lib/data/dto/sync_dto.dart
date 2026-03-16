@@ -26,3 +26,4 @@ export 'matrix_cell_dto.dart';
 export 'matrix_attempt_dto.dart';
 export 'performance_snapshot_dto.dart';
 export 'snapshot_club_dto.dart';
+export 'user_training_item_dto.dart';

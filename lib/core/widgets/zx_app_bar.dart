@@ -11,6 +11,7 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final Widget? leading;
   final double? titleSize;
+  final PreferredSizeWidget? bottom;
 
   const ZxAppBar({
     super.key,
@@ -18,10 +19,12 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.leading,
     this.titleSize,
+    this.bottom,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(72);
+  Size get preferredSize =>
+      Size.fromHeight(72 + (bottom?.preferredSize.height ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +43,7 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: ColorTokens.surfacePrimary,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      bottom: bottom,
     );
   }
 }

@@ -10,8 +10,10 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
+import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
@@ -193,6 +195,15 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
                   drill.targetSizeWidth, drill.targetSizeUnit),
             ),
 
+          // Recommended equipment section — informational only.
+          if (_recommendedEquipment(drill).isNotEmpty) ...[
+            const SizedBox(height: SpacingTokens.sm),
+            DetailRow(
+              label: 'Recommended',
+              value: _recommendedEquipment(drill),
+            ),
+          ],
+
           // Anchors section — system drills, read-only display.
           if (isStandard && isScored) ...[
             const SizedBox(height: SpacingTokens.lg),
@@ -289,13 +300,74 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     final envSurface = await showEnvironmentSurfacePicker(context);
     if (envSurface == null || !mounted) return;
 
+    // Check if drill requires clubs the user doesn't have.
+    if (drill.clubSelectionMode != null) {
+      final clubs = await ref
+          .read(clubsForSkillAreaProvider((userId, drill.skillArea)).future);
+      if (clubs.isEmpty && mounted) {
+        final proceed = await _showNoClubsWarning(drill.skillArea);
+        if (proceed != true || !mounted) return;
+      }
+    }
+
     final actions = ref.read(practiceActionsProvider);
+    final repo = ref.read(practiceRepositoryProvider);
+
+    // If there's already an active practice block, end it first.
+    final existingBlock = await repo.getActivePracticeBlock(userId).first;
+    if (existingBlock != null) {
+      await actions.endPracticeBlock(existingBlock.practiceBlockId, userId);
+    }
+
+    if (!mounted) return;
+
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: [drill.drillId],
       surfaceType: envSurface.surface,
     );
 
+    if (!mounted) return;
+
+    // Get the practice entry that was just created for this drill.
+    final entries = await repo.getPracticeEntriesByBlock(pb.practiceBlockId);
+    if (entries.isEmpty || !mounted) return;
+    final entry = entries.first;
+
+    // S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
+    String? userDeclaration;
+    if (drill.inputMode == InputMode.binaryHitMiss) {
+      userDeclaration = await _promptForDeclaration();
+      if (userDeclaration != null && userDeclaration.trim().isEmpty) {
+        userDeclaration = null;
+      }
+      if (!mounted) return;
+    }
+
+    final session = await actions.startSession(
+      entry.practiceEntryId,
+      userId,
+      userDeclaration: userDeclaration,
+    );
+
+    if (!mounted) return;
+
+    // Go directly to execution screen, skipping the queue.
+    final screen = PracticeRouter.routeToExecutionScreen(
+      drill: drill,
+      session: session,
+      userId: userId,
+    );
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => screen),
+    );
+
+    // After execution returns, auto-discard session if empty.
+    if (!mounted) return;
+    await _discardSessionIfEmpty(entry.practiceEntryId, session.sessionId);
+
+    // Navigate to the practice queue for the remainder of the block.
     if (mounted) {
       Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => PracticeQueueScreen(
@@ -304,6 +376,92 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
         ),
       ));
     }
+  }
+
+  /// Discard a session if it has zero instances recorded.
+  Future<void> _discardSessionIfEmpty(String entryId, String sessionId) async {
+    final repo = ref.read(practiceRepositoryProvider);
+    final entry = await repo.getPracticeEntryById(entryId);
+    if (entry == null || entry.entryType != PracticeEntryType.activeSession) {
+      return;
+    }
+    final currentSet = await repo.getCurrentSet(sessionId);
+    if (currentSet == null) return;
+    final instanceCount = await repo.getInstanceCount(currentSet.setId);
+    final setCount = await repo.getSetCount(sessionId);
+    if (instanceCount == 0 && setCount <= 1) {
+      await ref
+          .read(practiceActionsProvider)
+          .discardSession(entryId, sessionId);
+    }
+  }
+
+  /// S04 §4.3 — Prompt for intention declaration on Binary Hit/Miss drills.
+  Future<String?> _promptForDeclaration() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Session Declaration',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: ColorTokens.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'What are you aiming for? (e.g. "Hit fairway")',
+            hintStyle: TextStyle(color: ColorTokens.textTertiary),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.primaryDefault,
+            ),
+            child: const Text('Start'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
+  /// Warning when no clubs are configured for the drill's skill area.
+  Future<bool?> _showNoClubsWarning(SkillArea skillArea) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('No Clubs Configured',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: Text(
+          'This drill requires clubs for ${skillArea.dbValue}, '
+          'but you have none in your bag. '
+          'Add clubs in your Equipment bag before starting this drill.',
+          style: const TextStyle(color: ColorTokens.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.warningIntegrity,
+            ),
+            child: const Text('Start Anyway'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _removeFromActive(Drill drill) async {
@@ -363,6 +521,26 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
         ? value.toInt().toString()
         : value.toStringAsFixed(1);
     return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+  }
+
+  String _recommendedEquipment(Drill drill) {
+    final json = drill.recommendedEquipment;
+    if (json.isEmpty || json == '[]') return '';
+    try {
+      final list = jsonDecode(json) as List<dynamic>;
+      if (list.isEmpty) return '';
+      return list.map((e) => _formatEquipmentName(e as String)).join(', ');
+    } on Exception {
+      return '';
+    }
+  }
+
+  String _formatEquipmentName(String value) {
+    // Convert PascalCase to spaced words.
+    return value.replaceAllMapped(
+      RegExp(r'([a-z])([A-Z])'),
+      (m) => '${m[1]} ${m[2]}',
+    );
   }
 
   String _formatSubskillId(String id) {

@@ -149,9 +149,6 @@ class PracticeActions {
         // Completion matching is best-effort; session result is already saved.
       }
 
-      // Phase 7A — Post-session sync trigger (TD-03 §5.1).
-      _syncOrchestrator?.requestSync(SyncTrigger.postSession);
-
       return result;
     } finally {
       _timerService.resumeAll();

@@ -3,7 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:zx_golf_app/data/database.dart';
 
 // TD-03 §5.2.5 — Instance DTO serialisation.
-// No UserID (child entity). SelectedClub is plain text, not enum.
+// SelectedClub stores UserClub.ClubID (UUID), nullable for technique blocks.
 
 extension InstanceSyncDto on Instance {
   Map<String, dynamic> toSyncDto() => {
@@ -25,7 +25,7 @@ InstancesCompanion instanceFromSyncDto(Map<String, dynamic> json) =>
     InstancesCompanion(
       instanceId: Value(json['InstanceID'] as String),
       setId: Value(json['SetID'] as String),
-      selectedClub: Value(json['SelectedClub'] as String),
+      selectedClub: Value(json['SelectedClub'] as String?),
       rawMetrics: Value(
         json['RawMetrics'] is String
             ? json['RawMetrics'] as String

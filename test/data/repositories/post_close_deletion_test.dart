@@ -111,7 +111,7 @@ void main() {
             InstancesCompanion.insert(
               instanceId: instId,
               setId: setId,
-              selectedClub: 'i7',
+              selectedClub: Value('i7'),
               rawMetrics: jsonEncode({'value': 50.0}),
             ),
           );

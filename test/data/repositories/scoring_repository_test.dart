@@ -314,7 +314,7 @@ void main() {
               InstancesCompanion.insert(
                 instanceId: 'inst-$sessionId-$i',
                 setId: setId,
-                selectedClub: 'i7',
+                selectedClub: Value('i7'),
                 rawMetrics: '{"hit": true}',
               ),
             );

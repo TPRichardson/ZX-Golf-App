@@ -10,7 +10,8 @@ import 'package:zx_golf_app/features/practice/execution/session_execution_contro
 class ExecutionContext {
   final bool isLocked;
   final bool isEnding;
-  final String selectedClub;
+  /// Selected club ID (UUID). Null for technique blocks.
+  final String? selectedClub;
   final String? currentSetId;
 
   const ExecutionContext({

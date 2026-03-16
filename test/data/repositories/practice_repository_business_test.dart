@@ -374,7 +374,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-1',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -409,7 +409,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-1',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -426,7 +426,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'inst-1',
             setId: 'nonexistent-set',
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{}',
           ),
           'nonexistent-session',
@@ -457,7 +457,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-grid-1',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -496,7 +496,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-dur-1',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
           timestamp: Value(baseTime),
         ),
@@ -507,7 +507,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-dur-2',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": false}',
           timestamp: Value(baseTime.add(const Duration(minutes: 5))),
         ),
@@ -530,7 +530,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-dur-single',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -568,7 +568,7 @@ void main() {
       InstancesCompanion.insert(
         instanceId: 'inst-tech-dur',
         setId: currentSet.setId,
-        selectedClub: 'None',
+        selectedClub: Value('None'),
         rawMetrics: '{"duration": 420}',
       ),
       session.sessionId,
@@ -620,7 +620,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-for-close',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -675,7 +675,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-for-close2',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -754,7 +754,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-state-transition',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -819,7 +819,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-for-edit',
           setId: setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         sessionId,
@@ -872,7 +872,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-for-delete-unstruct',
           setId: set2.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session2.sessionId,
@@ -912,7 +912,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-for-remove',
           setId: currentSet.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session.sessionId,
@@ -971,7 +971,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-block-test',
           setId: set1.setId,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ),
         session1.sessionId,

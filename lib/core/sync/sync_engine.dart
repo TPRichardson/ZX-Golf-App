@@ -44,7 +44,7 @@ class SyncEngine {
   bool _failuresLoaded = false;
 
   // TD-03 §5.1 — Feature flag: enable/disable sync.
-  bool _syncEnabled = false; // Off by default during testing. Flip to true to test sync.
+  bool _syncEnabled = true;
   bool _syncEnabledLoaded = false;
 
   // Phase 7C — Merge timeout counter (transient, not persisted). TD-07 §6.2.
@@ -135,6 +135,7 @@ class SyncEngine {
 
     // TD-03 §5.1 — Short-circuit if sync disabled.
     if (!_syncEnabled) {
+      debugPrint('[SyncEngine] Sync disabled (failures=$_consecutiveFailures). Call resetFailureCounter() to re-enable.');
       return SyncResult.failure(
         errorCode: SyncException.networkUnavailable,
         errorMessage:
@@ -182,10 +183,13 @@ class SyncEngine {
     });
 
     try {
-      final lastSync = reason == SyncTrigger.forceFullSync
+      final rawLastSync = reason == SyncTrigger.forceFullSync
           ? null
           : await getLastSyncTimestamp();
-
+      // Subtract 1 second to create an overlap window — prevents missing rows
+      // with UpdatedAt equal to the saved timestamp. Duplicate uploads are
+      // harmless (server upserts).
+      final lastSync = rawLastSync?.subtract(const Duration(seconds: 1));
       // Step 1: Gather local changes and device ID
       final payload = await _buildUploadPayload(lastSync);
       final deviceId = await _getOrCreateDeviceId();
@@ -204,17 +208,17 @@ class SyncEngine {
             'changes': batch,
           }),
         );
-
         if (lastUploadResponse is Map &&
             lastUploadResponse['success'] != true) {
-          final errorCode = lastUploadResponse['error_code'] as String?;
-          if (errorCode == 'SCHEMA_VERSION_MISMATCH') {
-            _setStatus(SyncStatus.failed);
-            throw SyncException(
-              code: SyncException.schemaMismatch,
-              message: 'Server requires different schema version',
-            );
-          }
+          final errorCode = lastUploadResponse['error_code'] as String? ?? 'UPLOAD_FAILED';
+          final errorMsg = lastUploadResponse['error_message'] as String? ?? 'Upload failed';
+          debugPrint('[SyncEngine] Upload failed: $errorCode — $errorMsg');
+          throw SyncException(
+            code: errorCode == 'SCHEMA_VERSION_MISMATCH'
+                ? SyncException.schemaMismatch
+                : SyncException.uploadFailed,
+            message: errorMsg,
+          );
         }
 
         totalUploaded += batch.values
@@ -235,6 +239,16 @@ class SyncEngine {
           'last_sync_timestamp': lastSync?.toUtc().toIso8601String(),
         }),
       );
+      // Fail the cycle if download returned an error.
+      if (downloadResponse is Map && downloadResponse['success'] == false) {
+        final errorCode = downloadResponse['error_code'] as String? ?? 'DOWNLOAD_FAILED';
+        final errorMsg = downloadResponse['error_message'] as String? ?? 'Download failed';
+        debugPrint('[SyncEngine] Download failed: $errorCode — $errorMsg');
+        throw SyncException(
+          code: SyncException.downloadFailed,
+          message: errorMsg,
+        );
+      }
 
       // Step 4: LWW merge (Phase 7B).
       int downloadedCount = 0;
@@ -242,7 +256,6 @@ class SyncEngine {
         downloadedCount =
             await _applyDownloadedChanges(downloadResponse['changes'] as Map);
       }
-
       final downloadDuration = DateTime.now().difference(downloadStart);
       _diagnostics?.emit('sync_download_complete', downloadDuration, {
         'downloadedCount': downloadedCount,
@@ -355,6 +368,7 @@ class SyncEngine {
     'PracticeEntry',
     'UserDrillAdoption',
     'UserClub',
+    'UserTrainingItem',
     'ClubPerformanceProfile',
     'UserSkillAreaClubMapping',
     'Routine',
@@ -614,6 +628,17 @@ class SyncEngine {
       payload['UserClub'] = clubs.map((e) => e.toSyncDto()).toList();
     }
 
+    // UserTrainingItem
+    final kitItems = lastSync == null
+        ? await _db.select(_db.userTrainingItems).get()
+        : await (_db.select(_db.userTrainingItems)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    if (kitItems.isNotEmpty) {
+      payload['UserTrainingItem'] =
+          kitItems.map((e) => e.toSyncDto()).toList();
+    }
+
     // ClubPerformanceProfile
     final profiles = lastSync == null
         ? await _db.select(_db.clubPerformanceProfiles).get()
@@ -848,7 +873,7 @@ class SyncEngine {
           mergedCount++;
 
           // Track affected users for post-merge rebuild.
-          final userId = remote['userId'] as String?;
+          final userId = (remote['UserID'] ?? remote['userId']) as String?;
           if (userId != null) affectedUserIds.add(userId);
         }
       }
@@ -918,6 +943,7 @@ class SyncEngine {
     'PracticeEntry': 'practiceEntryId',
     'UserDrillAdoption': 'userDrillAdoptionId',
     'UserClub': 'clubId',
+    'UserTrainingItem': 'itemId',
     'ClubPerformanceProfile': 'profileId',
     'UserSkillAreaClubMapping': 'mappingId',
     'Routine': 'routineId',
@@ -948,6 +974,7 @@ class SyncEngine {
     'PracticeEntry': 'PracticeEntry',
     'UserDrillAdoption': 'UserDrillAdoption',
     'UserClub': 'UserClub',
+    'UserTrainingItem': 'UserTrainingItem',
     'ClubPerformanceProfile': 'ClubPerformanceProfile',
     'UserSkillAreaClubMapping': 'UserSkillAreaClubMapping',
     'Routine': 'Routine',
@@ -978,6 +1005,7 @@ class SyncEngine {
     'PracticeEntry': 'PracticeEntryID',
     'UserDrillAdoption': 'UserDrillAdoptionID',
     'UserClub': 'ClubID',
+    'UserTrainingItem': 'ItemID',
     'ClubPerformanceProfile': 'ProfileID',
     'UserSkillAreaClubMapping': 'MappingID',
     'Routine': 'RoutineID',
@@ -1044,6 +1072,8 @@ class SyncEngine {
         return _db.userDrillAdoptions.map(row.data).toSyncDto();
       case 'UserClub':
         return _db.userClubs.map(row.data).toSyncDto();
+      case 'UserTrainingItem':
+        return _db.userTrainingItems.map(row.data).toSyncDto();
       case 'ClubPerformanceProfile':
         return _db.clubPerformanceProfiles.map(row.data).toSyncDto();
       case 'UserSkillAreaClubMapping':
@@ -1115,6 +1145,9 @@ class SyncEngine {
       case 'UserClub':
         await _db.into(_db.userClubs).insertOnConflictUpdate(
               userClubFromSyncDto(merged));
+      case 'UserTrainingItem':
+        await _db.into(_db.userTrainingItems).insertOnConflictUpdate(
+              userTrainingItemFromSyncDto(merged));
       case 'ClubPerformanceProfile':
         await _db.into(_db.clubPerformanceProfiles).insertOnConflictUpdate(
               clubPerformanceProfileFromSyncDto(merged));

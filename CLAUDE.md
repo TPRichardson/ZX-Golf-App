@@ -97,7 +97,7 @@ Do not comment obvious code. Target ~1 spec/TD reference per public repository/s
 
 | Spec Reference | Deviation | Rationale | Date |
 |----------------|-----------|-----------|------|
-| TD-06 §4.4 "28 Drift tables" | 34 Drift tables (26 from DDL + SyncMetadata + 7 matrix tables). SystemMaintenanceLock and MigrationLog excluded. | TD-02 §8 specifies these are server-only. Matrix tables added in Matrix M1-M3. | 2026-02-27 |
+| TD-06 §4.4 "28 Drift tables" | 35 Drift tables (26 from DDL + SyncMetadata + 7 matrix tables + UserTrainingItems). SystemMaintenanceLock and MigrationLog excluded. | TD-02 §8 specifies these are server-only. Matrix tables added in Matrix M1-M3. UserTrainingItems added for Training Kit feature. | 2026-03-16 |
 | TD-02 §3.5 `Sets` table | Generated data class renamed to `PracticeSet` via `@DataClassName('PracticeSet')`. | Drift generates singular `Set` from `Sets`, clashing with `dart:core.Set`. | 2026-02-27 |
 | Phase 7C StorageMonitor | `StorageMonitor._defaultCheck()` returns `false` (stub). No real disk space detection. | `dart:io` doesn't expose free space without FFI/native plugin. Infrastructure wired for Phase 8 activation. | 2026-03-02 |
 | S10 §10.10 Notifications | Reminder toggle + time picker persist preferences but do not schedule system notifications. | `flutter_local_notifications` deferred to post-V1 to avoid native dependency complexity. | 2026-03-02 |

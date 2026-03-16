@@ -134,19 +134,19 @@ void main() {
       await ctrl.logInstance(InstancesCompanion.insert(
         instanceId: 'inst-close-raw-1',
         setId: ctrl.currentSetId!,
-        selectedClub: 'Driver',
+        selectedClub: Value('Driver'),
         rawMetrics: '{"value": 250}',
       ));
       await ctrl.logInstance(InstancesCompanion.insert(
         instanceId: 'inst-close-raw-2',
         setId: ctrl.currentSetId!,
-        selectedClub: 'Driver',
+        selectedClub: Value('Driver'),
         rawMetrics: '{"value": 260}',
       ));
       await ctrl.logInstance(InstancesCompanion.insert(
         instanceId: 'inst-close-raw-3',
         setId: ctrl.currentSetId!,
-        selectedClub: 'Driver',
+        selectedClub: Value('Driver'),
         rawMetrics: '{"value": 240}',
       ));
 
@@ -178,14 +178,14 @@ void main() {
         await ctrl.logInstance(InstancesCompanion.insert(
           instanceId: 'inst-close-grid-h$i',
           setId: ctrl.currentSetId!,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ));
       }
       await ctrl.logInstance(InstancesCompanion.insert(
         instanceId: 'inst-close-grid-miss',
         setId: ctrl.currentSetId!,
-        selectedClub: 'Putter',
+        selectedClub: Value('Putter'),
         rawMetrics: '{"hit": false}',
       ));
 
@@ -209,7 +209,6 @@ void main() {
       await ctrl.logInstance(InstancesCompanion.insert(
         instanceId: 'inst-close-tech-1',
         setId: ctrl.currentSetId!,
-        selectedClub: 'N/A',
         rawMetrics: '{"duration": 600}',
       ));
 
@@ -257,7 +256,7 @@ void main() {
         await ctrl.logInstance(InstancesCompanion.insert(
           instanceId: 'inst-close-auto-$i',
           setId: ctrl.currentSetId!,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: '{"hit": true}',
         ));
       }

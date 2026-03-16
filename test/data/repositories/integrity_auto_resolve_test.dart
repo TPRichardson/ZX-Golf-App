@@ -100,7 +100,7 @@ void main() {
             InstancesCompanion.insert(
               instanceId: 'inst-integrity-1',
               setId: setId,
-              selectedClub: 'i7',
+              selectedClub: Value('i7'),
               rawMetrics: jsonEncode({'value': 50.0}),
             ),
           );
@@ -152,7 +152,7 @@ void main() {
             InstancesCompanion.insert(
               instanceId: 'inst-integrity-ok',
               setId: setId,
-              selectedClub: 'i7',
+              selectedClub: Value('i7'),
               rawMetrics: jsonEncode({'value': 50.0}),
             ),
           );
@@ -162,7 +162,7 @@ void main() {
             InstancesCompanion.insert(
               instanceId: 'inst-integrity-breach',
               setId: setId,
-              selectedClub: 'i7',
+              selectedClub: Value('i7'),
               rawMetrics: jsonEncode({'value': 600.0}),
             ),
           );
@@ -210,7 +210,7 @@ void main() {
             InstancesCompanion.insert(
               instanceId: 'inst-integrity-event',
               setId: setId,
-              selectedClub: 'i7',
+              selectedClub: Value('i7'),
               rawMetrics: jsonEncode({'value': 50.0}),
             ),
           );

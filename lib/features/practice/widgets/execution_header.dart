@@ -4,8 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/database.dart';
-import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/features/drill/drill_detail_screen.dart';
 
 /// S13 §13.6 — Header showing drill name. Styled to match ZxAppBar.
 class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -15,6 +13,7 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
   final int currentInstanceCount;
   final int? requiredAttemptsPerSet;
   final VoidCallback? onInfoTap;
+  final VoidCallback? onSettingsTap;
 
   const ExecutionHeader({
     super.key,
@@ -24,6 +23,7 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.currentInstanceCount,
     this.requiredAttemptsPerSet,
     this.onInfoTap,
+    this.onSettingsTap,
   });
 
   @override
@@ -40,14 +40,7 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: GestureDetector(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => DrillDetailScreen(
-                drillId: drill.drillId,
-                isCustom: drill.origin == DrillOrigin.custom,
-              ),
-            ),
-          ),
+          onTap: onInfoTap,
           child: Text(
             drill.name,
             style: TextStyle(
@@ -58,11 +51,12 @@ class ExecutionHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
         actions: [
-          if (onInfoTap != null)
+          if (onSettingsTap != null)
             IconButton(
-              icon: const Icon(Icons.info_outline,
+              icon: const Icon(Icons.settings_outlined,
                   color: ColorTokens.textSecondary),
-              onPressed: onInfoTap,
+              tooltip: 'Practice Settings',
+              onPressed: onSettingsTap,
             ),
         ],
         centerTitle: true,

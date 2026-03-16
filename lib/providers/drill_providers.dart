@@ -54,6 +54,7 @@ final standardDrillCatalogueProvider = FutureProvider<List<Drill>>((ref) async {
             targetDistanceUnit: companion.targetDistanceUnit.value,
             targetSizeUnit: companion.targetSizeUnit.value,
             requiredEquipment: companion.requiredEquipment.value,
+            recommendedEquipment: companion.recommendedEquipment.value,
             origin: companion.origin.value,
             status: companion.status.value,
             isDeleted: companion.isDeleted.value,

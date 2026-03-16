@@ -113,7 +113,7 @@ void main() {
         return InstancesCompanion.insert(
           instanceId: 'bulk-$i',
           setId: controller.currentSetId!,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: jsonEncode({'hit': true}),
         );
       });
@@ -133,7 +133,7 @@ void main() {
         await controller.logInstance(InstancesCompanion.insert(
           instanceId: 'pre-$i',
           setId: controller.currentSetId!,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: jsonEncode({'hit': true}),
         ));
       }
@@ -144,7 +144,7 @@ void main() {
         return InstancesCompanion.insert(
           instanceId: 'bulk-capped-$i',
           setId: controller.currentSetId!,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: jsonEncode({'hit': true}),
         );
       });
@@ -161,7 +161,7 @@ void main() {
         return InstancesCompanion.insert(
           instanceId: 'ts-$i',
           setId: controller.currentSetId!,
-          selectedClub: 'Putter',
+          selectedClub: Value('Putter'),
           rawMetrics: jsonEncode({'hit': true}),
         );
       });

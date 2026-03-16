@@ -86,17 +86,19 @@ class ClubRepository {
     final clubId = _uuid.v4();
     final clubType = data.clubType.value;
 
-    // Prevent duplicate club types per user.
-    final existing = await (_db.select(_db.userClubs)
-          ..where((t) => t.userId.equals(userId))
-          ..where((t) => t.clubType.equalsValue(clubType)))
-        .getSingleOrNull();
-    if (existing != null) {
-      throw ValidationException(
-        code: ValidationException.duplicateEntry,
-        message: 'Club type ${clubType.dbValue} already in bag',
-        context: {'clubType': clubType.dbValue},
-      );
+    // Prevent duplicate club types per user (training clubs exempt — multiple allowed).
+    if (clubType != ClubType.trainingClub) {
+      final existing = await (_db.select(_db.userClubs)
+            ..where((t) => t.userId.equals(userId))
+            ..where((t) => t.clubType.equalsValue(clubType)))
+          .getSingleOrNull();
+      if (existing != null) {
+        throw ValidationException(
+          code: ValidationException.duplicateEntry,
+          message: 'Club type ${clubType.dbValue} already in bag',
+          context: {'clubType': clubType.dbValue},
+        );
+      }
     }
 
     final companion = data.copyWith(
@@ -260,6 +262,13 @@ class ClubRepository {
             ..where((t) => t.userId.equals(userId))
             ..where((t) => t.clubType.equalsValue(club.clubType)))
           .go();
+      // Soft-delete any training kit item linked to this club.
+      await (_db.update(_db.userTrainingItems)
+            ..where((t) => t.linkedClubId.equals(clubId)))
+          .write(UserTrainingItemsCompanion(
+        isDeleted: const Value(true),
+        updatedAt: Value(DateTime.now()),
+      ));
       // Delete the club.
       await (_db.delete(_db.userClubs)
             ..where((t) => t.clubId.equals(clubId)))

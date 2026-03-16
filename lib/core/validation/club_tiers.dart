@@ -64,6 +64,7 @@ double targetWidthPercentForClub(ClubType club) {
     case ClubType.w9:
     case ClubType.chipper:
     case ClubType.putter:
+    case ClubType.trainingClub:
       return kMidIronTargetWidthPercent;
   }
 }

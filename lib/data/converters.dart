@@ -243,3 +243,11 @@ class GreenFirmnessConverter extends TypeConverter<GreenFirmness, String> {
   @override
   String toSql(GreenFirmness value) => value.dbValue;
 }
+
+class EquipmentCategoryConverter extends TypeConverter<EquipmentCategory, String> {
+  const EquipmentCategoryConverter();
+  @override
+  EquipmentCategory fromSql(String fromDb) => EquipmentCategory.fromString(fromDb);
+  @override
+  String toSql(EquipmentCategory value) => value.dbValue;
+}

@@ -25,24 +25,24 @@ void main() {
   tearDown(() => db.close());
 
   group('Fresh database smoke test', () {
-    test('schema version is 11', () {
-      expect(db.schemaVersion, 11);
+    test('schema version is 16', () {
+      expect(db.schemaVersion, 16);
     });
 
-    test('34 tables are created', () async {
+    test('35 tables are created', () async {
       final tables = await db.customSelect(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
       ).get();
-      // 27 original + 7 Matrix tables = 34.
-      expect(tables.length, 34);
+      // 27 original + 7 Matrix tables + 1 UserTrainingItem = 35.
+      expect(tables.length, 35);
     });
 
-    test('16 indexes are created', () async {
+    test('17 indexes are created', () async {
       final indexes = await db.customSelect(
         "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'",
       ).get();
       final names = indexes.map((r) => r.read<String>('name')).toList()..sort();
-      // 9 original + 7 Matrix indexes = 16.
+      // 9 original + 7 Matrix indexes + 1 UserTrainingItem = 17.
       expect(names, [
         'idx_drill_user_id',
         'idx_drills_active',
@@ -60,6 +60,7 @@ void main() {
         'idx_session_practice_block_id',
         'idx_sessions_active',
         'idx_snapshot_club_snapshot_id',
+        'idx_user_training_item_user_id',
       ]);
     });
 

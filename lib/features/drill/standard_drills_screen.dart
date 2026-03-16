@@ -11,7 +11,6 @@ import 'package:zx_golf_app/providers/drill_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
-import 'package:zx_golf_app/features/settings/settings_screen.dart';
 
 import 'widgets/drill_card.dart';
 
@@ -221,8 +220,8 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
       final Widget actionScreen;
       if (isEquipmentError) {
         title = 'Missing Equipment';
-        actionLabel = 'Open Settings';
-        actionScreen = const SettingsScreen();
+        actionLabel = 'Open Training Kit';
+        actionScreen = const BagScreen(initialTab: 1);
       } else if (isCarryError) {
         title = 'Missing Carry Distances';
         actionLabel = 'Customise Golf Bag';

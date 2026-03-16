@@ -115,7 +115,7 @@ void main() {
       InstancesCompanion.insert(
         instanceId: 'inst-${DateTime.now().microsecondsSinceEpoch}',
         setId: setId,
-        selectedClub: 'Putter',
+        selectedClub: Value('Putter'),
         rawMetrics: jsonEncode({'hit': isHit}),
       );
 

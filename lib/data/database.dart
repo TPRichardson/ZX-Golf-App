@@ -40,6 +40,7 @@ import 'tables/matrix_cells.dart';
 import 'tables/matrix_attempts.dart';
 import 'tables/performance_snapshots.dart';
 import 'tables/snapshot_clubs.dart';
+import 'tables/user_training_items.dart';
 import 'tables/sync_metadata.dart';
 import 'seed_data.dart';
 
@@ -85,6 +86,8 @@ part 'database.g.dart';
   MatrixAttempts,
   PerformanceSnapshots,
   SnapshotClubs,
+  // Training Kit (1)
+  UserTrainingItems,
   // Local-only (1)
   SyncMetadataEntries,
 ])
@@ -94,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -136,6 +139,10 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV12ToV13(m);
               case 13:
                 await _migrateV13ToV14(m);
+              case 14:
+                await _migrateV14ToV15(m);
+              case 15:
+                await _migrateV15ToV16(m);
             }
           }
         },
@@ -246,6 +253,24 @@ class AppDatabase extends _$AppDatabase {
     // System drills previously seeded here; now server-authoritative (v11 deletes them).
   }
 
+  // SelectedClub: nullable (technique blocks have no club).
+  // SQLite doesn't enforce NOT NULL changes, so no ALTER needed.
+  // Clean-slate migration — old data uses type strings, new data uses club UUIDs.
+  Future<void> _migrateV15ToV16(Migrator m) async {
+    // No-op: SQLite TEXT columns accept NULL regardless of schema declaration.
+    // The Drift codegen handles the nullable type at the Dart level.
+  }
+
+  // Training Kit table + RecommendedEquipment column on Drill.
+  Future<void> _migrateV14ToV15(Migrator m) async {
+    await m.createTable(userTrainingItems);
+    await customStatement(
+        "ALTER TABLE Drill ADD COLUMN RecommendedEquipment TEXT NOT NULL DEFAULT '[]'");
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_user_training_item_user_id '
+        'ON UserTrainingItem (UserID)');
+  }
+
   // Add SurfaceType column to PracticeBlock and Session tables.
   Future<void> _migrateV5ToV6(Migrator m) async {
     await customStatement(
@@ -311,6 +336,9 @@ class AppDatabase extends _$AppDatabase {
         'ON Drill (UserID)');
     await _createPartialIndexes();
     await _createMatrixIndexes();
+    await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_user_training_item_user_id '
+        'ON UserTrainingItem (UserID)');
   }
 
   /// 8A — Partial indexes for IsDeleted=false on high-traffic tables.

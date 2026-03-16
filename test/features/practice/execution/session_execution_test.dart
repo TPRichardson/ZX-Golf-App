@@ -144,7 +144,7 @@ void main() {
       InstancesCompanion.insert(
         instanceId: 'inst-${DateTime.now().microsecondsSinceEpoch}',
         setId: setId,
-        selectedClub: 'Putter',
+        selectedClub: Value('Putter'),
         rawMetrics: '{"hit": $hit}',
       );
 
@@ -152,7 +152,7 @@ void main() {
       InstancesCompanion.insert(
         instanceId: 'inst-${DateTime.now().microsecondsSinceEpoch}',
         setId: setId,
-        selectedClub: 'Driver',
+        selectedClub: Value('Driver'),
         rawMetrics: '{"value": $value}',
       );
 
@@ -222,7 +222,6 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'inst-tech-1',
           setId: ctrl.currentSetId!,
-          selectedClub: 'N/A',
           rawMetrics: '{"duration": 1800}',
         ),
       );

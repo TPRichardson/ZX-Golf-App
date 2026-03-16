@@ -112,7 +112,8 @@ enum ClubType {
   uw('UW'),
   lw('LW'),
   chipper('Chipper'),
-  putter('Putter');
+  putter('Putter'),
+  trainingClub('TrainingClub');
 
   const ClubType(this.dbValue);
   final String dbValue;
@@ -370,18 +371,23 @@ enum DrillLengthUnit {
           orElse: () => throw ArgumentError('Invalid DrillLengthUnit: $value'));
 }
 
-/// Equipment types available for practice.
-enum EquipmentType {
+/// Training Kit equipment categories (replaces EquipmentType).
+enum EquipmentCategory {
+  specialistTrainingClub('SpecialistTrainingClub'),
   launchMonitor('LaunchMonitor'),
-  alignmentSticks('AlignmentSticks'),
-  puttingGate('PuttingGate');
+  puttingGate('PuttingGate'),
+  alignmentAid('AlignmentAid'),
+  impactTrainer('ImpactTrainer'),
+  tempoTrainer('TempoTrainer'),
+  puttingStrokeTrainer('PuttingStrokeTrainer'),
+  shortGameTarget('ShortGameTarget');
 
-  const EquipmentType(this.dbValue);
+  const EquipmentCategory(this.dbValue);
   final String dbValue;
 
-  static EquipmentType fromString(String value) =>
+  static EquipmentCategory fromString(String value) =>
       values.firstWhere((e) => e.dbValue == value,
-          orElse: () => throw ArgumentError('Invalid EquipmentType: $value'));
+          orElse: () => throw ArgumentError('Invalid EquipmentCategory: $value'));
 }
 
 /// Matrix §8.2.1 — Three matrix workflow types.

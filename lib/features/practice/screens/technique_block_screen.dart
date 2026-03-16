@@ -101,7 +101,6 @@ class _TechniqueBlockScreenState extends ConsumerState<TechniqueBlockScreen> {
     final data = InstancesCompanion.insert(
       instanceId: const Uuid().v4(),
       setId: setId,
-      selectedClub: 'N/A',
       rawMetrics: jsonEncode({'duration': _elapsedSeconds}),
     );
 

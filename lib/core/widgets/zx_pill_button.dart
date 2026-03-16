@@ -6,7 +6,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 
 enum ZxPillVariant { progress, primary, secondary, tertiary, destructive }
 
-enum ZxPillSize { sm, md, lg }
+enum ZxPillSize { xs, sm, md, lg }
 
 class ZxPillButton extends StatelessWidget {
   final String label;
@@ -112,6 +112,13 @@ class ZxPillButton extends StatelessWidget {
 
   _ZxPillMetrics _resolveSize() {
     return switch (size) {
+      ZxPillSize.xs => const _ZxPillMetrics(
+          fontSize: 15,
+          iconSize: 15,
+          horizontalPadding: SpacingTokens.sm,
+          verticalPadding: SpacingTokens.xs,
+          gap: SpacingTokens.xs,
+        ),
       ZxPillSize.sm => const _ZxPillMetrics(
           fontSize: TypographyTokens.bodySize,
           iconSize: 16,

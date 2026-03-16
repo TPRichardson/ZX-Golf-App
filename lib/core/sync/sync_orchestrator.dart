@@ -59,6 +59,9 @@ class SyncOrchestrator {
     );
 
     debugPrint('[SyncOrchestrator] Started');
+
+    // Trigger an immediate sync on start (e.g. after login).
+    _debouncedTrigger(SyncTrigger.manual);
   }
 
   /// Stop orchestrator: cancel all timers and subscriptions.
@@ -131,7 +134,10 @@ class SyncOrchestrator {
     });
 
     try {
-      await _engine.triggerSync(reason: reason);
+      final result = await _engine.triggerSync(reason: reason);
+      if (!result.success) {
+        debugPrint('[SyncOrchestrator] Sync failed: ${result.errorCode} — ${result.errorMessage}');
+      }
     } catch (e) {
       debugPrint('[SyncOrchestrator] Sync failed: $e');
     }

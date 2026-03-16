@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/data/models/equipment.dart';
 
 // S10 §10.6–10.10 — User preferences model.
 // Serialized to/from the Users.unitPreferences JSON column (TEXT, default '{}').
+// Equipment moved to UserTrainingItems table — legacy equipment JSON silently ignored.
 
 class UserPreferences {
   /// S10 §10.6 — Distance unit for display (yards or metres).
@@ -31,8 +31,17 @@ class UserPreferences {
   /// Week start day: 1 = Monday (ISO 8601), 7 = Sunday.
   final int weekStartDay;
 
-  /// Equipment available to the user for practice.
-  final List<Equipment> equipment;
+  /// Whether the screen stays on by default during drill execution.
+  final bool screenAlwaysOn;
+
+  /// Whether target bars default to split (± half) view.
+  final bool targetBarSplitView;
+
+  /// Whether to play a sound on shot input.
+  final bool shotInputSound;
+
+  /// Vibration strength on shot input: 'off', 'soft', 'medium', 'hard'.
+  final String shotInputVibration;
 
   const UserPreferences({
     this.distanceUnit = DistanceUnit.yards,
@@ -43,7 +52,10 @@ class UserPreferences {
     this.reminderEnabled = false,
     this.reminderTime,
     this.weekStartDay = 1,
-    this.equipment = const [],
+    this.screenAlwaysOn = false,
+    this.targetBarSplitView = false,
+    this.shotInputSound = false,
+    this.shotInputVibration = 'medium',
   });
 
   factory UserPreferences.fromJson(String json) {
@@ -66,7 +78,11 @@ class UserPreferences {
         reminderEnabled: (map['reminderEnabled'] as bool?) ?? false,
         reminderTime: map['reminderTime'] as String?,
         weekStartDay: (map['weekStartDay'] as num?)?.toInt() ?? 1,
-        equipment: _parseEquipment(map['equipment'] as List<dynamic>?),
+        screenAlwaysOn: (map['screenAlwaysOn'] as bool?) ?? false,
+        targetBarSplitView: (map['targetBarSplitView'] as bool?) ?? false,
+        shotInputSound: (map['shotInputSound'] as bool?) ?? false,
+        shotInputVibration:
+            (map['shotInputVibration'] as String?) ?? 'medium',
       );
     } on FormatException {
       return const UserPreferences();
@@ -85,8 +101,10 @@ class UserPreferences {
       'reminderEnabled': reminderEnabled,
       if (reminderTime != null) 'reminderTime': reminderTime,
       'weekStartDay': weekStartDay,
-      if (equipment.isNotEmpty)
-        'equipment': equipment.map((e) => e.toMap()).toList(),
+      'screenAlwaysOn': screenAlwaysOn,
+      'targetBarSplitView': targetBarSplitView,
+      'shotInputSound': shotInputSound,
+      'shotInputVibration': shotInputVibration,
     };
     return jsonEncode(map);
   }
@@ -100,7 +118,10 @@ class UserPreferences {
     bool? reminderEnabled,
     String? reminderTime,
     int? weekStartDay,
-    List<Equipment>? equipment,
+    bool? screenAlwaysOn,
+    bool? targetBarSplitView,
+    bool? shotInputSound,
+    String? shotInputVibration,
   }) {
     return UserPreferences(
       distanceUnit: distanceUnit ?? this.distanceUnit,
@@ -114,7 +135,10 @@ class UserPreferences {
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderTime: reminderTime ?? this.reminderTime,
       weekStartDay: weekStartDay ?? this.weekStartDay,
-      equipment: equipment ?? this.equipment,
+      screenAlwaysOn: screenAlwaysOn ?? this.screenAlwaysOn,
+      targetBarSplitView: targetBarSplitView ?? this.targetBarSplitView,
+      shotInputSound: shotInputSound ?? this.shotInputSound,
+      shotInputVibration: shotInputVibration ?? this.shotInputVibration,
     );
   }
 
@@ -137,21 +161,4 @@ class UserPreferences {
     if (raw == null || raw.length != 7) return const [3, 3, 3, 3, 3, 0, 0];
     return raw.map((e) => (e as num).toInt().clamp(0, 10)).toList();
   }
-
-  static List<Equipment> _parseEquipment(List<dynamic>? raw) {
-    if (raw == null) return const [];
-    final result = <Equipment>[];
-    for (final item in raw) {
-      try {
-        result.add(Equipment.fromMap(item as Map<String, dynamic>));
-      } on ArgumentError {
-        // Skip invalid entries.
-      }
-    }
-    return result;
-  }
-
-  /// Whether the user has a specific equipment type.
-  bool hasEquipment(EquipmentType type) =>
-      Equipment.hasType(equipment, type);
 }

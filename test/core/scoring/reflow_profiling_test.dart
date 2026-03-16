@@ -102,7 +102,7 @@ Future<void> seedLargeDataset(
           InstancesCompanion.insert(
             instanceId: 'perf-inst-$s-$i',
             setId: setId,
-            selectedClub: 'i7',
+            selectedClub: Value('i7'),
             rawMetrics: isHit ? hitMetrics : missMetrics,
           ),
         );

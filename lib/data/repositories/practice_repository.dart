@@ -607,17 +607,19 @@ class PracticeRepository {
     SurfaceType? surfaceType,
   }) async {
     await _gate.awaitGateRelease();
-    // Guard: no active practice block for user.
-    final existing = await _findActivePracticeBlock(userId);
-    if (existing != null) {
-      throw ValidationException(
-        code: ValidationException.stateTransition,
-        message: 'User already has an active practice block',
-        context: {
-          'userId': userId,
-          'activePracticeBlockId': existing.practiceBlockId,
-        },
-      );
+    // Clean up any stale active practice blocks for this user.
+    final staleBlocks = await (_db.select(_db.practiceBlocks)
+          ..where((t) => t.userId.equals(userId))
+          ..where((t) => t.endTimestamp.isNull())
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+    for (final stale in staleBlocks) {
+      await (_db.update(_db.practiceBlocks)
+            ..where((t) => t.practiceBlockId.equals(stale.practiceBlockId)))
+          .write(PracticeBlocksCompanion(
+        endTimestamp: Value(DateTime.now()),
+        updatedAt: Value(DateTime.now()),
+      ));
     }
 
     final pbId = _uuid.v4();
@@ -709,7 +711,8 @@ class PracticeRepository {
           ..where((t) => t.userId.equals(userId))
           ..where((t) => t.endTimestamp.isNull())
           ..where((t) => t.isDeleted.equals(false)))
-        .watchSingleOrNull();
+        .watch()
+        .map((rows) => rows.isEmpty ? null : rows.first);
   }
 
   // ---------------------------------------------------------------------------
@@ -951,10 +954,10 @@ class PracticeRepository {
         _db, userId, drill.skillArea, drill.drillType);
 
     final sessionId = _uuid.v4();
-    final pb = await getPracticeBlockById(entry.practiceBlockId);
+    final pb = (await getPracticeBlockById(entry.practiceBlockId))!;
 
     // Resolve environment and surface: inherit from block at session start.
-    final resolvedSurface = surfaceType ?? pb!.surfaceType;
+    final resolvedSurface = surfaceType ?? pb.surfaceType;
     final resolvedEnvironment = pb.environmentType;
 
     // Create Session. S04 §4.3 — Persist UserDeclaration when provided.
@@ -1647,13 +1650,6 @@ class PracticeRepository {
     return result.read<int>('c');
   }
 
-  Future<PracticeBlock?> _findActivePracticeBlock(String userId) async {
-    return (_db.select(_db.practiceBlocks)
-          ..where((t) => t.userId.equals(userId))
-          ..where((t) => t.endTimestamp.isNull())
-          ..where((t) => t.isDeleted.equals(false)))
-        .getSingleOrNull();
-  }
 
   Future<bool> _hasActiveSession(String pbId) async {
     final entries = await (_db.select(_db.practiceEntries)

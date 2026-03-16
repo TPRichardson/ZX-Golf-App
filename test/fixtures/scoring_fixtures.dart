@@ -151,7 +151,7 @@ Future<String> seedSessionWithInstances(
           InstancesCompanion.insert(
             instanceId: 'inst-$sid-$i',
             setId: setId,
-            selectedClub: 'i7',
+            selectedClub: Value('i7'),
             rawMetrics: metrics,
           ),
         );

@@ -1928,6 +1928,18 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
         requiredDuringInsert: false,
         defaultValue: const Constant('[]'),
       );
+  static const VerificationMeta _recommendedEquipmentMeta =
+      const VerificationMeta('recommendedEquipment');
+  @override
+  late final GeneratedColumn<String> recommendedEquipment =
+      GeneratedColumn<String>(
+        'RecommendedEquipment',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
   @override
   late final GeneratedColumnWithTypeConverter<DrillOrigin, String> origin =
       GeneratedColumn<String>(
@@ -2012,6 +2024,7 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
     targetDistanceUnit,
     targetSizeUnit,
     requiredEquipment,
+    recommendedEquipment,
     origin,
     status,
     isDeleted,
@@ -2144,6 +2157,15 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
         requiredEquipment.isAcceptableOrUnknown(
           data['RequiredEquipment']!,
           _requiredEquipmentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('RecommendedEquipment')) {
+      context.handle(
+        _recommendedEquipmentMeta,
+        recommendedEquipment.isAcceptableOrUnknown(
+          data['RecommendedEquipment']!,
+          _recommendedEquipmentMeta,
         ),
       );
     }
@@ -2290,6 +2312,10 @@ class $DrillsTable extends Drills with TableInfo<$DrillsTable, Drill> {
         DriftSqlType.string,
         data['${effectivePrefix}RequiredEquipment'],
       )!,
+      recommendedEquipment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}RecommendedEquipment'],
+      )!,
       origin: $DrillsTable.$converterorigin.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -2393,6 +2419,7 @@ class Drill extends DataClass implements Insertable<Drill> {
   final DrillLengthUnit? targetDistanceUnit;
   final DrillLengthUnit? targetSizeUnit;
   final String requiredEquipment;
+  final String recommendedEquipment;
   final DrillOrigin origin;
   final DrillStatus status;
   final bool isDeleted;
@@ -2423,6 +2450,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     this.targetDistanceUnit,
     this.targetSizeUnit,
     required this.requiredEquipment,
+    required this.recommendedEquipment,
     required this.origin,
     required this.status,
     required this.isDeleted,
@@ -2510,6 +2538,7 @@ class Drill extends DataClass implements Insertable<Drill> {
       );
     }
     map['RequiredEquipment'] = Variable<String>(requiredEquipment);
+    map['RecommendedEquipment'] = Variable<String>(recommendedEquipment);
     {
       map['Origin'] = Variable<String>(
         $DrillsTable.$converterorigin.toSql(origin),
@@ -2580,6 +2609,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           ? const Value.absent()
           : Value(targetSizeUnit),
       requiredEquipment: Value(requiredEquipment),
+      recommendedEquipment: Value(recommendedEquipment),
       origin: Value(origin),
       status: Value(status),
       isDeleted: Value(isDeleted),
@@ -2632,6 +2662,9 @@ class Drill extends DataClass implements Insertable<Drill> {
         json['targetSizeUnit'],
       ),
       requiredEquipment: serializer.fromJson<String>(json['requiredEquipment']),
+      recommendedEquipment: serializer.fromJson<String>(
+        json['recommendedEquipment'],
+      ),
       origin: serializer.fromJson<DrillOrigin>(json['origin']),
       status: serializer.fromJson<DrillStatus>(json['status']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
@@ -2673,6 +2706,7 @@ class Drill extends DataClass implements Insertable<Drill> {
       ),
       'targetSizeUnit': serializer.toJson<DrillLengthUnit?>(targetSizeUnit),
       'requiredEquipment': serializer.toJson<String>(requiredEquipment),
+      'recommendedEquipment': serializer.toJson<String>(recommendedEquipment),
       'origin': serializer.toJson<DrillOrigin>(origin),
       'status': serializer.toJson<DrillStatus>(status),
       'isDeleted': serializer.toJson<bool>(isDeleted),
@@ -2706,6 +2740,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     Value<DrillLengthUnit?> targetDistanceUnit = const Value.absent(),
     Value<DrillLengthUnit?> targetSizeUnit = const Value.absent(),
     String? requiredEquipment,
+    String? recommendedEquipment,
     DrillOrigin? origin,
     DrillStatus? status,
     bool? isDeleted,
@@ -2754,6 +2789,7 @@ class Drill extends DataClass implements Insertable<Drill> {
         ? targetSizeUnit.value
         : this.targetSizeUnit,
     requiredEquipment: requiredEquipment ?? this.requiredEquipment,
+    recommendedEquipment: recommendedEquipment ?? this.recommendedEquipment,
     origin: origin ?? this.origin,
     status: status ?? this.status,
     isDeleted: isDeleted ?? this.isDeleted,
@@ -2816,6 +2852,9 @@ class Drill extends DataClass implements Insertable<Drill> {
       requiredEquipment: data.requiredEquipment.present
           ? data.requiredEquipment.value
           : this.requiredEquipment,
+      recommendedEquipment: data.recommendedEquipment.present
+          ? data.recommendedEquipment.value
+          : this.recommendedEquipment,
       origin: data.origin.present ? data.origin.value : this.origin,
       status: data.status.present ? data.status.value : this.status,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
@@ -2851,6 +2890,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           ..write('targetDistanceUnit: $targetDistanceUnit, ')
           ..write('targetSizeUnit: $targetSizeUnit, ')
           ..write('requiredEquipment: $requiredEquipment, ')
+          ..write('recommendedEquipment: $recommendedEquipment, ')
           ..write('origin: $origin, ')
           ..write('status: $status, ')
           ..write('isDeleted: $isDeleted, ')
@@ -2886,6 +2926,7 @@ class Drill extends DataClass implements Insertable<Drill> {
     targetDistanceUnit,
     targetSizeUnit,
     requiredEquipment,
+    recommendedEquipment,
     origin,
     status,
     isDeleted,
@@ -2920,6 +2961,7 @@ class Drill extends DataClass implements Insertable<Drill> {
           other.targetDistanceUnit == this.targetDistanceUnit &&
           other.targetSizeUnit == this.targetSizeUnit &&
           other.requiredEquipment == this.requiredEquipment &&
+          other.recommendedEquipment == this.recommendedEquipment &&
           other.origin == this.origin &&
           other.status == this.status &&
           other.isDeleted == this.isDeleted &&
@@ -2952,6 +2994,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
   final Value<DrillLengthUnit?> targetDistanceUnit;
   final Value<DrillLengthUnit?> targetSizeUnit;
   final Value<String> requiredEquipment;
+  final Value<String> recommendedEquipment;
   final Value<DrillOrigin> origin;
   final Value<DrillStatus> status;
   final Value<bool> isDeleted;
@@ -2983,6 +3026,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     this.targetDistanceUnit = const Value.absent(),
     this.targetSizeUnit = const Value.absent(),
     this.requiredEquipment = const Value.absent(),
+    this.recommendedEquipment = const Value.absent(),
     this.origin = const Value.absent(),
     this.status = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -3015,6 +3059,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     this.targetDistanceUnit = const Value.absent(),
     this.targetSizeUnit = const Value.absent(),
     this.requiredEquipment = const Value.absent(),
+    this.recommendedEquipment = const Value.absent(),
     required DrillOrigin origin,
     this.status = const Value.absent(),
     this.isDeleted = const Value.absent(),
@@ -3053,6 +3098,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     Expression<String>? targetDistanceUnit,
     Expression<String>? targetSizeUnit,
     Expression<String>? requiredEquipment,
+    Expression<String>? recommendedEquipment,
     Expression<String>? origin,
     Expression<String>? status,
     Expression<bool>? isDeleted,
@@ -3087,6 +3133,8 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
       if (targetDistanceUnit != null) 'TargetDistanceUnit': targetDistanceUnit,
       if (targetSizeUnit != null) 'TargetSizeUnit': targetSizeUnit,
       if (requiredEquipment != null) 'RequiredEquipment': requiredEquipment,
+      if (recommendedEquipment != null)
+        'RecommendedEquipment': recommendedEquipment,
       if (origin != null) 'Origin': origin,
       if (status != null) 'Status': status,
       if (isDeleted != null) 'IsDeleted': isDeleted,
@@ -3121,6 +3169,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     Value<DrillLengthUnit?>? targetDistanceUnit,
     Value<DrillLengthUnit?>? targetSizeUnit,
     Value<String>? requiredEquipment,
+    Value<String>? recommendedEquipment,
     Value<DrillOrigin>? origin,
     Value<DrillStatus>? status,
     Value<bool>? isDeleted,
@@ -3154,6 +3203,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
       targetDistanceUnit: targetDistanceUnit ?? this.targetDistanceUnit,
       targetSizeUnit: targetSizeUnit ?? this.targetSizeUnit,
       requiredEquipment: requiredEquipment ?? this.requiredEquipment,
+      recommendedEquipment: recommendedEquipment ?? this.recommendedEquipment,
       origin: origin ?? this.origin,
       status: status ?? this.status,
       isDeleted: isDeleted ?? this.isDeleted,
@@ -3266,6 +3316,11 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
     if (requiredEquipment.present) {
       map['RequiredEquipment'] = Variable<String>(requiredEquipment.value);
     }
+    if (recommendedEquipment.present) {
+      map['RecommendedEquipment'] = Variable<String>(
+        recommendedEquipment.value,
+      );
+    }
     if (origin.present) {
       map['Origin'] = Variable<String>(
         $DrillsTable.$converterorigin.toSql(origin.value),
@@ -3318,6 +3373,7 @@ class DrillsCompanion extends UpdateCompanion<Drill> {
           ..write('targetDistanceUnit: $targetDistanceUnit, ')
           ..write('targetSizeUnit: $targetSizeUnit, ')
           ..write('requiredEquipment: $requiredEquipment, ')
+          ..write('recommendedEquipment: $recommendedEquipment, ')
           ..write('origin: $origin, ')
           ..write('status: $status, ')
           ..write('isDeleted: $isDeleted, ')
@@ -5391,9 +5447,9 @@ class $InstancesTable extends Instances
   late final GeneratedColumn<String> selectedClub = GeneratedColumn<String>(
     'SelectedClub',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _rawMetricsMeta = const VerificationMeta(
     'rawMetrics',
@@ -5540,8 +5596,6 @@ class $InstancesTable extends Instances
           _selectedClubMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_selectedClubMeta);
     }
     if (data.containsKey('RawMetrics')) {
       context.handle(
@@ -5622,7 +5676,7 @@ class $InstancesTable extends Instances
       selectedClub: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}SelectedClub'],
-      )!,
+      ),
       rawMetrics: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}RawMetrics'],
@@ -5667,7 +5721,7 @@ class $InstancesTable extends Instances
 class Instance extends DataClass implements Insertable<Instance> {
   final String instanceId;
   final String setId;
-  final String selectedClub;
+  final String? selectedClub;
   final String rawMetrics;
   final DateTime timestamp;
   final double? resolvedTargetDistance;
@@ -5679,7 +5733,7 @@ class Instance extends DataClass implements Insertable<Instance> {
   const Instance({
     required this.instanceId,
     required this.setId,
-    required this.selectedClub,
+    this.selectedClub,
     required this.rawMetrics,
     required this.timestamp,
     this.resolvedTargetDistance,
@@ -5694,7 +5748,9 @@ class Instance extends DataClass implements Insertable<Instance> {
     final map = <String, Expression>{};
     map['InstanceID'] = Variable<String>(instanceId);
     map['SetID'] = Variable<String>(setId);
-    map['SelectedClub'] = Variable<String>(selectedClub);
+    if (!nullToAbsent || selectedClub != null) {
+      map['SelectedClub'] = Variable<String>(selectedClub);
+    }
     map['RawMetrics'] = Variable<String>(rawMetrics);
     map['Timestamp'] = Variable<DateTime>(timestamp);
     if (!nullToAbsent || resolvedTargetDistance != null) {
@@ -5716,7 +5772,9 @@ class Instance extends DataClass implements Insertable<Instance> {
     return InstancesCompanion(
       instanceId: Value(instanceId),
       setId: Value(setId),
-      selectedClub: Value(selectedClub),
+      selectedClub: selectedClub == null && nullToAbsent
+          ? const Value.absent()
+          : Value(selectedClub),
       rawMetrics: Value(rawMetrics),
       timestamp: Value(timestamp),
       resolvedTargetDistance: resolvedTargetDistance == null && nullToAbsent
@@ -5742,7 +5800,7 @@ class Instance extends DataClass implements Insertable<Instance> {
     return Instance(
       instanceId: serializer.fromJson<String>(json['instanceId']),
       setId: serializer.fromJson<String>(json['setId']),
-      selectedClub: serializer.fromJson<String>(json['selectedClub']),
+      selectedClub: serializer.fromJson<String?>(json['selectedClub']),
       rawMetrics: serializer.fromJson<String>(json['rawMetrics']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       resolvedTargetDistance: serializer.fromJson<double?>(
@@ -5765,7 +5823,7 @@ class Instance extends DataClass implements Insertable<Instance> {
     return <String, dynamic>{
       'instanceId': serializer.toJson<String>(instanceId),
       'setId': serializer.toJson<String>(setId),
-      'selectedClub': serializer.toJson<String>(selectedClub),
+      'selectedClub': serializer.toJson<String?>(selectedClub),
       'rawMetrics': serializer.toJson<String>(rawMetrics),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'resolvedTargetDistance': serializer.toJson<double?>(
@@ -5782,7 +5840,7 @@ class Instance extends DataClass implements Insertable<Instance> {
   Instance copyWith({
     String? instanceId,
     String? setId,
-    String? selectedClub,
+    Value<String?> selectedClub = const Value.absent(),
     String? rawMetrics,
     DateTime? timestamp,
     Value<double?> resolvedTargetDistance = const Value.absent(),
@@ -5794,7 +5852,7 @@ class Instance extends DataClass implements Insertable<Instance> {
   }) => Instance(
     instanceId: instanceId ?? this.instanceId,
     setId: setId ?? this.setId,
-    selectedClub: selectedClub ?? this.selectedClub,
+    selectedClub: selectedClub.present ? selectedClub.value : this.selectedClub,
     rawMetrics: rawMetrics ?? this.rawMetrics,
     timestamp: timestamp ?? this.timestamp,
     resolvedTargetDistance: resolvedTargetDistance.present
@@ -5890,7 +5948,7 @@ class Instance extends DataClass implements Insertable<Instance> {
 class InstancesCompanion extends UpdateCompanion<Instance> {
   final Value<String> instanceId;
   final Value<String> setId;
-  final Value<String> selectedClub;
+  final Value<String?> selectedClub;
   final Value<String> rawMetrics;
   final Value<DateTime> timestamp;
   final Value<double?> resolvedTargetDistance;
@@ -5917,7 +5975,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
   InstancesCompanion.insert({
     required String instanceId,
     required String setId,
-    required String selectedClub,
+    this.selectedClub = const Value.absent(),
     required String rawMetrics,
     this.timestamp = const Value.absent(),
     this.resolvedTargetDistance = const Value.absent(),
@@ -5929,7 +5987,6 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     this.rowid = const Value.absent(),
   }) : instanceId = Value(instanceId),
        setId = Value(setId),
-       selectedClub = Value(selectedClub),
        rawMetrics = Value(rawMetrics);
   static Insertable<Instance> custom({
     Expression<String>? instanceId,
@@ -5967,7 +6024,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
   InstancesCompanion copyWith({
     Value<String>? instanceId,
     Value<String>? setId,
-    Value<String>? selectedClub,
+    Value<String?>? selectedClub,
     Value<String>? rawMetrics,
     Value<DateTime>? timestamp,
     Value<double?>? resolvedTargetDistance,
@@ -18935,6 +18992,621 @@ class SnapshotClubsCompanion extends UpdateCompanion<SnapshotClub> {
   }
 }
 
+class $UserTrainingItemsTable extends UserTrainingItems
+    with TableInfo<$UserTrainingItemsTable, UserTrainingItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserTrainingItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'ItemID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'UserID',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<EquipmentCategory, String>
+  category =
+      GeneratedColumn<String>(
+        'Category',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<EquipmentCategory>(
+        $UserTrainingItemsTable.$convertercategory,
+      );
+  static const VerificationMeta _skillAreasMeta = const VerificationMeta(
+    'skillAreas',
+  );
+  @override
+  late final GeneratedColumn<String> skillAreas = GeneratedColumn<String>(
+    'SkillAreas',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'Name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _propertiesMeta = const VerificationMeta(
+    'properties',
+  );
+  @override
+  late final GeneratedColumn<String> properties = GeneratedColumn<String>(
+    'Properties',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _linkedClubIdMeta = const VerificationMeta(
+    'linkedClubId',
+  );
+  @override
+  late final GeneratedColumn<String> linkedClubId = GeneratedColumn<String>(
+    'LinkedClubID',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'IsDeleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("IsDeleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'CreatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'UpdatedAt',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => DateTime.now(),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    itemId,
+    userId,
+    category,
+    skillAreas,
+    name,
+    properties,
+    linkedClubId,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'UserTrainingItem';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserTrainingItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('ItemID')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['ItemID']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('UserID')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['UserID']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('SkillAreas')) {
+      context.handle(
+        _skillAreasMeta,
+        skillAreas.isAcceptableOrUnknown(data['SkillAreas']!, _skillAreasMeta),
+      );
+    }
+    if (data.containsKey('Name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['Name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('Properties')) {
+      context.handle(
+        _propertiesMeta,
+        properties.isAcceptableOrUnknown(data['Properties']!, _propertiesMeta),
+      );
+    }
+    if (data.containsKey('LinkedClubID')) {
+      context.handle(
+        _linkedClubIdMeta,
+        linkedClubId.isAcceptableOrUnknown(
+          data['LinkedClubID']!,
+          _linkedClubIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('IsDeleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['IsDeleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('CreatedAt')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['CreatedAt']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('UpdatedAt')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['UpdatedAt']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {itemId};
+  @override
+  UserTrainingItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserTrainingItem(
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ItemID'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}UserID'],
+      )!,
+      category: $UserTrainingItemsTable.$convertercategory.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}Category'],
+        )!,
+      ),
+      skillAreas: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}SkillAreas'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}Name'],
+      )!,
+      properties: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}Properties'],
+      )!,
+      linkedClubId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}LinkedClubID'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}IsDeleted'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}CreatedAt'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}UpdatedAt'],
+      )!,
+    );
+  }
+
+  @override
+  $UserTrainingItemsTable createAlias(String alias) {
+    return $UserTrainingItemsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<EquipmentCategory, String> $convertercategory =
+      const EquipmentCategoryConverter();
+}
+
+class UserTrainingItem extends DataClass
+    implements Insertable<UserTrainingItem> {
+  final String itemId;
+  final String userId;
+  final EquipmentCategory category;
+  final String skillAreas;
+  final String name;
+  final String properties;
+  final String? linkedClubId;
+  final bool isDeleted;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const UserTrainingItem({
+    required this.itemId,
+    required this.userId,
+    required this.category,
+    required this.skillAreas,
+    required this.name,
+    required this.properties,
+    this.linkedClubId,
+    required this.isDeleted,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['ItemID'] = Variable<String>(itemId);
+    map['UserID'] = Variable<String>(userId);
+    {
+      map['Category'] = Variable<String>(
+        $UserTrainingItemsTable.$convertercategory.toSql(category),
+      );
+    }
+    map['SkillAreas'] = Variable<String>(skillAreas);
+    map['Name'] = Variable<String>(name);
+    map['Properties'] = Variable<String>(properties);
+    if (!nullToAbsent || linkedClubId != null) {
+      map['LinkedClubID'] = Variable<String>(linkedClubId);
+    }
+    map['IsDeleted'] = Variable<bool>(isDeleted);
+    map['CreatedAt'] = Variable<DateTime>(createdAt);
+    map['UpdatedAt'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  UserTrainingItemsCompanion toCompanion(bool nullToAbsent) {
+    return UserTrainingItemsCompanion(
+      itemId: Value(itemId),
+      userId: Value(userId),
+      category: Value(category),
+      skillAreas: Value(skillAreas),
+      name: Value(name),
+      properties: Value(properties),
+      linkedClubId: linkedClubId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linkedClubId),
+      isDeleted: Value(isDeleted),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory UserTrainingItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserTrainingItem(
+      itemId: serializer.fromJson<String>(json['itemId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      category: serializer.fromJson<EquipmentCategory>(json['category']),
+      skillAreas: serializer.fromJson<String>(json['skillAreas']),
+      name: serializer.fromJson<String>(json['name']),
+      properties: serializer.fromJson<String>(json['properties']),
+      linkedClubId: serializer.fromJson<String?>(json['linkedClubId']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'itemId': serializer.toJson<String>(itemId),
+      'userId': serializer.toJson<String>(userId),
+      'category': serializer.toJson<EquipmentCategory>(category),
+      'skillAreas': serializer.toJson<String>(skillAreas),
+      'name': serializer.toJson<String>(name),
+      'properties': serializer.toJson<String>(properties),
+      'linkedClubId': serializer.toJson<String?>(linkedClubId),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  UserTrainingItem copyWith({
+    String? itemId,
+    String? userId,
+    EquipmentCategory? category,
+    String? skillAreas,
+    String? name,
+    String? properties,
+    Value<String?> linkedClubId = const Value.absent(),
+    bool? isDeleted,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => UserTrainingItem(
+    itemId: itemId ?? this.itemId,
+    userId: userId ?? this.userId,
+    category: category ?? this.category,
+    skillAreas: skillAreas ?? this.skillAreas,
+    name: name ?? this.name,
+    properties: properties ?? this.properties,
+    linkedClubId: linkedClubId.present ? linkedClubId.value : this.linkedClubId,
+    isDeleted: isDeleted ?? this.isDeleted,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  UserTrainingItem copyWithCompanion(UserTrainingItemsCompanion data) {
+    return UserTrainingItem(
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      category: data.category.present ? data.category.value : this.category,
+      skillAreas: data.skillAreas.present
+          ? data.skillAreas.value
+          : this.skillAreas,
+      name: data.name.present ? data.name.value : this.name,
+      properties: data.properties.present
+          ? data.properties.value
+          : this.properties,
+      linkedClubId: data.linkedClubId.present
+          ? data.linkedClubId.value
+          : this.linkedClubId,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserTrainingItem(')
+          ..write('itemId: $itemId, ')
+          ..write('userId: $userId, ')
+          ..write('category: $category, ')
+          ..write('skillAreas: $skillAreas, ')
+          ..write('name: $name, ')
+          ..write('properties: $properties, ')
+          ..write('linkedClubId: $linkedClubId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    itemId,
+    userId,
+    category,
+    skillAreas,
+    name,
+    properties,
+    linkedClubId,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserTrainingItem &&
+          other.itemId == this.itemId &&
+          other.userId == this.userId &&
+          other.category == this.category &&
+          other.skillAreas == this.skillAreas &&
+          other.name == this.name &&
+          other.properties == this.properties &&
+          other.linkedClubId == this.linkedClubId &&
+          other.isDeleted == this.isDeleted &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class UserTrainingItemsCompanion extends UpdateCompanion<UserTrainingItem> {
+  final Value<String> itemId;
+  final Value<String> userId;
+  final Value<EquipmentCategory> category;
+  final Value<String> skillAreas;
+  final Value<String> name;
+  final Value<String> properties;
+  final Value<String?> linkedClubId;
+  final Value<bool> isDeleted;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const UserTrainingItemsCompanion({
+    this.itemId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.category = const Value.absent(),
+    this.skillAreas = const Value.absent(),
+    this.name = const Value.absent(),
+    this.properties = const Value.absent(),
+    this.linkedClubId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserTrainingItemsCompanion.insert({
+    required String itemId,
+    required String userId,
+    required EquipmentCategory category,
+    this.skillAreas = const Value.absent(),
+    required String name,
+    this.properties = const Value.absent(),
+    this.linkedClubId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : itemId = Value(itemId),
+       userId = Value(userId),
+       category = Value(category),
+       name = Value(name);
+  static Insertable<UserTrainingItem> custom({
+    Expression<String>? itemId,
+    Expression<String>? userId,
+    Expression<String>? category,
+    Expression<String>? skillAreas,
+    Expression<String>? name,
+    Expression<String>? properties,
+    Expression<String>? linkedClubId,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (itemId != null) 'ItemID': itemId,
+      if (userId != null) 'UserID': userId,
+      if (category != null) 'Category': category,
+      if (skillAreas != null) 'SkillAreas': skillAreas,
+      if (name != null) 'Name': name,
+      if (properties != null) 'Properties': properties,
+      if (linkedClubId != null) 'LinkedClubID': linkedClubId,
+      if (isDeleted != null) 'IsDeleted': isDeleted,
+      if (createdAt != null) 'CreatedAt': createdAt,
+      if (updatedAt != null) 'UpdatedAt': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserTrainingItemsCompanion copyWith({
+    Value<String>? itemId,
+    Value<String>? userId,
+    Value<EquipmentCategory>? category,
+    Value<String>? skillAreas,
+    Value<String>? name,
+    Value<String>? properties,
+    Value<String?>? linkedClubId,
+    Value<bool>? isDeleted,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return UserTrainingItemsCompanion(
+      itemId: itemId ?? this.itemId,
+      userId: userId ?? this.userId,
+      category: category ?? this.category,
+      skillAreas: skillAreas ?? this.skillAreas,
+      name: name ?? this.name,
+      properties: properties ?? this.properties,
+      linkedClubId: linkedClubId ?? this.linkedClubId,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (itemId.present) {
+      map['ItemID'] = Variable<String>(itemId.value);
+    }
+    if (userId.present) {
+      map['UserID'] = Variable<String>(userId.value);
+    }
+    if (category.present) {
+      map['Category'] = Variable<String>(
+        $UserTrainingItemsTable.$convertercategory.toSql(category.value),
+      );
+    }
+    if (skillAreas.present) {
+      map['SkillAreas'] = Variable<String>(skillAreas.value);
+    }
+    if (name.present) {
+      map['Name'] = Variable<String>(name.value);
+    }
+    if (properties.present) {
+      map['Properties'] = Variable<String>(properties.value);
+    }
+    if (linkedClubId.present) {
+      map['LinkedClubID'] = Variable<String>(linkedClubId.value);
+    }
+    if (isDeleted.present) {
+      map['IsDeleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (createdAt.present) {
+      map['CreatedAt'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['UpdatedAt'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserTrainingItemsCompanion(')
+          ..write('itemId: $itemId, ')
+          ..write('userId: $userId, ')
+          ..write('category: $category, ')
+          ..write('skillAreas: $skillAreas, ')
+          ..write('name: $name, ')
+          ..write('properties: $properties, ')
+          ..write('linkedClubId: $linkedClubId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncMetadataEntriesTable extends SyncMetadataEntries
     with TableInfo<$SyncMetadataEntriesTable, SyncMetadataEntry> {
   @override
@@ -19252,6 +19924,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PerformanceSnapshotsTable performanceSnapshots =
       $PerformanceSnapshotsTable(this);
   late final $SnapshotClubsTable snapshotClubs = $SnapshotClubsTable(this);
+  late final $UserTrainingItemsTable userTrainingItems =
+      $UserTrainingItemsTable(this);
   late final $SyncMetadataEntriesTable syncMetadataEntries =
       $SyncMetadataEntriesTable(this);
   @override
@@ -19292,6 +19966,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     matrixAttempts,
     performanceSnapshots,
     snapshotClubs,
+    userTrainingItems,
     syncMetadataEntries,
   ];
 }
@@ -20200,6 +20875,7 @@ typedef $$DrillsTableCreateCompanionBuilder =
       Value<DrillLengthUnit?> targetDistanceUnit,
       Value<DrillLengthUnit?> targetSizeUnit,
       Value<String> requiredEquipment,
+      Value<String> recommendedEquipment,
       required DrillOrigin origin,
       Value<DrillStatus> status,
       Value<bool> isDeleted,
@@ -20233,6 +20909,7 @@ typedef $$DrillsTableUpdateCompanionBuilder =
       Value<DrillLengthUnit?> targetDistanceUnit,
       Value<DrillLengthUnit?> targetSizeUnit,
       Value<String> requiredEquipment,
+      Value<String> recommendedEquipment,
       Value<DrillOrigin> origin,
       Value<DrillStatus> status,
       Value<bool> isDeleted,
@@ -20381,6 +21058,11 @@ class $$DrillsTableFilterComposer
 
   ColumnFilters<String> get requiredEquipment => $composableBuilder(
     column: $table.requiredEquipment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recommendedEquipment => $composableBuilder(
+    column: $table.recommendedEquipment,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20541,6 +21223,11 @@ class $$DrillsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get recommendedEquipment => $composableBuilder(
+    column: $table.recommendedEquipment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get origin => $composableBuilder(
     column: $table.origin,
     builder: (column) => ColumnOrderings(column),
@@ -20684,6 +21371,11 @@ class $$DrillsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get recommendedEquipment => $composableBuilder(
+    column: $table.recommendedEquipment,
+    builder: (column) => column,
+  );
+
   GeneratedColumnWithTypeConverter<DrillOrigin, String> get origin =>
       $composableBuilder(column: $table.origin, builder: (column) => column);
 
@@ -20755,6 +21447,7 @@ class $$DrillsTableTableManager
                     const Value.absent(),
                 Value<DrillLengthUnit?> targetSizeUnit = const Value.absent(),
                 Value<String> requiredEquipment = const Value.absent(),
+                Value<String> recommendedEquipment = const Value.absent(),
                 Value<DrillOrigin> origin = const Value.absent(),
                 Value<DrillStatus> status = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20786,6 +21479,7 @@ class $$DrillsTableTableManager
                 targetDistanceUnit: targetDistanceUnit,
                 targetSizeUnit: targetSizeUnit,
                 requiredEquipment: requiredEquipment,
+                recommendedEquipment: recommendedEquipment,
                 origin: origin,
                 status: status,
                 isDeleted: isDeleted,
@@ -20822,6 +21516,7 @@ class $$DrillsTableTableManager
                     const Value.absent(),
                 Value<DrillLengthUnit?> targetSizeUnit = const Value.absent(),
                 Value<String> requiredEquipment = const Value.absent(),
+                Value<String> recommendedEquipment = const Value.absent(),
                 required DrillOrigin origin,
                 Value<DrillStatus> status = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
@@ -20853,6 +21548,7 @@ class $$DrillsTableTableManager
                 targetDistanceUnit: targetDistanceUnit,
                 targetSizeUnit: targetSizeUnit,
                 requiredEquipment: requiredEquipment,
+                recommendedEquipment: recommendedEquipment,
                 origin: origin,
                 status: status,
                 isDeleted: isDeleted,
@@ -21840,7 +22536,7 @@ typedef $$InstancesTableCreateCompanionBuilder =
     InstancesCompanion Function({
       required String instanceId,
       required String setId,
-      required String selectedClub,
+      Value<String?> selectedClub,
       required String rawMetrics,
       Value<DateTime> timestamp,
       Value<double?> resolvedTargetDistance,
@@ -21855,7 +22551,7 @@ typedef $$InstancesTableUpdateCompanionBuilder =
     InstancesCompanion Function({
       Value<String> instanceId,
       Value<String> setId,
-      Value<String> selectedClub,
+      Value<String?> selectedClub,
       Value<String> rawMetrics,
       Value<DateTime> timestamp,
       Value<double?> resolvedTargetDistance,
@@ -22082,7 +22778,7 @@ class $$InstancesTableTableManager
               ({
                 Value<String> instanceId = const Value.absent(),
                 Value<String> setId = const Value.absent(),
-                Value<String> selectedClub = const Value.absent(),
+                Value<String?> selectedClub = const Value.absent(),
                 Value<String> rawMetrics = const Value.absent(),
                 Value<DateTime> timestamp = const Value.absent(),
                 Value<double?> resolvedTargetDistance = const Value.absent(),
@@ -22110,7 +22806,7 @@ class $$InstancesTableTableManager
               ({
                 required String instanceId,
                 required String setId,
-                required String selectedClub,
+                Value<String?> selectedClub = const Value.absent(),
                 required String rawMetrics,
                 Value<DateTime> timestamp = const Value.absent(),
                 Value<double?> resolvedTargetDistance = const Value.absent(),
@@ -28667,6 +29363,321 @@ typedef $$SnapshotClubsTableProcessedTableManager =
       SnapshotClub,
       PrefetchHooks Function()
     >;
+typedef $$UserTrainingItemsTableCreateCompanionBuilder =
+    UserTrainingItemsCompanion Function({
+      required String itemId,
+      required String userId,
+      required EquipmentCategory category,
+      Value<String> skillAreas,
+      required String name,
+      Value<String> properties,
+      Value<String?> linkedClubId,
+      Value<bool> isDeleted,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$UserTrainingItemsTableUpdateCompanionBuilder =
+    UserTrainingItemsCompanion Function({
+      Value<String> itemId,
+      Value<String> userId,
+      Value<EquipmentCategory> category,
+      Value<String> skillAreas,
+      Value<String> name,
+      Value<String> properties,
+      Value<String?> linkedClubId,
+      Value<bool> isDeleted,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$UserTrainingItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $UserTrainingItemsTable> {
+  $$UserTrainingItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<EquipmentCategory, EquipmentCategory, String>
+  get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get skillAreas => $composableBuilder(
+    column: $table.skillAreas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get properties => $composableBuilder(
+    column: $table.properties,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linkedClubId => $composableBuilder(
+    column: $table.linkedClubId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserTrainingItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserTrainingItemsTable> {
+  $$UserTrainingItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skillAreas => $composableBuilder(
+    column: $table.skillAreas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get properties => $composableBuilder(
+    column: $table.properties,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linkedClubId => $composableBuilder(
+    column: $table.linkedClubId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserTrainingItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserTrainingItemsTable> {
+  $$UserTrainingItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<EquipmentCategory, String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get skillAreas => $composableBuilder(
+    column: $table.skillAreas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get properties => $composableBuilder(
+    column: $table.properties,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get linkedClubId => $composableBuilder(
+    column: $table.linkedClubId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$UserTrainingItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserTrainingItemsTable,
+          UserTrainingItem,
+          $$UserTrainingItemsTableFilterComposer,
+          $$UserTrainingItemsTableOrderingComposer,
+          $$UserTrainingItemsTableAnnotationComposer,
+          $$UserTrainingItemsTableCreateCompanionBuilder,
+          $$UserTrainingItemsTableUpdateCompanionBuilder,
+          (
+            UserTrainingItem,
+            BaseReferences<
+              _$AppDatabase,
+              $UserTrainingItemsTable,
+              UserTrainingItem
+            >,
+          ),
+          UserTrainingItem,
+          PrefetchHooks Function()
+        > {
+  $$UserTrainingItemsTableTableManager(
+    _$AppDatabase db,
+    $UserTrainingItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserTrainingItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserTrainingItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserTrainingItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> itemId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<EquipmentCategory> category = const Value.absent(),
+                Value<String> skillAreas = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> properties = const Value.absent(),
+                Value<String?> linkedClubId = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserTrainingItemsCompanion(
+                itemId: itemId,
+                userId: userId,
+                category: category,
+                skillAreas: skillAreas,
+                name: name,
+                properties: properties,
+                linkedClubId: linkedClubId,
+                isDeleted: isDeleted,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String itemId,
+                required String userId,
+                required EquipmentCategory category,
+                Value<String> skillAreas = const Value.absent(),
+                required String name,
+                Value<String> properties = const Value.absent(),
+                Value<String?> linkedClubId = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserTrainingItemsCompanion.insert(
+                itemId: itemId,
+                userId: userId,
+                category: category,
+                skillAreas: skillAreas,
+                name: name,
+                properties: properties,
+                linkedClubId: linkedClubId,
+                isDeleted: isDeleted,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserTrainingItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserTrainingItemsTable,
+      UserTrainingItem,
+      $$UserTrainingItemsTableFilterComposer,
+      $$UserTrainingItemsTableOrderingComposer,
+      $$UserTrainingItemsTableAnnotationComposer,
+      $$UserTrainingItemsTableCreateCompanionBuilder,
+      $$UserTrainingItemsTableUpdateCompanionBuilder,
+      (
+        UserTrainingItem,
+        BaseReferences<
+          _$AppDatabase,
+          $UserTrainingItemsTable,
+          UserTrainingItem
+        >,
+      ),
+      UserTrainingItem,
+      PrefetchHooks Function()
+    >;
 typedef $$SyncMetadataEntriesTableCreateCompanionBuilder =
     SyncMetadataEntriesCompanion Function({
       required String key,
@@ -28934,6 +29945,8 @@ class $AppDatabaseManager {
       $$PerformanceSnapshotsTableTableManager(_db, _db.performanceSnapshots);
   $$SnapshotClubsTableTableManager get snapshotClubs =>
       $$SnapshotClubsTableTableManager(_db, _db.snapshotClubs);
+  $$UserTrainingItemsTableTableManager get userTrainingItems =>
+      $$UserTrainingItemsTableTableManager(_db, _db.userTrainingItems);
   $$SyncMetadataEntriesTableTableManager get syncMetadataEntries =>
       $$SyncMetadataEntriesTableTableManager(_db, _db.syncMetadataEntries);
 }

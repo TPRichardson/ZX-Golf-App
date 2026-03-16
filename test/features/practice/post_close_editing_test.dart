@@ -129,7 +129,7 @@ void main() {
         InstancesCompanion.insert(
           instanceId: 'ignored', // Will be replaced by repo.
           setId: set.setId,
-          selectedClub: 'Default',
+          selectedClub: Value('Default'),
           rawMetrics: rawMetrics,
         ),
         session.sessionId,
@@ -162,7 +162,7 @@ void main() {
       InstancesCompanion.insert(
         instanceId: 'ignored',
         setId: set.setId,
-        selectedClub: 'Default',
+        selectedClub: Value('Default'),
         rawMetrics: '{"value": 250}',
       ),
       session.sessionId,

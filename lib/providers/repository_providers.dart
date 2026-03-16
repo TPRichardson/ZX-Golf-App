@@ -9,6 +9,7 @@ import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/matrix_repository.dart';
 import 'package:zx_golf_app/data/repositories/performance_snapshot_repository.dart';
 import 'package:zx_golf_app/data/repositories/reference_repository.dart';
+import 'package:zx_golf_app/data/repositories/training_kit_repository.dart';
 import 'database_providers.dart';
 import 'scoring_providers.dart';
 import 'sync_providers.dart';
@@ -94,5 +95,13 @@ final performanceSnapshotRepositoryProvider =
   return PerformanceSnapshotRepository(
     ref.watch(databaseProvider),
     ref.watch(syncWriteGateProvider),
+  );
+});
+
+final trainingKitRepositoryProvider = Provider<TrainingKitRepository>((ref) {
+  return TrainingKitRepository(
+    ref.watch(databaseProvider),
+    ref.watch(syncWriteGateProvider),
+    ref.watch(clubRepositoryProvider),
   );
 });

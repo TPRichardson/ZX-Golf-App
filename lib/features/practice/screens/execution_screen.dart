@@ -9,6 +9,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vibration/vibration.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/validation/club_tiers.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -23,6 +25,7 @@ import 'package:zx_golf_app/features/practice/execution/session_execution_contro
 import 'package:zx_golf_app/features/practice/widgets/club_grid_picker.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/features/practice/widgets/execution_header.dart';
+import 'package:zx_golf_app/features/settings/settings_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_stats_bar.dart';
 import 'package:zx_golf_app/features/practice/widgets/set_transition_overlay.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
@@ -30,6 +33,7 @@ import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 import 'package:zx_golf_app/providers/scoring_providers.dart';
+import 'package:zx_golf_app/providers/settings_providers.dart';
 
 /// Tracked shot entry for the shot log.
 class _ShotEntry {
@@ -73,8 +77,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   bool _ending = false;
   late SurfaceType? _surfaceType = widget.session.surfaceType;
   EnvironmentType? _environmentType;
-  String _selectedClub = 'Putter';
-  List<String> _availableClubs = [];
+  /// Currently selected club ID (UUID). Null for technique blocks.
+  String? _selectedClubId;
+  /// Available clubs for this drill's skill area.
+  List<UserClub> _availableClubs = [];
+  /// Lookup: clubId → clubType.dbValue for display.
+  final Map<String, String> _clubIdToLabel = {};
   final _random = Random();
   final List<_ShotEntry> _shotLog = [];
   final _shotListController = ScrollController();
@@ -86,9 +94,20 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Toggle: show total target width vs ± half-width from center.
   bool _showHalfWidth = false;
 
+  /// Whether the screen wakelock is currently enabled.
+  bool _screenAlwaysOn = false;
+
+  /// Toggle: show total target depth vs ± half-depth on vertical bar.
+  bool _showHalfDepth = false;
+
+  /// Cached notifier for safe access in dispose (ref is unavailable there).
+  late final StateController<bool> _executionActiveNotifier;
+
   @override
   void initState() {
     super.initState();
+    _executionActiveNotifier =
+        ref.read(practiceExecutionActiveProvider.notifier);
     _delegate = _createDelegate();
     // For 1x3 grids, remove top padding — target bar spacing handles it.
     if (_delegate is GridCellDelegate &&
@@ -126,8 +145,14 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         .read(practiceRepositoryProvider)
         .getPracticeBlockById(widget.session.practiceBlockId);
     _environmentType = block?.environmentType;
+    // Read user preferences for execution defaults.
+    final prefs = ref.read(userPreferencesProvider);
+    _screenAlwaysOn = prefs.screenAlwaysOn;
+    _showHalfWidth = prefs.targetBarSplitView;
+    _showHalfDepth = prefs.targetBarSplitView;
+    if (_screenAlwaysOn) WakelockPlus.enable();
     if (mounted) {
-      ref.read(practiceExecutionActiveProvider.notifier).state = true;
+      _executionActiveNotifier.state = true;
       setState(() => _initialized = true);
     }
   }
@@ -139,6 +164,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final repo = ref.read(practiceRepositoryProvider);
     final instances = await repo.watchInstancesBySet(setId).first;
     for (final inst in instances) {
+      final clubLabel = _clubIdToLabel[inst.selectedClub] ?? '';
       final metrics =
           jsonDecode(inst.rawMetrics) as Map<String, dynamic>;
       if (metrics.containsKey('hit')) {
@@ -148,20 +174,20 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         _shotLog.add(_ShotEntry(
           label: label,
           isHit: isHit,
-          club: inst.selectedClub,
+          club: clubLabel,
         ));
       } else if (metrics.containsKey('value')) {
         final value = (metrics['value'] as num).toDouble();
         _shotLog.add(_ShotEntry(
           label: value.toStringAsFixed(1),
           isHit: false,
-          club: inst.selectedClub,
+          club: clubLabel,
         ));
       } else {
         _shotLog.add(_ShotEntry(
           label: '\u2014',
           isHit: false,
-          club: inst.selectedClub,
+          club: clubLabel,
         ));
       }
     }
@@ -171,20 +197,42 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   Future<void> _loadClubs() async {
     final mode = widget.drill.clubSelectionMode;
     if (mode == null) {
-      _selectedClub = 'Putter';
+      // No club selection — e.g. putting drills with putter implicit.
+      // Find the user's putter club ID if available.
+      final allClubs = await ref
+          .read(clubsForSkillAreaProvider(
+              (widget.userId, widget.drill.skillArea))
+              .future);
+      for (final c in allClubs) {
+        _clubIdToLabel[c.clubId] = c.clubType.dbValue;
+      }
+      final putter = allClubs.where((c) => c.clubType == ClubType.putter).firstOrNull;
+      _selectedClubId = putter?.clubId;
+      if (putter != null) {
+        _clubIdToLabel[putter.clubId] = putter.clubType.dbValue;
+      }
       return;
     }
     final clubs = await ref
         .read(clubsForSkillAreaProvider(
             (widget.userId, widget.drill.skillArea))
             .future);
-    final names = clubs.map((c) => c.clubType.dbValue).toList();
-    _availableClubs = names;
-    if (names.isNotEmpty) {
-      _selectedClub = mode == ClubSelectionMode.random
-          ? names[_random.nextInt(names.length)]
-          : names.first;
+    _availableClubs = clubs;
+    for (final c in clubs) {
+      _clubIdToLabel[c.clubId] = c.clubType.dbValue;
     }
+    if (clubs.isNotEmpty) {
+      final pick = mode == ClubSelectionMode.random
+          ? clubs[_random.nextInt(clubs.length)]
+          : clubs.first;
+      _selectedClubId = pick.clubId;
+    }
+  }
+
+  /// Display label for the currently selected club.
+  String get _selectedClubLabel {
+    if (_selectedClubId == null) return '';
+    return _clubIdToLabel[_selectedClubId] ?? '';
   }
 
   /// Load carry distances for each active club in this drill's skill area.
@@ -196,20 +244,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       return;
     }
     final clubRepo = ref.read(clubRepositoryProvider);
-    final clubs = await ref
-        .read(clubsForSkillAreaProvider(
-            (widget.userId, widget.drill.skillArea))
-            .future);
-    for (final club in clubs) {
+    for (final club in _availableClubs) {
       final profile = await clubRepo.getActiveProfile(club.clubId);
       if (profile?.carryDistance != null) {
-        _clubCarryDistances[club.clubType.dbValue] = profile!.carryDistance!;
+        _clubCarryDistances[club.clubId] = profile!.carryDistance!;
       }
     }
   }
 
   /// Get the carry distance for the currently selected club.
-  double? get _currentCarryDistance => _clubCarryDistances[_selectedClub];
+  double? get _currentCarryDistance => _clubCarryDistances[_selectedClubId];
 
   /// Compute the target width for the currently selected club.
   /// Uses club tier percentage of carry distance.
@@ -227,7 +271,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     if (widget.drill.targetSizeMode ==
         TargetSizeMode.percentageOfTargetDistance) {
       try {
-        final clubType = ClubType.fromString(_selectedClub);
+        final clubType = ClubType.fromString(_selectedClubLabel);
         final percent = targetWidthPercentForClub(clubType);
         return carry * percent / 100.0;
       } on ArgumentError {
@@ -239,7 +283,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   @override
   void dispose() {
-    ref.read(practiceExecutionActiveProvider.notifier).state = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _executionActiveNotifier.state = false;
+    });
+    WakelockPlus.disable();
     _delegate.dispose();
     _shotListController.dispose();
     super.dispose();
@@ -247,6 +294,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Parse a shot entry from instance data for the shot log.
   _ShotEntry _parseShotEntry(InstancesCompanion data, InstanceResult result) {
+    final clubLabel = _clubIdToLabel[data.selectedClub.value] ?? '';
     final metrics =
         jsonDecode(data.rawMetrics.value) as Map<String, dynamic>;
     // Grid or binary — has 'hit' field.
@@ -257,7 +305,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       return _ShotEntry(
         label: label,
         isHit: isHit,
-        club: data.selectedClub.value,
+        club: clubLabel,
         score: result.realtimeScore,
       );
     }
@@ -267,14 +315,14 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       return _ShotEntry(
         label: value.toStringAsFixed(1),
         isHit: (result.realtimeScore ?? 0) >= 2.5,
-        club: data.selectedClub.value,
+        club: clubLabel,
         score: result.realtimeScore,
       );
     }
     return _ShotEntry(
       label: '\u2014',
       isHit: false,
-      club: data.selectedClub.value,
+      club: clubLabel,
     );
   }
 
@@ -288,7 +336,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         instance: Instance(
           instanceId: '',
           setId: '',
-          selectedClub: '',
+          selectedClub: null,
           rawMetrics: '{}',
           timestamp: now,
           isDeleted: false,
@@ -298,14 +346,14 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       );
     }
 
-    // S15 §15.8.3 — Haptic tick.
-    HapticFeedback.lightImpact();
+    // Haptic + sound feedback based on user preferences.
+    _playShotFeedback();
 
     // TD-06 §9.1.2 — Random mode picks a new club per instance.
     if (widget.drill.clubSelectionMode == ClubSelectionMode.random &&
         _availableClubs.isNotEmpty) {
-      _selectedClub =
-          _availableClubs[_random.nextInt(_availableClubs.length)];
+      final pick = _availableClubs[_random.nextInt(_availableClubs.length)];
+      _selectedClubId = pick.clubId;
     }
 
     final result = await _controller.logInstance(data);
@@ -404,15 +452,20 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Open club grid picker for user-led/guided modes.
   Future<void> _pickClub() async {
-    final club = await showClubGridPicker(
+    final clubNames = _availableClubs.map((c) => c.clubType.dbValue).toList();
+    final picked = await showClubGridPicker(
       context,
-      clubs: _availableClubs,
-      selectedClub: _selectedClub,
+      clubs: clubNames,
+      selectedClub: _selectedClubLabel,
       skillArea: widget.drill.skillArea,
       userId: widget.userId,
     );
-    if (club != null && mounted) {
-      setState(() => _selectedClub = club);
+    if (picked != null && mounted) {
+      // Find the UserClub matching the picked type name.
+      final club = _availableClubs.firstWhere(
+        (c) => c.clubType.dbValue == picked,
+      );
+      setState(() => _selectedClubId = club.clubId);
     }
   }
 
@@ -442,7 +495,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final executionContext = ExecutionContext(
       isLocked: isLocked,
       isEnding: _ending,
-      selectedClub: _selectedClub,
+      selectedClub: _selectedClubId,
       currentSetId: _controller.currentSetId,
     );
 
@@ -457,6 +510,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         onInfoTap: widget.drill.description != null
             ? () => _showDrillInfo(context)
             : null,
+        onSettingsTap: _openPracticeSettings,
       ),
       body: Column(
           children: [
@@ -495,6 +549,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       // Input area — varies by delegate.
                       // Target width bar sits just above the input for 1x3/3x3 grids.
                       // For 3x1 grids, a vertical target depth bar sits on the left.
+                      // Pre-set grid padding before building the delegate so the
+                      // vertical target bar wrapper doesn't lag by one frame.
+                      ..._applyVerticalBarPaddingOverride(),
                       Expanded(
                         flex: showShotLog ? 65 : 1,
                         child: Column(
@@ -546,9 +603,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   Widget _buildShotLogSection() {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
-    final hitCount = _shotLog.where((s) => s.isHit).length;
-    final totalCount = _shotLog.length;
-
     return Expanded(
       flex: 35,
       child: Padding(
@@ -607,45 +661,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     // Shot count + undo row.
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                        SpacingTokens.md, 2, SpacingTokens.md, 2,
+                        SpacingTokens.md, 6, SpacingTokens.md, 2,
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Hits counter (left).
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '$hitCount',
-                                  style: TextStyle(
-                                    fontSize: TypographyTokens.bodyLgSize,
-                                    fontWeight: FontWeight.w500,
-                                    color: ColorTokens.successDefault,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: '/$totalCount',
-                                  style: TextStyle(
-                                    fontSize: TypographyTokens.bodyLgSize,
-                                    fontWeight: FontWeight.w500,
-                                    color: ColorTokens.textSecondary,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            ' Hits',
-                            style: TextStyle(
-                              fontSize: TypographyTokens.bodyLgSize,
-                              color: ColorTokens.textTertiary,
-                            ),
-                          ),
-                          const Spacer(),
-                          // Set counter (center).
+                          // Set counter (left): "Set A of BxC"
                           Text.rich(
                             TextSpan(
                               children: [
@@ -666,7 +687,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '/${_controller.requiredSetCount}',
+                                  text: ' of ${_controller.requiredSetCount}x${_controller.requiredAttemptsPerSet}',
                                   style: TextStyle(
                                     fontSize: TypographyTokens.bodyLgSize,
                                     color: ColorTokens.textTertiary,
@@ -678,15 +699,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                           ),
                           const Spacer(),
                           // Undo button (right).
-                          Padding(
-                            padding: const EdgeInsets.only(right: SpacingTokens.sm),
-                            child: ZxPillButton(
-                              label: 'Undo',
-                              icon: Icons.undo,
-                              variant: ZxPillVariant.secondary,
-                              size: ZxPillSize.sm,
-                              onTap: _controller.canUndo ? _undoLast : () {},
-                            ),
+                          ZxPillButton(
+                            label: 'Undo',
+                            icon: Icons.undo,
+                            variant: ZxPillVariant.secondary,
+                            size: ZxPillSize.xs,
+                            onTap: _controller.canUndo ? _undoLast : () {},
                           ),
                         ],
                       ),
@@ -726,58 +744,183 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       _ => '',
     };
 
-    return GestureDetector(
-      onTap: isTappable ? _pickClub : null,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(
-          SpacingTokens.md, SpacingTokens.xs, SpacingTokens.sm, SpacingTokens.xs,
-        ),
-        decoration: BoxDecoration(
-          color: ColorTokens.surfaceRaised,
-          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-          border: Border.all(color: ColorTokens.surfaceBorder),
-        ),
-        child: Row(
-          children: [
-            if (modeLabel.isNotEmpty)
+    return IntrinsicHeight(
+      child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Left half — target distance.
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Text(
-                modeLabel,
+                'Distance',
                 style: TextStyle(
-                  fontSize: TypographyTokens.bodyLgSize,
+                  fontSize: TypographyTokens.bodySmSize,
                   color: ColorTokens.textTertiary,
                 ),
               ),
-            const Spacer(),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 120),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.lg,
-                  vertical: SpacingTokens.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: ColorTokens.primaryDefault.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                  border: Border.all(
-                    color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
+              const SizedBox(height: SpacingTokens.xs),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(SpacingTokens.xs),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.surfaceRaised,
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                    border: Border.all(color: ColorTokens.surfaceBorder),
                   ),
-                ),
-                child: Text(
-                  _abbreviateClub(_selectedClub),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: TypographyTokens.displayXlSize,
-                    fontWeight: FontWeight.w600,
-                    color: ColorTokens.primaryDefault,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Target Distance',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodySize,
+                          color: ColorTokens.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: SpacingTokens.xs),
+                      Text(
+                        _formatTargetDistance(),
+                        style: TextStyle(
+                          fontSize: TypographyTokens.displayLgSize,
+                          fontWeight: FontWeight.w600,
+                          color: ColorTokens.textPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: SpacingTokens.sm),
+        // Right half — club selection.
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Club',
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySmSize,
+                  color: ColorTokens.textTertiary,
+                ),
+              ),
+              const SizedBox(height: SpacingTokens.xs),
+              GestureDetector(
+                onTap: isTappable ? _pickClub : null,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(SpacingTokens.xs),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.surfaceRaised,
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                    border: Border.all(color: ColorTokens.surfaceBorder),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (modeLabel.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: SpacingTokens.xs),
+                          child: Text(
+                            modeLabel,
+                            style: TextStyle(
+                              fontSize: TypographyTokens.bodySize,
+                              color: ColorTokens.textTertiary,
+                            ),
+                          ),
+                        ),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SpacingTokens.md,
+                          vertical: SpacingTokens.xs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ColorTokens.primaryDefault.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                          border: Border.all(
+                            color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Text(
+                          _abbreviateClub(_selectedClubLabel),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: TypographyTokens.displayLgSize,
+                            fontWeight: FontWeight.w600,
+                            color: ColorTokens.primaryDefault,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+    );
+  }
+
+  /// Set grid padding override before the delegate builds, so the vertical
+  /// target bar gap is correct on the very first frame.
+  List<Widget> _applyVerticalBarPaddingOverride() {
+    if (widget.drill.inputMode == InputMode.gridCell &&
+        (widget.drill.gridType == GridType.threeByOne ||
+            widget.drill.gridType == GridType.threeByThree) &&
+        _delegate is GridCellDelegate) {
+      (_delegate as GridCellDelegate).overridePadding =
+          const EdgeInsets.fromLTRB(
+            SpacingTokens.xs, 0, SpacingTokens.lg, 0,
+          );
+    }
+    return const [];
+  }
+
+  /// Navigate to settings, then re-apply practice preferences on return.
+  Future<void> _openPracticeSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SettingsScreen(scrollToSection: 'practice'),
       ),
     );
+    if (!mounted) return;
+    final prefs = ref.read(userPreferencesProvider);
+    setState(() {
+      _screenAlwaysOn = prefs.screenAlwaysOn;
+      _showHalfWidth = prefs.targetBarSplitView;
+      _showHalfDepth = prefs.targetBarSplitView;
+    });
+    if (_screenAlwaysOn) {
+      WakelockPlus.enable();
+    } else {
+      WakelockPlus.disable();
+    }
+  }
+
+  /// Play haptic and/or sound feedback on shot input per user preferences.
+  void _playShotFeedback() {
+    final prefs = ref.read(userPreferencesProvider);
+    switch (prefs.shotInputVibration) {
+      case 'soft':
+        Vibration.vibrate(duration: 20, amplitude: 40);
+      case 'medium':
+        Vibration.vibrate(duration: 30, amplitude: 128);
+      case 'hard':
+        Vibration.vibrate(duration: 50, amplitude: 255);
+      default:
+        break; // 'off'
+    }
+    if (prefs.shotInputSound) {
+      SystemSound.play(SystemSoundType.click);
+    }
   }
 
   /// Wraps the input area with a vertical target depth bar for 3x1 grids.
@@ -786,14 +929,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final gridType = widget.drill.gridType;
     if (gridType != GridType.threeByOne && gridType != GridType.threeByThree) {
       return inputArea;
-    }
-
-    // Reduce grid left padding so the 4px gap between bar and input is tight.
-    if (_delegate is GridCellDelegate) {
-      (_delegate as GridCellDelegate).overridePadding =
-          const EdgeInsets.fromLTRB(
-            SpacingTokens.xs, 0, SpacingTokens.lg, 0,
-          );
     }
 
     return Row(
@@ -821,27 +956,32 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     ),
                   ),
                 ),
-                // Hit zone (middle) — shows target distance.
+                // Hit zone (middle) — tap to toggle total vs ± half depth.
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: ColorTokens.successDefault.withValues(alpha: 0.15),
-                      border: Border.all(
-                        color: ColorTokens.successDefault.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: RotatedBox(
-                      quarterTurns: 3,
-                      child: Text(
-                        _formatTargetDistance(),
-                        style: TextStyle(
-                          fontSize: TypographyTokens.bodySmSize,
-                          fontWeight: FontWeight.w600,
-                          color: ColorTokens.successDefault,
-                        ),
-                      ),
-                    ),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showHalfDepth = !_showHalfDepth),
+                    child: _showHalfDepth
+                        ? _buildSplitDepthZone()
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: ColorTokens.successDefault.withValues(alpha: 0.15),
+                              border: Border.all(
+                                color: ColorTokens.successDefault.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: RotatedBox(
+                              quarterTurns: 3,
+                              child: Text(
+                                _formatTargetDepth(),
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.bodySmSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.successDefault,
+                                ),
+                              ),
+                            ),
+                          ),
                   ),
                 ),
                 // Miss short zone (bottom).
@@ -889,10 +1029,18 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         ? _formatTargetWidthHalf()
         : _formatTargetWidth();
 
+    // For 3x3/3x1 grids with a vertical target bar, offset the left edge
+    // to align with the grid: lg (bar padding) + 28 (bar width) + xs (grid gap).
+    final hasVerticalBar =
+        gridType == GridType.threeByThree || gridType == GridType.threeByOne;
+    final leftPad = hasVerticalBar
+        ? SpacingTokens.lg + 28 + SpacingTokens.xs
+        : SpacingTokens.lg;
+
     return GestureDetector(
       onTap: () => setState(() => _showHalfWidth = !_showHalfWidth),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
+        padding: EdgeInsets.only(left: leftPad, right: SpacingTokens.lg),
         child: SizedBox(
           height: 28,
           child: Row(
@@ -1048,11 +1196,18 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     double? value;
     DrillLengthUnit? unit;
 
-    if (widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry ||
-        widget.drill.targetDistanceMode ==
-            TargetDistanceMode.percentageOfClubCarry) {
+    if (widget.drill.targetDistanceMode ==
+        TargetDistanceMode.percentageOfClubCarry) {
+      // Target is a percentage of carry — show the computed distance.
+      final carry = _currentCarryDistance;
+      final percent = widget.drill.targetDistanceValue;
+      if (carry != null && percent != null) {
+        value = carry * percent / 100.0;
+      }
+      unit = DrillLengthUnit.yards;
+    } else if (widget.drill.targetDistanceMode ==
+        TargetDistanceMode.clubCarry) {
       value = _currentCarryDistance;
-      // Carry distances are stored in yards by default.
       unit = DrillLengthUnit.yards;
     } else {
       value = widget.drill.targetDistanceValue;
@@ -1062,6 +1217,87 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     if (value == null) return '';
     final rounded = value.round();
     return unit != null ? '$rounded ${unit.dbValue}' : '$rounded';
+  }
+
+  /// Format target depth for the vertical target bar (miss long / hit / miss short).
+  String _formatTargetDepth() {
+    final value = widget.drill.targetSizeDepth;
+    final unit = widget.drill.targetSizeUnit;
+    if (value == null) return _formatTargetDistance();
+    final formatted = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(1);
+    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+  }
+
+  /// Format target depth as half value for split vertical bar display.
+  String _formatTargetDepthHalf() {
+    final value = widget.drill.targetSizeDepth;
+    final unit = widget.drill.targetSizeUnit;
+    if (value == null) return '';
+    final half = value / 2;
+    final formatted = half == half.roundToDouble()
+        ? half.toInt().toString()
+        : half.toStringAsFixed(1);
+    return '$formatted${_shortUnit(unit)}';
+  }
+
+  /// Split depth zone: top half (long) and bottom half (short) with divider.
+  Widget _buildSplitDepthZone() {
+    final halfLabel = _formatTargetDepthHalf();
+    final borderColor = ColorTokens.successDefault.withValues(alpha: 0.5);
+    final bgColor = ColorTokens.successDefault.withValues(alpha: 0.15);
+    final textStyle = TextStyle(
+      fontSize: TypographyTokens.bodySmSize,
+      fontWeight: FontWeight.w600,
+      color: ColorTokens.successDefault,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        children: [
+          // Top half: label ↑ (long side — arrow points up/outward)
+          Expanded(
+            child: Center(
+              child: RotatedBox(
+                quarterTurns: 3,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(halfLabel, style: textStyle),
+                    Text(' >', style: textStyle),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Center divider line.
+          Container(
+            height: 2,
+            color: ColorTokens.successDefault.withValues(alpha: 0.6),
+          ),
+          // Bottom half: ↓ label (short side — arrow points down/outward)
+          Expanded(
+            child: Center(
+              child: RotatedBox(
+                quarterTurns: 3,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('< ', style: textStyle),
+                    Text(halfLabel, style: textStyle),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Format target width value + unit for the horizontal target bar.

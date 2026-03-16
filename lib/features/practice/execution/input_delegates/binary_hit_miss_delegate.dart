@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_input_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
@@ -96,7 +97,7 @@ class BinaryHitMissDelegate extends ExecutionInputDelegate {
     final data = InstancesCompanion.insert(
       instanceId: const Uuid().v4(),
       setId: ctx.currentSetId!,
-      selectedClub: ctx.selectedClub,
+      selectedClub: Value(ctx.selectedClub),
       rawMetrics: jsonEncode({'hit': isHit}),
     );
     await onLogInstance(data);

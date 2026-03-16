@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/data/enums.dart';
-import 'package:zx_golf_app/data/models/equipment.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
@@ -26,6 +25,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _scrollController = ScrollController();
   final _calendarKey = GlobalKey();
+  final _practiceKey = GlobalKey();
   String? _highlightedSection;
 
   @override
@@ -42,7 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _scrollToSection() {
-    final keyMap = {'calendar': _calendarKey};
+    final keyMap = {'calendar': _calendarKey, 'practice': _practiceKey};
     final key = keyMap[widget.scrollToSection];
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
@@ -125,31 +125,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _toggleSmallLengthUnit(ref, prefs),
           ),
 
-          // --- Equipment Section ---
-          _SectionHeader(title: 'Equipment'),
-          _SwitchTile(
-            label: 'Launch Monitor',
-            value: prefs.hasEquipment(EquipmentType.launchMonitor),
-            onChanged: (v) => _toggleEquipment(
-                ref, prefs, EquipmentType.launchMonitor, v),
-          ),
-          if (prefs.hasEquipment(EquipmentType.launchMonitor))
-            ..._launchMonitorDetails(ref, prefs),
-          _SwitchTile(
-            label: 'Alignment Sticks',
-            value: prefs.hasEquipment(EquipmentType.alignmentSticks),
-            onChanged: (v) => _toggleEquipment(
-                ref, prefs, EquipmentType.alignmentSticks, v),
-          ),
-          _SwitchTile(
-            label: 'Putting Gate',
-            value: prefs.hasEquipment(EquipmentType.puttingGate),
-            onChanged: (v) => _toggleEquipment(
-                ref, prefs, EquipmentType.puttingGate, v),
-          ),
-          if (prefs.hasEquipment(EquipmentType.puttingGate))
-            ..._puttingGateDetails(ref, prefs),
-
           // --- Execution Section ---
           _SectionHeader(title: 'Execution'),
           _NavigationTile(
@@ -193,6 +168,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _cycleResolution(ref, prefs),
           ),
 
+          // --- Practice Section ---
+          _SectionHeader(key: _practiceKey, title: 'Practice'),
+          _SwitchTile(
+            label: 'Screen Always On During Drills',
+            value: prefs.screenAlwaysOn,
+            onChanged: (v) => updatePreferences(
+                ref, prefs.copyWith(screenAlwaysOn: v)),
+          ),
+          _SwitchTile(
+            label: 'Target Bars Show ± Half by Default',
+            value: prefs.targetBarSplitView,
+            onChanged: (v) => updatePreferences(
+                ref, prefs.copyWith(targetBarSplitView: v)),
+          ),
+          _SwitchTile(
+            label: 'Shot Input Sound',
+            value: prefs.shotInputSound,
+            onChanged: (v) => updatePreferences(
+                ref, prefs.copyWith(shotInputSound: v)),
+          ),
+          _ToggleTile(
+            label: 'Shot Input Vibration',
+            value: _vibrationLabel(prefs.shotInputVibration),
+            onTap: () => _cycleVibration(ref, prefs),
+          ),
+
           // --- Notifications Section ---
           _SectionHeader(title: 'Notifications'),
           _SwitchTile(
@@ -221,6 +222,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             label: 'Sync Now',
             onTap: () => _triggerManualSync(context, ref),
           ),
+          _ActionTile(
+            label: 'Force Full Sync',
+            onTap: () => _triggerFullSync(context, ref),
+          ),
 
           // --- Data Section ---
           _SectionHeader(title: 'Data'),
@@ -244,82 +249,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
-  }
-
-  void _toggleEquipment(
-      WidgetRef ref, UserPreferences prefs, EquipmentType type, bool add) {
-    final updated = List<Equipment>.from(prefs.equipment);
-    if (add) {
-      if (!prefs.hasEquipment(type)) {
-        updated.add(Equipment(type: type));
-      }
-    } else {
-      updated.removeWhere((e) => e.type == type);
-    }
-    updatePreferences(ref, prefs.copyWith(equipment: updated));
-  }
-
-  Equipment? _findEquipment(UserPreferences prefs, EquipmentType type) {
-    try {
-      return prefs.equipment.firstWhere((e) => e.type == type);
-    } on StateError {
-      return null;
-    }
-  }
-
-  void _updateEquipmentProperties(
-      WidgetRef ref, UserPreferences prefs, EquipmentType type,
-      Map<String, dynamic> properties) {
-    final updated = prefs.equipment.map((e) {
-      if (e.type == type) return e.copyWith(properties: properties);
-      return e;
-    }).toList();
-    updatePreferences(ref, prefs.copyWith(equipment: updated));
-  }
-
-  List<Widget> _launchMonitorDetails(WidgetRef ref, UserPreferences prefs) {
-    final lm = _findEquipment(prefs, EquipmentType.launchMonitor);
-    return [
-      _EditableTile(
-        label: 'Brand',
-        value: lm?.brand ?? '',
-        hint: 'e.g. Garmin, Trackman',
-        onSubmitted: (v) => _updateEquipmentProperties(
-          ref, prefs, EquipmentType.launchMonitor,
-          {...?lm?.properties, 'brand': v},
-        ),
-      ),
-      _EditableTile(
-        label: 'Model',
-        value: lm?.model ?? '',
-        hint: 'e.g. Approach R10',
-        onSubmitted: (v) => _updateEquipmentProperties(
-          ref, prefs, EquipmentType.launchMonitor,
-          {...?lm?.properties, 'model': v},
-        ),
-      ),
-    ];
-  }
-
-  List<Widget> _puttingGateDetails(WidgetRef ref, UserPreferences prefs) {
-    final gate = _findEquipment(prefs, EquipmentType.puttingGate);
-    return [
-      _EditableTile(
-        label: 'Gate Width',
-        value: gate?.widthCm?.toString() ?? '',
-        hint: 'Width in cm',
-        keyboardType: TextInputType.number,
-        onSubmitted: (v) {
-          final width = double.tryParse(v);
-          if (width != null && width > 0) {
-            _updateEquipmentProperties(
-              ref, prefs, EquipmentType.puttingGate,
-              {'widthCm': width},
-            );
-          }
-        },
-      ),
-    ];
   }
 
   void _toggleDistanceUnit(WidgetRef ref, UserPreferences prefs) {
@@ -347,6 +276,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final next = order[(idx + 1) % order.length];
     updatePreferences(
         ref, prefs.copyWith(defaultAnalysisResolution: next));
+  }
+
+  void _cycleVibration(WidgetRef ref, UserPreferences prefs) {
+    const order = ['off', 'soft', 'medium', 'hard'];
+    final idx = order.indexOf(prefs.shotInputVibration);
+    final next = order[(idx + 1) % order.length];
+    updatePreferences(ref, prefs.copyWith(shotInputVibration: next));
+  }
+
+  String _vibrationLabel(String value) {
+    return switch (value) {
+      'off' => 'Off',
+      'soft' => 'Soft',
+      'hard' => 'Hard',
+      _ => 'Medium',
+    };
   }
 
   String _resolutionLabel(String resolution) {
@@ -400,6 +345,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.read(syncOrchestratorProvider).requestSync(SyncTrigger.manual);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Sync triggered')),
+    );
+  }
+
+  void _triggerFullSync(BuildContext context, WidgetRef ref) {
+    ref.read(syncOrchestratorProvider).requestSync(SyncTrigger.forceFullSync);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Full sync triggered')),
     );
   }
 

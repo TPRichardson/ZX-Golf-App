@@ -109,7 +109,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'ignored',
             setId: set.setId,
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{"hit": true}',
           ),
           session.sessionId,
@@ -185,7 +185,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'ignored',
             setId: set.setId,
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{"hit": true}',
           ),
           session.sessionId,
@@ -233,7 +233,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'ignored',
             setId: set.setId,
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{"hit": true}',
           ),
           session.sessionId,
@@ -265,7 +265,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'ignored',
             setId: set.setId,
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{"hit": true}',
           ),
           session.sessionId,
@@ -281,7 +281,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'ignored',
             setId: set.setId,
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{"hit": true}',
           ),
           session.sessionId,
@@ -373,7 +373,7 @@ void main() {
           InstancesCompanion.insert(
             instanceId: 'ignored',
             setId: set.setId,
-            selectedClub: 'Putter',
+            selectedClub: Value('Putter'),
             rawMetrics: '{"hit": true}',
           ),
           session.sessionId,

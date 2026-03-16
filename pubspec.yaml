@@ -22,6 +22,8 @@ dependencies:
   connectivity_plus: ^6.0.0
   flutter_svg: ^2.0.17
   clock: ^1.1.1
+  wakelock_plus: ^1.5.1
+  vibration: ^3.1.8
 
 dev_dependencies:
   flutter_test:

@@ -15,7 +15,6 @@ import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'tabs/plan_tab.dart';
 import 'tabs/track_tab.dart';
 import 'tabs/review_tab.dart';
-import 'widgets/dual_active_session_dialog.dart';
 import 'widgets/system_maintenance_banner.dart';
 
 /// Whether the auth-required sync banner has been dismissed this session.
@@ -171,20 +170,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Phase 7C — Listen for dual active session conflicts.
-    ref.listen<AsyncValue<String>>(dualActiveSessionProvider, (_, next) {
-      next.whenData((blockId) {
-        if (context.mounted) {
-          showDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) =>
-                DualActiveSessionDialog(conflictingBlockId: blockId),
-          );
-        }
-      });
-    });
-
     // S12 §12.2 — showHomeProvider controls Home vs Tab display.
     final showHome = ref.watch(showHomeProvider);
 

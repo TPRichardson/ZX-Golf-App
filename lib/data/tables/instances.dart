@@ -7,7 +7,7 @@ class Instances extends Table {
 
   TextColumn get instanceId => text().named('InstanceID')();
   TextColumn get setId => text().named('SetID')();
-  TextColumn get selectedClub => text().named('SelectedClub')();
+  TextColumn get selectedClub => text().named('SelectedClub').nullable()();
   TextColumn get rawMetrics => text().named('RawMetrics')();
   DateTimeColumn get timestamp =>
       dateTime().named('Timestamp').clientDefault(() => DateTime.now())();

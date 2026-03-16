@@ -24,6 +24,8 @@ void main() {
     description: null,
     targetDistanceUnit: null,
     targetSizeUnit: null,
+    requiredEquipment: '[]',
+    recommendedEquipment: '[]',
     origin: DrillOrigin.standard,
     status: DrillStatus.active,
     isDeleted: false,
