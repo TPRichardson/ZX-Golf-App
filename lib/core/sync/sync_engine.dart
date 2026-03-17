@@ -155,7 +155,9 @@ class SyncEngine {
       final result = await _executeSyncCycle(reason);
       _activeSyncCompleter!.complete(result);
       return result;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[SyncEngine] triggerSync error: $e');
+      debugPrint('[SyncEngine] Stack trace:\n$st');
       final failure = SyncResult.failure(
         errorCode: SyncException.uploadFailed,
         errorMessage: e.toString(),
@@ -191,7 +193,9 @@ class SyncEngine {
       // harmless (server upserts).
       final lastSync = rawLastSync?.subtract(const Duration(seconds: 1));
       // Step 1: Gather local changes and device ID
+      debugPrint('[SyncEngine] Building upload payload (lastSync=$lastSync)');
       final payload = await _buildUploadPayload(lastSync);
+      debugPrint('[SyncEngine] Payload tables: ${payload.keys.toList()}, counts: ${payload.map((k, v) => MapEntry(k, v.length))}');
       final deviceId = await _getOrCreateDeviceId();
 
       // Step 2: Batch and upload with retry
@@ -333,7 +337,9 @@ class SyncEngine {
       );
 
       rethrow;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[SyncEngine] _executeSyncCycle error: $e');
+      debugPrint('[SyncEngine] Stack trace:\n$st');
       await _incrementFailureCounter();
       _setStatus(SyncStatus.failed);
 

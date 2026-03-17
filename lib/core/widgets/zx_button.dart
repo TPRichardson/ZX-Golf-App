@@ -45,14 +45,6 @@ class ZxButton extends StatelessWidget {
           horizontal: SpacingTokens.md,
           vertical: SpacingTokens.sm,
         ),
-        animationDuration: MotionTokens.fast,
-      ).copyWith(
-        overlayColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.pressed)) {
-            return pressedColor;
-          }
-          return null;
-        }),
       ),
       child: isLoading
           ? const SizedBox(
@@ -77,7 +69,6 @@ class ZxButton extends StatelessWidget {
           horizontal: SpacingTokens.md,
           vertical: SpacingTokens.sm,
         ),
-        animationDuration: MotionTokens.fast,
       ),
       child: isLoading
           ? const SizedBox(
@@ -98,7 +89,6 @@ class ZxButton extends StatelessWidget {
           horizontal: SpacingTokens.sm,
           vertical: SpacingTokens.xs,
         ),
-        animationDuration: MotionTokens.fast,
       ),
       child: Text(label),
     );

@@ -279,7 +279,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _migrateV16ToV17(Migrator m) async {
-    await customStatement('ALTER TABLE Drill ADD COLUMN WindowCap INTEGER');
+    // Idempotent: column may already exist if a prior migration attempt
+    // partially succeeded before Drift could persist the version bump.
+    final cols = await customSelect(
+      "PRAGMA table_info('Drill')",
+    ).get();
+    final hasWindowCap = cols.any((r) => r.data['name'] == 'WindowCap');
+    if (!hasWindowCap) {
+      await customStatement('ALTER TABLE Drill ADD COLUMN WindowCap INTEGER');
+    }
     // Seed new MetricSchemas.
     for (final s in [
       "('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', 0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",

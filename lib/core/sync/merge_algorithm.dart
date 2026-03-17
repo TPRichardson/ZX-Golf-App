@@ -39,25 +39,25 @@ class MergeAlgorithm {
     Map<String, dynamic> local,
     Map<String, dynamic> remote,
   ) {
-    final localDeleted = local['isDeleted'] == true;
-    final remoteDeleted = remote['isDeleted'] == true;
+    final localDeleted = local['IsDeleted'] == true;
+    final remoteDeleted = remote['IsDeleted'] == true;
 
     // Delete-always-wins: if either side is deleted, result is deleted.
     if (localDeleted || remoteDeleted) {
-      final localTs = _parseTimestamp(local['updatedAt']);
-      final remoteTs = _parseTimestamp(remote['updatedAt']);
+      final localTs = _parseTimestamp(local['UpdatedAt']);
+      final remoteTs = _parseTimestamp(remote['UpdatedAt']);
       // Use the version with the latest timestamp, but force isDeleted=true.
       final winner = (remoteTs != null &&
               (localTs == null || remoteTs.isAfter(localTs)))
           ? Map<String, dynamic>.from(remote)
           : Map<String, dynamic>.from(local);
-      winner['isDeleted'] = true;
+      winner['IsDeleted'] = true;
       return winner;
     }
 
     // Standard LWW: remote wins if strictly newer.
-    final localTs = _parseTimestamp(local['updatedAt']);
-    final remoteTs = _parseTimestamp(remote['updatedAt']);
+    final localTs = _parseTimestamp(local['UpdatedAt']);
+    final remoteTs = _parseTimestamp(remote['UpdatedAt']);
 
     if (remoteTs != null && (localTs == null || remoteTs.isAfter(localTs))) {
       return Map<String, dynamic>.from(remote);
@@ -72,8 +72,8 @@ class MergeAlgorithm {
     Map<String, dynamic> local,
     Map<String, dynamic> remote,
   ) {
-    final localTs = _parseTimestamp(local['updatedAt']);
-    final remoteTs = _parseTimestamp(remote['updatedAt']);
+    final localTs = _parseTimestamp(local['UpdatedAt']);
+    final remoteTs = _parseTimestamp(remote['UpdatedAt']);
 
     // Determine the base (row-level winner provides structure).
     final remoteIsNewer = remoteTs != null &&
@@ -83,16 +83,16 @@ class MergeAlgorithm {
         : Map<String, dynamic>.from(local);
 
     // Parse slot arrays from both sides.
-    final localSlots = _parseSlots(local['slots']);
-    final remoteSlots = _parseSlots(remote['slots']);
+    final localSlots = _parseSlots(local['Slots']);
+    final remoteSlots = _parseSlots(remote['Slots']);
 
     if (localSlots == null && remoteSlots == null) return base;
     if (localSlots == null) {
-      base['slots'] = remote['slots'];
+      base['slots'] = remote['Slots'];
       return base;
     }
     if (remoteSlots == null) {
-      base['slots'] = local['slots'];
+      base['slots'] = local['Slots'];
       return base;
     }
 
@@ -127,10 +127,10 @@ class MergeAlgorithm {
       }
     }
 
-    base['slots'] = jsonEncode(mergedSlots);
+    base['Slots'] = jsonEncode(mergedSlots);
     // Use the later row-level updatedAt.
     if (remoteTs != null && localTs != null) {
-      base['updatedAt'] = (remoteTs.isAfter(localTs)
+      base['UpdatedAt'] = (remoteTs.isAfter(localTs)
               ? remoteTs
               : localTs)
           .toIso8601String();

@@ -104,8 +104,15 @@ class PerformanceChart extends StatelessWidget {
               spots: spots,
               isCurved: true,
               color: ColorTokens.primaryDefault.withValues(alpha: 0.4),
-              dotData: const FlDotData(show: false),
-              barWidth: 1,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                  radius: 3,
+                  color: ColorTokens.primaryDefault.withValues(alpha: 0.6),
+                  strokeWidth: 0,
+                ),
+              ),
+              barWidth: 1.5,
               belowBarData: BarAreaData(show: false),
             ),
             // Rolling average overlay.

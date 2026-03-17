@@ -54,7 +54,7 @@ Color scoreColor(double score) {
   return ColorTokens.warningIntegrity;
 }
 
-/// Map 0–5 raw score to 0–5 stars, rounded to nearest 0.5.
+/// Map 0–5 raw score to 0–5 stars, rounded to nearest 0.1.
 double scoreToStars(double score) {
-  return (score.clamp(0.0, 5.0) * 2).roundToDouble() / 2;
+  return (score.clamp(0.0, 5.0) * 10).roundToDouble() / 10;
 }

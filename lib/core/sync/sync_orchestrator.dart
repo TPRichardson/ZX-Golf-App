@@ -141,8 +141,9 @@ class SyncOrchestrator {
       if (!result.success) {
         debugPrint('[SyncOrchestrator] Sync failed: ${result.errorCode} — ${result.errorMessage}');
       }
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('[SyncOrchestrator] Sync failed: $e');
+      debugPrint('[SyncOrchestrator] Stack trace:\n$st');
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/zx_button.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_execution_screen.dart';
 import 'package:zx_golf_app/features/matrix/screens/matrix_setup_screen.dart';
@@ -266,15 +267,17 @@ class _ActionZone extends ConsumerWidget {
         ],
         // Practice Drills — always visible when no active PB.
         if (!hasActivePb)
-          _ActionButton(
+          ZxButton(
             label: 'Practice Drills',
+            variant: ZxButtonVariant.secondary,
             onPressed: () => _startCleanPractice(context, ref),
           ),
         // Planned Practice — visible when filled incomplete slots exist and no active PB.
         if (!hasActivePb && filledDrillIds.isNotEmpty) ...[
           const SizedBox(height: SpacingTokens.sm),
-          _ActionButton(
+          ZxButton(
             label: 'Start Planned Practice (${filledDrillIds.length} drills)',
+            variant: ZxButtonVariant.secondary,
             onPressed: () => _startTodayPractice(context, ref, filledDrillIds),
           ),
         ],
@@ -290,8 +293,9 @@ class _ActionZone extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SpacingTokens.sm),
-          _ActionButton(
+          ZxButton(
             label: 'Build Gapping Chart',
+            variant: ZxButtonVariant.secondary,
             onPressed: () {
               Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.gappingChart),
@@ -299,8 +303,9 @@ class _ActionZone extends ConsumerWidget {
             },
           ),
           const SizedBox(height: SpacingTokens.sm),
-          _ActionButton(
+          ZxButton(
             label: 'Build Wedge Matrix',
+            variant: ZxButtonVariant.secondary,
             onPressed: () {
               Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.wedgeMatrix),
@@ -308,8 +313,9 @@ class _ActionZone extends ConsumerWidget {
             },
           ),
           const SizedBox(height: SpacingTokens.sm),
-          _ActionButton(
+          ZxButton(
             label: 'Build Chipping Matrix',
+            variant: ZxButtonVariant.secondary,
             onPressed: () {
               Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (_) => MatrixSetupScreen(userId: userId, matrixType: MatrixType.chippingMatrix),
@@ -383,28 +389,3 @@ class _ActionZone extends ConsumerWidget {
   }
 }
 
-/// Outlined action button.
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onPressed;
-
-  const _ActionButton({required this.label, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: ColorTokens.primaryDefault),
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md,
-          vertical: SpacingTokens.sm,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: ColorTokens.primaryDefault),
-      ),
-    );
-  }
-}
