@@ -361,9 +361,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     _playShotFeedback();
 
     // TD-06 §9.1.2 — Random mode picks a new club per instance.
+    // Avoid picking the same club consecutively (unless only 1 club available).
     if (widget.drill.clubSelectionMode == ClubSelectionMode.random &&
         _availableClubs.isNotEmpty) {
-      final pick = _availableClubs[_random.nextInt(_availableClubs.length)];
+      final candidates = _availableClubs.length > 1
+          ? _availableClubs.where((c) => c.clubId != _selectedClubId).toList()
+          : _availableClubs;
+      final pick = candidates[_random.nextInt(candidates.length)];
       _selectedClubId = pick.clubId;
     }
 
@@ -544,7 +548,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                   return Column(
                     children: [
                       // Shot log + Club bar section.
-                      if (showShotLog) _buildShotLogSection(compact: isCompact),
+                      if (showShotLog) _buildShotLogSection(compact: isCompact),  // flex 40 (or 50 compact)
                       // Gap 42 — Inline lock indicator.
                       if (isLocked)
                         Padding(
@@ -566,7 +570,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       ..._applyVerticalBarPaddingOverride(),
                       Expanded(
                         flex: showShotLog
-                            ? (isCompact ? 50 : 65)
+                            ? (isCompact ? 50 : 60)
                             : 1,
                         child: Column(
                           children: [
@@ -618,7 +622,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
     return Expanded(
-      flex: compact ? 50 : 35,
+      flex: compact ? 50 : 40,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
@@ -809,7 +813,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     _formatTargetDistance(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: TypographyTokens.headerSize,
+                      fontSize: TypographyTokens.displayMdSize,
                       fontWeight: FontWeight.w600,
                       color: ColorTokens.textPrimary,
                     ),
@@ -870,7 +874,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       _abbreviateClub(_selectedClubLabel),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: TypographyTokens.headerSize,
+                        fontSize: TypographyTokens.displayMdSize,
                         fontWeight: FontWeight.w600,
                         color: ColorTokens.primaryDefault,
                       ),
@@ -960,7 +964,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
             left: SpacingTokens.lg,
           ),
           child: SizedBox(
-            width: 28,
+            width: 48,
             child: Column(
               children: [
                 // Miss long zone (top).
@@ -996,7 +1000,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                               child: Text(
                                 _formatTargetDepth(),
                                 style: TextStyle(
-                                  fontSize: TypographyTokens.bodySmSize,
+                                  fontSize: TypographyTokens.headerSize,
                                   fontWeight: FontWeight.w600,
                                   color: ColorTokens.successDefault,
                                 ),
@@ -1051,11 +1055,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         : _formatTargetWidth();
 
     // For 3x3/3x1 grids with a vertical target bar, offset the left edge
-    // to align with the grid: lg (bar padding) + 28 (bar width) + xs (grid gap).
+    // to align with the grid: lg (bar padding) + 48 (bar width) + xs (grid gap).
     final hasVerticalBar =
         gridType == GridType.threeByThree || gridType == GridType.threeByOne;
     final leftPad = hasVerticalBar
-        ? SpacingTokens.lg + 28 + SpacingTokens.xs
+        ? SpacingTokens.lg + 48 + SpacingTokens.xs
         : SpacingTokens.lg;
 
     return GestureDetector(
@@ -1063,7 +1067,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       child: Padding(
         padding: EdgeInsets.only(left: leftPad, right: SpacingTokens.lg),
         child: SizedBox(
-          height: 28,
+          height: 48,
           child: Row(
             children: [
               // Left miss zone.
@@ -1097,7 +1101,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                         child: Text(
                           widthLabel,
                           style: TextStyle(
-                            fontSize: TypographyTokens.bodySmSize,
+                            fontSize: TypographyTokens.headerSize,
                             fontWeight: FontWeight.w600,
                             color: ColorTokens.successDefault,
                           ),
@@ -1131,7 +1135,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final borderColor = ColorTokens.successDefault.withValues(alpha: 0.5);
     final bgColor = ColorTokens.successDefault.withValues(alpha: 0.15);
     final textStyle = TextStyle(
-      fontSize: TypographyTokens.bodySize,
+      fontSize: TypographyTokens.headerSize,
       fontWeight: FontWeight.w600,
       color: ColorTokens.successDefault,
     );
@@ -1275,7 +1279,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final borderColor = ColorTokens.successDefault.withValues(alpha: 0.5);
     final bgColor = ColorTokens.successDefault.withValues(alpha: 0.15);
     final textStyle = TextStyle(
-      fontSize: TypographyTokens.bodySmSize,
+      fontSize: TypographyTokens.headerSize,
       fontWeight: FontWeight.w600,
       color: ColorTokens.successDefault,
     );

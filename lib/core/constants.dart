@@ -115,10 +115,10 @@ const kLowStorageThresholdBytes = 100 * 1024 * 1024;
 // ---------------------------------------------------------------------------
 
 // Short irons: PW, 9i, 8i — tightest dispersion expected.
-const kShortIronTargetWidthPercent = 5.0;
+const kShortIronTargetWidthPercent = 11.0;
 
 // Mid irons: 7i, 6i, 5i — moderate dispersion.
-const kMidIronTargetWidthPercent = 7.0;
+const kMidIronTargetWidthPercent = 12.0;
 
 // Long irons: 4i, 3i, 2i, 1i + all hybrids — widest acceptable dispersion.
-const kLongIronTargetWidthPercent = 9.0;
+const kLongIronTargetWidthPercent = 13.0;
