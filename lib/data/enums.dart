@@ -183,7 +183,8 @@ enum ClubSelectionMode {
 enum TargetDistanceMode {
   fixed('Fixed'),
   clubCarry('ClubCarry'),
-  percentageOfClubCarry('PercentageOfClubCarry');
+  percentageOfClubCarry('PercentageOfClubCarry'),
+  randomRange('RandomRange');
 
   const TargetDistanceMode(this.dbValue);
   final String dbValue;

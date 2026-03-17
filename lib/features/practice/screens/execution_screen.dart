@@ -95,6 +95,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Populated during init for drills using ClubCarry targeting.
   final Map<String, double> _clubCarryDistances = {};
 
+  /// Current random target distance for RandomRange drills (yards).
+  double? _currentRandomDistance;
+
   /// Toggle: show total target width vs ± half-width from center.
   bool _showHalfWidth = false;
 
@@ -142,6 +145,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await _controller.initialize();
     await _loadClubs();
     await _loadCarryDistances();
+    _pickRandomDistanceIfNeeded();
     // Rebuild shot log from existing instances in the current set.
     await _restoreShotLog();
     // Load environment type from practice block.
@@ -266,6 +270,17 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Get the carry distance for the currently selected club.
   double? get _currentCarryDistance => _clubCarryDistances[_selectedClubId];
 
+  /// Pick a new random target distance for RandomRange drills.
+  /// Uses Target (min) and TargetDistanceValue (max) from the drill.
+  void _pickRandomDistanceIfNeeded() {
+    if (widget.drill.targetDistanceMode != TargetDistanceMode.randomRange) {
+      return;
+    }
+    final min = widget.drill.target ?? 100;
+    final max = widget.drill.targetDistanceValue ?? 200;
+    _currentRandomDistance = min + _random.nextDouble() * (max - min);
+  }
+
   /// Compute the target width for the currently selected club.
   /// Uses club tier percentage of carry distance.
   double? get _currentTargetWidth {
@@ -290,6 +305,31 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       }
     }
     return null;
+  }
+
+  /// Computed target depth (yards) for the vertical bar.
+  /// For PercentageOfTargetDistance mode, uses club-tier depth percentages.
+  double? get _currentTargetDepth {
+    if (widget.drill.targetSizeMode !=
+        TargetSizeMode.percentageOfTargetDistance) {
+      return null;
+    }
+    // Determine the base distance (carry or random).
+    double? baseDistance;
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange) {
+      baseDistance = _currentRandomDistance;
+    } else {
+      baseDistance = _currentCarryDistance;
+    }
+    if (baseDistance == null) return null;
+
+    try {
+      final clubType = ClubType.fromString(_selectedClubLabel);
+      final percent = targetDepthPercentForClub(clubType);
+      return baseDistance * percent / 100.0;
+    } on ArgumentError {
+      return null;
+    }
   }
 
   @override
@@ -370,6 +410,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       final pick = candidates[_random.nextInt(candidates.length)];
       _selectedClubId = pick.clubId;
     }
+
+    // RandomRange mode picks a new distance per shot.
+    _pickRandomDistanceIfNeeded();
 
     final result = await _controller.logInstance(data);
 
@@ -570,7 +613,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       ..._applyVerticalBarPaddingOverride(),
                       Expanded(
                         flex: showShotLog
-                            ? (isCompact ? 50 : 60)
+                            ? 50
                             : 1,
                         child: Column(
                           children: [
@@ -622,7 +665,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
     return Expanded(
-      flex: compact ? 50 : 40,
+      flex: 50,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
@@ -803,17 +846,14 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     vertical: SpacingTokens.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: ColorTokens.textTertiary.withValues(alpha: 0.15),
+                    color: const Color(0xFF3A4048),
                     borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                    border: Border.all(
-                      color: ColorTokens.textTertiary.withValues(alpha: 0.3),
-                    ),
                   ),
                   child: Text(
                     _formatTargetDistance(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: TypographyTokens.displayMdSize,
+                      fontSize: 36,
                       fontWeight: FontWeight.w600,
                       color: ColorTokens.textPrimary,
                     ),
@@ -864,19 +904,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       vertical: SpacingTokens.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: ColorTokens.primaryDefault.withValues(alpha: 0.10),
+                      color: ColorTokens.primaryDefault,
                       borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                      border: Border.all(
-                        color: ColorTokens.primaryDefault.withValues(alpha: 0.25),
-                      ),
                     ),
                     child: Text(
                       _abbreviateClub(_selectedClubLabel),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: TypographyTokens.displayMdSize,
+                        fontSize: 36,
                         fontWeight: FontWeight.w600,
-                        color: ColorTokens.primaryDefault,
+                        color: ColorTokens.textPrimary,
                       ),
                     ),
                   ),
@@ -1240,6 +1277,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         TargetDistanceMode.clubCarry) {
       value = _currentCarryDistance;
       unit = DrillLengthUnit.yards;
+    } else if (widget.drill.targetDistanceMode ==
+        TargetDistanceMode.randomRange) {
+      value = _currentRandomDistance;
+      unit = DrillLengthUnit.yards;
     } else {
       value = widget.drill.targetDistanceValue;
       unit = widget.drill.targetDistanceUnit;
@@ -1247,11 +1288,17 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     if (value == null) return 'None';
     final rounded = value.round();
-    return unit != null ? '$rounded ${unit.dbValue}' : '$rounded';
+    return unit != null ? '$rounded${_shortUnit(unit)}' : '$rounded';
   }
 
   /// Format target depth for the vertical target bar (miss long / hit / miss short).
   String _formatTargetDepth() {
+    // Use computed depth from club tier if available.
+    final computed = _currentTargetDepth;
+    if (computed != null) {
+      final rounded = computed.round();
+      return '$rounded yds';
+    }
     final value = widget.drill.targetSizeDepth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return _formatTargetDistance();
@@ -1263,6 +1310,15 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Format target depth as half value for split vertical bar display.
   String _formatTargetDepthHalf() {
+    // Use computed depth from club tier if available.
+    final computed = _currentTargetDepth;
+    if (computed != null) {
+      final half = computed / 2;
+      final formatted = half == half.roundToDouble()
+          ? half.toInt().toString()
+          : half.toStringAsFixed(1);
+      return '${formatted}y';
+    }
     final value = widget.drill.targetSizeDepth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';

@@ -1,0 +1,68 @@
+-- Add RandomRange to target_distance_mode enum.
+ALTER TYPE target_distance_mode ADD VALUE 'RandomRange';
+
+-- Seed standard drill: Approach Variable Target
+-- 3x1 distance grid, user-led club, random target 110-220y per shot, 3x5.
+-- Target depth as % of target distance by club tier (7/8/9%).
+
+INSERT INTO "Drill" (
+  "DrillID",
+  "UserID",
+  "Name",
+  "SkillArea",
+  "DrillType",
+  "ScoringMode",
+  "InputMode",
+  "MetricSchemaID",
+  "GridType",
+  "SubskillMapping",
+  "ClubSelectionMode",
+  "TargetDistanceMode",
+  "TargetDistanceValue",
+  "TargetSizeMode",
+  "TargetSizeWidth",
+  "TargetSizeDepth",
+  "RequiredSetCount",
+  "RequiredAttemptsPerSet",
+  "Anchors",
+  "Target",
+  "Description",
+  "TargetDistanceUnit",
+  "TargetSizeUnit",
+  "RequiredEquipment",
+  "Origin",
+  "Status",
+  "IsDeleted",
+  "CreatedAt",
+  "UpdatedAt"
+) VALUES (
+  'a0000000-0000-4000-8000-000000000007',
+  NULL,
+  'Approach Variable Target',
+  'Approach',
+  'Pressure',
+  'Shared',
+  'GridCell',
+  'grid_3x1_distance',
+  'ThreeByOne',
+  '["approach_distance_control"]'::JSONB,
+  'UserLed',
+  'RandomRange',
+  220,
+  'PercentageOfTargetDistance',
+  NULL,
+  NULL,
+  3,
+  5,
+  '{"approach_distance_control": {"Min": 10, "Scratch": 70, "Pro": 90}}'::JSONB,
+  110,
+  'Hit three sets of five approach shots at random distances between 110-220 yards. Target depth adjusts by club tier. Requires a launch monitor.',
+  'yards',
+  NULL,
+  '["LaunchMonitor"]'::JSONB,
+  'System',
+  'Active',
+  false,
+  NOW(),
+  NOW()
+);

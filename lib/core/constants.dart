@@ -122,3 +122,11 @@ const kMidIronTargetWidthPercent = 12.0;
 
 // Long irons: 4i, 3i, 2i, 1i + all hybrids — widest acceptable dispersion.
 const kLongIronTargetWidthPercent = 13.0;
+
+// ---------------------------------------------------------------------------
+// Club-tier target DEPTH percentages (vertical bar, distance-based drills)
+// ---------------------------------------------------------------------------
+
+const kShortIronTargetDepthPercent = 7.0;
+const kMidIronTargetDepthPercent = 8.0;
+const kLongIronTargetDepthPercent = 9.0;

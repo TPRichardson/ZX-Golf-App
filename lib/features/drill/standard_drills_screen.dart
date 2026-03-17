@@ -206,10 +206,9 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
         if (drill == null) continue;
         await drillRepo.adoptStandardDrill(ref.read(currentUserIdProvider), drill);
       }
-      setState(() {
-        _selectedIds.clear();
-        _isAdopting = false;
-      });
+      _selectedIds.clear();
+      _isAdopting = false;
+      if (mounted) Navigator.of(context).pop();
     } on ValidationException catch (e) {
       setState(() => _isAdopting = false);
       if (!mounted) return;
