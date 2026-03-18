@@ -574,13 +574,14 @@ class SyncEngine {
       payload['PracticeBlock'] = blocks.map((e) => e.toSyncDto()).toList();
     }
 
-    // Collect active (unfinished) block IDs to exclude their child data.
-    final activeBlockIds = (await (_db.select(_db.practiceBlocks)
-          ..where((t) => t.endTimestamp.isNull())
-          ..where((t) => t.isDeleted.equals(false)))
-        .get())
+    // Collect IDs of blocks NOT in the upload (unfinished blocks) to exclude
+    // their child data. This covers both active blocks (endTimestamp=null,
+    // isDeleted=false) and discarded blocks (endTimestamp=null, isDeleted=true).
+    final uploadedBlockIds = blocks.map((b) => b.practiceBlockId).toSet();
+    final allBlockIds = (await _db.select(_db.practiceBlocks).get())
         .map((b) => b.practiceBlockId)
         .toSet();
+    final activeBlockIds = allBlockIds.difference(uploadedBlockIds);
 
     // Session — exclude sessions belonging to active blocks.
     final allSessions = lastSync == null
@@ -591,44 +592,11 @@ class SyncEngine {
     final sessions = allSessions
         .where((s) => !activeBlockIds.contains(s.practiceBlockId))
         .toList();
+
+    // Ensure parent blocks are included for all uploading sessions (FK integrity).
     if (sessions.isNotEmpty) {
-      payload['Session'] = sessions.map((e) => e.toSyncDto()).toList();
-    }
-
-    // Collect session IDs that are excluded (belong to active blocks).
-    final excludedSessionIds = allSessions
-        .where((s) => activeBlockIds.contains(s.practiceBlockId))
-        .map((s) => s.sessionId)
-        .toSet();
-
-    // Set — exclude sets belonging to excluded sessions.
-    final allSets = lastSync == null
-        ? await _db.select(_db.sets).get()
-        : await (_db.select(_db.sets)
-              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
-            .get();
-    final sets = allSets
-        .where((s) => !excludedSessionIds.contains(s.sessionId))
-        .toList();
-
-    // Ensure parent sessions for uploading sets are included (FK integrity).
-    final uploadingSessionIds = sessions.map((s) => s.sessionId).toSet();
-    final missingSessionIds = sets
-        .map((s) => s.sessionId)
-        .where((id) => !uploadingSessionIds.contains(id))
-        .toSet();
-    if (missingSessionIds.isNotEmpty) {
-      final missingSessions = await (_db.select(_db.sessions)
-            ..where((t) => t.sessionId.isIn(missingSessionIds)))
-          .get();
-      final filtered = missingSessions
-          .where((s) => !activeBlockIds.contains(s.practiceBlockId));
-      for (final s in filtered) {
-        sessions.add(s);
-      }
-      // Also ensure parent blocks are included.
       final uploadingBlockIds = blocks.map((b) => b.practiceBlockId).toSet();
-      final missingBlockIds = filtered
+      final missingBlockIds = sessions
           .map((s) => s.practiceBlockId)
           .where((id) => !uploadingBlockIds.contains(id))
           .toSet();
@@ -638,47 +606,73 @@ class SyncEngine {
               ..where((t) => t.endTimestamp.isNotNull()))
             .get();
         blocks.addAll(missingBlocks);
+        if (blocks.isNotEmpty) {
+          payload['PracticeBlock'] = blocks.map((e) => e.toSyncDto()).toList();
+        }
       }
-      // Rebuild payload for Session and PracticeBlock.
-      if (sessions.isNotEmpty) {
-        payload['Session'] = sessions.map((e) => e.toSyncDto()).toList();
-      }
-      if (blocks.isNotEmpty) {
-        payload['PracticeBlock'] = blocks.map((e) => e.toSyncDto()).toList();
-      }
+      payload['Session'] = sessions.map((e) => e.toSyncDto()).toList();
     }
 
+    // Use uploaded block IDs (may have grown from FK check above) for children.
+    final uploadedBlockIdsFinal = blocks.map((b) => b.practiceBlockId).toSet();
+
+    // Session — only include sessions whose block is being uploaded.
+    final allSessions2 = lastSync == null
+        ? await _db.select(_db.sessions).get()
+        : await (_db.select(_db.sessions)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    final filteredSessions = allSessions2
+        .where((s) => uploadedBlockIdsFinal.contains(s.practiceBlockId))
+        .toList();
+    // Merge with any sessions already added via the parent-block FK check.
+    final sessionIdSet = sessions.map((s) => s.sessionId).toSet();
+    for (final s in filteredSessions) {
+      if (!sessionIdSet.contains(s.sessionId)) {
+        sessions.add(s);
+        sessionIdSet.add(s.sessionId);
+      }
+    }
+    if (sessions.isNotEmpty) {
+      payload['Session'] = sessions.map((e) => e.toSyncDto()).toList();
+    }
+    final uploadedSessionIds = sessions.map((s) => s.sessionId).toSet();
+
+    // Set — only include sets whose session is being uploaded.
+    final allSets = lastSync == null
+        ? await _db.select(_db.sets).get()
+        : await (_db.select(_db.sets)
+              ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
+            .get();
+    final sets = allSets
+        .where((s) => uploadedSessionIds.contains(s.sessionId))
+        .toList();
     if (sets.isNotEmpty) {
       payload['Set'] = sets.map((e) => e.toSyncDto()).toList();
     }
+    final uploadedSetIds = sets.map((s) => s.setId).toSet();
 
-    // Collect set IDs that are excluded.
-    final excludedSetIds = allSets
-        .where((s) => excludedSessionIds.contains(s.sessionId))
-        .map((s) => s.setId)
-        .toSet();
-
-    // Instance — exclude instances belonging to excluded sets.
+    // Instance — only include instances whose set is being uploaded.
     final allInstances = lastSync == null
         ? await _db.select(_db.instances).get()
         : await (_db.select(_db.instances)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
     final instances = allInstances
-        .where((i) => !excludedSetIds.contains(i.setId))
+        .where((i) => uploadedSetIds.contains(i.setId))
         .toList();
     if (instances.isNotEmpty) {
       payload['Instance'] = instances.map((e) => e.toSyncDto()).toList();
     }
 
-    // PracticeEntry — exclude entries belonging to active blocks.
+    // PracticeEntry — only include entries whose block is being uploaded.
     final allEntries = lastSync == null
         ? await _db.select(_db.practiceEntries).get()
         : await (_db.select(_db.practiceEntries)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
     final entries = allEntries
-        .where((e) => !activeBlockIds.contains(e.practiceBlockId))
+        .where((e) => uploadedBlockIdsFinal.contains(e.practiceBlockId))
         .toList();
     if (entries.isNotEmpty) {
       payload['PracticeEntry'] = entries.map((e) => e.toSyncDto()).toList();
@@ -758,15 +752,43 @@ class SyncEngine {
       payload['Schedule'] = schedules.map((e) => e.toSyncDto()).toList();
     }
 
-    // CalendarDay
+    // CalendarDay — deduplicate by date, merging slots from duplicates.
     final calendarDays = lastSync == null
         ? await _db.select(_db.calendarDays).get()
         : await (_db.select(_db.calendarDays)
               ..where((t) => t.updatedAt.isBiggerThanValue(lastSync)))
             .get();
     if (calendarDays.isNotEmpty) {
-      payload['CalendarDay'] =
-          calendarDays.map((e) => e.toSyncDto()).toList();
+      // Group by date to detect duplicates.
+      final byDate = <String, List<CalendarDay>>{};
+      for (final day in calendarDays) {
+        final dateKey = day.date.toIso8601String().split('T')[0];
+        byDate.putIfAbsent(dateKey, () => []).add(day);
+      }
+      final dedupedDtos = <Map<String, dynamic>>[];
+      for (final group in byDate.values) {
+        if (group.length == 1) {
+          dedupedDtos.add(group.first.toSyncDto());
+        } else {
+          // Merge duplicates: use per-slot LWW merge, keep the newest ID.
+          var merged = group.first.toSyncDto();
+          for (var i = 1; i < group.length; i++) {
+            merged = MergeAlgorithm.mergeCalendarDay(
+                merged, group[i].toSyncDto());
+          }
+          dedupedDtos.add(merged);
+          // Clean up duplicates locally — delete all but the winner.
+          final winnerId = merged['CalendarDayID'] as String;
+          for (final day in group) {
+            if (day.calendarDayId != winnerId) {
+              await (_db.delete(_db.calendarDays)
+                    ..where((t) => t.calendarDayId.equals(day.calendarDayId)))
+                  .go();
+            }
+          }
+        }
+      }
+      payload['CalendarDay'] = dedupedDtos;
     }
 
     // RoutineInstance
@@ -940,7 +962,10 @@ class SyncEngine {
               }
             }
 
-            final merged = local == null
+            // System drills are server-authoritative — always take remote.
+            final isSystemDrill = tableName == 'Drill' &&
+                remote['Origin'] == 'System';
+            final merged = local == null || isSystemDrill
                 ? remote
                 : MergeAlgorithm.slotMergeTables.contains(tableName)
                     ? MergeAlgorithm.mergeCalendarDay(local, remote)

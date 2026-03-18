@@ -99,6 +99,9 @@ class BinaryHitMissDelegate extends ExecutionInputDelegate {
       setId: ctx.currentSetId!,
       selectedClub: Value(ctx.selectedClub),
       rawMetrics: jsonEncode({'hit': isHit}),
+      resolvedTargetDistance: Value(ctx.resolvedTargetDistance),
+      resolvedTargetWidth: Value(ctx.resolvedTargetWidth),
+      resolvedTargetDepth: Value(ctx.resolvedTargetDepth),
     );
     await onLogInstance(data);
   }

@@ -200,6 +200,9 @@ class GridCellDelegate extends ExecutionInputDelegate {
       rawMetrics: jsonEncode({'hit': cell.isHit, 'label': cell.label}),
       shotShape: Value(ctx.shotShape),
       shotEffort: Value(ctx.shotEffort),
+      resolvedTargetDistance: Value(ctx.resolvedTargetDistance),
+      resolvedTargetWidth: Value(ctx.resolvedTargetWidth),
+      resolvedTargetDepth: Value(ctx.resolvedTargetDepth),
     );
     await onLogInstance(data);
   }

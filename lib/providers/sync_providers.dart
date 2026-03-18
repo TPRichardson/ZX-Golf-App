@@ -95,7 +95,9 @@ final connectivityStatusProvider = StreamProvider<bool>((ref) {
 });
 
 /// Phase 7C — Last sync timestamp from engine.
+/// Re-reads after each sync status change so the display stays current.
 final lastSyncTimestampProvider = FutureProvider<DateTime?>((ref) {
+  ref.watch(syncStatusProvider);
   return ref.watch(syncEngineProvider).getLastSyncTimestamp();
 });
 

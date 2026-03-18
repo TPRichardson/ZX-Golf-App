@@ -393,9 +393,16 @@ BEGIN
   END IF;
 
   -- === CalendarDay ===
+  -- Handle both PK conflict (CalendarDayID) and unique (UserID, Date) conflict.
+  -- Delete any existing row with the same (UserID, Date) but different ID first.
   IF changes ? 'CalendarDay' THEN
     FOR v_row IN SELECT * FROM jsonb_array_elements(changes->'CalendarDay')
     LOOP
+      DELETE FROM "CalendarDay"
+      WHERE "UserID" = v_user_id
+        AND "Date" = (v_row->>'Date')::DATE
+        AND "CalendarDayID" != (v_row->>'CalendarDayID')::UUID;
+
       INSERT INTO "CalendarDay" ("CalendarDayID", "UserID", "Date", "SlotCapacity", "Slots", "CreatedAt")
       VALUES (
         (v_row->>'CalendarDayID')::UUID, v_user_id, (v_row->>'Date')::DATE,

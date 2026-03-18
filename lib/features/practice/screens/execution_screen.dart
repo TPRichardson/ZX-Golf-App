@@ -105,8 +105,15 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Current random target distance for RandomRange drills (yards).
   double? _currentRandomDistance;
+  /// User override of the target distance (yards). Null = use default.
+  double? _targetDistanceOverride;
   /// History of random distances for undo support.
   final List<double> _randomDistanceHistory = [];
+
+  /// Whether the club was manually picked by the player (vs system suggested).
+  bool _clubIsPlayerChoice = false;
+  /// Whether the target distance was manually set by the player.
+  bool _distanceIsPlayerChoice = false;
 
   /// Player-declared shot shape intent for the next shot.
   String? _shotShape;
@@ -161,6 +168,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await _loadClubs();
     await _loadCarryDistances();
     _pickRandomDistanceIfNeeded();
+    _suggestRandomClubIfNeeded();
     // Rebuild shot log from existing instances in the current set.
     await _restoreShotLog();
     // Load environment type from practice block.
@@ -294,6 +302,27 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Get the carry distance for the currently selected club.
   double? get _currentCarryDistance => _clubCarryDistances[_selectedClubId];
 
+  /// Effective target distance: user override > random > carry > fixed.
+  double? get _effectiveTargetDistance {
+    if (_targetDistanceOverride != null) return _targetDistanceOverride;
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange) {
+      return _currentRandomDistance;
+    }
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
+      return _currentCarryDistance;
+    }
+    return widget.drill.targetDistanceValue;
+  }
+
+  /// Min/max target distance range for user override.
+  (double min, double max) get _targetDistanceRange {
+    final carries = _clubCarryDistances.values;
+    if (carries.isEmpty) return (50, 300);
+    final lowest = carries.reduce((a, b) => a < b ? a : b);
+    final highest = carries.reduce((a, b) => a > b ? a : b);
+    return (lowest * 0.9, highest * 1.1);
+  }
+
   /// Pick a new random target distance for RandomRange drills.
   /// Uses Target (min) and TargetDistanceValue (max) from the drill.
   /// Ensures the new distance differs from the previous by at least 5% of max.
@@ -324,13 +353,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Compute the target width for the currently selected club.
   /// Uses club tier percentage of carry distance.
   double? get _currentTargetWidth {
-    final carry = _currentCarryDistance;
-    if (carry == null) return null;
+    final dist = _effectiveTargetDistance;
+    if (dist == null) return null;
 
     // If drill specifies a fixed TargetSizeWidth, use that percentage.
     final fixedPercent = widget.drill.targetSizeWidth;
     if (fixedPercent != null) {
-      return carry * fixedPercent / 100.0;
+      return dist * fixedPercent / 100.0;
     }
 
     // Otherwise use club-tier banded percentage.
@@ -339,7 +368,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       try {
         final clubType = ClubType.fromString(_selectedClubLabel);
         final percent = targetWidthPercentForClub(clubType);
-        return carry * percent / 100.0;
+        return dist * percent / 100.0;
       } on ArgumentError {
         return null;
       }
@@ -354,13 +383,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         TargetSizeMode.percentageOfTargetDistance) {
       return null;
     }
-    // Determine the base distance (carry or random).
-    double? baseDistance;
-    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange) {
-      baseDistance = _currentRandomDistance;
-    } else {
-      baseDistance = _currentCarryDistance;
-    }
+    final baseDistance = _effectiveTargetDistance;
     if (baseDistance == null) return null;
 
     try {
@@ -530,6 +553,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     if (mounted) {
       setState(() {
+        if (clubId != _selectedClubId) _clubIsPlayerChoice = true;
         _selectedClubId = clubId;
         _shotShape = shape;
         _shotEffort = effort;
@@ -550,6 +574,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         await _controller.advanceSet();
         // Clear shot log for new set.
         _shotLog.clear();
+        // Suggest a random club at the start of each new set
+        // for UserLed + ClubCarry transition drills.
+        _suggestRandomClubIfNeeded();
+        // Clear any target distance override for the new set.
+        _targetDistanceOverride = null;
+        _distanceIsPlayerChoice = false;
         if (mounted) setState(() {});
       }
     }
@@ -715,7 +745,39 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         (c) => c.clubType.dbValue == picked,
         orElse: () => _availableClubs.first,
       );
-      setState(() => _selectedClubId = club.clubId);
+      setState(() {
+        _selectedClubId = club.clubId;
+        _clubIsPlayerChoice = true;
+      });
+    }
+  }
+
+  /// Let the user override the target distance via a scroll wheel dialog.
+  Future<void> _editTargetDistance() async {
+    final range = _targetDistanceRange;
+    final current = (_effectiveTargetDistance ?? range.$1).round();
+    final min = range.$1.round();
+    final max = range.$2.round();
+
+    final result = await showDialog<double>(
+      context: context,
+      builder: (ctx) => _TargetDistancePickerDialog(
+        current: current,
+        min: min,
+        max: max,
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        if (result < 0) {
+          _targetDistanceOverride = null;
+          _distanceIsPlayerChoice = false;
+        } else {
+          _targetDistanceOverride = result;
+          _distanceIsPlayerChoice = true;
+        }
+      });
     }
   }
 
@@ -749,6 +811,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       currentSetId: _controller.currentSetId,
       shotShape: _shotShape,
       shotEffort: _shotEffort,
+      resolvedTargetDistance: _effectiveTargetDistance,
+      resolvedTargetWidth: _currentTargetWidth,
+      resolvedTargetDepth: _currentTargetDepth,
     );
 
     return Scaffold(
@@ -977,6 +1042,29 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
   }
 
+  /// For UserLed + ClubCarry drills, randomly suggest a club.
+  /// Called at init and at the start of each new set.
+  void _suggestRandomClubIfNeeded() {
+    if (widget.drill.clubSelectionMode != ClubSelectionMode.userLed) return;
+    if (widget.drill.targetDistanceMode != TargetDistanceMode.clubCarry) return;
+    if (_availableClubs.isEmpty) return;
+    final candidates = _availableClubs.length > 1
+        ? _availableClubs.where((c) => c.clubId != _selectedClubId).toList()
+        : _availableClubs;
+    final pick = candidates[_random.nextInt(candidates.length)];
+    _selectedClubId = pick.clubId;
+    _clubIsPlayerChoice = false;
+  }
+
+  void _showPressureLockMessage(String field) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$field cannot be changed on a pressure drill'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   /// Abbreviate long club names for compact display.
   static String _abbreviateClub(String name) {
     return switch (name) {
@@ -995,20 +1083,44 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         widget.drill.clubSelectionMode == ClubSelectionMode.guided;
     final isTappable = canChange && !isRandom && !isGuided;
 
-    final modeLabel = switch (widget.drill.clubSelectionMode) {
-      ClubSelectionMode.userLed => 'Players Choice',
-      ClubSelectionMode.random => 'Fixed Random',
-      ClubSelectionMode.guided => 'Fixed Sequence',
-      null => widget.drill.skillArea == SkillArea.driving ? 'Fixed' : '',
-    };
+    // Dynamic club status label.
+    final ({String label, Color color}) clubStatus;
+    if (isRandom) {
+      clubStatus = (label: 'Fixed Random', color: ColorTokens.ragAmber);
+    } else if (isGuided) {
+      clubStatus = (label: 'Fixed Sequence', color: ColorTokens.ragAmber);
+    } else if (_clubIsPlayerChoice) {
+      clubStatus = (label: 'Player Choice', color: ColorTokens.successDefault);
+    } else if (widget.drill.clubSelectionMode == ClubSelectionMode.userLed &&
+        widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
+      clubStatus = (label: 'Suggested', color: ColorTokens.primaryDefault);
+    } else {
+      clubStatus = (label: '', color: ColorTokens.textTertiary);
+    }
+
+    // Dynamic distance status label.
+    final ({String label, Color color}) distanceStatus;
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange) {
+      distanceStatus = (label: 'Fixed Random', color: ColorTokens.ragAmber);
+    } else if (_distanceIsPlayerChoice) {
+      distanceStatus = (label: 'Player Choice', color: ColorTokens.successDefault);
+    } else if (widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
+      distanceStatus = (label: 'Suggested', color: ColorTokens.primaryDefault);
+    } else {
+      distanceStatus = (label: 'Target Distance', color: ColorTokens.textTertiary);
+    }
 
     return IntrinsicHeight(
       child: Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Left half — target distance.
+        // Left half — target distance (tappable to override).
         Expanded(
-          child: Container(
+          child: GestureDetector(
+            onTap: widget.drill.drillType == DrillType.pressure
+                ? () => _showPressureLockMessage('Target')
+                : _editTargetDistance,
+            child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(SpacingTokens.xs),
             decoration: BoxDecoration(
@@ -1027,14 +1139,15 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     color: ColorTokens.textPrimary,
                   ),
                 ),
-                Text(
-                  'Target Distance',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySize,
-                    fontStyle: FontStyle.italic,
-                    color: ColorTokens.textTertiary,
+                if (distanceStatus.label.isNotEmpty)
+                  Text(
+                    distanceStatus.label,
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      fontStyle: FontStyle.italic,
+                      color: distanceStatus.color,
+                    ),
                   ),
-                ),
                 const SizedBox(height: SpacingTokens.xs),
                 Container(
                   width: double.infinity,
@@ -1059,12 +1172,17 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
               ],
             ),
           ),
+          ),
         ),
         const SizedBox(width: SpacingTokens.sm),
         // Right half — club selection.
         Expanded(
           child: GestureDetector(
-            onTap: isTappable ? _pickClub : null,
+            onTap: isTappable
+                ? (widget.drill.drillType == DrillType.pressure
+                    ? () => _showPressureLockMessage('Club')
+                    : _pickClub)
+                : null,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(SpacingTokens.xs),
@@ -1084,13 +1202,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       color: ColorTokens.textPrimary,
                     ),
                   ),
-                  if (modeLabel.isNotEmpty)
+                  if (clubStatus.label.isNotEmpty)
                     Text(
-                      modeLabel,
+                      clubStatus.label,
                       style: TextStyle(
                         fontSize: TypographyTokens.bodySize,
                         fontStyle: FontStyle.italic,
-                        color: ColorTokens.textTertiary,
+                        color: clubStatus.color,
                       ),
                     ),
                   const SizedBox(height: SpacingTokens.xs),
@@ -1276,11 +1394,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     final gridType = widget.drill.gridType;
 
-    // For 1x3 (direction): the center 1/3 is the hit zone.
-    // For 3x1 (distance): show width bar if computed target width is available
-    //   (e.g. PercentageOfTargetDistance drills with club-tier banding).
-    // For 3x3: center column is the hit zone (1/3 width).
-    if (gridType == GridType.threeByOne && _currentTargetWidth == null) {
+    // For 1x3 (direction): the center 1/3 is the hit zone — show width bar.
+    // For 3x1 (distance): no width bar — only vertical depth bar.
+    // For 3x3: center column is the hit zone (1/3 width) — show width bar.
+    if (gridType == GridType.threeByOne) {
       return const SizedBox.shrink();
     }
 
@@ -1458,12 +1575,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Format target distance value + unit for the vertical target bar.
   /// For ClubCarry mode, uses the selected club's carry distance.
   String _formatTargetDistance() {
+    // Override takes priority.
+    if (_targetDistanceOverride != null) {
+      return '${_targetDistanceOverride!.round()}y';
+    }
+
     double? value;
     DrillLengthUnit? unit;
 
     if (widget.drill.targetDistanceMode ==
         TargetDistanceMode.percentageOfClubCarry) {
-      // Target is a percentage of carry — show the computed distance.
       final carry = _currentCarryDistance;
       final percent = widget.drill.targetDistanceValue;
       if (carry != null && percent != null) {
@@ -2156,6 +2277,192 @@ class _EditShotDialogState extends State<_EditShotDialog> {
             ),
           ),
           child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Scroll wheel + tap-to-type dialog for target distance override.
+class _TargetDistancePickerDialog extends StatefulWidget {
+  final int current;
+  final int min;
+  final int max;
+
+  const _TargetDistancePickerDialog({
+    required this.current,
+    required this.min,
+    required this.max,
+  });
+
+  @override
+  State<_TargetDistancePickerDialog> createState() =>
+      _TargetDistancePickerDialogState();
+}
+
+class _TargetDistancePickerDialogState
+    extends State<_TargetDistancePickerDialog> {
+  late int _selectedValue;
+  late FixedExtentScrollController _scrollCtrl;
+  final _textCtrl = TextEditingController();
+  bool _editing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedValue = widget.current.clamp(widget.min, widget.max);
+    _scrollCtrl = FixedExtentScrollController(
+      initialItem: _selectedValue - widget.min,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    _textCtrl.dispose();
+    super.dispose();
+  }
+
+  void _commitTextEntry() {
+    final v = int.tryParse(_textCtrl.text);
+    if (v != null && v >= widget.min && v <= widget.max) {
+      _selectedValue = v;
+      _scrollCtrl.jumpToItem(v - widget.min);
+    }
+    _editing = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: const Text(
+        'Set Target Distance',
+        style: TextStyle(color: ColorTokens.textPrimary),
+      ),
+      contentPadding: const EdgeInsets.all(SpacingTokens.md),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 180,
+            child: Row(
+              children: [
+                // Left: display value — tap to type.
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _editing = true;
+                        _textCtrl.text = '$_selectedValue';
+                        _textCtrl.selection = TextSelection(
+                          baseOffset: 0,
+                          extentOffset: _textCtrl.text.length,
+                        );
+                      });
+                    },
+                    child: Center(
+                      child: _editing
+                          ? SizedBox(
+                              width: 120,
+                              child: TextField(
+                                controller: _textCtrl,
+                                autofocus: true,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: TypographyTokens.displayXlSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.primaryDefault,
+                                ),
+                                decoration: const InputDecoration(
+                                  suffixText: 'y',
+                                  suffixStyle: TextStyle(
+                                    fontSize: TypographyTokens.bodyLgSize,
+                                    color: ColorTokens.textTertiary,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                                onSubmitted: (_) {
+                                  setState(() => _commitTextEntry());
+                                },
+                              ),
+                            )
+                          : Text(
+                              '${_selectedValue}y',
+                              style: const TextStyle(
+                                fontSize: TypographyTokens.displayXlSize,
+                                fontWeight: FontWeight.w600,
+                                color: ColorTokens.primaryDefault,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                // Right: scroll wheel.
+                SizedBox(
+                  width: 80,
+                  child: ListWheelScrollView.useDelegate(
+                    controller: _scrollCtrl,
+                    itemExtent: 36,
+                    physics: const FixedExtentScrollPhysics(),
+                    diameterRatio: 1.6,
+                    perspective: 0.003,
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        _selectedValue = widget.min + index;
+                      });
+                    },
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: widget.max - widget.min + 1,
+                      builder: (context, index) {
+                        final value = widget.min + index;
+                        final isSelected = value == _selectedValue;
+                        return Center(
+                          child: Text(
+                            '$value',
+                            style: TextStyle(
+                              fontSize: isSelected
+                                  ? TypographyTokens.displayLgSize
+                                  : TypographyTokens.bodyLgSize,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: isSelected
+                                  ? ColorTokens.textPrimary
+                                  : ColorTokens.textTertiary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, -1.0),
+          child: const Text('Reset',
+              style: TextStyle(color: ColorTokens.textSecondary)),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.pop(context, _selectedValue.toDouble()),
+          style: FilledButton.styleFrom(
+            backgroundColor: ColorTokens.primaryDefault,
+            foregroundColor: ColorTokens.textPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+            ),
+          ),
+          child: const Text('Set'),
         ),
       ],
     );

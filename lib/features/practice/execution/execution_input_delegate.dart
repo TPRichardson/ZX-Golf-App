@@ -17,6 +17,10 @@ class ExecutionContext {
   final String? shotShape;
   /// Player-declared effort percentage (100/90/75). Nullable.
   final int? shotEffort;
+  /// Resolved target values for storage on Instance.
+  final double? resolvedTargetDistance;
+  final double? resolvedTargetWidth;
+  final double? resolvedTargetDepth;
 
   const ExecutionContext({
     required this.isLocked,
@@ -25,6 +29,9 @@ class ExecutionContext {
     required this.currentSetId,
     this.shotShape,
     this.shotEffort,
+    this.resolvedTargetDistance,
+    this.resolvedTargetWidth,
+    this.resolvedTargetDepth,
   });
 }
 

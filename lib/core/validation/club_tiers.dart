@@ -50,8 +50,7 @@ double targetWidthPercentForClub(ClubType club) {
     case ClubType.lw:
       return kShortIronTargetWidthPercent;
 
-    // Woods, driver, chipper, putter — not typically used with this system.
-    // Default to mid if somehow selected.
+    // Woods + driver — match long irons.
     case ClubType.driver:
     case ClubType.w1:
     case ClubType.w2:
@@ -62,6 +61,8 @@ double targetWidthPercentForClub(ClubType club) {
     case ClubType.w7:
     case ClubType.w8:
     case ClubType.w9:
+      return kLongIronTargetWidthPercent;
+
     case ClubType.chipper:
     case ClubType.putter:
     case ClubType.trainingClub:
@@ -103,6 +104,7 @@ double targetDepthPercentForClub(ClubType club) {
     case ClubType.h4:
       return kLongIronTargetDepthPercent;
 
+    // Woods + driver — match long irons.
     case ClubType.driver:
     case ClubType.w1:
     case ClubType.w2:
@@ -113,6 +115,8 @@ double targetDepthPercentForClub(ClubType club) {
     case ClubType.w7:
     case ClubType.w8:
     case ClubType.w9:
+      return kLongIronTargetDepthPercent;
+
     case ClubType.chipper:
     case ClubType.putter:
     case ClubType.trainingClub:
