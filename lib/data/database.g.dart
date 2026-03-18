@@ -5556,6 +5556,28 @@ class $InstancesTable extends Instances
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _shotShapeMeta = const VerificationMeta(
+    'shotShape',
+  );
+  @override
+  late final GeneratedColumn<String> shotShape = GeneratedColumn<String>(
+    'ShotShape',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _shotEffortMeta = const VerificationMeta(
+    'shotEffort',
+  );
+  @override
+  late final GeneratedColumn<int> shotEffort = GeneratedColumn<int>(
+    'ShotEffort',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -5605,6 +5627,8 @@ class $InstancesTable extends Instances
     resolvedTargetDistance,
     resolvedTargetWidth,
     resolvedTargetDepth,
+    shotShape,
+    shotEffort,
     isDeleted,
     createdAt,
     updatedAt,
@@ -5687,6 +5711,18 @@ class $InstancesTable extends Instances
         ),
       );
     }
+    if (data.containsKey('ShotShape')) {
+      context.handle(
+        _shotShapeMeta,
+        shotShape.isAcceptableOrUnknown(data['ShotShape']!, _shotShapeMeta),
+      );
+    }
+    if (data.containsKey('ShotEffort')) {
+      context.handle(
+        _shotEffortMeta,
+        shotEffort.isAcceptableOrUnknown(data['ShotEffort']!, _shotEffortMeta),
+      );
+    }
     if (data.containsKey('IsDeleted')) {
       context.handle(
         _isDeletedMeta,
@@ -5746,6 +5782,14 @@ class $InstancesTable extends Instances
         DriftSqlType.double,
         data['${effectivePrefix}ResolvedTargetDepth'],
       ),
+      shotShape: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ShotShape'],
+      ),
+      shotEffort: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ShotEffort'],
+      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}IsDeleted'],
@@ -5776,6 +5820,8 @@ class Instance extends DataClass implements Insertable<Instance> {
   final double? resolvedTargetDistance;
   final double? resolvedTargetWidth;
   final double? resolvedTargetDepth;
+  final String? shotShape;
+  final int? shotEffort;
   final bool isDeleted;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -5788,6 +5834,8 @@ class Instance extends DataClass implements Insertable<Instance> {
     this.resolvedTargetDistance,
     this.resolvedTargetWidth,
     this.resolvedTargetDepth,
+    this.shotShape,
+    this.shotEffort,
     required this.isDeleted,
     required this.createdAt,
     required this.updatedAt,
@@ -5810,6 +5858,12 @@ class Instance extends DataClass implements Insertable<Instance> {
     }
     if (!nullToAbsent || resolvedTargetDepth != null) {
       map['ResolvedTargetDepth'] = Variable<double>(resolvedTargetDepth);
+    }
+    if (!nullToAbsent || shotShape != null) {
+      map['ShotShape'] = Variable<String>(shotShape);
+    }
+    if (!nullToAbsent || shotEffort != null) {
+      map['ShotEffort'] = Variable<int>(shotEffort);
     }
     map['IsDeleted'] = Variable<bool>(isDeleted);
     map['CreatedAt'] = Variable<DateTime>(createdAt);
@@ -5835,6 +5889,12 @@ class Instance extends DataClass implements Insertable<Instance> {
       resolvedTargetDepth: resolvedTargetDepth == null && nullToAbsent
           ? const Value.absent()
           : Value(resolvedTargetDepth),
+      shotShape: shotShape == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shotShape),
+      shotEffort: shotEffort == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shotEffort),
       isDeleted: Value(isDeleted),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -5861,6 +5921,8 @@ class Instance extends DataClass implements Insertable<Instance> {
       resolvedTargetDepth: serializer.fromJson<double?>(
         json['resolvedTargetDepth'],
       ),
+      shotShape: serializer.fromJson<String?>(json['shotShape']),
+      shotEffort: serializer.fromJson<int?>(json['shotEffort']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -5880,6 +5942,8 @@ class Instance extends DataClass implements Insertable<Instance> {
       ),
       'resolvedTargetWidth': serializer.toJson<double?>(resolvedTargetWidth),
       'resolvedTargetDepth': serializer.toJson<double?>(resolvedTargetDepth),
+      'shotShape': serializer.toJson<String?>(shotShape),
+      'shotEffort': serializer.toJson<int?>(shotEffort),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -5895,6 +5959,8 @@ class Instance extends DataClass implements Insertable<Instance> {
     Value<double?> resolvedTargetDistance = const Value.absent(),
     Value<double?> resolvedTargetWidth = const Value.absent(),
     Value<double?> resolvedTargetDepth = const Value.absent(),
+    Value<String?> shotShape = const Value.absent(),
+    Value<int?> shotEffort = const Value.absent(),
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -5913,6 +5979,8 @@ class Instance extends DataClass implements Insertable<Instance> {
     resolvedTargetDepth: resolvedTargetDepth.present
         ? resolvedTargetDepth.value
         : this.resolvedTargetDepth,
+    shotShape: shotShape.present ? shotShape.value : this.shotShape,
+    shotEffort: shotEffort.present ? shotEffort.value : this.shotEffort,
     isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -5939,6 +6007,10 @@ class Instance extends DataClass implements Insertable<Instance> {
       resolvedTargetDepth: data.resolvedTargetDepth.present
           ? data.resolvedTargetDepth.value
           : this.resolvedTargetDepth,
+      shotShape: data.shotShape.present ? data.shotShape.value : this.shotShape,
+      shotEffort: data.shotEffort.present
+          ? data.shotEffort.value
+          : this.shotEffort,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -5956,6 +6028,8 @@ class Instance extends DataClass implements Insertable<Instance> {
           ..write('resolvedTargetDistance: $resolvedTargetDistance, ')
           ..write('resolvedTargetWidth: $resolvedTargetWidth, ')
           ..write('resolvedTargetDepth: $resolvedTargetDepth, ')
+          ..write('shotShape: $shotShape, ')
+          ..write('shotEffort: $shotEffort, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -5973,6 +6047,8 @@ class Instance extends DataClass implements Insertable<Instance> {
     resolvedTargetDistance,
     resolvedTargetWidth,
     resolvedTargetDepth,
+    shotShape,
+    shotEffort,
     isDeleted,
     createdAt,
     updatedAt,
@@ -5989,6 +6065,8 @@ class Instance extends DataClass implements Insertable<Instance> {
           other.resolvedTargetDistance == this.resolvedTargetDistance &&
           other.resolvedTargetWidth == this.resolvedTargetWidth &&
           other.resolvedTargetDepth == this.resolvedTargetDepth &&
+          other.shotShape == this.shotShape &&
+          other.shotEffort == this.shotEffort &&
           other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -6003,6 +6081,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
   final Value<double?> resolvedTargetDistance;
   final Value<double?> resolvedTargetWidth;
   final Value<double?> resolvedTargetDepth;
+  final Value<String?> shotShape;
+  final Value<int?> shotEffort;
   final Value<bool> isDeleted;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -6016,6 +6096,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     this.resolvedTargetDistance = const Value.absent(),
     this.resolvedTargetWidth = const Value.absent(),
     this.resolvedTargetDepth = const Value.absent(),
+    this.shotShape = const Value.absent(),
+    this.shotEffort = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -6030,6 +6112,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     this.resolvedTargetDistance = const Value.absent(),
     this.resolvedTargetWidth = const Value.absent(),
     this.resolvedTargetDepth = const Value.absent(),
+    this.shotShape = const Value.absent(),
+    this.shotEffort = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -6046,6 +6130,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     Expression<double>? resolvedTargetDistance,
     Expression<double>? resolvedTargetWidth,
     Expression<double>? resolvedTargetDepth,
+    Expression<String>? shotShape,
+    Expression<int>? shotEffort,
     Expression<bool>? isDeleted,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -6063,6 +6149,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
         'ResolvedTargetWidth': resolvedTargetWidth,
       if (resolvedTargetDepth != null)
         'ResolvedTargetDepth': resolvedTargetDepth,
+      if (shotShape != null) 'ShotShape': shotShape,
+      if (shotEffort != null) 'ShotEffort': shotEffort,
       if (isDeleted != null) 'IsDeleted': isDeleted,
       if (createdAt != null) 'CreatedAt': createdAt,
       if (updatedAt != null) 'UpdatedAt': updatedAt,
@@ -6079,6 +6167,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     Value<double?>? resolvedTargetDistance,
     Value<double?>? resolvedTargetWidth,
     Value<double?>? resolvedTargetDepth,
+    Value<String?>? shotShape,
+    Value<int?>? shotEffort,
     Value<bool>? isDeleted,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -6094,6 +6184,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
           resolvedTargetDistance ?? this.resolvedTargetDistance,
       resolvedTargetWidth: resolvedTargetWidth ?? this.resolvedTargetWidth,
       resolvedTargetDepth: resolvedTargetDepth ?? this.resolvedTargetDepth,
+      shotShape: shotShape ?? this.shotShape,
+      shotEffort: shotEffort ?? this.shotEffort,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -6130,6 +6222,12 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     if (resolvedTargetDepth.present) {
       map['ResolvedTargetDepth'] = Variable<double>(resolvedTargetDepth.value);
     }
+    if (shotShape.present) {
+      map['ShotShape'] = Variable<String>(shotShape.value);
+    }
+    if (shotEffort.present) {
+      map['ShotEffort'] = Variable<int>(shotEffort.value);
+    }
     if (isDeleted.present) {
       map['IsDeleted'] = Variable<bool>(isDeleted.value);
     }
@@ -6156,6 +6254,8 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
           ..write('resolvedTargetDistance: $resolvedTargetDistance, ')
           ..write('resolvedTargetWidth: $resolvedTargetWidth, ')
           ..write('resolvedTargetDepth: $resolvedTargetDepth, ')
+          ..write('shotShape: $shotShape, ')
+          ..write('shotEffort: $shotEffort, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -22610,6 +22710,8 @@ typedef $$InstancesTableCreateCompanionBuilder =
       Value<double?> resolvedTargetDistance,
       Value<double?> resolvedTargetWidth,
       Value<double?> resolvedTargetDepth,
+      Value<String?> shotShape,
+      Value<int?> shotEffort,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -22625,6 +22727,8 @@ typedef $$InstancesTableUpdateCompanionBuilder =
       Value<double?> resolvedTargetDistance,
       Value<double?> resolvedTargetWidth,
       Value<double?> resolvedTargetDepth,
+      Value<String?> shotShape,
+      Value<int?> shotEffort,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -22677,6 +22781,16 @@ class $$InstancesTableFilterComposer
 
   ColumnFilters<double> get resolvedTargetDepth => $composableBuilder(
     column: $table.resolvedTargetDepth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shotShape => $composableBuilder(
+    column: $table.shotShape,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get shotEffort => $composableBuilder(
+    column: $table.shotEffort,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22745,6 +22859,16 @@ class $$InstancesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get shotShape => $composableBuilder(
+    column: $table.shotShape,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get shotEffort => $composableBuilder(
+    column: $table.shotEffort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
@@ -22806,6 +22930,14 @@ class $$InstancesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get shotShape =>
+      $composableBuilder(column: $table.shotShape, builder: (column) => column);
+
+  GeneratedColumn<int> get shotEffort => $composableBuilder(
+    column: $table.shotEffort,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 
@@ -22852,6 +22984,8 @@ class $$InstancesTableTableManager
                 Value<double?> resolvedTargetDistance = const Value.absent(),
                 Value<double?> resolvedTargetWidth = const Value.absent(),
                 Value<double?> resolvedTargetDepth = const Value.absent(),
+                Value<String?> shotShape = const Value.absent(),
+                Value<int?> shotEffort = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -22865,6 +22999,8 @@ class $$InstancesTableTableManager
                 resolvedTargetDistance: resolvedTargetDistance,
                 resolvedTargetWidth: resolvedTargetWidth,
                 resolvedTargetDepth: resolvedTargetDepth,
+                shotShape: shotShape,
+                shotEffort: shotEffort,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -22880,6 +23016,8 @@ class $$InstancesTableTableManager
                 Value<double?> resolvedTargetDistance = const Value.absent(),
                 Value<double?> resolvedTargetWidth = const Value.absent(),
                 Value<double?> resolvedTargetDepth = const Value.absent(),
+                Value<String?> shotShape = const Value.absent(),
+                Value<int?> shotEffort = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -22893,6 +23031,8 @@ class $$InstancesTableTableManager
                 resolvedTargetDistance: resolvedTargetDistance,
                 resolvedTargetWidth: resolvedTargetWidth,
                 resolvedTargetDepth: resolvedTargetDepth,
+                shotShape: shotShape,
+                shotEffort: shotEffort,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

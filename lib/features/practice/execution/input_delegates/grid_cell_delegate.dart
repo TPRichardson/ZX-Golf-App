@@ -198,6 +198,8 @@ class GridCellDelegate extends ExecutionInputDelegate {
       setId: ctx.currentSetId!,
       selectedClub: Value(ctx.selectedClub),
       rawMetrics: jsonEncode({'hit': cell.isHit, 'label': cell.label}),
+      shotShape: Value(ctx.shotShape),
+      shotEffort: Value(ctx.shotEffort),
     );
     await onLogInstance(data);
   }

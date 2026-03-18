@@ -13,12 +13,18 @@ class ExecutionContext {
   /// Selected club ID (UUID). Null for technique blocks.
   final String? selectedClub;
   final String? currentSetId;
+  /// Player-declared shot shape intent (Fade/Draw/Straight). Nullable.
+  final String? shotShape;
+  /// Player-declared effort percentage (100/90/75). Nullable.
+  final int? shotEffort;
 
   const ExecutionContext({
     required this.isLocked,
     required this.isEnding,
     required this.selectedClub,
     required this.currentSetId,
+    this.shotShape,
+    this.shotEffort,
   });
 }
 

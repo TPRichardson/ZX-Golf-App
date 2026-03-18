@@ -40,9 +40,8 @@ String _clubLabel(ClubType type) {
   };
 }
 
-/// Shows a tabbed dialog with clubs in a grid layout.
-/// Common tab (default) shows the 16 most-used clubs; Specialist tab shows
-/// everything else. Returns the selected club name.
+/// Shows a reactive club picker dialog. Watches clubsForSkillAreaProvider
+/// so edits via "Edit Clubs" are reflected immediately.
 Future<String?> showClubGridPicker(
   BuildContext context, {
   required List<String> clubs,
@@ -50,98 +49,86 @@ Future<String?> showClubGridPicker(
   SkillArea? skillArea,
   String? userId,
 }) {
-  final common = clubs.where((c) => _commonClubs.contains(c)).toList();
-  final specialist = clubs.where((c) => !_commonClubs.contains(c)).toList();
-
-  // If all clubs fit in one tab, skip tabs entirely.
-  if (specialist.isEmpty) {
-    return _showSingleGrid(context,
-        clubs: clubs,
-        selectedClub: selectedClub,
-        skillArea: skillArea,
-        userId: userId);
-  }
-
-  // Default tab: whichever contains the currently selected club.
-  final initialTab = specialist.contains(selectedClub) ? 1 : 0;
-
   return showDialog<String>(
     context: context,
-    builder: (ctx) => _TabbedClubPicker(
-      common: common,
-      specialist: specialist,
+    builder: (ctx) => _ReactiveClubPicker(
       selectedClub: selectedClub,
-      initialTab: initialTab,
       skillArea: skillArea,
       userId: userId,
     ),
   );
 }
 
-/// Fallback: single grid with no tabs (when all clubs are common).
-Future<String?> _showSingleGrid(
-  BuildContext context, {
-  required List<String> clubs,
-  required String selectedClub,
-  SkillArea? skillArea,
-  String? userId,
-}) {
-  return showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-      ),
-      title: Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'Select Club',
-              style: TextStyle(color: ColorTokens.textPrimary),
-            ),
-          ),
-          if (skillArea != null && userId != null)
-            ZxPillButton(
-              label: 'Edit Clubs',
-              variant: ZxPillVariant.secondary,
-              onTap: () => _showSkillAreaClubMapper(
-                  ctx, skillArea: skillArea, userId: userId),
-            ),
-        ],
-      ),
-      contentPadding: const EdgeInsets.all(SpacingTokens.md),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _ClubGrid(
-          clubs: clubs,
-          selectedClub: selectedClub,
-          onSelect: (club) => Navigator.pop(ctx, club),
-        ),
-      ),
-    ),
-  );
-}
-
-class _TabbedClubPicker extends StatelessWidget {
-  final List<String> common;
-  final List<String> specialist;
+/// Reactive club picker that watches skill area clubs and rebuilds
+/// when mappings change (e.g. after "Edit Clubs").
+class _ReactiveClubPicker extends ConsumerWidget {
   final String selectedClub;
-  final int initialTab;
   final SkillArea? skillArea;
   final String? userId;
 
-  const _TabbedClubPicker({
-    required this.common,
-    required this.specialist,
+  const _ReactiveClubPicker({
     required this.selectedClub,
-    required this.initialTab,
     this.skillArea,
     this.userId,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Reactively watch clubs for this skill area.
+    final clubsAsync = (skillArea != null && userId != null)
+        ? ref.watch(clubsForSkillAreaProvider((userId!, skillArea!)))
+        : null;
+
+    final clubs = clubsAsync?.valueOrNull ?? [];
+    final sorted = List.of(clubs)
+      ..sort((a, b) => a.clubType.index.compareTo(b.clubType.index));
+    final clubNames = sorted.map((c) => c.clubType.dbValue).toList();
+
+    final common = clubNames.where((c) => _commonClubs.contains(c)).toList();
+    final specialist =
+        clubNames.where((c) => !_commonClubs.contains(c)).toList();
+
+    final hasSpecialist = specialist.isNotEmpty;
+
+    if (!hasSpecialist) {
+      // Single grid — no tabs needed.
+      return AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+        ),
+        title: Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Select Club',
+                style: TextStyle(color: ColorTokens.textPrimary),
+              ),
+            ),
+            if (skillArea != null && userId != null)
+              ZxPillButton(
+                label: 'Edit Clubs',
+                variant: ZxPillVariant.secondary,
+                onTap: () => _showSkillAreaClubMapper(
+                    context, skillArea: skillArea!, userId: userId!),
+              ),
+          ],
+        ),
+        contentPadding: const EdgeInsets.all(SpacingTokens.md),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: _ClubGrid(
+            clubs: clubNames,
+            selectedClub: selectedClub,
+            onSelect: (club) => Navigator.pop(context, club),
+          ),
+        ),
+      );
+    }
+
+    // Tabbed picker.
+    final initialTab = specialist.contains(selectedClub) ? 1 : 0;
+
     return DefaultTabController(
       length: 2,
       initialIndex: initialTab,
@@ -327,7 +314,8 @@ class _SkillAreaClubMapperDialog extends ConsumerWidget {
 
     // Only show club types the user has in their bag.
     final userBag = ref.watch(userBagProvider(userId)).valueOrNull ?? [];
-    final bagClubTypes = userBag.map((c) => c.clubType).toList();
+    final bagClubTypes = userBag.map((c) => c.clubType).toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
 
     final color = ColorTokens.skillArea(skillArea);
 

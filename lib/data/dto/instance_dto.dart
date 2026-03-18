@@ -15,6 +15,8 @@ extension InstanceSyncDto on Instance {
         'ResolvedTargetDistance': resolvedTargetDistance,
         'ResolvedTargetWidth': resolvedTargetWidth,
         'ResolvedTargetDepth': resolvedTargetDepth,
+        'ShotShape': shotShape,
+        'ShotEffort': shotEffort,
         'IsDeleted': isDeleted,
         'CreatedAt': createdAt.toUtc().toIso8601String(),
         'UpdatedAt': updatedAt.toUtc().toIso8601String(),
@@ -41,6 +43,8 @@ InstancesCompanion instanceFromSyncDto(Map<String, dynamic> json) =>
       resolvedTargetDepth: Value(json['ResolvedTargetDepth'] != null
           ? (json['ResolvedTargetDepth'] as num).toDouble()
           : null),
+      shotShape: Value(json['ShotShape'] as String?),
+      shotEffort: Value(json['ShotEffort'] as int?),
       isDeleted: Value(json['IsDeleted'] as bool),
       createdAt: Value(DateTime.parse(json['CreatedAt'] as String)),
       updatedAt: Value(DateTime.parse(json['UpdatedAt'] as String)),

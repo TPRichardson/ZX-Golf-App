@@ -17,6 +17,8 @@ class Instances extends Table {
       real().named('ResolvedTargetWidth').nullable()();
   RealColumn get resolvedTargetDepth =>
       real().named('ResolvedTargetDepth').nullable()();
+  TextColumn get shotShape => text().named('ShotShape').nullable()();
+  IntColumn get shotEffort => integer().named('ShotEffort').nullable()();
   BoolColumn get isDeleted =>
       boolean().named('IsDeleted').withDefault(const Constant(false))();
   DateTimeColumn get createdAt =>

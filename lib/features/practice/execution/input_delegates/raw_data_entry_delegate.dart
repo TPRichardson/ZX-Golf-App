@@ -202,7 +202,7 @@ class RawDataEntryDelegate extends ExecutionInputDelegate {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: SpacingTokens.md),
+            padding: const EdgeInsets.only(bottom: SpacingTokens.md + 16),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton(
@@ -214,7 +214,7 @@ class RawDataEntryDelegate extends ExecutionInputDelegate {
                   padding: const EdgeInsets.symmetric(
                       vertical: SpacingTokens.md),
                   textStyle: const TextStyle(
-                    fontSize: TypographyTokens.bodyLgSize,
+                    fontSize: TypographyTokens.headerSize,
                   ),
                 ),
                 child: const Text('Record'),

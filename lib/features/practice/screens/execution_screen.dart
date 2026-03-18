@@ -4,6 +4,7 @@
 // TechniqueBlockScreen remains separate (timer-based, no per-instance recording).
 
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 import 'dart:io' show Platform;
 import 'dart:math';
 
@@ -14,6 +15,7 @@ import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/validation/club_tiers.dart';
+import 'package:zx_golf_app/core/widgets/zx_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_helpers.dart';
@@ -41,15 +43,21 @@ final bool _isMobilePlatform = Platform.isAndroid || Platform.isIOS;
 
 /// Tracked shot entry for the shot log.
 class _ShotEntry {
+  final String instanceId;
   final String label;
   final bool isHit;
   final String club;
+  final String? clubId;
+  final String rawMetrics;
   final double? score;
 
   const _ShotEntry({
+    required this.instanceId,
     required this.label,
     required this.isHit,
     required this.club,
+    this.clubId,
+    required this.rawMetrics,
     this.score,
   });
 }
@@ -97,6 +105,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Current random target distance for RandomRange drills (yards).
   double? _currentRandomDistance;
+  /// History of random distances for undo support.
+  final List<double> _randomDistanceHistory = [];
+
+  /// Player-declared shot shape intent for the next shot.
+  String? _shotShape;
+  /// Player-declared effort percentage for the next shot.
+  int? _shotEffort;
 
   /// Toggle: show total target width vs ± half-width from center.
   bool _showHalfWidth = false;
@@ -173,29 +188,38 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final instances = await repo.watchInstancesBySet(setId).first;
     for (final inst in instances) {
       final clubLabel = _clubIdToLabel[inst.selectedClub] ?? '';
-      final metrics =
-          jsonDecode(inst.rawMetrics) as Map<String, dynamic>;
+      final raw = inst.rawMetrics;
+      final metrics = jsonDecode(raw) as Map<String, dynamic>;
       if (metrics.containsKey('hit')) {
         final isHit = metrics['hit'] as bool;
         final label =
             metrics['label'] as String? ?? (isHit ? 'Hit' : 'Miss');
         _shotLog.add(_ShotEntry(
+          instanceId: inst.instanceId,
           label: label,
           isHit: isHit,
           club: clubLabel,
+          clubId: inst.selectedClub,
+          rawMetrics: raw,
         ));
       } else if (metrics.containsKey('value')) {
         final value = (metrics['value'] as num).toDouble();
         _shotLog.add(_ShotEntry(
+          instanceId: inst.instanceId,
           label: value.toStringAsFixed(1),
           isHit: false,
           club: clubLabel,
+          clubId: inst.selectedClub,
+          rawMetrics: raw,
         ));
       } else {
         _shotLog.add(_ShotEntry(
+          instanceId: inst.instanceId,
           label: '\u2014',
           isHit: false,
           club: clubLabel,
+          clubId: inst.selectedClub,
+          rawMetrics: raw,
         ));
       }
     }
@@ -272,12 +296,28 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Pick a new random target distance for RandomRange drills.
   /// Uses Target (min) and TargetDistanceValue (max) from the drill.
+  /// Ensures the new distance differs from the previous by at least 5% of max.
   void _pickRandomDistanceIfNeeded() {
     if (widget.drill.targetDistanceMode != TargetDistanceMode.randomRange) {
       return;
     }
+    // Save current distance to history before picking a new one.
+    if (_currentRandomDistance != null) {
+      _randomDistanceHistory.add(_currentRandomDistance!);
+    }
     final min = widget.drill.target ?? 100;
     final max = widget.drill.targetDistanceValue ?? 200;
+    final minDelta = max * 0.05;
+    final previous = _currentRandomDistance;
+
+    for (var attempt = 0; attempt < 20; attempt++) {
+      final candidate = min + _random.nextDouble() * (max - min);
+      if (previous == null || (candidate - previous).abs() >= minDelta) {
+        _currentRandomDistance = candidate;
+        return;
+      }
+    }
+    // Fallback: accept whatever we get.
     _currentRandomDistance = min + _random.nextDouble() * (max - min);
   }
 
@@ -346,17 +386,20 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Parse a shot entry from instance data for the shot log.
   _ShotEntry _parseShotEntry(InstancesCompanion data, InstanceResult result) {
     final clubLabel = _clubIdToLabel[data.selectedClub.value] ?? '';
-    final metrics =
-        jsonDecode(data.rawMetrics.value) as Map<String, dynamic>;
+    final raw = data.rawMetrics.value;
+    final metrics = jsonDecode(raw) as Map<String, dynamic>;
     // Grid or binary — has 'hit' field.
     if (metrics.containsKey('hit')) {
       final isHit = metrics['hit'] as bool;
       final label =
           metrics['label'] as String? ?? (isHit ? 'Hit' : 'Miss');
       return _ShotEntry(
+        instanceId: result.instance.instanceId,
         label: label,
         isHit: isHit,
         club: clubLabel,
+        clubId: data.selectedClub.value,
+        rawMetrics: raw,
         score: result.realtimeScore,
       );
     }
@@ -364,16 +407,22 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     if (metrics.containsKey('value')) {
       final value = (metrics['value'] as num).toDouble();
       return _ShotEntry(
+        instanceId: result.instance.instanceId,
         label: value.toStringAsFixed(1),
         isHit: (result.realtimeScore ?? 0) >= 2.5,
         club: clubLabel,
+        clubId: data.selectedClub.value,
+        rawMetrics: raw,
         score: result.realtimeScore,
       );
     }
     return _ShotEntry(
+      instanceId: result.instance.instanceId,
       label: '\u2014',
       isHit: false,
       club: clubLabel,
+      clubId: data.selectedClub.value,
+      rawMetrics: raw,
     );
   }
 
@@ -442,7 +491,50 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     // S13 §13.7 — Auto-advance set if structured.
     await _handlePostInstanceAdvance();
 
+    // Show inter-shot dialog for RandomRange drills (next target + intent).
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange &&
+        !_ending && mounted) {
+      await _showNextTargetDialog();
+    }
+
     return result;
+  }
+
+  /// Inter-shot dialog for variable target drills.
+  /// Shows next target distance, club picker, shape and effort selectors.
+  Future<void> _showNextTargetDialog() async {
+    String? shape = _shotShape;
+    int? effort = _shotEffort;
+    String? clubId = _selectedClubId;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _NextTargetDialog(
+        targetDistance: _currentRandomDistance?.round() ?? 0,
+        initialShape: shape,
+        initialEffort: effort,
+        initialClubLabel: _clubIdToLabel[clubId] ?? '',
+        availableClubs: List.of(_availableClubs)
+          ..sort((a, b) => a.clubType.index.compareTo(b.clubType.index)),
+        clubIdToLabel: _clubIdToLabel,
+        skillArea: widget.drill.skillArea,
+        userId: widget.userId,
+        onConfirm: (newClubId, newShape, newEffort) {
+          clubId = newClubId;
+          shape = newShape;
+          effort = newEffort;
+        },
+      ),
+    );
+
+    if (mounted) {
+      setState(() {
+        _selectedClubId = clubId;
+        _shotShape = shape;
+        _shotEffort = effort;
+      });
+    }
   }
 
   /// S13 §13.7 — Check and handle set/session auto-completion.
@@ -468,7 +560,99 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final deleted = await _controller.undoLastInstance();
     _delegate.onInstanceUndone(deleted);
     if (_shotLog.isNotEmpty) _shotLog.removeLast();
+    // Restore previous random distance on undo.
+    if (_randomDistanceHistory.isNotEmpty) {
+      _currentRandomDistance = _randomDistanceHistory.removeLast();
+    }
     if (mounted) setState(() {});
+  }
+
+  /// Edit a shot in the log — change zone (hit/miss label) or club.
+  Future<void> _editShot(int index) async {
+    final shot = _shotLog[index];
+    final metrics = jsonDecode(shot.rawMetrics) as Map<String, dynamic>;
+    final isGridDrill = metrics.containsKey('hit');
+
+    // Build zone options from the drill's grid type.
+    List<({String label, bool isHit})>? zoneOptions;
+    if (isGridDrill) {
+      zoneOptions = switch (widget.drill.gridType) {
+        GridType.oneByThree => [
+          (label: 'Miss Left', isHit: false),
+          (label: 'Hit', isHit: true),
+          (label: 'Miss Right', isHit: false),
+        ],
+        GridType.threeByOne => [
+          (label: 'Miss Long', isHit: false),
+          (label: 'Hit', isHit: true),
+          (label: 'Miss Short', isHit: false),
+        ],
+        GridType.threeByThree => [
+          (label: 'Long Left', isHit: false),
+          (label: 'Long', isHit: false),
+          (label: 'Long Right', isHit: false),
+          (label: 'Left', isHit: false),
+          (label: 'Hit', isHit: true),
+          (label: 'Right', isHit: false),
+          (label: 'Short Left', isHit: false),
+          (label: 'Short', isHit: false),
+          (label: 'Short Right', isHit: false),
+        ],
+        _ => null,
+      };
+    }
+
+    String? newZoneLabel = shot.label;
+    bool? newIsHit = shot.isHit;
+    String? newClubId = shot.clubId;
+
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _EditShotDialog(
+        currentLabel: shot.label,
+        currentClubId: shot.clubId,
+        zoneOptions: zoneOptions,
+        availableClubs: List.of(_availableClubs)
+          ..sort((a, b) => a.clubType.index.compareTo(b.clubType.index)),
+        clubIdToLabel: _clubIdToLabel,
+        onConfirm: (label, isHit, clubId) {
+          newZoneLabel = label;
+          newIsHit = isHit;
+          newClubId = clubId;
+        },
+      ),
+    );
+
+    if (changed != true || !mounted) return;
+
+    // Build updated raw metrics.
+    if (isGridDrill) {
+      metrics['hit'] = newIsHit;
+      metrics['label'] = newZoneLabel;
+    }
+    final newRawMetrics = jsonEncode(metrics);
+
+    // Update the Instance in the DB.
+    await ref.read(practiceRepositoryProvider).updateInstanceRaw(
+          shot.instanceId,
+          InstancesCompanion(
+            rawMetrics: Value(newRawMetrics),
+            selectedClub: Value(newClubId),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+
+    // Update the shot log entry.
+    _shotLog[index] = _ShotEntry(
+      instanceId: shot.instanceId,
+      label: newZoneLabel ?? shot.label,
+      isHit: newIsHit ?? shot.isHit,
+      club: _clubIdToLabel[newClubId] ?? shot.club,
+      clubId: newClubId,
+      rawMetrics: newRawMetrics,
+      score: shot.score,
+    );
+    setState(() {});
   }
 
   Future<void> _endSession() async {
@@ -510,7 +694,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Open club grid picker for user-led/guided modes.
   Future<void> _pickClub() async {
-    final clubNames = _availableClubs.map((c) => c.clubType.dbValue).toList();
+    // Refresh clubs in case mappings were edited.
+    await _loadClubs();
+    await _loadCarryDistances();
+    final sorted = List.of(_availableClubs)
+      ..sort((a, b) => a.clubType.index.compareTo(b.clubType.index));
+    final clubNames = sorted.map((c) => c.clubType.dbValue).toList();
     final picked = await showClubGridPicker(
       context,
       clubs: clubNames,
@@ -519,9 +708,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       userId: widget.userId,
     );
     if (picked != null && mounted) {
-      // Find the UserClub matching the picked type name.
+      // Reload again in case "Edit Clubs" changed mappings during the dialog.
+      await _loadClubs();
+      await _loadCarryDistances();
       final club = _availableClubs.firstWhere(
         (c) => c.clubType.dbValue == picked,
+        orElse: () => _availableClubs.first,
       );
       setState(() => _selectedClubId = club.clubId);
     }
@@ -555,6 +747,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       isEnding: _ending,
       selectedClub: _selectedClubId,
       currentSetId: _controller.currentSetId,
+      shotShape: _shotShape,
+      shotEffort: _shotEffort,
     );
 
     return Scaffold(
@@ -706,9 +900,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                               itemCount: _shotLog.length,
                               itemBuilder: (context, index) {
                                 final shot = _shotLog[index];
-                                return _ShotLogRow(
-                                  index: index + 1,
-                                  shot: shot,
+                                return GestureDetector(
+                                  onTap: () => _editShot(index),
+                                  child: _ShotLogRow(
+                                    index: index + 1,
+                                    shot: shot,
+                                  ),
                                 );
                               },
                             ),
@@ -764,7 +961,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                             label: 'Undo',
                             icon: Icons.undo,
                             variant: ZxPillVariant.secondary,
-                            size: ZxPillSize.xs,
+                            size: ZxPillSize.sm,
                             onTap: _controller.canUndo ? _undoLast : () {},
                           ),
                         ],
@@ -1296,16 +1493,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     // Use computed depth from club tier if available.
     final computed = _currentTargetDepth;
     if (computed != null) {
-      final rounded = computed.round();
-      return '$rounded yds';
+      return '${_formatYards(computed)}y';
     }
     final value = widget.drill.targetSizeDepth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return _formatTargetDistance();
-    final formatted = value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toStringAsFixed(1);
-    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+    return '${_formatYards(value)}${_shortUnit(unit)}';
   }
 
   /// Format target depth as half value for split vertical bar display.
@@ -1313,20 +1506,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     // Use computed depth from club tier if available.
     final computed = _currentTargetDepth;
     if (computed != null) {
-      final half = computed / 2;
-      final formatted = half == half.roundToDouble()
-          ? half.toInt().toString()
-          : half.toStringAsFixed(1);
-      return '${formatted}y';
+      return '${_formatYards(computed / 2)}y';
     }
     final value = widget.drill.targetSizeDepth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';
-    final half = value / 2;
-    final formatted = half == half.roundToDouble()
-        ? half.toInt().toString()
-        : half.toStringAsFixed(1);
-    return '$formatted${_shortUnit(unit)}';
+    return '${_formatYards(value / 2)}${_shortUnit(unit)}';
   }
 
   /// Split depth zone: top half (long) and bottom half (short) with divider.
@@ -1350,14 +1535,17 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           // Top half: label ↑ (long side — arrow points up/outward)
           Expanded(
             child: Center(
-              child: RotatedBox(
-                quarterTurns: 3,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(halfLabel, style: textStyle),
-                    Text(' >', style: textStyle),
-                  ],
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(halfLabel, style: textStyle),
+                      Text(' >', style: textStyle),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1370,14 +1558,17 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           // Bottom half: ↓ label (short side — arrow points down/outward)
           Expanded(
             child: Center(
-              child: RotatedBox(
-                quarterTurns: 3,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('< ', style: textStyle),
-                    Text(halfLabel, style: textStyle),
-                  ],
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('< ', style: textStyle),
+                      Text(halfLabel, style: textStyle),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1392,35 +1583,37 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   String _formatTargetWidth() {
     final computed = _currentTargetWidth;
     if (computed != null) {
-      final rounded = computed.round();
-      return '$rounded yds';
+      return '${_formatYards(computed)}y';
     }
 
     final value = widget.drill.targetSizeWidth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';
-    final formatted = value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toStringAsFixed(1);
-    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+    return '${_formatYards(value)}${_shortUnit(unit)}';
   }
 
   /// Format target width as half value for the split display.
   String _formatTargetWidthHalf() {
     final computed = _currentTargetWidth;
     if (computed != null) {
-      final half = (computed / 2).round();
-      return '${half}y';
+      return '${_formatYards(computed / 2)}y';
     }
 
     final value = widget.drill.targetSizeWidth;
     final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';
-    final half = value / 2;
-    final formatted = half == half.roundToDouble()
-        ? half.toInt().toString()
-        : half.toStringAsFixed(1);
-    return '$formatted${_shortUnit(unit)}';
+    return '${_formatYards(value / 2)}${_shortUnit(unit)}';
+  }
+
+  /// Format a yard value: under 10y rounds to nearest 0.5, 10+ rounds to int.
+  static String _formatYards(double value) {
+    if (value < 10) {
+      final rounded = (value * 2).round() / 2;
+      return rounded == rounded.roundToDouble()
+          ? rounded.toInt().toString()
+          : rounded.toStringAsFixed(1);
+    }
+    return value.round().toString();
   }
 
   /// Short unit suffix for compact display.
@@ -1528,6 +1721,443 @@ class _ShotLogRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Inter-shot dialog for variable target drills.
+/// Shows next target, club selector, shape and effort pickers.
+class _NextTargetDialog extends StatefulWidget {
+  final int targetDistance;
+  final String? initialShape;
+  final int? initialEffort;
+  final String initialClubLabel;
+  final List<UserClub> availableClubs;
+  final Map<String, String> clubIdToLabel;
+  final SkillArea skillArea;
+  final String userId;
+  final void Function(String? clubId, String? shape, int? effort) onConfirm;
+
+  const _NextTargetDialog({
+    required this.targetDistance,
+    required this.initialShape,
+    required this.initialEffort,
+    required this.initialClubLabel,
+    required this.availableClubs,
+    required this.clubIdToLabel,
+    required this.skillArea,
+    required this.userId,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_NextTargetDialog> createState() => _NextTargetDialogState();
+}
+
+class _NextTargetDialogState extends State<_NextTargetDialog> {
+  String? _selectedClubId;
+  String? _shape;
+  int? _effort;
+
+  @override
+  void initState() {
+    super.initState();
+    _shape = widget.initialShape;
+    _effort = widget.initialEffort;
+    // Find club ID matching the initial label.
+    _selectedClubId = widget.availableClubs
+        .where((c) => c.clubType.dbValue == widget.initialClubLabel)
+        .map((c) => c.clubId)
+        .firstOrNull;
+  }
+
+  String get _clubLabel =>
+      widget.clubIdToLabel[_selectedClubId] ?? '';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: const Text(
+        'Next Shot',
+        style: TextStyle(color: ColorTokens.textPrimary),
+      ),
+      contentPadding: const EdgeInsets.all(SpacingTokens.md),
+      content: SingleChildScrollView(
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Target distance.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              vertical: SpacingTokens.md,
+            ),
+            decoration: BoxDecoration(
+              color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+            ),
+            child: Text(
+              '${widget.targetDistance}y',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w700,
+                color: ColorTokens.primaryDefault,
+              ),
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.md),
+
+          // Club selector — grid matching club picker style.
+          _sectionLabel('Club'),
+          Wrap(
+            spacing: SpacingTokens.sm,
+            runSpacing: SpacingTokens.sm,
+            children: widget.availableClubs.map((club) {
+              final isSelected = club.clubId == _selectedClubId;
+              return InkWell(
+                onTap: () => setState(() => _selectedClubId = club.clubId),
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+                child: Container(
+                  width: 72,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ColorTokens.primaryDefault.withValues(alpha: 0.2)
+                        : ColorTokens.surfaceRaised,
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+                    border: Border.all(
+                      color: isSelected
+                          ? ColorTokens.primaryDefault
+                          : ColorTokens.surfaceBorder,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      club.clubType.dbValue,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? ColorTokens.primaryDefault
+                            : ColorTokens.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: SpacingTokens.md),
+
+          // Shape selector.
+          _sectionLabel('Shape'),
+          Row(
+            children: [
+              for (final s in ShotShape.values)
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: s != ShotShape.values.last
+                          ? SpacingTokens.xs
+                          : 0,
+                    ),
+                    child: ChoiceChip(
+                      label: SizedBox(
+                        width: double.infinity,
+                        child: Text(s.dbValue, textAlign: TextAlign.center),
+                      ),
+                      selected: _shape == s.dbValue,
+                      onSelected: (_) => setState(() =>
+                          _shape = _shape == s.dbValue ? null : s.dbValue),
+                      selectedColor: ColorTokens.primaryDefault,
+                      backgroundColor: ColorTokens.surfaceRaised,
+                      labelStyle: TextStyle(
+                        fontSize: 16,
+                        color: _shape == s.dbValue
+                            ? ColorTokens.textPrimary
+                            : ColorTokens.textSecondary,
+                      ),
+                      side: BorderSide(
+                        color: _shape == s.dbValue
+                            ? ColorTokens.primaryDefault
+                            : ColorTokens.surfaceBorder,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: SpacingTokens.md),
+
+          // Effort selector.
+          _sectionLabel('Effort'),
+          Row(
+            children: [
+              for (final e in [100, 90, 75])
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: e != 75 ? SpacingTokens.xs : 0,
+                    ),
+                    child: ChoiceChip(
+                      label: SizedBox(
+                        width: double.infinity,
+                        child: Text('$e%', textAlign: TextAlign.center),
+                      ),
+                      selected: _effort == e,
+                      onSelected: (_) => setState(() =>
+                          _effort = _effort == e ? null : e),
+                      selectedColor: ColorTokens.primaryDefault,
+                      backgroundColor: ColorTokens.surfaceRaised,
+                      labelStyle: TextStyle(
+                        fontSize: 16,
+                        color: _effort == e
+                            ? ColorTokens.textPrimary
+                            : ColorTokens.textSecondary,
+                      ),
+                      side: BorderSide(
+                        color: _effort == e
+                            ? ColorTokens.primaryDefault
+                            : ColorTokens.surfaceBorder,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+      ),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              widget.onConfirm(_selectedClubId, _shape, _effort);
+              Navigator.pop(context);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorTokens.primaryDefault,
+              foregroundColor: ColorTokens.textPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
+              textStyle: const TextStyle(
+                fontSize: TypographyTokens.headerSize,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: const Text('Ready'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacingTokens.xs),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: TypographyTokens.bodySmSize,
+            fontWeight: FontWeight.w600,
+            color: ColorTokens.textTertiary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dialog to edit a shot's zone (hit/miss) and/or club.
+class _EditShotDialog extends StatefulWidget {
+  final String currentLabel;
+  final String? currentClubId;
+  final List<({String label, bool isHit})>? zoneOptions;
+  final List<UserClub> availableClubs;
+  final Map<String, String> clubIdToLabel;
+  final void Function(String? label, bool? isHit, String? clubId) onConfirm;
+
+  const _EditShotDialog({
+    required this.currentLabel,
+    required this.currentClubId,
+    required this.zoneOptions,
+    required this.availableClubs,
+    required this.clubIdToLabel,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_EditShotDialog> createState() => _EditShotDialogState();
+}
+
+class _EditShotDialogState extends State<_EditShotDialog> {
+  late String _selectedLabel;
+  late bool _selectedIsHit;
+  String? _selectedClubId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLabel = widget.currentLabel;
+    _selectedIsHit = widget.zoneOptions
+            ?.where((z) => z.label == widget.currentLabel)
+            .firstOrNull
+            ?.isHit ??
+        false;
+    _selectedClubId = widget.currentClubId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: ColorTokens.surfaceModal,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
+      ),
+      title: const Text(
+        'Edit Shot',
+        style: TextStyle(color: ColorTokens.textPrimary),
+      ),
+      contentPadding: const EdgeInsets.all(SpacingTokens.md),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Zone selector (grid drills only).
+            if (widget.zoneOptions != null) ...[
+              const Text(
+                'Result',
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySmSize,
+                  fontWeight: FontWeight.w600,
+                  color: ColorTokens.textTertiary,
+                ),
+              ),
+              const SizedBox(height: SpacingTokens.xs),
+              Wrap(
+                spacing: SpacingTokens.xs,
+                runSpacing: SpacingTokens.xs,
+                children: widget.zoneOptions!.map((zone) {
+                  final isSelected = zone.label == _selectedLabel;
+                  final color = zone.isHit
+                      ? ColorTokens.successDefault
+                      : ColorTokens.missDefault;
+                  return ChoiceChip(
+                    label: Text(zone.label),
+                    selected: isSelected,
+                    onSelected: (_) => setState(() {
+                      _selectedLabel = zone.label;
+                      _selectedIsHit = zone.isHit;
+                    }),
+                    selectedColor: color.withValues(alpha: 0.3),
+                    backgroundColor: ColorTokens.surfaceRaised,
+                    labelStyle: TextStyle(
+                      fontSize: 14,
+                      color: isSelected ? color : ColorTokens.textSecondary,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    side: BorderSide(
+                      color: isSelected ? color : ColorTokens.surfaceBorder,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: SpacingTokens.md),
+            ],
+            // Club selector.
+            if (widget.availableClubs.isNotEmpty) ...[
+              const Text(
+                'Club',
+                style: TextStyle(
+                  fontSize: TypographyTokens.bodySmSize,
+                  fontWeight: FontWeight.w600,
+                  color: ColorTokens.textTertiary,
+                ),
+              ),
+              const SizedBox(height: SpacingTokens.xs),
+              Wrap(
+                spacing: SpacingTokens.sm,
+                runSpacing: SpacingTokens.sm,
+                children: widget.availableClubs.map((club) {
+                  final isSelected = club.clubId == _selectedClubId;
+                  return InkWell(
+                    onTap: () =>
+                        setState(() => _selectedClubId = club.clubId),
+                    borderRadius:
+                        BorderRadius.circular(ShapeTokens.radiusGrid),
+                    child: Container(
+                      width: 72,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? ColorTokens.primaryDefault
+                                .withValues(alpha: 0.2)
+                            : ColorTokens.surfaceRaised,
+                        borderRadius:
+                            BorderRadius.circular(ShapeTokens.radiusGrid),
+                        border: Border.all(
+                          color: isSelected
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.surfaceBorder,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          club.clubType.dbValue,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? ColorTokens.primaryDefault
+                                : ColorTokens.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel',
+              style: TextStyle(color: ColorTokens.textSecondary)),
+        ),
+        FilledButton(
+          onPressed: () {
+            widget.onConfirm(_selectedLabel, _selectedIsHit, _selectedClubId);
+            Navigator.pop(context, true);
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: ColorTokens.primaryDefault,
+            foregroundColor: ColorTokens.textPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+            ),
+          ),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }

@@ -355,6 +355,20 @@ enum SmallLengthUnit {
           orElse: () => throw ArgumentError('Invalid SmallLengthUnit: $value'));
 }
 
+/// Shot shape intent declared by the player before a shot.
+enum ShotShape {
+  fade('Fade'),
+  draw('Draw'),
+  straight('Straight');
+
+  const ShotShape(this.dbValue);
+  final String dbValue;
+
+  static ShotShape fromString(String value) =>
+      values.firstWhere((e) => e.dbValue == value,
+          orElse: () => throw ArgumentError('Invalid ShotShape: $value'));
+}
+
 /// Drill-identity length unit. Governs target distance/size display on drill definition.
 /// Separate from user-preference enums (DistanceUnit, SmallLengthUnit) which govern display.
 enum DrillLengthUnit {

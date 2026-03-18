@@ -97,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -160,10 +160,19 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV15ToV16(m);
               case 16:
                 await _migrateV16ToV17(m);
+              case 17:
+                await _migrateV17ToV18(m);
             }
           }
         },
       );
+
+  Future<void> _migrateV17ToV18(Migrator m) async {
+    await customStatement(
+        'ALTER TABLE Instance ADD COLUMN ShotShape TEXT');
+    await customStatement(
+        'ALTER TABLE Instance ADD COLUMN ShotEffort INTEGER');
+  }
 
   Future<void> _migrateV1ToV2(Migrator m) async {
     await _createIndexes();
