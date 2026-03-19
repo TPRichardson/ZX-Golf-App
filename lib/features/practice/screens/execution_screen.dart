@@ -381,7 +381,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 
   /// Computed target depth (yards) for the vertical bar.
-  /// For PercentageOfTargetDistance mode, uses club-tier depth percentages.
+  /// For PercentageOfTargetDistance mode, uses drill-specified depth percentage
+  /// if available, otherwise falls back to club-tier depth percentages.
   double? get _currentTargetDepth {
     if (widget.drill.targetSizeMode !=
         TargetSizeMode.percentageOfTargetDistance) {
@@ -390,6 +391,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final baseDistance = _effectiveTargetDistance;
     if (baseDistance == null) return null;
 
+    // If drill specifies a fixed TargetSizeDepth, use that percentage.
+    final fixedPercent = widget.drill.targetSizeDepth;
+    if (fixedPercent != null) {
+      return baseDistance * fixedPercent / 100.0;
+    }
+
+    // Otherwise use club-tier banded percentage.
     try {
       final clubType = ClubType.fromString(_selectedClubLabel);
       final percent = targetDepthPercentForClub(clubType);
