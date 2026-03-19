@@ -357,9 +357,9 @@ enum SmallLengthUnit {
 
 /// Shot shape intent declared by the player before a shot.
 enum ShotShape {
-  fade('Fade'),
   draw('Draw'),
-  straight('Straight');
+  straight('Straight'),
+  fade('Fade');
 
   const ShotShape(this.dbValue);
   final String dbValue;

@@ -188,6 +188,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             value: _vibrationLabel(prefs.shotInputVibration),
             onTap: () => _cycleVibration(ref, prefs),
           ),
+          _SwitchTile(
+            label: 'Show Shot Intent (Shape & Effort)',
+            value: prefs.showShotIntent,
+            onChanged: (v) => updatePreferences(
+                ref, prefs.copyWith(showShotIntent: v)),
+          ),
 
           // --- Notifications Section ---
           _SectionHeader(title: 'Notifications'),

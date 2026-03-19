@@ -40,6 +40,9 @@ class UserPreferences {
   /// Vibration strength on shot input: 'off', 'soft', 'medium', 'hard'.
   final String shotInputVibration;
 
+  /// Whether to show shot intent fields (shape + effort) on inter-shot dialogs.
+  final bool showShotIntent;
+
   const UserPreferences({
     this.distanceUnit = DistanceUnit.yards,
     this.smallLengthUnit = SmallLengthUnit.inches,
@@ -52,6 +55,7 @@ class UserPreferences {
     this.targetBarSplitView = false,
     this.shotInputSound = false,
     this.shotInputVibration = 'medium',
+    this.showShotIntent = false,
   });
 
   factory UserPreferences.fromJson(String json) {
@@ -77,6 +81,7 @@ class UserPreferences {
         shotInputSound: (map['shotInputSound'] as bool?) ?? false,
         shotInputVibration:
             (map['shotInputVibration'] as String?) ?? 'medium',
+        showShotIntent: (map['showShotIntent'] as bool?) ?? false,
       );
     } on FormatException {
       return const UserPreferences();
@@ -98,6 +103,7 @@ class UserPreferences {
       'targetBarSplitView': targetBarSplitView,
       'shotInputSound': shotInputSound,
       'shotInputVibration': shotInputVibration,
+      'showShotIntent': showShotIntent,
     };
     return jsonEncode(map);
   }
@@ -114,6 +120,7 @@ class UserPreferences {
     bool? targetBarSplitView,
     bool? shotInputSound,
     String? shotInputVibration,
+    bool? showShotIntent,
   }) {
     return UserPreferences(
       distanceUnit: distanceUnit ?? this.distanceUnit,
@@ -129,6 +136,7 @@ class UserPreferences {
       targetBarSplitView: targetBarSplitView ?? this.targetBarSplitView,
       shotInputSound: shotInputSound ?? this.shotInputSound,
       shotInputVibration: shotInputVibration ?? this.shotInputVibration,
+      showShotIntent: showShotIntent ?? this.showShotIntent,
     );
   }
 
