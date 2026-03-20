@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_card.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -65,7 +66,7 @@ class DrillCard extends StatelessWidget {
                       child: Text(
                         drill.name,
                         style: TextStyle(
-                          fontSize: TypographyTokens.bodyLgSize,
+                          fontSize: TypographyTokens.bodySize,
                           fontWeight: FontWeight.w600,
                           color: isDestructiveSelected
                             ? ColorTokens.errorDestructive
@@ -88,16 +89,14 @@ class DrillCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    if (subtitle != null) ...[
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          fontSize: TypographyTokens.bodySmSize,
-                          color: ColorTokens.textTertiary,
-                        ),
+                    Text(
+                      _gridLabel(drill),
+                      style: const TextStyle(
+                        fontSize: TypographyTokens.bodySmSize,
+                        color: ColorTokens.textTertiary,
                       ),
-                      const SizedBox(width: SpacingTokens.sm),
-                    ],
+                    ),
+                    const SizedBox(width: SpacingTokens.sm),
                     _ModeChip(
                       icon: Icons.gps_fixed,
                       label: _targetLabel(drill),
@@ -105,7 +104,7 @@ class DrillCard extends StatelessWidget {
                     ),
                     const SizedBox(width: SpacingTokens.xs),
                     _ModeChip(
-                      icon: Icons.sports_golf,
+                      svgIcon: 'assets/icons/golf-club-iron.svg',
                       label: _clubLabel(drill),
                       color: _clubColor(drill),
                     ),
@@ -120,11 +119,20 @@ class DrillCard extends StatelessWidget {
     );
   }
 
+  static String _gridLabel(Drill drill) {
+    return switch (drill.gridType) {
+      GridType.threeByThree => 'Full Grid',
+      GridType.oneByThree => 'Left/Right',
+      GridType.threeByOne => 'Long/Short',
+      null => drill.inputMode.dbValue,
+    };
+  }
+
   static String _targetLabel(Drill drill) {
     return switch (drill.targetDistanceMode) {
       TargetDistanceMode.randomRange => 'Fixed Random',
       TargetDistanceMode.randomDistancePerSet => 'Fixed Static',
-      TargetDistanceMode.clubCarry => 'Carry',
+      TargetDistanceMode.clubCarry => 'Suggested',
       TargetDistanceMode.fixed => 'Fixed Static',
       TargetDistanceMode.percentageOfClubCarry => '% Carry',
       null => 'N/A',
@@ -136,6 +144,9 @@ class DrillCard extends StatelessWidget {
     if (drill.targetDistanceMode == TargetDistanceMode.randomRange ||
         drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
       return ColorTokens.ragAmber;
+    }
+    if (drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
+      return ColorTokens.primaryDefault;
     }
     return null;
   }
@@ -162,12 +173,14 @@ class DrillCard extends StatelessWidget {
 }
 
 class _ModeChip extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? svgIcon;
   final String label;
   final Color? color;
 
   const _ModeChip({
-    required this.icon,
+    this.icon,
+    this.svgIcon,
     required this.label,
     this.color,
   });
@@ -178,7 +191,11 @@ class _ModeChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: c),
+        if (svgIcon != null)
+          SvgPicture.asset(svgIcon!, width: 12, height: 12,
+              colorFilter: ColorFilter.mode(c, BlendMode.srcIn))
+        else if (icon != null)
+          Icon(icon, size: 12, color: c),
         const SizedBox(width: 2),
         Text(
           label,

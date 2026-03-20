@@ -266,10 +266,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       _clubIdToLabel[c.clubId] = c.clubType.dbValue;
     }
     if (clubs.isNotEmpty) {
-      final pick = mode == ClubSelectionMode.random
-          ? clubs[_random.nextInt(clubs.length)]
-          : clubs.first;
-      _selectedClubId = pick.clubId;
+      // Free Practice (ClubCarry + UserLed): don't pre-select — user picks.
+      if (mode == ClubSelectionMode.userLed &&
+          widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
+        _selectedClubId = null;
+      } else {
+        final pick = mode == ClubSelectionMode.random
+            ? clubs[_random.nextInt(clubs.length)]
+            : clubs.first;
+        _selectedClubId = pick.clubId;
+      }
     }
   }
 
@@ -591,10 +597,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         _shotLog.clear();
         // Suggest a random club at the start of each new set
         // for UserLed + ClubCarry transition drills.
-        _suggestRandomClubIfNeeded();
-        // Clear any target distance override for the new set.
+        // Clear any target distance override for the new set
+        // BEFORE suggesting a club (which may set a new override for
+        // randomDistancePerSet drills).
         _targetDistanceOverride = null;
         _distanceIsPlayerChoice = false;
+        _suggestRandomClubIfNeeded();
         if (mounted) setState(() {});
       }
     }
@@ -1059,12 +1067,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     );
   }
 
-  /// For UserLed + ClubCarry drills, randomly suggest a club.
+  /// For UserLed + RandomDistancePerSet drills, suggest a club and lock target.
+  /// ClubCarry (Free Practice) drills start blank — user picks.
   /// Called at init and at the start of each new set.
   void _suggestRandomClubIfNeeded() {
     if (widget.drill.clubSelectionMode != ClubSelectionMode.userLed) return;
-    if (widget.drill.targetDistanceMode != TargetDistanceMode.clubCarry &&
-        widget.drill.targetDistanceMode != TargetDistanceMode.randomDistancePerSet) {
+    if (widget.drill.targetDistanceMode != TargetDistanceMode.randomDistancePerSet) {
       return;
     }
     if (_availableClubs.isEmpty) return;
@@ -1086,11 +1094,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     }
   }
 
-  void _showPressureLockMessage() {
+  void _showFixedMessage(String field) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Target cannot be changed on a pressure drill'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text('$field is fixed for this drill'),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -1121,9 +1129,6 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       clubStatus = (label: 'Fixed Sequence', color: ColorTokens.ragAmber);
     } else if (_clubIsPlayerChoice) {
       clubStatus = (label: 'Player Choice', color: ColorTokens.successDefault);
-    } else if (widget.drill.clubSelectionMode == ClubSelectionMode.userLed &&
-        widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
-      clubStatus = (label: 'Suggested', color: ColorTokens.primaryDefault);
     } else if (widget.drill.clubSelectionMode == ClubSelectionMode.userLed) {
       clubStatus = (label: 'Suggested', color: ColorTokens.primaryDefault);
     } else {
@@ -1151,9 +1156,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         // Left half — target distance (tappable to override).
         Expanded(
           child: GestureDetector(
-            onTap: (widget.drill.drillType == DrillType.pressure ||
+            onTap: (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange ||
                     widget.drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet)
-                ? _showPressureLockMessage
+                ? () => _showFixedMessage('Target')
                 : _editTargetDistance,
             child: Container(
             width: double.infinity,
@@ -1191,7 +1196,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     vertical: SpacingTokens.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3A4048),
+                    color: (_effectiveTargetDistance != null &&
+                            distanceStatus.color != ColorTokens.textTertiary &&
+                            distanceStatus.color != ColorTokens.ragAmber)
+                        ? ColorTokens.primaryDefault
+                        : const Color(0xFF3A4048),
                     borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
                   ),
                   child: Text(
@@ -1213,7 +1222,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         // Right half — club selection.
         Expanded(
           child: GestureDetector(
-            onTap: isTappable ? _pickClub : null,
+            onTap: isTappable
+                ? _pickClub
+                : (isRandom || isGuided)
+                    ? () => _showFixedMessage('Club')
+                    : null,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(SpacingTokens.xs),
@@ -1250,7 +1263,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       vertical: SpacingTokens.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: ColorTokens.primaryDefault,
+                      color: (isRandom || isGuided)
+                          ? const Color(0xFF3A4048)
+                          : ColorTokens.primaryDefault,
                       borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
                     ),
                     child: Text(

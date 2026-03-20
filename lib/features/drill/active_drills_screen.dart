@@ -27,8 +27,8 @@ const _skillAreaDisplayOrder = [
   SkillArea.driving,
   SkillArea.woods,
   SkillArea.approach,
-  SkillArea.bunkers,
   SkillArea.pitching,
+  SkillArea.bunkers,
   SkillArea.chipping,
   SkillArea.putting,
 ];
@@ -323,7 +323,6 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
     return DrillCard(
       drill: dwa.drill,
       hasUnseenUpdate: dwa.adoption?.hasUnseenUpdate ?? false,
-      subtitle: '${dwa.drill.requiredSetCount}x${dwa.drill.requiredAttemptsPerSet ?? 0}',
       isDestructiveSelected: _removeMode && _removeDrillIds.contains(drillId),
       onTap: () {
         if (_removeMode) {
@@ -554,7 +553,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                       const SizedBox(width: SpacingTokens.sm),
                       Expanded(
                         child: ZxPillButton(
-                          label: '+Add/Create Drills',
+                          label: 'Add/Create Drills',
                           icon: Icons.add,
                           size: ZxPillSize.md,
                           variant: ZxPillVariant.secondary,
@@ -570,7 +569,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                   ),
                   )
                 : ZxPillButton(
-                    label: '+Add/Create Drills',
+                    label: 'Add/Create Drills',
                     icon: Icons.add,
                     size: ZxPillSize.md,
                     variant: ZxPillVariant.primary,

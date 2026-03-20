@@ -67,7 +67,7 @@ From the answers, automatically determine:
 
 1. Glob `supabase/migrations/*.sql` and find the highest numbered prefix.
 2. Next migration = highest + 1, zero-padded to 3 digits.
-3. UUID follows the standard drill pattern: `a0000000-0000-4000-8000-NNNNNNNNNNNN` where N is the next sequential number. Grep existing migrations for this UUID pattern to find the highest used number.
+3. Generate a random UUID v4 for each drill. Do NOT use sequential UUIDs — they cause collisions.
 
 ## Step 4 — Generate the SQL migration
 

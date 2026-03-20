@@ -21,7 +21,7 @@ class AddDrillsScreen extends StatelessWidget {
             const SizedBox(height: SpacingTokens.lg),
             _ChoiceCard(
               icon: Icons.library_books,
-              title: 'Browse Standard Drills',
+              title: 'Add Standard Drills',
               subtitle: 'Add golf drills to your library from our catalogue, build your SkillScore',
               onTap: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const StandardDrillsScreen(),
@@ -79,7 +79,7 @@ class _ChoiceCard extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: TypographyTokens.headerSize,
+                        fontSize: TypographyTokens.bodyLgSize,
                         fontWeight: TypographyTokens.headerWeight,
                         color: ColorTokens.textPrimary,
                       ),

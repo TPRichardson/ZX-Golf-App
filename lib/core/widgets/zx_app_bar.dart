@@ -34,7 +34,7 @@ class ZxAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: TextStyle(
-          fontSize: titleSize ?? TypographyTokens.displayXlSize,
+          fontSize: titleSize ?? TypographyTokens.displayLgSize,
           fontWeight: TypographyTokens.displayXlWeight,
         ),
       ),
