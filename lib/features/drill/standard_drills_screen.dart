@@ -28,9 +28,40 @@ class StandardDrillsScreen extends ConsumerStatefulWidget {
       _StandardDrillsScreenState();
 }
 
+const _skillAreaDisplayOrder = [
+  SkillArea.driving,
+  SkillArea.woods,
+  SkillArea.approach,
+  SkillArea.pitching,
+  SkillArea.bunkers,
+  SkillArea.chipping,
+  SkillArea.putting,
+];
+
+const _drillTypeSortOrder = [
+  DrillType.techniqueBlock,
+  DrillType.transition,
+  DrillType.pressure,
+  DrillType.benchmark,
+];
+
 class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
   final Set<String> _selectedIds = {};
   bool _isAdopting = false;
+  late final PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,70 +126,93 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
           for (final drill in available) {
             grouped.putIfAbsent(drill.skillArea, () => []).add(drill);
           }
+          // Sort within each group by drill type.
+          for (final list in grouped.values) {
+            list.sort((a, b) {
+              final typeA = _drillTypeSortOrder.indexOf(a.drillType);
+              final typeB = _drillTypeSortOrder.indexOf(b.drillType);
+              if (typeA != typeB) return typeA.compareTo(typeB);
+              return a.name.compareTo(b.name);
+            });
+          }
 
           // Build drill-by-id map for adopt action.
           final drillById = {for (final d in drills) d.drillId: d};
 
           return Column(
             children: [
+              // Carousel indicator.
+              _buildCarouselIndicator(),
+              const SizedBox(height: SpacingTokens.sm),
+              // Carousel pages.
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(SpacingTokens.md),
-                  children: [
-                    for (final area in SkillArea.values)
-                      if (grouped.containsKey(area)) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            top: SpacingTokens.md,
-                            bottom: SpacingTokens.sm,
-                          ),
-                          child: Text(
-                            area.dbValue,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(color: ColorTokens.textPrimary),
-                          ),
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _skillAreaDisplayOrder.length,
+                  onPageChanged: (page) => setState(() => _currentPage = page),
+                  itemBuilder: (context, index) {
+                    final area = _skillAreaDisplayOrder[index];
+                    final areaDrills = grouped[area] ?? [];
+
+                    if (areaDrills.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle_outline,
+                                size: 48,
+                                color: ColorTokens.successDefault.withValues(alpha: 0.5)),
+                            const SizedBox(height: SpacingTokens.md),
+                            Text(
+                              'All ${area.dbValue} drills added',
+                              style: const TextStyle(
+                                fontSize: TypographyTokens.bodyLgSize,
+                                color: ColorTokens.textTertiary,
+                              ),
+                            ),
+                          ],
                         ),
-                        for (final drill in grouped[area]!)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: SpacingTokens.sm,
-                            ),
-                            child: DrillCard(
-                              drill: drill,
-                              isSelected: _selectedIds.contains(drill.drillId),
-                              onTap: () {
-                                if (widget.pickMode) {
-                                  Navigator.of(context).pop(drill.drillId);
-                                  return;
-                                }
-                                setState(() {
-                                  if (_selectedIds.contains(drill.drillId)) {
-                                    _selectedIds.remove(drill.drillId);
-                                  } else {
-                                    _selectedIds.add(drill.drillId);
-                                  }
-                                });
-                              },
-                              trailing: _selectedIds.contains(drill.drillId)
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.remove_circle_outline,
-                                        color: ColorTokens.textTertiary,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _selectedIds.remove(drill.drillId);
-                                        });
-                                      },
-                                      tooltip: 'Deselect',
-                                    )
-                                  : null,
-                            ),
-                          ),
-                      ],
-                  ],
+                      );
+                    }
+
+                    // Group by drill type.
+                    final typeGroups = <DrillType, List<Drill>>{};
+                    for (final d in areaDrills) {
+                      typeGroups.putIfAbsent(d.drillType, () => []).add(d);
+                    }
+                    final orderedTypes = _drillTypeSortOrder
+                        .where((t) => typeGroups.containsKey(t))
+                        .toList();
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.lg,
+                      ),
+                      itemCount: orderedTypes.length,
+                      itemBuilder: (context, i) {
+                        final type = orderedTypes[i];
+                        final typeDrills = typeGroups[type]!;
+                        return _DrillTypeSection(
+                          drillType: type,
+                          drills: typeDrills,
+                          selectedIds: _selectedIds,
+                          onTap: (drill) {
+                            if (widget.pickMode) {
+                              Navigator.of(context).pop(drill.drillId);
+                              return;
+                            }
+                            setState(() {
+                              if (_selectedIds.contains(drill.drillId)) {
+                                _selectedIds.remove(drill.drillId);
+                              } else {
+                                _selectedIds.add(drill.drillId);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
               if (_selectedIds.isNotEmpty)
@@ -267,5 +321,137 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
       debugPrint('[StandardDrills] Adopt error: $e');
       setState(() => _isAdopting = false);
     }
+  }
+
+  Widget _buildCarouselIndicator() {
+    final currentArea = _skillAreaDisplayOrder[_currentPage];
+    final areaColor = ColorTokens.skillArea(currentArea);
+    return Padding(
+      padding: const EdgeInsets.only(top: SpacingTokens.sm),
+      child: Column(
+        children: [
+          const Text(
+            'Standard Drills',
+            style: TextStyle(
+              fontSize: TypographyTokens.bodyLgSize,
+              fontWeight: FontWeight.w500,
+              color: ColorTokens.textSecondary,
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Text(
+            currentArea.dbValue,
+            style: TextStyle(
+              fontSize: TypographyTokens.headerSize,
+              fontWeight: FontWeight.w600,
+              color: areaColor,
+            ),
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_skillAreaDisplayOrder.length, (index) {
+              final isActive = index == _currentPage;
+              final dotColor = ColorTokens.skillArea(_skillAreaDisplayOrder[index]);
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: isActive ? 14 : 8,
+                height: isActive ? 14 : 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive
+                      ? dotColor
+                      : dotColor.withValues(alpha: 0.35),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DrillTypeSection extends StatefulWidget {
+  final DrillType drillType;
+  final List<Drill> drills;
+  final Set<String> selectedIds;
+  final void Function(Drill) onTap;
+
+  const _DrillTypeSection({
+    required this.drillType,
+    required this.drills,
+    required this.selectedIds,
+    required this.onTap,
+  });
+
+  @override
+  State<_DrillTypeSection> createState() => _DrillTypeSectionState();
+}
+
+class _DrillTypeSectionState extends State<_DrillTypeSection> {
+  bool _expanded = true;
+
+  static String _typeLabel(DrillType type) => switch (type) {
+        DrillType.techniqueBlock => 'Technique',
+        DrillType.transition => 'Transition',
+        DrillType.pressure => 'Pressure',
+        DrillType.benchmark => 'Benchmark',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.sm),
+              child: Row(
+                children: [
+                  Text(
+                    _typeLabel(widget.drillType),
+                    style: const TextStyle(
+                      fontSize: TypographyTokens.bodyLgSize,
+                      fontWeight: FontWeight.w600,
+                      color: ColorTokens.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: SpacingTokens.xs),
+                  Text(
+                    '(${widget.drills.length})',
+                    style: const TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      color: ColorTokens.textTertiary,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20,
+                    color: ColorTokens.textTertiary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded)
+            ...widget.drills.map((drill) => Padding(
+                  padding: const EdgeInsets.only(bottom: SpacingTokens.sm),
+                  child: DrillCard(
+                    drill: drill,
+                    isSelected: widget.selectedIds.contains(drill.drillId),
+                    onTap: () => widget.onTap(drill),
+                  ),
+                )),
+        ],
+      ),
+    );
   }
 }
