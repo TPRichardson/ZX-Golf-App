@@ -128,7 +128,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   void dispose() {
     // Phase 7A — Stop sync orchestrator on shell dispose.
-    ref.read(syncOrchestratorProvider).stop();
+    // Cache ref before super.dispose() makes it unavailable.
+    try {
+      ref.read(syncOrchestratorProvider).stop();
+    } catch (_) {
+      // Widget already disposed — orchestrator will clean up on its own.
+    }
     super.dispose();
   }
 

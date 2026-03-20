@@ -3,6 +3,8 @@
 // start sessions, end practice block.
 
 import 'dart:async';
+
+import 'package:zx_golf_app/core/error_types.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -194,7 +196,11 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   }
 
   Future<void> _removePendingEntry(String entryId) async {
-    await ref.read(practiceRepositoryProvider).removePendingEntry(entryId);
+    try {
+      await ref.read(practiceRepositoryProvider).removePendingEntry(entryId);
+    } on ValidationException {
+      // Entry already removed — ignore.
+    }
   }
 
   /// View the summary for a completed session.
@@ -962,6 +968,9 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
     final activeEntry = pending.where(
         (e) => e.entry.entryType == PracticeEntryType.activeSession).firstOrNull;
     final hasActive = activeEntry != null;
+    final hasPendingDrills = pending.any(
+        (e) => e.entry.entryType == PracticeEntryType.pendingDrill);
+    final isEmpty = !hasActive && !hasPendingDrills;
     return Container(
       padding: EdgeInsets.fromLTRB(
         SpacingTokens.md,
@@ -994,29 +1003,66 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
           Row(
             children: [
               if (!hasActive) ...[
-                GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Practice settings coming soon')),
-                    );
-                  },
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: ColorTokens.textTertiary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                      border: Border.all(
-                        color: ColorTokens.textTertiary.withValues(alpha: 0.25),
+                if (isEmpty)
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Practice settings coming soon')),
+                        );
+                      },
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: ColorTokens.textTertiary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                          border: Border.all(
+                            color: ColorTokens.textTertiary.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.settings_outlined,
+                                size: 24,
+                                color: ColorTokens.textTertiary),
+                            const SizedBox(width: SpacingTokens.sm),
+                            Text('Practice Settings',
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.bodySize,
+                                  color: ColorTokens.textTertiary,
+                                )),
+                          ],
+                        ),
                       ),
                     ),
-                    child: Icon(Icons.settings_outlined,
-                        size: 24,
-                        color: ColorTokens.textTertiary),
+                  )
+                else ...[
+                  GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Practice settings coming soon')),
+                      );
+                    },
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: ColorTokens.textTertiary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                        border: Border.all(
+                          color: ColorTokens.textTertiary.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Icon(Icons.settings_outlined,
+                          size: 24,
+                          color: ColorTokens.textTertiary),
+                    ),
                   ),
-                ),
-                const SizedBox(width: SpacingTokens.sm),
+                  const SizedBox(width: SpacingTokens.sm),
+                ],
               ],
               if (hasActive)
                 Expanded(
@@ -1029,8 +1075,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                     onTap: () => _discardActiveSession(activeEntry),
                   ),
                 )
-              else if (pending.where(
-                  (e) => e.entry.entryType == PracticeEntryType.pendingDrill).isNotEmpty)
+              else if (hasPendingDrills)
                 Expanded(
                   child: ZxPillButton(
                     label: 'Next Drill',
@@ -1070,7 +1115,7 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
                 child: ZxPillButton(
                   label: 'Finish Practice',
                   icon: Icons.check_circle_outline,
-                  variant: ZxPillVariant.primary,
+                  variant: isEmpty ? ZxPillVariant.secondary : ZxPillVariant.primary,
                   expanded: true,
                   centered: true,
                   isLoading: _endingBlock,

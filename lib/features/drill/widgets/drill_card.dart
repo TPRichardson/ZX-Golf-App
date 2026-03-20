@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_card.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
 
 // S15 §15.8 — Drill card for list display.
 // Simplified: skill area colour bar, drill name, optional trailing widget.
@@ -85,20 +86,108 @@ class DrillCard extends StatelessWidget {
                     ],
                   ],
                 ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: TextStyle(
-                      fontSize: TypographyTokens.bodySmSize,
-                      color: ColorTokens.textTertiary,
+                Row(
+                  children: [
+                    if (subtitle != null) ...[
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          fontSize: TypographyTokens.bodySmSize,
+                          color: ColorTokens.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(width: SpacingTokens.sm),
+                    ],
+                    _ModeChip(
+                      icon: Icons.gps_fixed,
+                      label: _targetLabel(drill),
+                      color: _targetColor(drill),
                     ),
-                  ),
+                    const SizedBox(width: SpacingTokens.xs),
+                    _ModeChip(
+                      icon: Icons.sports_golf,
+                      label: _clubLabel(drill),
+                      color: _clubColor(drill),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
           ?trailing,
         ],
       ),
+    );
+  }
+
+  static String _targetLabel(Drill drill) {
+    return switch (drill.targetDistanceMode) {
+      TargetDistanceMode.randomRange => 'Fixed Random',
+      TargetDistanceMode.randomDistancePerSet => 'Fixed Static',
+      TargetDistanceMode.clubCarry => 'Carry',
+      TargetDistanceMode.fixed => 'Fixed Static',
+      TargetDistanceMode.percentageOfClubCarry => '% Carry',
+      null => 'N/A',
+    };
+  }
+
+  /// Returns: amber = system, cyan = suggested, null = grey.
+  static Color? _targetColor(Drill drill) {
+    if (drill.targetDistanceMode == TargetDistanceMode.randomRange ||
+        drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
+      return ColorTokens.ragAmber;
+    }
+    return null;
+  }
+
+  static String _clubLabel(Drill drill) {
+    return switch (drill.clubSelectionMode) {
+      ClubSelectionMode.userLed => 'Suggested',
+      ClubSelectionMode.random => 'Fixed Random',
+      ClubSelectionMode.guided => 'Fixed Sequence',
+      null => 'N/A',
+    };
+  }
+
+  static Color? _clubColor(Drill drill) {
+    if (drill.clubSelectionMode == ClubSelectionMode.random ||
+        drill.clubSelectionMode == ClubSelectionMode.guided) {
+      return ColorTokens.ragAmber;
+    }
+    if (drill.clubSelectionMode == ClubSelectionMode.userLed) {
+      return ColorTokens.primaryDefault;
+    }
+    return null;
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  const _ModeChip({
+    required this.icon,
+    required this.label,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? ColorTokens.textTertiary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: c),
+        const SizedBox(width: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: TypographyTokens.bodySmSize,
+            color: c,
+          ),
+        ),
+      ],
     );
   }
 }

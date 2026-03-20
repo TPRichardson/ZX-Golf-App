@@ -199,16 +199,20 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
   Future<void> _adoptSelected(Map<String, Drill> drillById) async {
     setState(() => _isAdopting = true);
     final drillRepo = ref.read(drillRepositoryProvider);
+    final userId = ref.read(currentUserIdProvider);
+    final drillsToAdopt = _selectedIds
+        .map((id) => drillById[id])
+        .whereType<Drill>()
+        .toList();
+
+    // Pop first to dispose the widget before DB writes trigger provider
+    // notifications on defunct elements.
+    Navigator.of(context).popUntil((route) => route.isFirst);
 
     try {
-      for (final id in _selectedIds.toList()) {
-        final drill = drillById[id];
-        if (drill == null) continue;
-        await drillRepo.adoptStandardDrill(ref.read(currentUserIdProvider), drill);
+      for (final drill in drillsToAdopt) {
+        await drillRepo.adoptStandardDrill(userId, drill);
       }
-      _selectedIds.clear();
-      _isAdopting = false;
-      if (mounted) Navigator.of(context).pop();
     } on ValidationException catch (e) {
       setState(() => _isAdopting = false);
       if (!mounted) return;
@@ -259,7 +263,8 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
           ],
         ),
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[StandardDrills] Adopt error: $e');
       setState(() => _isAdopting = false);
     }
   }

@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/scoring/integrity_evaluator.dart';
@@ -509,6 +510,7 @@ class PracticeRepository {
     } on ZxGolfAppException {
       rethrow;
     } on Exception catch (e) {
+      debugPrint('[PracticeRepo] createPracticeEntry error: $e');
       throw SystemException(
         code: SystemException.referentialIntegrity,
         message: 'Failed to create practice entry',

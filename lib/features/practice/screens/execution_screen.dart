@@ -291,7 +291,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   Future<void> _loadCarryDistances() async {
     final distMode = widget.drill.targetDistanceMode;
     if (distMode != TargetDistanceMode.clubCarry &&
-        distMode != TargetDistanceMode.percentageOfClubCarry) {
+        distMode != TargetDistanceMode.percentageOfClubCarry &&
+        distMode != TargetDistanceMode.randomDistancePerSet) {
       return;
     }
     final clubRepo = ref.read(clubRepositoryProvider);
@@ -1062,7 +1063,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Called at init and at the start of each new set.
   void _suggestRandomClubIfNeeded() {
     if (widget.drill.clubSelectionMode != ClubSelectionMode.userLed) return;
-    if (widget.drill.targetDistanceMode != TargetDistanceMode.clubCarry) return;
+    if (widget.drill.targetDistanceMode != TargetDistanceMode.clubCarry &&
+        widget.drill.targetDistanceMode != TargetDistanceMode.randomDistancePerSet) {
+      return;
+    }
     if (_availableClubs.isEmpty) return;
     final candidates = _availableClubs.length > 1
         ? _availableClubs.where((c) => c.clubId != _selectedClubId).toList()
@@ -1070,6 +1074,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final pick = candidates[_random.nextInt(candidates.length)];
     _selectedClubId = pick.clubId;
     _clubIsPlayerChoice = false;
+
+    // For randomDistancePerSet: lock the target distance from this club's carry ±2%.
+    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
+      final carry = _clubCarryDistances[pick.clubId];
+      if (carry != null) {
+        final jitter = carry * 0.02 * (2 * _random.nextDouble() - 1);
+        _targetDistanceOverride = carry + jitter;
+        _distanceIsPlayerChoice = false;
+      }
+    }
   }
 
   void _showPressureLockMessage() {
@@ -1120,6 +1134,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final ({String label, Color color}) distanceStatus;
     if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange) {
       distanceStatus = (label: 'Fixed Random', color: ColorTokens.ragAmber);
+    } else if (widget.drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
+      distanceStatus = (label: 'Fixed Static', color: ColorTokens.ragAmber);
     } else if (_distanceIsPlayerChoice) {
       distanceStatus = (label: 'Player Choice', color: ColorTokens.successDefault);
     } else if (widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
@@ -1135,7 +1151,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         // Left half — target distance (tappable to override).
         Expanded(
           child: GestureDetector(
-            onTap: widget.drill.drillType == DrillType.pressure
+            onTap: (widget.drill.drillType == DrillType.pressure ||
+                    widget.drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet)
                 ? _showPressureLockMessage
                 : _editTargetDistance,
             child: Container(
@@ -1303,9 +1320,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         case 'soft':
           Vibration.vibrate(duration: 20, amplitude: 40);
         case 'medium':
-          Vibration.vibrate(duration: 30, amplitude: 128);
+          Vibration.vibrate(duration: 50, amplitude: 200);
         case 'hard':
-          Vibration.vibrate(duration: 50, amplitude: 255);
+          Vibration.vibrate(duration: 80, amplitude: 255);
         default:
           break; // 'off'
       }

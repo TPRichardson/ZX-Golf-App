@@ -184,7 +184,8 @@ enum TargetDistanceMode {
   fixed('Fixed'),
   clubCarry('ClubCarry'),
   percentageOfClubCarry('PercentageOfClubCarry'),
-  randomRange('RandomRange');
+  randomRange('RandomRange'),
+  randomDistancePerSet('RandomDistancePerSet');
 
   const TargetDistanceMode(this.dbValue);
   final String dbValue;
