@@ -2,9 +2,8 @@
 // TD-04 §3.2 Step 2 — Scope determination is separated from execution.
 // No Drift dependency. Works with plain data.
 
-import 'dart:convert';
-
 import 'reflow_types.dart';
+import 'scoring_helpers.dart';
 
 class ScopeResolver {
   /// TD-04 §3.2 — From session close: affected subskills from drill's SubskillMapping.
@@ -17,7 +16,7 @@ class ScopeResolver {
     return ReflowTrigger(
       type: ReflowTriggerType.sessionClose,
       userId: userId,
-      affectedSubskillIds: _parseSubskillMapping(subskillMappingJson),
+      affectedSubskillIds: parseSubskillMapping(subskillMappingJson),
       sessionId: sessionId,
       drillId: drillId,
     );
@@ -32,7 +31,7 @@ class ScopeResolver {
     return ReflowTrigger(
       type: ReflowTriggerType.anchorEdit,
       userId: userId,
-      affectedSubskillIds: _parseSubskillMapping(subskillMappingJson),
+      affectedSubskillIds: parseSubskillMapping(subskillMappingJson),
       drillId: drillId,
     );
   }
@@ -46,7 +45,7 @@ class ScopeResolver {
     return ReflowTrigger(
       type: ReflowTriggerType.instanceEdit,
       userId: userId,
-      affectedSubskillIds: _parseSubskillMapping(subskillMappingJson),
+      affectedSubskillIds: parseSubskillMapping(subskillMappingJson),
       drillId: drillId,
     );
   }
@@ -60,7 +59,7 @@ class ScopeResolver {
     return ReflowTrigger(
       type: ReflowTriggerType.instanceDeletion,
       userId: userId,
-      affectedSubskillIds: _parseSubskillMapping(subskillMappingJson),
+      affectedSubskillIds: parseSubskillMapping(subskillMappingJson),
       drillId: drillId,
     );
   }
@@ -74,7 +73,7 @@ class ScopeResolver {
     return ReflowTrigger(
       type: ReflowTriggerType.sessionDeletion,
       userId: userId,
-      affectedSubskillIds: _parseSubskillMapping(subskillMappingJson),
+      affectedSubskillIds: parseSubskillMapping(subskillMappingJson),
       drillId: drillId,
     );
   }
@@ -103,9 +102,4 @@ class ScopeResolver {
     );
   }
 
-  /// Parse SubskillMapping JSON array to a Set of subskill IDs.
-  static Set<String> _parseSubskillMapping(String json) {
-    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-    return list.map((e) => e as String).toSet();
-  }
 }

@@ -317,29 +317,43 @@ class MatrixRepository {
           ..orderBy([(t) => OrderingTerm.asc(t.axisOrder)]))
         .get();
 
-    final axesWithValues = <MatrixAxisWithValues>[];
-    for (final axis in axes) {
-      final values = await (_db.select(_db.matrixAxisValues)
-            ..where((t) => t.matrixAxisId.equals(axis.matrixAxisId))
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .get();
-      axesWithValues.add(
-          MatrixAxisWithValues(axis: axis, values: values));
+    // Batch-fetch all axis values for this run's axes in one query.
+    final axisIds = axes.map((a) => a.matrixAxisId).toList();
+    final allValues = axisIds.isEmpty
+        ? <MatrixAxisValue>[]
+        : await (_db.select(_db.matrixAxisValues)
+              ..where((t) => t.matrixAxisId.isIn(axisIds))
+              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+            .get();
+    final valuesByAxis = <String, List<MatrixAxisValue>>{};
+    for (final v in allValues) {
+      valuesByAxis.putIfAbsent(v.matrixAxisId, () => []).add(v);
     }
+    final axesWithValues = axes
+        .map((a) => MatrixAxisWithValues(
+            axis: a, values: valuesByAxis[a.matrixAxisId] ?? []))
+        .toList();
 
     final cells = await (_db.select(_db.matrixCells)
           ..where((t) => t.matrixRunId.equals(runId)))
         .get();
 
-    final cellsWithAttempts = <MatrixCellWithAttempts>[];
-    for (final cell in cells) {
-      final attempts = await (_db.select(_db.matrixAttempts)
-            ..where((t) => t.matrixCellId.equals(cell.matrixCellId))
-            ..orderBy([(t) => OrderingTerm.asc(t.attemptTimestamp)]))
-          .get();
-      cellsWithAttempts.add(
-          MatrixCellWithAttempts(cell: cell, attempts: attempts));
+    // Batch-fetch all attempts for this run's cells in one query.
+    final cellIds = cells.map((c) => c.matrixCellId).toList();
+    final allAttempts = cellIds.isEmpty
+        ? <MatrixAttempt>[]
+        : await (_db.select(_db.matrixAttempts)
+              ..where((t) => t.matrixCellId.isIn(cellIds))
+              ..orderBy([(t) => OrderingTerm.asc(t.attemptTimestamp)]))
+            .get();
+    final attemptsByCell = <String, List<MatrixAttempt>>{};
+    for (final a in allAttempts) {
+      attemptsByCell.putIfAbsent(a.matrixCellId, () => []).add(a);
     }
+    final cellsWithAttempts = cells
+        .map((c) => MatrixCellWithAttempts(
+            cell: c, attempts: attemptsByCell[c.matrixCellId] ?? []))
+        .toList();
 
     return MatrixRunWithDetails(
       run: run,
@@ -548,15 +562,27 @@ class MatrixRepository {
               ..where((t) => t.excludedFromRun.equals(false)))
             .get();
 
+        // Batch-fetch attempt counts per cell in one query.
+        final activeCellIds =
+            activeCells.map((c) => c.matrixCellId).toList();
+        final allAttempts = activeCellIds.isEmpty
+            ? <MatrixAttempt>[]
+            : await (_db.select(_db.matrixAttempts)
+                  ..where((t) => t.matrixCellId.isIn(activeCellIds)))
+                .get();
+        final attemptCountByCell = <String, int>{};
+        for (final a in allAttempts) {
+          attemptCountByCell[a.matrixCellId] =
+              (attemptCountByCell[a.matrixCellId] ?? 0) + 1;
+        }
+
         for (final cell in activeCells) {
-          final attemptCount = await (_db.select(_db.matrixAttempts)
-                ..where((t) => t.matrixCellId.equals(cell.matrixCellId)))
-              .get();
-          if (attemptCount.length < run.sessionShotTarget) {
+          final count = attemptCountByCell[cell.matrixCellId] ?? 0;
+          if (count < run.sessionShotTarget) {
             throw ValidationException(
               code: ValidationException.stateTransition,
               message:
-                  'Cell has insufficient attempts (${attemptCount.length}/${run.sessionShotTarget})',
+                  'Cell has insufficient attempts ($count/${run.sessionShotTarget})',
               context: {'cellId': cell.matrixCellId},
             );
           }
@@ -646,11 +672,22 @@ class MatrixRepository {
           ..where((t) => t.matrixRunId.equals(runId)))
         .get();
 
-    final result = <MatrixCellWithAttempts>[];
-    for (final cell in cells) {
-      final attempts = await getAttemptsForCell(cell.matrixCellId);
-      result.add(MatrixCellWithAttempts(cell: cell, attempts: attempts));
+    // Batch-fetch all attempts for this run's cells in one query.
+    final cellIds = cells.map((c) => c.matrixCellId).toList();
+    final allAttempts = cellIds.isEmpty
+        ? <MatrixAttempt>[]
+        : await (_db.select(_db.matrixAttempts)
+              ..where((t) => t.matrixCellId.isIn(cellIds))
+              ..orderBy([(t) => OrderingTerm.asc(t.attemptTimestamp)]))
+            .get();
+    final attemptsByCell = <String, List<MatrixAttempt>>{};
+    for (final a in allAttempts) {
+      attemptsByCell.putIfAbsent(a.matrixCellId, () => []).add(a);
     }
-    return result;
+
+    return cells
+        .map((c) => MatrixCellWithAttempts(
+            cell: c, attempts: attemptsByCell[c.matrixCellId] ?? []))
+        .toList();
   }
 }

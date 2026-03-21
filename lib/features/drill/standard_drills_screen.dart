@@ -12,7 +12,9 @@ import 'package:zx_golf_app/providers/repository_providers.dart';
 
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
 
+import 'drill_sort_order.dart';
 import 'widgets/drill_card.dart';
+import 'widgets/skill_area_carousel_indicator.dart';
 
 // Standard Drills — server-authoritative catalogue fetched from Supabase.
 // S14 §14.1 — Standard drill catalogue.
@@ -27,23 +29,6 @@ class StandardDrillsScreen extends ConsumerStatefulWidget {
   ConsumerState<StandardDrillsScreen> createState() =>
       _StandardDrillsScreenState();
 }
-
-const _skillAreaDisplayOrder = [
-  SkillArea.driving,
-  SkillArea.woods,
-  SkillArea.approach,
-  SkillArea.pitching,
-  SkillArea.bunkers,
-  SkillArea.chipping,
-  SkillArea.putting,
-];
-
-const _drillTypeSortOrder = [
-  DrillType.techniqueBlock,
-  DrillType.transition,
-  DrillType.pressure,
-  DrillType.benchmark,
-];
 
 class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
   final Set<String> _selectedIds = {};
@@ -129,8 +114,8 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
           // Sort within each group by drill type.
           for (final list in grouped.values) {
             list.sort((a, b) {
-              final typeA = _drillTypeSortOrder.indexOf(a.drillType);
-              final typeB = _drillTypeSortOrder.indexOf(b.drillType);
+              final typeA = kDrillTypeSortOrder.indexOf(a.drillType);
+              final typeB = kDrillTypeSortOrder.indexOf(b.drillType);
               if (typeA != typeB) return typeA.compareTo(typeB);
               return a.name.compareTo(b.name);
             });
@@ -148,10 +133,10 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  itemCount: _skillAreaDisplayOrder.length,
+                  itemCount: kSkillAreaDisplayOrder.length,
                   onPageChanged: (page) => setState(() => _currentPage = page),
                   itemBuilder: (context, index) {
-                    final area = _skillAreaDisplayOrder[index];
+                    final area = kSkillAreaDisplayOrder[index];
                     final areaDrills = grouped[area] ?? [];
 
                     if (areaDrills.isEmpty) {
@@ -180,7 +165,7 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
                     for (final d in areaDrills) {
                       typeGroups.putIfAbsent(d.drillType, () => []).add(d);
                     }
-                    final orderedTypes = _drillTypeSortOrder
+                    final orderedTypes = kDrillTypeSortOrder
                         .where((t) => typeGroups.containsKey(t))
                         .toList();
 
@@ -324,50 +309,9 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
   }
 
   Widget _buildCarouselIndicator() {
-    final currentArea = _skillAreaDisplayOrder[_currentPage];
-    final areaColor = ColorTokens.skillArea(currentArea);
-    return Padding(
-      padding: const EdgeInsets.only(top: SpacingTokens.sm),
-      child: Column(
-        children: [
-          const Text(
-            'Standard Drills',
-            style: TextStyle(
-              fontSize: TypographyTokens.bodyLgSize,
-              fontWeight: FontWeight.w500,
-              color: ColorTokens.textSecondary,
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.xs),
-          Text(
-            currentArea.dbValue,
-            style: TextStyle(
-              fontSize: TypographyTokens.headerSize,
-              fontWeight: FontWeight.w600,
-              color: areaColor,
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_skillAreaDisplayOrder.length, (index) {
-              final isActive = index == _currentPage;
-              final dotColor = ColorTokens.skillArea(_skillAreaDisplayOrder[index]);
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: isActive ? 14 : 8,
-                height: isActive ? 14 : 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isActive
-                      ? dotColor
-                      : dotColor.withValues(alpha: 0.35),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
+    return SkillAreaCarouselIndicator(
+      title: 'Standard Drills',
+      currentPage: _currentPage,
     );
   }
 }

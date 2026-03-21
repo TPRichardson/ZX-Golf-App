@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/providers/matrix_providers.dart';
@@ -46,27 +47,19 @@ class _CellDetailScreenState extends ConsumerState<CellDetailScreen> {
       body: detailsAsync.when(
         data: (details) {
           if (details == null) {
-            return const Center(child: Text('Run not found'));
+            return const EmptyState(message: 'Run not found');
           }
 
           final cellData = details.cells
               .where((c) => c.cell.matrixCellId == widget.cellId)
               .firstOrNull;
           if (cellData == null) {
-            return const Center(child: Text('Cell not found'));
+            return const EmptyState(message: 'Cell not found');
           }
 
           final attempts = cellData.attempts;
           if (attempts.isEmpty) {
-            return const Center(
-              child: Text(
-                'No attempts recorded',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
-                  color: ColorTokens.textSecondary,
-                ),
-              ),
-            );
+            return const EmptyState(message: 'No attempts recorded');
           }
 
           // Compute averages.

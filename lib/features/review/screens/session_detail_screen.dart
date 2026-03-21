@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/drill/drill_detail_screen.dart';
+import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
-import 'package:zx_golf_app/providers/review_providers.dart';
 
 // S12 §12.6.2 — Session detail: single session instance breakdown.
 // Read-only view of a closed session.
@@ -32,15 +33,7 @@ class SessionDetailScreen extends ConsumerWidget {
       body: sessionFuture.when(
         data: (detail) {
           if (detail == null) {
-            return Center(
-              child: Text(
-                'Session not found',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodyLgSize,
-                  color: ColorTokens.textTertiary,
-                ),
-              ),
-            );
+            return const EmptyState(message: 'Session not found');
           }
 
           return ListView(
@@ -232,7 +225,7 @@ final _sessionDetailProvider = FutureProvider.family<_SessionDetail?,
   final windows = await scoringRepo.getWindowStatesForUser(params.userId);
   final scores = <double>[];
   for (final w in windows) {
-    final entries = parseWindowEntries(w.entries);
+    final entries = decodeWindowEntries(w.entries);
     for (final e in entries) {
       if (e.sessionId == params.sessionId) {
         scores.add(e.score);

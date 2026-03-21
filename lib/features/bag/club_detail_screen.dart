@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
@@ -112,7 +113,7 @@ class _ClubDetailScreenState extends ConsumerState<ClubDetailScreen> {
     if (_club == null) {
       return Scaffold(
         appBar: const ZxAppBar(title: 'Club'),
-        body: const Center(child: Text('Club not found')),
+        body: const EmptyState(message: 'Club not found'),
       );
     }
 

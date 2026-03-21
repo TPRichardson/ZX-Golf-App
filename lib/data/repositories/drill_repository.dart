@@ -12,7 +12,9 @@ import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
+import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
+import 'package:zx_golf_app/data/repositories/repository_helpers.dart';
 
 // TD-03 §3.3.2 — Drill definition repository.
 // Manages: Drill, UserDrillAdoption, MetricSchema (read-only).
@@ -138,7 +140,7 @@ class DrillRepository {
     // Validate subskill mapping references valid SubskillRef IDs for selected SkillArea.
     final skillArea = data.skillArea.value;
     final subskillMapping = data.subskillMapping.present
-        ? _parseSubskillMapping(data.subskillMapping.value)
+        ? parseSubskillMapping(data.subskillMapping.value)
         : <String>{};
 
     // S04 §4.2 — Validate subskill count by DrillType.
@@ -212,19 +214,11 @@ class DrillRepository {
       isDeleted: const Value(false),
     );
 
-    try {
-      return await _db.transaction(() async {
-        return await _db.into(_db.drills).insertReturning(companion);
-      });
-    } on ZxGolfAppException {
-      rethrow;
-    } on Exception catch (e) {
-      throw SystemException(
-        code: SystemException.referentialIntegrity,
-        message: 'Failed to create custom drill',
-        context: {'error': e.toString()},
-      );
-    }
+    return executeTransaction(
+      _db,
+      () async => _db.into(_db.drills).insertReturning(companion),
+      errorMessage: 'Failed to create custom drill',
+    );
   }
 
   // TD-03 §3.3.2 — Update drill fields.
@@ -269,7 +263,7 @@ class DrillRepository {
 
     // Validate anchors if changed.
     if (anchorsChanged) {
-      final subskillMapping = _parseSubskillMapping(existing.subskillMapping);
+      final subskillMapping = parseSubskillMapping(existing.subskillMapping);
       _validateAnchors(data.anchors.value, subskillMapping);
     }
 
@@ -292,7 +286,7 @@ class DrillRepository {
 
       // Spec: S04 — Anchor edit triggers scoped reflow.
       if (anchorsChanged) {
-        final subskillMapping = _parseSubskillMapping(existing.subskillMapping);
+        final subskillMapping = parseSubskillMapping(existing.subskillMapping);
         if (subskillMapping.isNotEmpty) {
           await _eventLogRepo.create(EventLogsCompanion.insert(
             eventLogId: _uuid.v4(),
@@ -439,7 +433,7 @@ class DrillRepository {
     ));
 
     // Trigger full reflow.
-    final subskillMapping = _parseSubskillMapping(existing.subskillMapping);
+    final subskillMapping = parseSubskillMapping(existing.subskillMapping);
     if (subskillMapping.isNotEmpty) {
       await _reflowEngine.executeFullRebuild(userId);
     }
@@ -499,25 +493,17 @@ class DrillRepository {
     }
 
     // Create new adoption.
-    try {
-      return await _db.transaction(() async {
-        return await _db
-            .into(_db.userDrillAdoptions)
-            .insertReturning(UserDrillAdoptionsCompanion.insert(
-          userDrillAdoptionId: _uuid.v4(),
-          userId: userId,
-          drillId: drill.drillId,
-        ));
-      });
-    } on ZxGolfAppException {
-      rethrow;
-    } on Exception catch (e) {
-      throw SystemException(
-        code: SystemException.referentialIntegrity,
-        message: 'Failed to create drill adoption',
-        context: {'error': e.toString()},
-      );
-    }
+    return executeTransaction(
+      _db,
+      () async => _db
+          .into(_db.userDrillAdoptions)
+          .insertReturning(UserDrillAdoptionsCompanion.insert(
+        userDrillAdoptionId: _uuid.v4(),
+        userId: userId,
+        drillId: drill.drillId,
+      )),
+      errorMessage: 'Failed to create drill adoption',
+    );
   }
 
   // Adopt a server-authoritative standard drill. Upserts the drill locally
@@ -668,19 +654,12 @@ class DrillRepository {
       isDeleted: const Value(false),
     );
 
-    try {
-      return await _db.transaction(() async {
-        return await _db.into(_db.drills).insertReturning(companion);
-      });
-    } on ZxGolfAppException {
-      rethrow;
-    } on Exception catch (e) {
-      throw SystemException(
-        code: SystemException.referentialIntegrity,
-        message: 'Failed to duplicate drill',
-        context: {'sourceDrillId': sourceDrillId, 'error': e.toString()},
-      );
-    }
+    return executeTransaction(
+      _db,
+      () async => _db.into(_db.drills).insertReturning(companion),
+      errorMessage: 'Failed to duplicate drill',
+      errorContext: {'sourceDrillId': sourceDrillId},
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -962,9 +941,4 @@ class DrillRepository {
     }
   }
 
-  Set<String> _parseSubskillMapping(String json) {
-    if (json == '[]' || json.isEmpty) return {};
-    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-    return list.map((e) => e as String).toSet();
-  }
 }

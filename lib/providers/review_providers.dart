@@ -2,9 +2,8 @@
 // S05 — SkillScore dashboard, analysis, plan adherence.
 // Bridges materialised scoring data + reference data to UI.
 
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 import 'package:zx_golf_app/core/scoring/scoring_types.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -33,28 +32,6 @@ final rebuildNeededProvider = FutureProvider<bool>((ref) async {
 });
 
 // ---------------------------------------------------------------------------
-// Window entry JSON parsing — used by window detail views
-// ---------------------------------------------------------------------------
-
-/// Parse MaterialisedWindowState.entries JSON to a list of [WindowEntry].
-/// Format: `[{"sessionId","completionTimestamp","score","occupancy","isDualMapped"}]`
-List<WindowEntry> parseWindowEntries(String json) {
-  if (json.isEmpty || json == '[]') return [];
-  final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-  return list.map((e) {
-    final map = e as Map<String, dynamic>;
-    return WindowEntry(
-      sessionId: map['sessionId'] as String,
-      completionTimestamp:
-          DateTime.parse(map['completionTimestamp'] as String),
-      score: (map['score'] as num).toDouble(),
-      occupancy: (map['occupancy'] as num).toDouble(),
-      isDualMapped: map['isDualMapped'] as bool,
-    );
-  }).toList();
-}
-
-// ---------------------------------------------------------------------------
 // Drill-level session score map — Fix 7: Multi-Output averaging
 // ---------------------------------------------------------------------------
 
@@ -65,7 +42,7 @@ Map<String, double> buildDrillLevelScoreMap(
     List<MaterialisedWindowState> windows) {
   final scoreAccumulator = <String, List<double>>{};
   for (final w in windows) {
-    final entries = parseWindowEntries(w.entries);
+    final entries = decodeWindowEntries(w.entries);
     for (final e in entries) {
       scoreAccumulator.putIfAbsent(e.sessionId, () => []).add(e.score);
     }
@@ -256,7 +233,7 @@ final windowDetailProvider = Provider.family<
     if (match.isEmpty) return null;
     final ws = match.first;
     return ParsedWindowDetail(
-      entries: parseWindowEntries(ws.entries),
+      entries: decodeWindowEntries(ws.entries),
       totalOccupancy: ws.totalOccupancy,
       weightedSum: ws.weightedSum,
       windowAverage: ws.windowAverage,

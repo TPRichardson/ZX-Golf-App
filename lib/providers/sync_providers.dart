@@ -71,23 +71,24 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
   return ref.watch(authServiceProvider).watchAuthState();
 });
 
+/// Factory: sync-engine derived provider that recomputes on status change.
+Provider<T> _syncDerived<T>(T Function(SyncEngine) selector) {
+  return Provider<T>((ref) {
+    ref.watch(syncStatusProvider);
+    return selector(ref.read(syncEngineProvider));
+  });
+}
+
 /// Phase 7C — Whether sync is enabled (reads from engine). TD-07 §6.2.
-final syncEnabledProvider = Provider<bool>((ref) {
-  ref.watch(syncStatusProvider); // Recompute on status change.
-  return ref.read(syncEngineProvider).syncEnabled;
-});
+final syncEnabledProvider = _syncDerived<bool>((e) => e.syncEnabled);
 
 /// Phase 7C — Consecutive failure count (reads from engine). TD-07 §6.2.
-final syncFailureCountProvider = Provider<int>((ref) {
-  ref.watch(syncStatusProvider); // Recompute on status change.
-  return ref.read(syncEngineProvider).consecutiveFailures;
-});
+final syncFailureCountProvider =
+    _syncDerived<int>((e) => e.consecutiveFailures);
 
 /// Phase 7C — Consecutive merge timeout count. TD-07 §6.2.
-final consecutiveMergeTimeoutsProvider = Provider<int>((ref) {
-  ref.watch(syncStatusProvider);
-  return ref.read(syncEngineProvider).consecutiveMergeTimeouts;
-});
+final consecutiveMergeTimeoutsProvider =
+    _syncDerived<int>((e) => e.consecutiveMergeTimeouts);
 
 /// Phase 7C — Connectivity status stream.
 final connectivityStatusProvider = StreamProvider<bool>((ref) {
@@ -102,10 +103,8 @@ final lastSyncTimestampProvider = FutureProvider<DateTime?>((ref) {
 });
 
 /// Phase 7C — Schema mismatch detection flag. TD-07 §6.4.
-final schemaMismatchDetectedProvider = Provider<bool>((ref) {
-  ref.watch(syncStatusProvider);
-  return ref.read(syncEngineProvider).schemaMismatchDetected;
-});
+final schemaMismatchDetectedProvider =
+    _syncDerived<bool>((e) => e.schemaMismatchDetected);
 
 /// Phase 7C — Dual active session detection stream.
 final dualActiveSessionProvider = StreamProvider<String>((ref) {

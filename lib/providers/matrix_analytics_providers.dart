@@ -13,90 +13,54 @@ import 'package:zx_golf_app/providers/repository_providers.dart';
 /// Session-scoped — does not persist across app restarts.
 final analyticsWeightedProvider = StateProvider<bool>((ref) => true);
 
-/// Club distance analytics for all gapping runs (§9.6).
-final clubDistanceAnalyticsProvider = FutureProvider.family<
-    List<ClubDistanceResult>, String>((ref, userId) async {
+/// Shared loader: filter runs by type, load details, apply analytics function.
+Future<List<T>> _loadMatrixAnalytics<T>(
+  Ref ref,
+  String userId,
+  MatrixType matrixType,
+  List<T> Function(List<MatrixRunWithDetails>, {required bool weighted})
+      analyticsFunc,
+) async {
   final runsAsync = ref.watch(matrixRunsProvider(userId));
   final weighted = ref.watch(analyticsWeightedProvider);
 
   return runsAsync.when(
     data: (runs) async {
-      final gappingRuns = runs
-          .where((r) => r.matrixType == MatrixType.gappingChart)
-          .toList();
+      final filtered =
+          runs.where((r) => r.matrixType == matrixType).toList();
+      if (filtered.isEmpty) return [];
 
-      if (gappingRuns.isEmpty) return [];
-
-      // Load full details for each run.
       final details = <MatrixRunWithDetails>[];
       final repo = ref.read(matrixRepositoryProvider);
-      for (final run in gappingRuns) {
+      for (final run in filtered) {
         final d = await repo.getMatrixRunWithDetails(run.matrixRunId);
         if (d != null) details.add(d);
       }
 
-      return clubDistanceAnalytics(details, weighted: weighted);
+      return analyticsFunc(details, weighted: weighted);
     },
-    loading: () => <ClubDistanceResult>[],
-    error: (e, s) => <ClubDistanceResult>[],
+    loading: () => <T>[],
+    error: (e, s) => <T>[],
   );
-});
+}
+
+/// Club distance analytics for all gapping runs (§9.6).
+final clubDistanceAnalyticsProvider = FutureProvider.family<
+    List<ClubDistanceResult>, String>((ref, userId) =>
+    _loadMatrixAnalytics(ref, userId, MatrixType.gappingChart,
+        clubDistanceAnalytics));
 
 /// Wedge coverage analytics for all wedge runs (§9.7).
 final wedgeCoverageAnalyticsProvider = FutureProvider.family<
-    List<WedgeCoverageResult>, String>((ref, userId) async {
-  final runsAsync = ref.watch(matrixRunsProvider(userId));
-  final weighted = ref.watch(analyticsWeightedProvider);
-
-  return runsAsync.when(
-    data: (runs) async {
-      final wedgeRuns = runs
-          .where((r) => r.matrixType == MatrixType.wedgeMatrix)
-          .toList();
-
-      if (wedgeRuns.isEmpty) return [];
-
-      final details = <MatrixRunWithDetails>[];
-      final repo = ref.read(matrixRepositoryProvider);
-      for (final run in wedgeRuns) {
-        final d = await repo.getMatrixRunWithDetails(run.matrixRunId);
-        if (d != null) details.add(d);
-      }
-
-      return wedgeCoverageAnalytics(details, weighted: weighted);
-    },
-    loading: () => <WedgeCoverageResult>[],
-    error: (e, s) => <WedgeCoverageResult>[],
-  );
-});
+    List<WedgeCoverageResult>, String>((ref, userId) =>
+    _loadMatrixAnalytics(ref, userId, MatrixType.wedgeMatrix,
+        wedgeCoverageAnalytics));
 
 /// Chipping accuracy analytics for all chipping runs (§9.8).
 final chippingAccuracyAnalyticsProvider = FutureProvider.family<
-    List<ChippingAccuracyResult>, String>((ref, userId) async {
-  final runsAsync = ref.watch(matrixRunsProvider(userId));
-  final weighted = ref.watch(analyticsWeightedProvider);
-
-  return runsAsync.when(
-    data: (runs) async {
-      final chippingRuns = runs
-          .where((r) => r.matrixType == MatrixType.chippingMatrix)
-          .toList();
-
-      if (chippingRuns.isEmpty) return [];
-
-      final details = <MatrixRunWithDetails>[];
-      final repo = ref.read(matrixRepositoryProvider);
-      for (final run in chippingRuns) {
-        final d = await repo.getMatrixRunWithDetails(run.matrixRunId);
-        if (d != null) details.add(d);
-      }
-
-      return chippingAccuracyAnalytics(details, weighted: weighted);
-    },
-    loading: () => <ChippingAccuracyResult>[],
-    error: (e, s) => <ChippingAccuracyResult>[],
-  );
-});
+    List<ChippingAccuracyResult>, String>((ref, userId) =>
+    _loadMatrixAnalytics(ref, userId, MatrixType.chippingMatrix,
+        chippingAccuracyAnalytics));
 
 /// Distance trend for a specific cell across runs (§9.9).
 final distanceTrendProvider = FutureProvider.family<List<TrendPoint>,

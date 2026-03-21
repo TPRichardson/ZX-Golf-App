@@ -1702,13 +1702,7 @@ class PracticeRepository {
           ..where((t) => t.drillId.equals(session.drillId)))
         .getSingleOrNull();
     if (drill == null) return {};
-    return _parseSubskillMapping(drill.subskillMapping);
-  }
-
-  Set<String> _parseSubskillMapping(String json) {
-    if (json == '[]' || json.isEmpty) return {};
-    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-    return list.map((e) => e as String).toSet();
+    return parseSubskillMapping(drill.subskillMapping);
   }
 
   // Fix 9 — Re-evaluate integrity flag after instance edit.
@@ -1746,7 +1740,7 @@ class PracticeRepository {
 
     bool anyBreach = false;
     for (final instance in allInstances) {
-      final value = _extractNumericValue(instance.rawMetrics);
+      final value = extractNumericValue(instance.rawMetrics);
       final breach = evaluateIntegrity(IntegrityInput(
         value: value,
         hardMinInput: schema.hardMinInput,
@@ -1779,20 +1773,6 @@ class PracticeRepository {
         metadata: const Value('{"action":"auto_resolved"}'),
       ));
     }
-  }
-
-  /// Extract numeric value from rawMetrics JSON.
-  double _extractNumericValue(String rawMetrics) {
-    final parsed = jsonDecode(rawMetrics);
-    if (parsed is num) return parsed.toDouble();
-    if (parsed is Map) {
-      for (final key in ['value', 'distance', 'speed', 'carry']) {
-        if (parsed.containsKey(key) && parsed[key] is num) {
-          return (parsed[key] as num).toDouble();
-        }
-      }
-    }
-    return 0.0;
   }
 
   // ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import 'package:zx_golf_app/core/error_types.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/data/repositories/repository_helpers.dart';
 
 // TD-03 §3.3.5 — Club configuration repository.
 // Manages: UserClub, ClubPerformanceProfile, UserSkillAreaClubMapping.
@@ -107,55 +108,37 @@ class ClubRepository {
       status: const Value(UserClubStatus.active),
     );
 
-    try {
-      return await _db.transaction(() async {
-        final club =
-            await _db.into(_db.userClubs).insertReturning(companion);
+    return executeTransaction(_db, () async {
+      final club =
+          await _db.into(_db.userClubs).insertReturning(companion);
 
-        // S09 §9.2.3 — Create default mappings for this club type.
-        await _createDefaultMappings(userId, clubType);
+      // S09 §9.2.3 — Create default mappings for this club type.
+      await _createDefaultMappings(userId, clubType);
 
-        return club;
-      });
-    } on ZxGolfAppException {
-      rethrow;
-    } on Exception catch (e) {
-      throw SystemException(
-        code: SystemException.referentialIntegrity,
-        message: 'Failed to add club',
-        context: {'error': e.toString()},
-      );
-    }
+      return club;
+    }, errorMessage: 'Failed to add club');
   }
 
   // TD-03 §3.3.5 — Update club fields. Make, Model, Loft only.
   Future<UserClub> updateClub(String clubId, UserClubsCompanion data) async {
     await _gate.awaitGateRelease();
-    try {
-      return await _db.transaction(() async {
-        final rows = await (_db.update(_db.userClubs)
-              ..where((t) => t.clubId.equals(clubId)))
-            .writeReturning(data.copyWith(
-          updatedAt: Value(DateTime.now()),
-        ));
-        if (rows.isEmpty) {
-          throw ValidationException(
-            code: ValidationException.requiredField,
-            message: 'Club not found after update',
-            context: {'clubId': clubId},
-          );
-        }
-        return rows.first;
-      });
-    } on ZxGolfAppException {
-      rethrow;
-    } on Exception catch (e) {
-      throw SystemException(
-        code: SystemException.referentialIntegrity,
-        message: 'Failed to update club',
-        context: {'clubId': clubId, 'error': e.toString()},
-      );
-    }
+    return executeTransaction(_db, () async {
+      final rows = await (_db.update(_db.userClubs)
+            ..where((t) => t.clubId.equals(clubId)))
+          .writeReturning(data.copyWith(
+        updatedAt: Value(DateTime.now()),
+      ));
+      if (rows.isEmpty) {
+        throw ValidationException(
+          code: ValidationException.requiredField,
+          message: 'Club not found after update',
+          context: {'clubId': clubId},
+        );
+      }
+      return rows.first;
+    },
+        errorMessage: 'Failed to update club',
+        errorContext: {'clubId': clubId});
   }
 
   // TD-03 §3.3.5 / TD-04 §2.10.1 — Retire club: Active→Retired.
@@ -293,21 +276,13 @@ class ClubRepository {
       clubId: Value(clubId),
     );
 
-    try {
-      return await _db.transaction(() async {
-        return await _db
-            .into(_db.clubPerformanceProfiles)
-            .insertReturning(companion);
-      });
-    } on ZxGolfAppException {
-      rethrow;
-    } on Exception catch (e) {
-      throw SystemException(
-        code: SystemException.referentialIntegrity,
-        message: 'Failed to create club performance profile',
-        context: {'error': e.toString()},
-      );
-    }
+    return executeTransaction(
+      _db,
+      () async => _db
+          .into(_db.clubPerformanceProfiles)
+          .insertReturning(companion),
+      errorMessage: 'Failed to create club performance profile',
+    );
   }
 
   // TD-03 §3.3.5 — Get active profile: most recent EffectiveFromDate ≤ now.

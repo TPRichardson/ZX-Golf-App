@@ -243,7 +243,7 @@ class ReflowEngine {
           skillArea: subskillRef.skillArea,
           subskill: subskillId,
           practiceType: drillType,
-          entries: Value(_encodeWindowEntries(emptyWindow.entries)),
+          entries: Value(encodeWindowEntries(emptyWindow.entries)),
           totalOccupancy: Value(emptyWindow.totalOccupancy),
           weightedSum: Value(emptyWindow.weightedSum),
           windowAverage: Value(emptyWindow.windowAverage),
@@ -269,18 +269,13 @@ class ReflowEngine {
           _scoreSessionInMemory(swd, schema, instances, forSubskillId: subskillId);
       if (sessionScore == null) continue;
 
-      // Determine occupancy: dual-mapped = 0.5, single = 1.0
-      final subskillMapping = _parseSubskillMapping(swd.drill.subskillMapping);
-      final isDualMapped = subskillMapping.length > 1;
-      final occupancy = isDualMapped ? 0.5 : 1.0;
-
-      entries.add(WindowEntry(
+      entries.add(createWindowEntry(
         sessionId: swd.session.sessionId,
         drillId: swd.drill.drillId,
-        completionTimestamp: swd.session.completionTimestamp ?? DateTime.now(),
+        completionTimestamp: swd.session.completionTimestamp,
         score: sessionScore,
-        occupancy: occupancy,
-        isDualMapped: isDualMapped,
+        subskillCount:
+            parseSubskillMapping(swd.drill.subskillMapping).length,
       ));
     }
 
@@ -306,7 +301,7 @@ class ReflowEngine {
         skillArea: subskillRef.skillArea,
         subskill: subskillId,
         practiceType: drillType,
-        entries: Value(_encodeWindowEntries(windowState.entries)),
+        entries: Value(encodeWindowEntries(windowState.entries)),
         totalOccupancy: Value(windowState.totalOccupancy),
         weightedSum: Value(windowState.weightedSum),
         windowAverage: Value(windowState.windowAverage),
@@ -399,8 +394,8 @@ class ReflowEngine {
     if (instances.isEmpty) return 0.0;
 
     // Parse anchors for this drill's subskill.
-    final anchorsMap = _parseAnchorsMap(swd.drill.anchors);
-    final subskillMapping = _parseSubskillMapping(swd.drill.subskillMapping);
+    final anchorsMap = parseAnchorsMap(swd.drill.anchors);
+    final subskillMapping = parseSubskillMapping(swd.drill.subskillMapping);
     if (subskillMapping.isEmpty || anchorsMap.isEmpty) return 0.0;
 
     // Fix 1 — Multi-Output: use the target subskill's anchors if specified.
@@ -415,13 +410,13 @@ class ReflowEngine {
       final bySet = <String, List<double>>{};
       for (final i in instances) {
         bySet.putIfAbsent(i.setId, () => [])
-            .add(_extractNumericValue(i.rawMetrics));
+            .add(extractNumericValue(i.rawMetrics));
       }
       return scoreBestOfSetSession(bySet, anchors);
     } else if (adapterType == ScoringAdapterType.linearInterpolation) {
       // Raw data drill: score per-instance then average.
       final inputs = instances
-          .map((i) => RawInstanceInput(_extractNumericValue(i.rawMetrics)))
+          .map((i) => RawInstanceInput(extractNumericValue(i.rawMetrics)))
           .toList();
       return scoreRawDataSession(inputs, anchors);
     } else {
@@ -429,7 +424,7 @@ class ReflowEngine {
       var totalHits = 0;
       var totalAttempts = instances.length;
       for (final instance in instances) {
-        if (_isHit(instance.rawMetrics, adapterType)) {
+        if (isHit(instance.rawMetrics, adapterType)) {
           totalHits++;
         }
       }
@@ -505,7 +500,7 @@ class ReflowEngine {
     }
     final s = matching.first;
     return WindowState(
-      entries: _decodeWindowEntries(s.entries),
+      entries: decodeWindowEntries(s.entries),
       totalOccupancy: s.totalOccupancy,
       weightedSum: s.weightedSum,
       windowAverage: s.windowAverage,
@@ -680,35 +675,15 @@ class ReflowEngine {
     List<SubskillRef> allRefs,
     Stopwatch stopwatch,
   ) async {
-    // 1. Bulk-fetch: schemas, drills (small tables), then sessions (lightweight).
+    // 1. Bulk-fetch schemas, drills, build metadata caches.
     final timer = Stopwatch()..start();
     final allSchemas = await _scoringRepo.getAllMetricSchemas();
     final allDrillsMap = await _scoringRepo.getAllDrillsMap();
     _instrumentation.emit('bulk.schemas', timer.elapsed);
 
-    // Pre-parse drill metadata once per drill.
-    final drillSubskillCache = <String, Set<String>>{};
-    final drillAnchorsCache = <String, Map<String, Anchors>>{};
-    final drillTypeCache = <String, DrillType>{};
-    final drillSchemaIdCache = <String, String>{};
-    final drillWindowCapCache = <String, int?>{};
-    for (final drill in allDrillsMap.values) {
-      drillSubskillCache[drill.drillId] =
-          _parseSubskillMapping(drill.subskillMapping);
-      drillAnchorsCache[drill.drillId] = _parseAnchorsMap(drill.anchors);
-      drillTypeCache[drill.drillId] = drill.drillType;
-      drillSchemaIdCache[drill.drillId] = drill.metricSchemaId;
-      drillWindowCapCache[drill.drillId] = drill.windowCap;
-    }
+    final cache = _buildDrillMetadataCache(allDrillsMap, allSchemas);
 
-    // Pre-parse adapter types per schema.
-    final adapterTypeCache = <String, ScoringAdapterType>{};
-    for (final entry in allSchemas.entries) {
-      adapterTypeCache[entry.key] =
-          parseScoringAdapterBinding(entry.value.scoringAdapterBinding);
-    }
-
-    // Fetch lightweight sessions (only 3 columns via raw SQL).
+    // 2. Fetch lightweight sessions, index by (subskillId, drillType).
     timer.reset();
     final allLightSessions =
         await _scoringRepo.getAllClosedSessionsLight(userId);
@@ -716,41 +691,12 @@ class ReflowEngine {
       'count': allLightSessions.length,
     });
 
-    // 2. Index sessions by (subskillId, drillType) in memory.
-    final sessionIndex =
-        <String, Map<DrillType, List<LightSession>>>{};
-    for (final ls in allLightSessions) {
-      final subskillIds = drillSubskillCache[ls.drillId];
-      var drillType = drillTypeCache[ls.drillId];
-      if (subskillIds == null || drillType == null) continue;
-      // Benchmark drills score in the Transition window.
-      if (drillType == DrillType.benchmark) drillType = DrillType.transition;
-      for (final subskillId in subskillIds) {
-        sessionIndex
-            .putIfAbsent(subskillId, () => {})
-            .putIfAbsent(drillType, () => [])
-            .add(ls);
-      }
-    }
+    final sessionIndex = _indexSessionsBySubskill(allLightSessions, cache);
 
     // 3. Pre-filter: cap sessions per window at per-subskill occupancy limit.
-    final neededSessionIds = <String>{};
-    final cappedIndex =
-        <String, Map<DrillType, List<LightSession>>>{};
-    for (final ref in allRefs) {
-      final maxSessionsPerWindow = (ref.windowSize * 2.2).ceil();
-      for (final drillType in [DrillType.transition, DrillType.pressure]) {
-        final sessions = sessionIndex[ref.subskillId]?[drillType] ?? [];
-        final capped = sessions.length > maxSessionsPerWindow
-            ? sessions.sublist(0, maxSessionsPerWindow)
-            : sessions;
-        cappedIndex
-            .putIfAbsent(ref.subskillId, () => {})[drillType] = capped;
-        for (final s in capped) {
-          neededSessionIds.add(s.sessionId);
-        }
-      }
-    }
+    final capResult = _capSessionsPerWindow(sessionIndex, allRefs);
+    final cappedIndex = capResult.cappedIndex;
+    final neededSessionIds = capResult.neededSessionIds;
 
     // 4. Batch-fetch instance metrics only for needed sessions (raw SQL).
     timer.reset();
@@ -767,12 +713,12 @@ class ReflowEngine {
           .fold<int>(0, (s, l) => s + l.length),
     });
 
+    // 5. Score all windows in memory.
     final affectedSkillAreas = <SkillArea>{};
     var totalWindowEntries = 0;
     final windowCompanions = <MaterialisedWindowStatesCompanion>[];
     final windowStateMap = <String, WindowState>{};
 
-    // 5. For each subskill, rebuild windows using pre-fetched data.
     timer.reset();
     for (final ref in allRefs) {
       affectedSkillAreas.add(ref.skillArea);
@@ -784,73 +730,26 @@ class ReflowEngine {
         // Score each session in memory using cached metadata.
         final entries = <WindowEntry>[];
         for (final ls in sessions) {
-          final schemaId = drillSchemaIdCache[ls.drillId];
-          final adapterType = schemaId != null
-              ? (adapterTypeCache[schemaId] ?? ScoringAdapterType.none)
-              : ScoringAdapterType.none;
+          final sessionScore = _scoreSessionBulk(
+            ls, ref.subskillId, cache,
+            instanceMetrics, instanceMetricsBySet,
+          );
+          if (sessionScore == null) continue;
 
-          if (adapterType == ScoringAdapterType.none) continue;
-
-          final metrics = instanceMetrics[ls.sessionId] ?? [];
-          if (metrics.isEmpty) continue;
-
-          final anchorsMap = drillAnchorsCache[ls.drillId]!;
-          final subskillIds = drillSubskillCache[ls.drillId]!;
-          if (subskillIds.isEmpty || anchorsMap.isEmpty) continue;
-
-          // Fix 1 — Multi-Output: use the current subskill's anchors, not always the first.
-          final targetSubskill = anchorsMap.containsKey(ref.subskillId)
-              ? ref.subskillId
-              : subskillIds.first;
-          final anchors = anchorsMap[targetSubskill];
-          if (anchors == null) continue;
-
-          double sessionScore;
-          if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
-            final setGrouped = instanceMetricsBySet[ls.sessionId] ?? {};
-            final bySet = <String, List<double>>{};
-            for (final entry in setGrouped.entries) {
-              bySet[entry.key] = entry.value
-                  .map((m) => _extractNumericValue(m))
-                  .toList();
-            }
-            sessionScore = scoreBestOfSetSession(bySet, anchors);
-          } else if (adapterType == ScoringAdapterType.linearInterpolation) {
-            final inputs = metrics
-                .map((m) => RawInstanceInput(_extractNumericValue(m)))
-                .toList();
-            sessionScore = scoreRawDataSession(inputs, anchors);
-          } else {
-            var totalHits = 0;
-            for (final m in metrics) {
-              if (_isHit(m, adapterType)) {
-                totalHits++;
-              }
-            }
-            sessionScore = scoreHitRateSession(
-              HitRateSessionInput(
-                  totalHits: totalHits, totalAttempts: metrics.length),
-              anchors,
-            );
-          }
-
-          final isDualMapped = subskillIds.length > 1;
-          final occupancy = isDualMapped ? 0.5 : 1.0;
-
-          entries.add(WindowEntry(
+          entries.add(createWindowEntry(
             sessionId: ls.sessionId,
             drillId: ls.drillId,
-            completionTimestamp: ls.completionTimestamp ?? DateTime.now(),
+            completionTimestamp: ls.completionTimestamp,
             score: sessionScore,
-            occupancy: occupancy,
-            isDualMapped: isDualMapped,
+            subskillCount: cache.drillSubskillCache[ls.drillId]!.length,
           ));
         }
 
         totalWindowEntries += entries.length;
 
         // Per-drill window cap before roll-off.
-        final capped = _applyPerDrillWindowCap(entries, drillWindowCapCache);
+        final capped =
+            _applyPerDrillWindowCap(entries, cache.drillWindowCapCache);
 
         final adjusted = _applyPartialRollOff(capped,
             maxOccupancy: ref.windowSize.toDouble());
@@ -862,7 +761,7 @@ class ReflowEngine {
           skillArea: ref.skillArea,
           subskill: ref.subskillId,
           practiceType: drillType,
-          entries: Value(_encodeWindowEntries(windowState.entries)),
+          entries: Value(encodeWindowEntries(windowState.entries)),
           totalOccupancy: Value(windowState.totalOccupancy),
           weightedSum: Value(windowState.weightedSum),
           windowAverage: Value(windowState.windowAverage),
@@ -877,7 +776,7 @@ class ReflowEngine {
       'windowEntries': totalWindowEntries,
     });
 
-    // 8. Batch-write all window states at once.
+    // 6. Batch-write all window states at once.
     timer.reset();
     await _db.batch((batch) {
       for (final c in windowCompanions) {
@@ -888,7 +787,187 @@ class ReflowEngine {
 
     _instrumentation.emit('bulk.windowWrite', timer.elapsed);
 
-    // 9. Compute all subskill scores in-memory using cached window states.
+    // 7. Compute & write subskill scores, then area + overall scores.
+    final subskillScoreMap =
+        await _computeAndWriteSubskillScores(userId, allRefs, windowStateMap);
+
+    final newOverall = await _computeAndWriteAreaAndOverallScores(
+      userId, allRefs, affectedSkillAreas, subskillScoreMap,
+    );
+
+    // 8. Reset IntegritySuppressed for all subskills.
+    final allSubskillIds = allRefs.map((r) => r.subskillId).toSet();
+    await _scoringRepo.resetIntegritySuppressedForSubskills(
+      userId,
+      allSubskillIds,
+    );
+
+    return ReflowResult(
+      success: true,
+      elapsed: stopwatch.elapsed,
+      subskillsRebuilt: allRefs.length,
+      windowEntriesProcessed: totalWindowEntries,
+      newOverallScore: newOverall,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // _executeFullRebuildBulk helpers
+  // ---------------------------------------------------------------------------
+
+  /// Builds pre-parsed drill and schema metadata caches from raw data.
+  _BulkRebuildCache _buildDrillMetadataCache(
+    Map<String, Drill> allDrillsMap,
+    Map<String, MetricSchema> allSchemas,
+  ) {
+    final drillSubskillCache = <String, Set<String>>{};
+    final drillAnchorsCache = <String, Map<String, Anchors>>{};
+    final drillTypeCache = <String, DrillType>{};
+    final drillSchemaIdCache = <String, String>{};
+    final drillWindowCapCache = <String, int?>{};
+    for (final drill in allDrillsMap.values) {
+      drillSubskillCache[drill.drillId] =
+          parseSubskillMapping(drill.subskillMapping);
+      drillAnchorsCache[drill.drillId] = parseAnchorsMap(drill.anchors);
+      drillTypeCache[drill.drillId] = drill.drillType;
+      drillSchemaIdCache[drill.drillId] = drill.metricSchemaId;
+      drillWindowCapCache[drill.drillId] = drill.windowCap;
+    }
+
+    final adapterTypeCache = <String, ScoringAdapterType>{};
+    for (final entry in allSchemas.entries) {
+      adapterTypeCache[entry.key] =
+          parseScoringAdapterBinding(entry.value.scoringAdapterBinding);
+    }
+
+    return _BulkRebuildCache(
+      drillSubskillCache: drillSubskillCache,
+      drillAnchorsCache: drillAnchorsCache,
+      drillTypeCache: drillTypeCache,
+      drillSchemaIdCache: drillSchemaIdCache,
+      drillWindowCapCache: drillWindowCapCache,
+      adapterTypeCache: adapterTypeCache,
+    );
+  }
+
+  /// Indexes lightweight sessions by (subskillId, drillType) in memory.
+  /// Benchmark drills are normalised to the Transition window.
+  Map<String, Map<DrillType, List<LightSession>>> _indexSessionsBySubskill(
+    List<LightSession> sessions,
+    _BulkRebuildCache cache,
+  ) {
+    final sessionIndex = <String, Map<DrillType, List<LightSession>>>{};
+    for (final ls in sessions) {
+      final subskillIds = cache.drillSubskillCache[ls.drillId];
+      var drillType = cache.drillTypeCache[ls.drillId];
+      if (subskillIds == null || drillType == null) continue;
+      // Benchmark drills score in the Transition window.
+      if (drillType == DrillType.benchmark) drillType = DrillType.transition;
+      for (final subskillId in subskillIds) {
+        sessionIndex
+            .putIfAbsent(subskillId, () => {})
+            .putIfAbsent(drillType, () => [])
+            .add(ls);
+      }
+    }
+    return sessionIndex;
+  }
+
+  /// Caps sessions per window at ~2.2x the per-subskill occupancy limit and
+  /// collects the set of session IDs that will need instance metrics fetched.
+  ({
+    Map<String, Map<DrillType, List<LightSession>>> cappedIndex,
+    Set<String> neededSessionIds,
+  }) _capSessionsPerWindow(
+    Map<String, Map<DrillType, List<LightSession>>> sessionIndex,
+    List<SubskillRef> allRefs,
+  ) {
+    final neededSessionIds = <String>{};
+    final cappedIndex = <String, Map<DrillType, List<LightSession>>>{};
+    for (final ref in allRefs) {
+      final maxSessionsPerWindow = (ref.windowSize * 2.2).ceil();
+      for (final drillType in [DrillType.transition, DrillType.pressure]) {
+        final sessions = sessionIndex[ref.subskillId]?[drillType] ?? [];
+        final capped = sessions.length > maxSessionsPerWindow
+            ? sessions.sublist(0, maxSessionsPerWindow)
+            : sessions;
+        cappedIndex
+            .putIfAbsent(ref.subskillId, () => {})[drillType] = capped;
+        for (final s in capped) {
+          neededSessionIds.add(s.sessionId);
+        }
+      }
+    }
+    return (cappedIndex: cappedIndex, neededSessionIds: neededSessionIds);
+  }
+
+  /// Scores a single session for a given subskill using cached metadata.
+  /// Returns null if the session should be skipped (no adapter, no metrics,
+  /// missing anchors).
+  double? _scoreSessionBulk(
+    LightSession ls,
+    String subskillId,
+    _BulkRebuildCache cache,
+    Map<String, List<String>> instanceMetrics,
+    Map<String, Map<String, List<String>>> instanceMetricsBySet,
+  ) {
+    final schemaId = cache.drillSchemaIdCache[ls.drillId];
+    final adapterType = schemaId != null
+        ? (cache.adapterTypeCache[schemaId] ?? ScoringAdapterType.none)
+        : ScoringAdapterType.none;
+
+    if (adapterType == ScoringAdapterType.none) return null;
+
+    final metrics = instanceMetrics[ls.sessionId] ?? [];
+    if (metrics.isEmpty) return null;
+
+    final anchorsMap = cache.drillAnchorsCache[ls.drillId]!;
+    final subskillIds = cache.drillSubskillCache[ls.drillId]!;
+    if (subskillIds.isEmpty || anchorsMap.isEmpty) return null;
+
+    // Fix 1 — Multi-Output: use the current subskill's anchors, not always the first.
+    final targetSubskill = anchorsMap.containsKey(subskillId)
+        ? subskillId
+        : subskillIds.first;
+    final anchors = anchorsMap[targetSubskill];
+    if (anchors == null) return null;
+
+    if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
+      final setGrouped = instanceMetricsBySet[ls.sessionId] ?? {};
+      final bySet = <String, List<double>>{};
+      for (final entry in setGrouped.entries) {
+        bySet[entry.key] = entry.value
+            .map((m) => extractNumericValue(m))
+            .toList();
+      }
+      return scoreBestOfSetSession(bySet, anchors);
+    } else if (adapterType == ScoringAdapterType.linearInterpolation) {
+      final inputs = metrics
+          .map((m) => RawInstanceInput(extractNumericValue(m)))
+          .toList();
+      return scoreRawDataSession(inputs, anchors);
+    } else {
+      var totalHits = 0;
+      for (final m in metrics) {
+        if (isHit(m, adapterType)) {
+          totalHits++;
+        }
+      }
+      return scoreHitRateSession(
+        HitRateSessionInput(
+            totalHits: totalHits, totalAttempts: metrics.length),
+        anchors,
+      );
+    }
+  }
+
+  /// Computes subskill scores from window state map and batch-writes them.
+  /// Returns the subskillScoreMap for use in area/overall scoring.
+  Future<Map<String, SubskillScore>> _computeAndWriteSubskillScores(
+    String userId,
+    List<SubskillRef> allRefs,
+    Map<String, WindowState> windowStateMap,
+  ) async {
     final subskillCompanions = <MaterialisedSubskillScoresCompanion>[];
     final subskillScoreMap = <String, SubskillScore>{};
 
@@ -936,7 +1015,17 @@ class ReflowEngine {
       }
     });
 
-    // 10. Compute skill area scores in-memory.
+    return subskillScoreMap;
+  }
+
+  /// Computes skill area scores and overall score, batch-writes them.
+  /// Returns the new overall score.
+  Future<double> _computeAndWriteAreaAndOverallScores(
+    String userId,
+    List<SubskillRef> allRefs,
+    Set<SkillArea> affectedSkillAreas,
+    Map<String, SubskillScore> subskillScoreMap,
+  ) async {
     final refsByArea = <SkillArea, List<SubskillRef>>{};
     for (final ref in allRefs) {
       refsByArea.putIfAbsent(ref.skillArea, () => []).add(ref);
@@ -972,10 +1061,10 @@ class ReflowEngine {
       ));
     }
 
-    // 11. Compute overall score in-memory.
+    // Compute overall score in-memory.
     final newOverall = scoreOverall(areaScoreValues);
 
-    // 12. Batch-write area scores + overall score.
+    // Batch-write area scores + overall score.
     await _db.batch((batch) {
       for (final c in areaScoreCompanions) {
         batch.insert(_db.materialisedSkillAreaScores, c,
@@ -993,20 +1082,7 @@ class ReflowEngine {
               )));
     });
 
-    // 13. Reset IntegritySuppressed for all subskills.
-    final allSubskillIds = allRefs.map((r) => r.subskillId).toSet();
-    await _scoringRepo.resetIntegritySuppressedForSubskills(
-      userId,
-      allSubskillIds,
-    );
-
-    return ReflowResult(
-      success: true,
-      elapsed: stopwatch.elapsed,
-      subskillsRebuilt: allRefs.length,
-      windowEntriesProcessed: totalWindowEntries,
-      newOverallScore: newOverall,
-    );
+    return newOverall;
   }
 
   // ---------------------------------------------------------------------------
@@ -1045,7 +1121,7 @@ class ReflowEngine {
     }
 
     final adapterType = parseScoringAdapterBinding(schema.scoringAdapterBinding);
-    final subskillMapping = _parseSubskillMapping(drill.subskillMapping);
+    final subskillMapping = parseSubskillMapping(drill.subskillMapping);
     final isDualMapped = subskillMapping.length > 1;
     final isCustomDrill = drill.origin == DrillOrigin.custom;
 
@@ -1060,7 +1136,7 @@ class ReflowEngine {
       // Evaluate integrity per instance for raw data drills.
       if (adapterType == ScoringAdapterType.linearInterpolation) {
         for (final instance in instances) {
-          final value = _extractNumericValue(instance.rawMetrics);
+          final value = extractNumericValue(instance.rawMetrics);
           final breach = evaluateIntegrity(IntegrityInput(
             value: value,
             hardMinInput: schema.hardMinInput,
@@ -1229,83 +1305,6 @@ class ReflowEngine {
     return true;
   }
 
-  // ---------------------------------------------------------------------------
-  // Private helpers
-  // ---------------------------------------------------------------------------
-
-  Set<String> _parseSubskillMapping(String json) {
-    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-    return list.map((e) => e as String).toSet();
-  }
-
-  Map<String, Anchors> _parseAnchorsMap(String json) {
-    final Map<String, dynamic> map =
-        jsonDecode(json) as Map<String, dynamic>;
-    final result = <String, Anchors>{};
-    for (final entry in map.entries) {
-      final anchor = entry.value as Map<String, dynamic>;
-      result[entry.key] = Anchors(
-        min: (anchor['Min'] as num).toDouble(),
-        scratch: (anchor['Scratch'] as num).toDouble(),
-        pro: (anchor['Pro'] as num).toDouble(),
-      );
-    }
-    return result;
-  }
-
-  double _extractNumericValue(String rawMetrics) {
-    final parsed = jsonDecode(rawMetrics);
-    if (parsed is num) return parsed.toDouble();
-    if (parsed is Map) {
-      // Try common keys: 'value', 'distance', 'speed'.
-      for (final key in ['value', 'distance', 'speed', 'carry']) {
-        if (parsed.containsKey(key) && parsed[key] is num) {
-          return (parsed[key] as num).toDouble();
-        }
-      }
-    }
-    return 0.0;
-  }
-
-  bool _isHit(String rawMetrics, ScoringAdapterType adapterType) {
-    final parsed = jsonDecode(rawMetrics);
-    if (parsed is Map) {
-      // Grid cell: check for 'hit' key.
-      if (parsed.containsKey('hit')) return parsed['hit'] == true;
-      // Binary: check for 'result' key.
-      if (parsed.containsKey('result')) return parsed['result'] == true;
-    }
-    return false;
-  }
-
-  String _encodeWindowEntries(List<WindowEntry> entries) {
-    return jsonEncode(entries
-        .map((e) => {
-              'sessionId': e.sessionId,
-              'drillId': e.drillId,
-              'completionTimestamp': e.completionTimestamp.toIso8601String(),
-              'score': e.score,
-              'occupancy': e.occupancy,
-              'isDualMapped': e.isDualMapped,
-            })
-        .toList());
-  }
-
-  List<WindowEntry> _decodeWindowEntries(String json) {
-    final List<dynamic> list = jsonDecode(json) as List<dynamic>;
-    return list.map((e) {
-      final map = e as Map<String, dynamic>;
-      return WindowEntry(
-        sessionId: map['sessionId'] as String,
-        drillId: map['drillId'] as String? ?? '',
-        completionTimestamp: DateTime.parse(map['completionTimestamp'] as String),
-        score: (map['score'] as num).toDouble(),
-        occupancy: (map['occupancy'] as num).toDouble(),
-        isDualMapped: map['isDualMapped'] as bool,
-      );
-    }).toList();
-  }
-
   Future<void> _emitReflowCompleteEvent(ReflowTrigger trigger) async {
     await _eventLogRepo.create(EventLogsCompanion.insert(
       eventLogId: _uuid.v4(),
@@ -1351,4 +1350,35 @@ class ReflowEngine {
       ),
     );
   }
+}
+
+/// Private data class holding pre-parsed drill and schema metadata caches
+/// used during bulk rebuild. Avoids re-parsing on every session evaluation.
+class _BulkRebuildCache {
+  /// Maps drillId -> set of subskill IDs the drill contributes to.
+  final Map<String, Set<String>> drillSubskillCache;
+
+  /// Maps drillId -> per-subskill anchors map.
+  final Map<String, Map<String, Anchors>> drillAnchorsCache;
+
+  /// Maps drillId -> drill type.
+  final Map<String, DrillType> drillTypeCache;
+
+  /// Maps drillId -> metric schema ID.
+  final Map<String, String> drillSchemaIdCache;
+
+  /// Maps drillId -> optional per-drill window cap.
+  final Map<String, int?> drillWindowCapCache;
+
+  /// Maps schemaId -> scoring adapter type.
+  final Map<String, ScoringAdapterType> adapterTypeCache;
+
+  const _BulkRebuildCache({
+    required this.drillSubskillCache,
+    required this.drillAnchorsCache,
+    required this.drillTypeCache,
+    required this.drillSchemaIdCache,
+    required this.drillWindowCapCache,
+    required this.adapterTypeCache,
+  });
 }

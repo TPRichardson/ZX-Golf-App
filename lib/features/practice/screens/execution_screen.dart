@@ -15,11 +15,14 @@ import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/validation/club_tiers.dart';
-import 'package:zx_golf_app/core/widgets/zx_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_helpers.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_input_delegate.dart';
+import 'package:zx_golf_app/features/practice/widgets/edit_shot_dialog.dart';
+import 'package:zx_golf_app/features/practice/widgets/next_target_dialog.dart';
+import 'package:zx_golf_app/features/practice/widgets/shot_log_row.dart';
+import 'package:zx_golf_app/features/practice/widgets/target_distance_picker_dialog.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/binary_hit_miss_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/continuous_measurement_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/grid_cell_delegate.dart';
@@ -41,26 +44,6 @@ import 'package:zx_golf_app/providers/settings_providers.dart';
 /// True on Android/iOS where vibration and wakelock are supported.
 final bool _isMobilePlatform = Platform.isAndroid || Platform.isIOS;
 
-/// Tracked shot entry for the shot log.
-class _ShotEntry {
-  final String instanceId;
-  final String label;
-  final bool isHit;
-  final String club;
-  final String? clubId;
-  final String rawMetrics;
-  final double? score;
-
-  const _ShotEntry({
-    required this.instanceId,
-    required this.label,
-    required this.isHit,
-    required this.club,
-    this.clubId,
-    required this.rawMetrics,
-    this.score,
-  });
-}
 
 /// Unified execution screen for grid, binary, continuous, and raw input modes.
 class ExecutionScreen extends ConsumerStatefulWidget {
@@ -96,7 +79,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Lookup: clubId → clubType.dbValue for display.
   final Map<String, String> _clubIdToLabel = {};
   final _random = Random();
-  final List<_ShotEntry> _shotLog = [];
+  final List<ShotEntry> _shotLog = [];
   final _shotListController = ScrollController();
 
   /// Carry distances keyed by ClubType dbValue (e.g. 'i7' → 155.0).
@@ -206,7 +189,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         final isHit = metrics['hit'] as bool;
         final label =
             metrics['label'] as String? ?? (isHit ? 'Hit' : 'Miss');
-        _shotLog.add(_ShotEntry(
+        _shotLog.add(ShotEntry(
           instanceId: inst.instanceId,
           label: label,
           isHit: isHit,
@@ -216,7 +199,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         ));
       } else if (metrics.containsKey('value')) {
         final value = (metrics['value'] as num).toDouble();
-        _shotLog.add(_ShotEntry(
+        _shotLog.add(ShotEntry(
           instanceId: inst.instanceId,
           label: value.toStringAsFixed(1),
           isHit: false,
@@ -225,7 +208,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
           rawMetrics: raw,
         ));
       } else {
-        _shotLog.add(_ShotEntry(
+        _shotLog.add(ShotEntry(
           instanceId: inst.instanceId,
           label: '\u2014',
           isHit: false,
@@ -426,7 +409,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 
   /// Parse a shot entry from instance data for the shot log.
-  _ShotEntry _parseShotEntry(InstancesCompanion data, InstanceResult result) {
+  ShotEntry _parseShotEntry(InstancesCompanion data, InstanceResult result) {
     final clubLabel = _clubIdToLabel[data.selectedClub.value] ?? '';
     final raw = data.rawMetrics.value;
     final metrics = jsonDecode(raw) as Map<String, dynamic>;
@@ -435,7 +418,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       final isHit = metrics['hit'] as bool;
       final label =
           metrics['label'] as String? ?? (isHit ? 'Hit' : 'Miss');
-      return _ShotEntry(
+      return ShotEntry(
         instanceId: result.instance.instanceId,
         label: label,
         isHit: isHit,
@@ -448,7 +431,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     // Raw/continuous — has 'value' field.
     if (metrics.containsKey('value')) {
       final value = (metrics['value'] as num).toDouble();
-      return _ShotEntry(
+      return ShotEntry(
         instanceId: result.instance.instanceId,
         label: value.toStringAsFixed(1),
         isHit: (result.realtimeScore ?? 0) >= 2.5,
@@ -458,7 +441,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         score: result.realtimeScore,
       );
     }
-    return _ShotEntry(
+    return ShotEntry(
       instanceId: result.instance.instanceId,
       label: '\u2014',
       isHit: false,
@@ -552,7 +535,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => _NextTargetDialog(
+      builder: (ctx) => NextTargetDialog(
         targetDistance: _currentRandomDistance?.round() ?? 0,
         initialShape: shape,
         initialEffort: effort,
@@ -661,7 +644,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     final changed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => _EditShotDialog(
+      builder: (ctx) => EditShotDialog(
         currentLabel: shot.label,
         currentClubId: shot.clubId,
         zoneOptions: zoneOptions,
@@ -696,7 +679,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         );
 
     // Update the shot log entry.
-    _shotLog[index] = _ShotEntry(
+    _shotLog[index] = ShotEntry(
       instanceId: shot.instanceId,
       label: newZoneLabel ?? shot.label,
       isHit: newIsHit ?? shot.isHit,
@@ -786,7 +769,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     final result = await showDialog<double>(
       context: context,
-      builder: (ctx) => _TargetDistancePickerDialog(
+      builder: (ctx) => TargetDistancePickerDialog(
         current: current,
         min: min,
         max: max,
@@ -992,7 +975,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                                 final shot = _shotLog[index];
                                 return GestureDetector(
                                   onTap: () => _editShot(index),
-                                  child: _ShotLogRow(
+                                  child: ShotLogRow(
                                     index: index + 1,
                                     shot: shot,
                                   ),
@@ -1826,728 +1809,3 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 }
 
-/// Single row in the shot log.
-class _ShotLogRow extends StatelessWidget {
-  final int index;
-  final _ShotEntry shot;
-
-  const _ShotLogRow({required this.index, required this.shot});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          // Shot number.
-          SizedBox(
-            width: 28,
-            child: Text(
-              '$index',
-              style: TextStyle(
-                fontSize: TypographyTokens.bodyLgSize,
-                color: ColorTokens.textTertiary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-          // Hit/miss indicator dot.
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: shot.isHit
-                  ? ColorTokens.successDefault
-                  : ColorTokens.missDefault,
-            ),
-          ),
-          const SizedBox(width: SpacingTokens.sm),
-          // Result label.
-          Expanded(
-            child: Text(
-              shot.label,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodyLgSize,
-                color: shot.isHit
-                    ? ColorTokens.successDefault
-                    : ColorTokens.textSecondary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          // Club name.
-          Padding(
-            padding: const EdgeInsets.only(right: SpacingTokens.xl + SpacingTokens.sm),
-            child: Text(
-              shot.club,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodySize,
-                color: ColorTokens.textTertiary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Inter-shot dialog for variable target drills.
-/// Shows next target, club selector, shape and effort pickers.
-class _NextTargetDialog extends StatefulWidget {
-  final int targetDistance;
-  final String? initialShape;
-  final int? initialEffort;
-  final String initialClubLabel;
-  final List<UserClub> availableClubs;
-  final Map<String, String> clubIdToLabel;
-  final SkillArea skillArea;
-  final String userId;
-  final bool showShotIntent;
-  final void Function(String? clubId, String? shape, int? effort) onConfirm;
-  final ValueChanged<bool> onToggleShotIntent;
-
-  const _NextTargetDialog({
-    required this.targetDistance,
-    required this.initialShape,
-    required this.initialEffort,
-    required this.initialClubLabel,
-    required this.availableClubs,
-    required this.clubIdToLabel,
-    required this.skillArea,
-    required this.userId,
-    required this.showShotIntent,
-    required this.onConfirm,
-    required this.onToggleShotIntent,
-  });
-
-  @override
-  State<_NextTargetDialog> createState() => _NextTargetDialogState();
-}
-
-class _NextTargetDialogState extends State<_NextTargetDialog> {
-  String? _selectedClubId;
-  String? _shape;
-  int? _effort;
-  late bool _showIntent;
-
-  @override
-  void initState() {
-    super.initState();
-    _showIntent = widget.showShotIntent;
-    _shape = widget.initialShape;
-    _effort = widget.initialEffort;
-    // Find club ID matching the initial label.
-    _selectedClubId = widget.availableClubs
-        .where((c) => c.clubType.dbValue == widget.initialClubLabel)
-        .map((c) => c.clubId)
-        .firstOrNull;
-  }
-
-  String get _clubLabel =>
-      widget.clubIdToLabel[_selectedClubId] ?? '';
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-      ),
-      title: const Text(
-        'Next Shot',
-        style: TextStyle(color: ColorTokens.textPrimary),
-      ),
-      contentPadding: const EdgeInsets.all(SpacingTokens.md),
-      content: SingleChildScrollView(
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Target distance.
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              vertical: SpacingTokens.md,
-            ),
-            decoration: BoxDecoration(
-              color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-            ),
-            child: Text(
-              '${widget.targetDistance}y',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.w700,
-                color: ColorTokens.primaryDefault,
-              ),
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.md),
-
-          // Club selector — grid matching club picker style.
-          _sectionLabel('Club'),
-          Wrap(
-            spacing: SpacingTokens.sm,
-            runSpacing: SpacingTokens.sm,
-            children: widget.availableClubs.map((club) {
-              final isSelected = club.clubId == _selectedClubId;
-              return InkWell(
-                onTap: () => setState(() => _selectedClubId = club.clubId),
-                borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-                child: Container(
-                  width: 72,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? ColorTokens.primaryDefault.withValues(alpha: 0.2)
-                        : ColorTokens.surfaceRaised,
-                    borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
-                    border: Border.all(
-                      color: isSelected
-                          ? ColorTokens.primaryDefault
-                          : ColorTokens.surfaceBorder,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      club.clubType.dbValue,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: SpacingTokens.md),
-
-          // Shot intent toggle.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Shot Intent',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySmSize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.textTertiary,
-                ),
-              ),
-              SizedBox(
-                height: 28,
-                child: Switch(
-                  value: _showIntent,
-                  activeColor: ColorTokens.primaryDefault,
-                  onChanged: (v) {
-                    setState(() => _showIntent = v);
-                    widget.onToggleShotIntent(v);
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          if (_showIntent) ...[
-            const SizedBox(height: SpacingTokens.sm),
-
-            // Shape selector.
-            _sectionLabel('Shape'),
-            Row(
-              children: [
-                for (final s in ShotShape.values)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: s != ShotShape.values.last
-                            ? SpacingTokens.xs
-                            : 0,
-                      ),
-                      child: ChoiceChip(
-                        label: SizedBox(
-                          width: double.infinity,
-                          child: Text(s.dbValue, textAlign: TextAlign.center),
-                        ),
-                        selected: _shape == s.dbValue,
-                        onSelected: (_) => setState(() =>
-                            _shape = _shape == s.dbValue ? null : s.dbValue),
-                        selectedColor: ColorTokens.primaryDefault,
-                        backgroundColor: ColorTokens.surfaceRaised,
-                        labelStyle: TextStyle(
-                          fontSize: 16,
-                          color: _shape == s.dbValue
-                              ? ColorTokens.textPrimary
-                              : ColorTokens.textSecondary,
-                        ),
-                        side: BorderSide(
-                          color: _shape == s.dbValue
-                              ? ColorTokens.primaryDefault
-                              : ColorTokens.surfaceBorder,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: SpacingTokens.md),
-
-            // Effort selector.
-            _sectionLabel('Effort'),
-            Row(
-              children: [
-                for (final e in [75, 90, 100])
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: e != 100 ? SpacingTokens.xs : 0,
-                      ),
-                      child: ChoiceChip(
-                        label: SizedBox(
-                          width: double.infinity,
-                          child: Text('$e%', textAlign: TextAlign.center),
-                        ),
-                        selected: _effort == e,
-                        onSelected: (_) => setState(() =>
-                            _effort = _effort == e ? null : e),
-                        selectedColor: ColorTokens.primaryDefault,
-                        backgroundColor: ColorTokens.surfaceRaised,
-                        labelStyle: TextStyle(
-                          fontSize: 16,
-                          color: _effort == e
-                              ? ColorTokens.textPrimary
-                              : ColorTokens.textSecondary,
-                        ),
-                        side: BorderSide(
-                          color: _effort == e
-                              ? ColorTokens.primaryDefault
-                              : ColorTokens.surfaceBorder,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
-      ),
-      actions: [
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () {
-              widget.onConfirm(_selectedClubId, _shape, _effort);
-              Navigator.pop(context);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.primaryDefault,
-              foregroundColor: ColorTokens.textPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: SpacingTokens.md),
-              textStyle: const TextStyle(
-                fontSize: TypographyTokens.headerSize,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            child: const Text('Ready'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  static Widget _sectionLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SpacingTokens.xs),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: TypographyTokens.bodySmSize,
-            fontWeight: FontWeight.w600,
-            color: ColorTokens.textTertiary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Dialog to edit a shot's zone (hit/miss) and/or club.
-class _EditShotDialog extends StatefulWidget {
-  final String currentLabel;
-  final String? currentClubId;
-  final List<({String label, bool isHit})>? zoneOptions;
-  final List<UserClub> availableClubs;
-  final Map<String, String> clubIdToLabel;
-  final void Function(String? label, bool? isHit, String? clubId) onConfirm;
-
-  const _EditShotDialog({
-    required this.currentLabel,
-    required this.currentClubId,
-    required this.zoneOptions,
-    required this.availableClubs,
-    required this.clubIdToLabel,
-    required this.onConfirm,
-  });
-
-  @override
-  State<_EditShotDialog> createState() => _EditShotDialogState();
-}
-
-class _EditShotDialogState extends State<_EditShotDialog> {
-  late String _selectedLabel;
-  late bool _selectedIsHit;
-  String? _selectedClubId;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedLabel = widget.currentLabel;
-    _selectedIsHit = widget.zoneOptions
-            ?.where((z) => z.label == widget.currentLabel)
-            .firstOrNull
-            ?.isHit ??
-        false;
-    _selectedClubId = widget.currentClubId;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-      ),
-      title: const Text(
-        'Edit Shot',
-        style: TextStyle(color: ColorTokens.textPrimary),
-      ),
-      contentPadding: const EdgeInsets.all(SpacingTokens.md),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Zone selector (grid drills only).
-            if (widget.zoneOptions != null) ...[
-              const Text(
-                'Result',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySmSize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.textTertiary,
-                ),
-              ),
-              const SizedBox(height: SpacingTokens.xs),
-              Wrap(
-                spacing: SpacingTokens.xs,
-                runSpacing: SpacingTokens.xs,
-                children: widget.zoneOptions!.map((zone) {
-                  final isSelected = zone.label == _selectedLabel;
-                  final color = zone.isHit
-                      ? ColorTokens.successDefault
-                      : ColorTokens.missDefault;
-                  return ChoiceChip(
-                    label: Text(zone.label),
-                    selected: isSelected,
-                    onSelected: (_) => setState(() {
-                      _selectedLabel = zone.label;
-                      _selectedIsHit = zone.isHit;
-                    }),
-                    selectedColor: color.withValues(alpha: 0.3),
-                    backgroundColor: ColorTokens.surfaceRaised,
-                    labelStyle: TextStyle(
-                      fontSize: 14,
-                      color: isSelected ? color : ColorTokens.textSecondary,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                    side: BorderSide(
-                      color: isSelected ? color : ColorTokens.surfaceBorder,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: SpacingTokens.md),
-            ],
-            // Club selector.
-            if (widget.availableClubs.isNotEmpty) ...[
-              const Text(
-                'Club',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySmSize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.textTertiary,
-                ),
-              ),
-              const SizedBox(height: SpacingTokens.xs),
-              Wrap(
-                spacing: SpacingTokens.sm,
-                runSpacing: SpacingTokens.sm,
-                children: widget.availableClubs.map((club) {
-                  final isSelected = club.clubId == _selectedClubId;
-                  return InkWell(
-                    onTap: () =>
-                        setState(() => _selectedClubId = club.clubId),
-                    borderRadius:
-                        BorderRadius.circular(ShapeTokens.radiusGrid),
-                    child: Container(
-                      width: 72,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? ColorTokens.primaryDefault
-                                .withValues(alpha: 0.2)
-                            : ColorTokens.surfaceRaised,
-                        borderRadius:
-                            BorderRadius.circular(ShapeTokens.radiusGrid),
-                        border: Border.all(
-                          color: isSelected
-                              ? ColorTokens.primaryDefault
-                              : ColorTokens.surfaceBorder,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          club.clubType.dbValue,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isSelected
-                                ? ColorTokens.primaryDefault
-                                : ColorTokens.textPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel',
-              style: TextStyle(color: ColorTokens.textSecondary)),
-        ),
-        FilledButton(
-          onPressed: () {
-            widget.onConfirm(_selectedLabel, _selectedIsHit, _selectedClubId);
-            Navigator.pop(context, true);
-          },
-          style: FilledButton.styleFrom(
-            backgroundColor: ColorTokens.primaryDefault,
-            foregroundColor: ColorTokens.textPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-            ),
-          ),
-          child: const Text('Save'),
-        ),
-      ],
-    );
-  }
-}
-
-/// Scroll wheel + tap-to-type dialog for target distance override.
-class _TargetDistancePickerDialog extends StatefulWidget {
-  final int current;
-  final int min;
-  final int max;
-
-  const _TargetDistancePickerDialog({
-    required this.current,
-    required this.min,
-    required this.max,
-  });
-
-  @override
-  State<_TargetDistancePickerDialog> createState() =>
-      _TargetDistancePickerDialogState();
-}
-
-class _TargetDistancePickerDialogState
-    extends State<_TargetDistancePickerDialog> {
-  late int _selectedValue;
-  late FixedExtentScrollController _scrollCtrl;
-  final _textCtrl = TextEditingController();
-  bool _editing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedValue = widget.current.clamp(widget.min, widget.max);
-    _scrollCtrl = FixedExtentScrollController(
-      initialItem: _selectedValue - widget.min,
-    );
-  }
-
-  @override
-  void dispose() {
-    _scrollCtrl.dispose();
-    _textCtrl.dispose();
-    super.dispose();
-  }
-
-  void _commitTextEntry() {
-    final v = int.tryParse(_textCtrl.text);
-    if (v != null && v >= widget.min && v <= widget.max) {
-      _selectedValue = v;
-      _scrollCtrl.jumpToItem(v - widget.min);
-    }
-    _editing = false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: ColorTokens.surfaceModal,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
-      ),
-      title: const Text(
-        'Set Target Distance',
-        style: TextStyle(color: ColorTokens.textPrimary),
-      ),
-      contentPadding: const EdgeInsets.all(SpacingTokens.md),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 180,
-            child: Row(
-              children: [
-                // Left: display value — tap to type.
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _editing = true;
-                        _textCtrl.text = '$_selectedValue';
-                        _textCtrl.selection = TextSelection(
-                          baseOffset: 0,
-                          extentOffset: _textCtrl.text.length,
-                        );
-                      });
-                    },
-                    child: Center(
-                      child: _editing
-                          ? SizedBox(
-                              width: 120,
-                              child: TextField(
-                                controller: _textCtrl,
-                                autofocus: true,
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: TypographyTokens.displayXlSize,
-                                  fontWeight: FontWeight.w600,
-                                  color: ColorTokens.primaryDefault,
-                                ),
-                                decoration: const InputDecoration(
-                                  suffixText: 'y',
-                                  suffixStyle: TextStyle(
-                                    fontSize: TypographyTokens.bodyLgSize,
-                                    color: ColorTokens.textTertiary,
-                                  ),
-                                  border: InputBorder.none,
-                                ),
-                                onSubmitted: (_) {
-                                  setState(() => _commitTextEntry());
-                                },
-                              ),
-                            )
-                          : Text(
-                              '${_selectedValue}y',
-                              style: const TextStyle(
-                                fontSize: TypographyTokens.displayXlSize,
-                                fontWeight: FontWeight.w600,
-                                color: ColorTokens.primaryDefault,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-                // Right: scroll wheel.
-                SizedBox(
-                  width: 80,
-                  child: ListWheelScrollView.useDelegate(
-                    controller: _scrollCtrl,
-                    itemExtent: 36,
-                    physics: const FixedExtentScrollPhysics(),
-                    diameterRatio: 1.6,
-                    perspective: 0.003,
-                    onSelectedItemChanged: (index) {
-                      setState(() {
-                        _selectedValue = widget.min + index;
-                      });
-                    },
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: widget.max - widget.min + 1,
-                      builder: (context, index) {
-                        final value = widget.min + index;
-                        final isSelected = value == _selectedValue;
-                        return Center(
-                          child: Text(
-                            '$value',
-                            style: TextStyle(
-                              fontSize: isSelected
-                                  ? TypographyTokens.displayLgSize
-                                  : TypographyTokens.bodyLgSize,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: isSelected
-                                  ? ColorTokens.textPrimary
-                                  : ColorTokens.textTertiary,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, -1.0),
-          child: const Text('Reset',
-              style: TextStyle(color: ColorTokens.textSecondary)),
-        ),
-        FilledButton(
-          onPressed: () =>
-              Navigator.pop(context, _selectedValue.toDouble()),
-          style: FilledButton.styleFrom(
-            backgroundColor: ColorTokens.primaryDefault,
-            foregroundColor: ColorTokens.textPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-            ),
-          ),
-          child: const Text('Set'),
-        ),
-      ],
-    );
-  }
-}

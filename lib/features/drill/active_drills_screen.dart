@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
-import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -20,36 +19,14 @@ import 'package:zx_golf_app/providers/settings_providers.dart';
 import '../bag/bag_screen.dart';
 import 'add_drills_screen.dart';
 import 'drill_detail_screen.dart';
+import 'drill_sort_order.dart';
 import 'widgets/drill_card.dart';
-
-/// Display order: driver at top → putter at bottom.
-const _skillAreaDisplayOrder = [
-  SkillArea.driving,
-  SkillArea.woods,
-  SkillArea.approach,
-  SkillArea.pitching,
-  SkillArea.bunkers,
-  SkillArea.chipping,
-  SkillArea.putting,
-];
-
-int _skillAreaSortKey(SkillArea area) =>
-    _skillAreaDisplayOrder.indexOf(area);
-
-/// Sort order within a skill area page:
-/// DrillType (Technique→Transition→Pressure→Benchmark),
-/// then ClubSelectionMode, then InputMode, then alphabetical.
-const _drillTypeSortOrder = [
-  DrillType.techniqueBlock,
-  DrillType.transition,
-  DrillType.pressure,
-  DrillType.benchmark,
-];
+import 'widgets/skill_area_carousel_indicator.dart';
 
 int _drillSortCompare(Drill a, Drill b) {
   // 1. DrillType
-  final typeA = _drillTypeSortOrder.indexOf(a.drillType);
-  final typeB = _drillTypeSortOrder.indexOf(b.drillType);
+  final typeA = kDrillTypeSortOrder.indexOf(a.drillType);
+  final typeB = kDrillTypeSortOrder.indexOf(b.drillType);
   if (typeA != typeB) return typeA.compareTo(typeB);
   // 2. ClubSelectionMode (null first, then by name)
   final clubA = a.clubSelectionMode?.name ?? '';
@@ -183,13 +160,13 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
 
               return PageView.builder(
                 controller: _pageController,
-                itemCount: _skillAreaDisplayOrder.length,
+                itemCount: kSkillAreaDisplayOrder.length,
                 onPageChanged: (page) => setState(() {
                   _currentPage = page;
                   _lastPage = page;
                 }),
                 itemBuilder: (context, index) {
-                  final area = _skillAreaDisplayOrder[index];
+                  final area = kSkillAreaDisplayOrder[index];
                   final areaDrills = groups[area] ?? [];
 
                   if (areaDrills.isEmpty) {
@@ -228,7 +205,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                         .putIfAbsent(dwa.drill.drillType, () => [])
                         .add(dwa);
                   }
-                  final orderedTypes = _drillTypeSortOrder
+                  final orderedTypes = kDrillTypeSortOrder
                       .where((t) => typeGroups.containsKey(t))
                       .toList();
 
@@ -267,53 +244,9 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
   }
 
   Widget _buildCarouselIndicator() {
-    final currentArea = _skillAreaDisplayOrder[_currentPage];
-    final areaColor = ColorTokens.skillArea(currentArea);
-    return Padding(
-      padding: const EdgeInsets.only(top: SpacingTokens.sm),
-      child: Column(
-      children: [
-        // Page title.
-        const Text(
-          'My Active Drills',
-          style: TextStyle(
-            fontSize: TypographyTokens.bodyLgSize,
-            fontWeight: FontWeight.w500,
-            color: ColorTokens.textSecondary,
-          ),
-        ),
-        const SizedBox(height: SpacingTokens.xs),
-        // Skill area name in its colour.
-        Text(
-          currentArea.dbValue,
-          style: TextStyle(
-            fontSize: TypographyTokens.headerSize,
-            fontWeight: FontWeight.w600,
-            color: areaColor,
-          ),
-        ),
-        const SizedBox(height: SpacingTokens.xs),
-        // Dot indicators.
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(_skillAreaDisplayOrder.length, (index) {
-            final isActive = index == _currentPage;
-            final dotColor = ColorTokens.skillArea(_skillAreaDisplayOrder[index]);
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: isActive ? 14 : 8,
-              height: isActive ? 14 : 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive
-                    ? dotColor
-                    : dotColor.withValues(alpha: 0.35),
-              ),
-            );
-          }),
-        ),
-      ],
-    ),
+    return SkillAreaCarouselIndicator(
+      title: 'My Active Drills',
+      currentPage: _currentPage,
     );
   }
 

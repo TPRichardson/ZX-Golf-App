@@ -122,6 +122,18 @@ class PerformanceSnapshotRepository {
       for (final v in clubValues) v.axisValueId: v.label,
     };
 
+    // Batch-fetch all attempts for this run's cells in one query.
+    final cellIds = cells.map((c) => c.matrixCellId).toList();
+    final allCellAttempts = cellIds.isEmpty
+        ? <MatrixAttempt>[]
+        : await (_db.select(_db.matrixAttempts)
+              ..where((t) => t.matrixCellId.isIn(cellIds)))
+            .get();
+    final attemptsByCell = <String, List<MatrixAttempt>>{};
+    for (final a in allCellAttempts) {
+      attemptsByCell.putIfAbsent(a.matrixCellId, () => []).add(a);
+    }
+
     // Group cells by club (by the club axis value ID).
     final clubCells = <String, List<MatrixCell>>{};
     for (final cell in cells) {
@@ -138,10 +150,7 @@ class PerformanceSnapshotRepository {
       final clubLabel = clubValueMap[entry.key] ?? entry.key;
       final allAttempts = <MatrixAttempt>[];
       for (final cell in entry.value) {
-        final attempts = await (_db.select(_db.matrixAttempts)
-              ..where((t) => t.matrixCellId.equals(cell.matrixCellId)))
-            .get();
-        allAttempts.addAll(attempts);
+        allAttempts.addAll(attemptsByCell[cell.matrixCellId] ?? []);
       }
 
       if (allAttempts.isEmpty) continue;
@@ -284,6 +293,28 @@ class PerformanceSnapshotRepository {
 
     if (runs.isEmpty) return {};
 
+    // Batch-fetch snapshots for all run IDs in one query.
+    final runIds = runs.map((r) => r.matrixRunId).toList();
+    final allSnapshots = await (_db.select(_db.performanceSnapshots)
+          ..where((t) => t.matrixRunId.isIn(runIds))
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+    final snapshotByRunId = {
+      for (final s in allSnapshots) s.matrixRunId: s,
+    };
+
+    // Batch-fetch clubs for all snapshots in one query.
+    final snapshotIds = allSnapshots.map((s) => s.snapshotId).toList();
+    final allClubs = snapshotIds.isEmpty
+        ? <SnapshotClub>[]
+        : await (_db.select(_db.snapshotClubs)
+              ..where((t) => t.snapshotId.isIn(snapshotIds)))
+            .get();
+    final clubsBySnapshot = <String, List<SnapshotClub>>{};
+    for (final c in allClubs) {
+      clubsBySnapshot.putIfAbsent(c.snapshotId, () => []).add(c);
+    }
+
     final now = DateTime.now();
     final clubWeightedValues = <String, List<_WeightedValue>>{};
 
@@ -293,16 +324,10 @@ class PerformanceSnapshotRepository {
       // Matrix §1.9.3 — Recency weight formula.
       final weight = exp(-2.25 * sqrt(ageDays / 365.0));
 
-      // Get snapshot for this run (if exists).
-      final snapshot = await (_db.select(_db.performanceSnapshots)
-            ..where((t) => t.matrixRunId.equals(run.matrixRunId))
-            ..where((t) => t.isDeleted.equals(false))
-            ..limit(1))
-          .getSingleOrNull();
-
+      final snapshot = snapshotByRunId[run.matrixRunId];
       if (snapshot == null) continue;
 
-      final clubs = await getSnapshotClubs(snapshot.snapshotId);
+      final clubs = clubsBySnapshot[snapshot.snapshotId] ?? [];
       for (final club in clubs) {
         if (club.carryDistanceMeters != null) {
           clubWeightedValues

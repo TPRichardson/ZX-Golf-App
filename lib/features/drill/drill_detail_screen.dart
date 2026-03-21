@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
+import 'package:zx_golf_app/core/widgets/empty_state.dart';
 import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -101,7 +102,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     if (_drill == null) {
       return Scaffold(
         appBar: const ZxAppBar(title: 'Drill'),
-        body: const Center(child: Text('Drill not found')),
+        body: const EmptyState(message: 'Drill not found'),
       );
     }
 
