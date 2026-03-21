@@ -27,14 +27,14 @@ void main() {
       final local = {
         'userId': 'u1',
         'name': 'local-name',
-        'updatedAt': '2026-03-01T10:00:00.000Z',
-        'isDeleted': false,
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
+        'IsDeleted': false,
       };
       final remote = {
         'userId': 'u1',
         'name': 'remote-name',
-        'updatedAt': '2026-03-01T12:00:00.000Z',
-        'isDeleted': false,
+        'UpdatedAt': '2026-03-01T12:00:00.000Z',
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['name'], 'remote-name');
@@ -42,14 +42,14 @@ void main() {
 
     test('remote strictly newer by 1ms wins', () {
       final local = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.001Z',
+        'UpdatedAt': '2026-03-01T10:00:00.001Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'remote');
@@ -57,14 +57,14 @@ void main() {
 
     test('remote with DateTime objects works', () {
       final local = {
-        'updatedAt': DateTime.utc(2026, 3, 1, 10, 0),
+        'UpdatedAt': DateTime.utc(2026, 3, 1, 10, 0),
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': DateTime.utc(2026, 3, 1, 12, 0),
+        'UpdatedAt': DateTime.utc(2026, 3, 1, 12, 0),
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'remote');
@@ -72,14 +72,14 @@ void main() {
 
     test('local newer wins', () {
       final local = {
-        'updatedAt': '2026-03-01T14:00:00.000Z',
+        'UpdatedAt': '2026-03-01T14:00:00.000Z',
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'local');
@@ -88,14 +88,14 @@ void main() {
     test('tie goes to local', () {
       final ts = '2026-03-01T10:00:00.000Z';
       final local = {
-        'updatedAt': ts,
+        'UpdatedAt': ts,
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': ts,
+        'UpdatedAt': ts,
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'local');
@@ -103,14 +103,14 @@ void main() {
 
     test('local null timestamp — remote wins', () {
       final local = {
-        'updatedAt': null,
+        'UpdatedAt': null,
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'remote');
@@ -120,92 +120,92 @@ void main() {
   group('MergeAlgorithm.mergeRow — Delete-always-wins', () {
     test('local deleted, remote not — result is deleted', () {
       final local = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'local',
-        'isDeleted': true,
+        'IsDeleted': true,
       };
       final remote = {
-        'updatedAt': '2026-03-01T12:00:00.000Z',
+        'UpdatedAt': '2026-03-01T12:00:00.000Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
-      expect(result['isDeleted'], true);
+      expect(result['IsDeleted'], true);
     });
 
     test('remote deleted, local not — result is deleted', () {
       final local = {
-        'updatedAt': '2026-03-01T12:00:00.000Z',
+        'UpdatedAt': '2026-03-01T12:00:00.000Z',
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'remote',
-        'isDeleted': true,
+        'IsDeleted': true,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
-      expect(result['isDeleted'], true);
+      expect(result['IsDeleted'], true);
     });
 
     test('both deleted — result is deleted with latest timestamp', () {
       final local = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'local',
-        'isDeleted': true,
+        'IsDeleted': true,
       };
       final remote = {
-        'updatedAt': '2026-03-01T14:00:00.000Z',
+        'UpdatedAt': '2026-03-01T14:00:00.000Z',
         'value': 'remote',
-        'isDeleted': true,
+        'IsDeleted': true,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
-      expect(result['isDeleted'], true);
+      expect(result['IsDeleted'], true);
       expect(result['value'], 'remote');
     });
 
     test('local deleted newer — uses local fields but isDeleted=true', () {
       final local = {
-        'updatedAt': '2026-03-01T14:00:00.000Z',
+        'UpdatedAt': '2026-03-01T14:00:00.000Z',
         'value': 'local',
-        'isDeleted': true,
+        'IsDeleted': true,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
-      expect(result['isDeleted'], true);
+      expect(result['IsDeleted'], true);
       expect(result['value'], 'local');
     });
   });
 
   group('MergeAlgorithm.mergeRow — Edge cases', () {
     test('both timestamps null — local wins', () {
-      final local = {'updatedAt': null, 'value': 'local', 'isDeleted': false};
-      final remote = {'updatedAt': null, 'value': 'remote', 'isDeleted': false};
+      final local = {'UpdatedAt': null, 'value': 'local', 'IsDeleted': false};
+      final remote = {'UpdatedAt': null, 'value': 'remote', 'IsDeleted': false};
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'local');
     });
 
     test('empty payloads — returns local copy', () {
-      final local = <String, dynamic>{'isDeleted': false};
-      final remote = <String, dynamic>{'isDeleted': false};
+      final local = <String, dynamic>{'IsDeleted': false};
+      final remote = <String, dynamic>{'IsDeleted': false};
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result, isA<Map<String, dynamic>>());
     });
 
     test('result is a new map (not same reference as input)', () {
       final local = {
-        'updatedAt': '2026-03-01T14:00:00.000Z',
+        'UpdatedAt': '2026-03-01T14:00:00.000Z',
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(identical(result, local), false);
@@ -213,14 +213,14 @@ void main() {
 
     test('invalid timestamp string — treated as null', () {
       final local = {
-        'updatedAt': 'not-a-date',
+        'UpdatedAt': 'not-a-date',
         'value': 'local',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remote = {
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
         'value': 'remote',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['value'], 'remote');
@@ -237,9 +237,9 @@ void main() {
         'calendarDayId': id,
         'userId': 'u1',
         'date': '2026-03-01',
-        'slotCapacity': slots.length,
-        'slots': jsonEncode(slots),
-        'updatedAt': updatedAt,
+        'SlotCapacity': slots.length,
+        'Slots': jsonEncode(slots),
+        'UpdatedAt': updatedAt,
       };
     }
 
@@ -278,7 +278,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
 
       // Slot 0: remote newer → remoteDrill
       expect(resultSlots[0]['drillId'], 'remoteDrill');
@@ -303,7 +303,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
       expect(resultSlots[0]['drillId'], 'localDrill');
     });
 
@@ -326,7 +326,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
 
       expect(resultSlots.length, 3);
       // Position 0: remote newer
@@ -355,7 +355,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
 
       expect(resultSlots.length, 3);
       expect(resultSlots[1]['drillId'], 'remote1');
@@ -379,7 +379,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
 
       // Remote row is newer → remote slot wins as fallback.
       expect(resultSlots[0]['drillId'], 'remoteDrill');
@@ -402,7 +402,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
 
       // Local slot has updatedAt, remote doesn't → local wins.
       expect(resultSlots[0]['drillId'], 'localDrill');
@@ -410,24 +410,24 @@ void main() {
 
     test('null slots on both sides — preserves base structure', () {
       final local = {
-        'calendarDayId': 'cd1',
-        'userId': 'u1',
-        'date': '2026-03-01',
-        'slotCapacity': 5,
-        'slots': null,
-        'updatedAt': '2026-03-01T10:00:00.000Z',
+        'CalendarDayId': 'cd1',
+        'UserID': 'u1',
+        'Date': '2026-03-01',
+        'SlotCapacity': 5,
+        'Slots': null,
+        'UpdatedAt': '2026-03-01T10:00:00.000Z',
       };
       final remote = {
-        'calendarDayId': 'cd1',
-        'userId': 'u1',
-        'date': '2026-03-01',
-        'slotCapacity': 5,
-        'slots': null,
-        'updatedAt': '2026-03-01T12:00:00.000Z',
+        'CalendarDayId': 'cd1',
+        'UserID': 'u1',
+        'Date': '2026-03-01',
+        'SlotCapacity': 5,
+        'Slots': null,
+        'UpdatedAt': '2026-03-01T12:00:00.000Z',
       };
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      expect(result['calendarDayId'], 'cd1');
+      expect(result['CalendarDayId'], 'cd1');
     });
 
     test('slot completed on A, different slot assigned on B — both preserved', () {
@@ -460,7 +460,7 @@ void main() {
       );
 
       final result = MergeAlgorithm.mergeCalendarDay(local, remote);
-      final resultSlots = jsonDecode(result['slots'] as String) as List;
+      final resultSlots = jsonDecode(result['Slots'] as String) as List;
 
       // Slot 0: local newer (11:00 > 09:00) → CompletedLinked
       expect(resultSlots[0]['completionState'], 'CompletedLinked');

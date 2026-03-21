@@ -48,6 +48,7 @@ void main() {
   });
 
   Future<void> seedMultipleSubskillSessions() async {
+    await seedPhantomDrills(db);
     final pbId = await seedPracticeBlock(db, userId, practiceBlockId: 'pb-fr');
 
     // Seed sessions for multiple subskills using different system drills.

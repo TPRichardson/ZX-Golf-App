@@ -173,12 +173,16 @@ void main() {
       expect(entries[1].positionIndex, 1);
     });
 
-    test('rejects second active practice block', () async {
-      await repo.createPracticeBlock(userId);
-      expect(
-        () => repo.createPracticeBlock(userId),
-        throwsA(isA<ValidationException>()),
-      );
+    test('second active practice block auto-closes the first', () async {
+      final first = await repo.createPracticeBlock(userId);
+      final second = await repo.createPracticeBlock(userId);
+
+      // First block should now be closed.
+      final reloaded = await (db.select(db.practiceBlocks)
+            ..where((t) => t.practiceBlockId.equals(first.practiceBlockId)))
+          .getSingle();
+      expect(reloaded.endTimestamp, isNotNull);
+      expect(second.endTimestamp, isNull);
     });
   });
 

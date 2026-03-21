@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -42,10 +43,20 @@ void main() {
     await db.close();
   });
 
+  /// Helper: ensure a CalendarDay exists with 5 empty slots.
+  Future<void> ensureDayWithSlots(DateTime date) async {
+    final day = await repo.getOrCreateCalendarDay(userId, date);
+    await repo.updateSlots(
+        day.calendarDayId, List.generate(5, (_) => const Slot()));
+    await repo.updateCalendarDay(day.calendarDayId,
+        const CalendarDaysCompanion(slotCapacity: Value(5)));
+  }
+
   group('RoutineApplicator (S08 §8.2.2)', () {
     test('apply 3-entry routine to day with 5 empty slots → 3 filled',
         () async {
       final date = DateTime(2026, 3, 1);
+      await ensureDayWithSlots(date);
       final routineId = await getRoutineId();
 
       final instance = await applicator.confirmApplication(
@@ -72,6 +83,7 @@ void main() {
 
     test('apply to day with 2 available slots → only 2 used', () async {
       final date = DateTime(2026, 3, 2);
+      await ensureDayWithSlots(date);
       final routineId = await getRoutineId();
       // Pre-fill 3 of 5 slots.
       await repo.assignDrillToSlot(userId, date, 0, 'existing-1');
@@ -97,6 +109,7 @@ void main() {
 
     test('unapply clears owned slots', () async {
       final date = DateTime(2026, 3, 3);
+      await ensureDayWithSlots(date);
       final routineId = await getRoutineId();
       final instance = await applicator.confirmApplication(
         userId,
@@ -121,6 +134,7 @@ void main() {
 
     test('unapply preserves manually-edited slots', () async {
       final date = DateTime(2026, 3, 4);
+      await ensureDayWithSlots(date);
       final routineId = await getRoutineId();
       final instance = await applicator.confirmApplication(
         userId,
@@ -149,6 +163,7 @@ void main() {
 
     test('slot ownership tracking correct', () async {
       final date = DateTime(2026, 3, 5);
+      await ensureDayWithSlots(date);
       final routineId = await getRoutineId();
       final instance = await applicator.confirmApplication(
         userId,

@@ -389,14 +389,20 @@ void main() {
       expect(closedPb.isDeleted, false);
     });
 
-    test('cannot create duplicate active PracticeBlock for same user',
-        () async {
-      await repo.createPracticeBlock(userId, initialDrillIds: [drillId]);
+    test('second createPracticeBlock auto-closes the first', () async {
+      final first =
+          await repo.createPracticeBlock(userId, initialDrillIds: [drillId]);
 
-      expect(
-        () => repo.createPracticeBlock(userId, initialDrillIds: [drillId]),
-        throwsA(isA<ValidationException>()),
-      );
+      final second =
+          await repo.createPracticeBlock(userId, initialDrillIds: [drillId]);
+
+      // First block should now be closed.
+      final reloaded = await (db.select(db.practiceBlocks)
+            ..where((t) => t.practiceBlockId.equals(first.practiceBlockId)))
+          .getSingle();
+      expect(reloaded.endTimestamp, isNotNull);
+      // Second block is the new active one.
+      expect(second.endTimestamp, isNull);
     });
   });
 }

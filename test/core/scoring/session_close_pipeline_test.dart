@@ -39,6 +39,7 @@ void main() {
       database: db,
       instrumentation: instrumentation,
     );
+    await seedPhantomDrills(db);
   });
 
   tearDown(() async {

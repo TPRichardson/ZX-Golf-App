@@ -1,9 +1,11 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/core/sync/sync_write_gate.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
+import 'package:zx_golf_app/features/planning/models/slot.dart';
 import 'package:zx_golf_app/features/planning/schedule_application.dart';
 
 // Phase 5 — ScheduleApplicator tests.
@@ -25,6 +27,15 @@ void main() {
   tearDown(() async {
     await db.close();
   });
+
+  /// Helper: ensure a CalendarDay exists with 5 empty slots.
+  Future<void> ensureDayWithSlots(DateTime date) async {
+    final day = await repo.getOrCreateCalendarDay(userId, date);
+    await repo.updateSlots(
+        day.calendarDayId, List.generate(5, (_) => const Slot()));
+    await repo.updateCalendarDay(day.calendarDayId,
+        const CalendarDaysCompanion(slotCapacity: Value(5)));
+  }
 
   group('ScheduleApplicator — List mode (S08 §8.10.3)', () {
     test('6 entries across 3 days (2 slots each)', () {
@@ -154,6 +165,9 @@ void main() {
         DateTime(2026, 3, 1),
         DateTime(2026, 3, 2),
       ];
+      for (final d in dates) {
+        await ensureDayWithSlots(d);
+      }
 
       final resolvedMap = <DateTime, List<String>>{
         dates[0]: ['drill-1', 'drill-2'],
@@ -186,6 +200,9 @@ void main() {
         DateTime(2026, 3, 3),
         DateTime(2026, 3, 4),
       ];
+      for (final d in dates) {
+        await ensureDayWithSlots(d);
+      }
 
       final resolvedMap = <DateTime, List<String>>{
         dates[0]: ['drill-a'],

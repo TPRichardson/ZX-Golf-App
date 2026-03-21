@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/core/error_types.dart';
@@ -8,6 +9,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
+import 'package:zx_golf_app/features/planning/models/slot.dart';
 
 // Phase 5 — PlanningRepository tests.
 // Covers: CalendarDay slot management (TD-04 §2.6),
@@ -29,6 +31,15 @@ void main() {
     await db.close();
   });
 
+  /// Helper: ensure a CalendarDay exists with 5 empty slots.
+  Future<void> ensureDayWithSlots(DateTime date) async {
+    final day = await repo.getOrCreateCalendarDay(userId, date);
+    await repo.updateSlots(
+        day.calendarDayId, List.generate(5, (_) => const Slot()));
+    await repo.updateCalendarDay(day.calendarDayId,
+        const CalendarDaysCompanion(slotCapacity: Value(5)));
+  }
+
   // ===========================================================================
   // CalendarDay Slot Management — TD-04 §2.6
   // ===========================================================================
@@ -38,10 +49,9 @@ void main() {
       final day = await repo.getOrCreateCalendarDay(userId, date);
 
       expect(day.userId, userId);
-      expect(day.slotCapacity, 5);
+      expect(day.slotCapacity, 0);
       final slots = repo.parseSlots(day.slots);
-      expect(slots.length, 5);
-      expect(slots.every((s) => s.isEmpty), isTrue);
+      expect(slots.length, 0);
     });
 
     test('getOrCreateCalendarDay returns existing on second call', () async {
@@ -54,6 +64,7 @@ void main() {
 
     test('assignDrillToSlot fills empty slot', () async {
       final date = DateTime(2026, 3, 2);
+      await ensureDayWithSlots(date);
       final day = await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       final slots = repo.parseSlots(day.slots);
 
@@ -65,6 +76,7 @@ void main() {
 
     test('assignDrillToSlot rejects filled slot', () async {
       final date = DateTime(2026, 3, 3);
+      await ensureDayWithSlots(date);
       await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
 
       expect(
@@ -75,7 +87,7 @@ void main() {
 
     test('assignDrillToSlot rejects out-of-range index', () async {
       final date = DateTime(2026, 3, 4);
-      await repo.getOrCreateCalendarDay(userId, date);
+      await ensureDayWithSlots(date);
 
       expect(
         () => repo.assignDrillToSlot(userId, date, 10, 'drill-1'),
@@ -85,6 +97,7 @@ void main() {
 
     test('clearSlot resets filled slot to empty', () async {
       final date = DateTime(2026, 3, 5);
+      await ensureDayWithSlots(date);
       await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       final day = await repo.clearSlot(userId, date, 0);
       final slots = repo.parseSlots(day.slots);
@@ -95,6 +108,7 @@ void main() {
 
     test('updateSlotCapacity rejects below filled count', () async {
       final date = DateTime(2026, 3, 6);
+      await ensureDayWithSlots(date);
       await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       await repo.assignDrillToSlot(userId, date, 1, 'drill-2');
       await repo.assignDrillToSlot(userId, date, 2, 'drill-3');
@@ -107,7 +121,7 @@ void main() {
 
     test('updateSlotCapacity increases capacity', () async {
       final date = DateTime(2026, 3, 7);
-      await repo.getOrCreateCalendarDay(userId, date);
+      await ensureDayWithSlots(date);
       final day = await repo.updateSlotCapacity(userId, date, 8);
 
       expect(day.slotCapacity, 8);
@@ -117,6 +131,7 @@ void main() {
 
     test('markSlotComplete: Incomplete → CompletedLinked', () async {
       final date = DateTime(2026, 3, 8);
+      await ensureDayWithSlots(date);
       final created = await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       final day = await repo.markSlotComplete(
           created.calendarDayId, 0, 'session-1');
@@ -128,6 +143,7 @@ void main() {
 
     test('markSlotComplete rejects already-completed slot', () async {
       final date = DateTime(2026, 3, 9);
+      await ensureDayWithSlots(date);
       final created = await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       await repo.markSlotComplete(created.calendarDayId, 0, 'session-1');
 
@@ -139,6 +155,7 @@ void main() {
 
     test('markSlotManualComplete: Incomplete → CompletedManual', () async {
       final date = DateTime(2026, 3, 10);
+      await ensureDayWithSlots(date);
       final created = await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       final day = await repo.markSlotManualComplete(
           created.calendarDayId, 0);
@@ -149,6 +166,7 @@ void main() {
 
     test('revertSlotCompletion: CompletedLinked → Incomplete', () async {
       final date = DateTime(2026, 3, 11);
+      await ensureDayWithSlots(date);
       final created = await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
       await repo.markSlotComplete(created.calendarDayId, 0, 'session-1');
       final day = await repo.revertSlotCompletion(created.calendarDayId, 0);
@@ -160,6 +178,7 @@ void main() {
 
     test('revertSlotCompletion rejects Incomplete slot', () async {
       final date = DateTime(2026, 3, 12);
+      await ensureDayWithSlots(date);
       final created = await repo.assignDrillToSlot(userId, date, 0, 'drill-1');
 
       expect(

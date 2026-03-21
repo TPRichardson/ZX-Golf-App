@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/data/database.dart';
@@ -31,6 +32,15 @@ void main() {
     await db.close();
   });
 
+  /// Helper: ensure a CalendarDay exists with 5 empty slots.
+  Future<void> ensureDayWithSlots(DateTime date) async {
+    final day = await repo.getOrCreateCalendarDay(userId, date);
+    await repo.updateSlots(
+        day.calendarDayId, List.generate(5, (_) => const Slot()));
+    await repo.updateCalendarDay(day.calendarDayId,
+        const CalendarDaysCompanion(slotCapacity: Value(5)));
+  }
+
   group('Full flow: routine → apply → complete → match', () {
     test('create routine, apply to day, match session to slot', () async {
       // 1. Create routine with 2 fixed entries.
@@ -46,6 +56,7 @@ void main() {
       // 2. Apply routine to today.
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
 
       final instance = await applicator.confirmApplication(
         userId,
@@ -88,6 +99,7 @@ void main() {
       // 1. Create a day with 2 slots, both filled with drill-a.
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
 
       final day =
           await repo.getOrCreateCalendarDay(userId, todayDate);
@@ -125,7 +137,7 @@ void main() {
       final todayDate = DateTime(today.year, today.month, today.day);
 
       // Setup: day with drill-a in slot 0.
-      await repo.getOrCreateCalendarDay(userId, todayDate);
+      await ensureDayWithSlots(todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-a');
 
       // Complete session for drill-a.
@@ -165,6 +177,7 @@ void main() {
 
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
 
       final instance = await applicator.confirmApplication(
         userId,

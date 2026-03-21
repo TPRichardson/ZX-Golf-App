@@ -121,8 +121,8 @@ void main() {
       expect(sessionIdx, lessThan(instanceIdx));
     });
 
-    test('tableUploadOrder has all 18 synced tables', () {
-      expect(SyncEngine.tableUploadOrder, hasLength(18));
+    test('tableUploadOrder has all 19 synced tables', () {
+      expect(SyncEngine.tableUploadOrder, hasLength(19));
       expect(SyncEngine.tableUploadOrder, contains('User'));
       expect(SyncEngine.tableUploadOrder, contains('UserDevice'));
       expect(SyncEngine.tableUploadOrder, contains('EventLog'));

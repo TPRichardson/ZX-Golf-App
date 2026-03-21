@@ -62,7 +62,7 @@ void main() {
       // Reading should return the engine's value, not a separate state.
       final enabled = container.read(syncEnabledProvider);
       expect(enabled, isA<bool>());
-      expect(enabled, false); // Default engine state (sync off by default).
+      expect(enabled, true); // Default engine state (sync on by default).
     });
 
     test('syncFailureCountProvider is Provider<int> (not StateProvider)', () {

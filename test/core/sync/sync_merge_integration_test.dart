@@ -34,9 +34,9 @@ void main() {
       'timezone': 'UTC',
       'weekStartDay': 1,
       'unitPreferences': '{"distance":"yards"}',
-      'isDeleted': isDeleted,
+      'IsDeleted': isDeleted,
       'createdAt': '2026-03-01T00:00:00.000Z',
-      'updatedAt': updatedAt,
+      'UpdatedAt': updatedAt,
     };
   }
 
@@ -71,9 +71,9 @@ void main() {
           '{"putting_direction_control":{"Min":20,"Scratch":60,"Pro":90}}',
       'origin': 'System',
       'status': 'Active',
-      'isDeleted': isDeleted,
+      'IsDeleted': isDeleted,
       'createdAt': '2026-03-01T00:00:00.000Z',
-      'updatedAt': updatedAt,
+      'UpdatedAt': updatedAt,
     };
   }
 
@@ -88,10 +88,10 @@ void main() {
       'calendarDayId': calendarDayId,
       'userId': userId,
       'date': '2026-03-15',
-      'slotCapacity': slots.length,
-      'slots': jsonEncode(slots),
+      'SlotCapacity': slots.length,
+      'Slots': jsonEncode(slots),
       'createdAt': '2026-03-01T00:00:00.000Z',
-      'updatedAt': updatedAt,
+      'UpdatedAt': updatedAt,
     };
   }
 
@@ -134,7 +134,7 @@ void main() {
 
   /// Parse slots from a CalendarDay result map.
   List<Map<String, dynamic>> parseSlots(Map<String, dynamic> day) {
-    final raw = day['slots'];
+    final raw = day['Slots'];
     if (raw is String) {
       return (jsonDecode(raw) as List)
           .map((e) => Map<String, dynamic>.from(e as Map))
@@ -172,8 +172,8 @@ void main() {
       final result = remote;
       expect(result['userId'], 'new-user-1');
       expect(result['displayName'], 'Remote User');
-      expect(result['updatedAt'], tBase);
-      expect(result['isDeleted'], false);
+      expect(result['UpdatedAt'], tBase);
+      expect(result['IsDeleted'], false);
     });
 
     test('Remote row inserted when no local exists — Drill', () {
@@ -189,7 +189,7 @@ void main() {
       expect(result['drillId'], 'new-drill-1');
       expect(result['name'], 'Remote Drill');
       expect(result['skillArea'], 'Putting');
-      expect(result['isDeleted'], false);
+      expect(result['IsDeleted'], false);
     });
   });
 
@@ -211,7 +211,7 @@ void main() {
 
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['displayName'], 'Local Name');
-      expect(result['updatedAt'], tNewer);
+      expect(result['UpdatedAt'], tNewer);
     });
 
     test('Local preserved on tie', () {
@@ -242,12 +242,12 @@ void main() {
         updatedAt: tBase,
         displayName: 'Remote Null Ts',
       );
-      // Override remote updatedAt to null to simulate missing timestamp.
-      remote['updatedAt'] = null;
+      // Override remote UpdatedAt to null to simulate missing timestamp.
+      remote['UpdatedAt'] = null;
 
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['displayName'], 'Local With Timestamp');
-      expect(result['updatedAt'], tBase);
+      expect(result['UpdatedAt'], tBase);
     });
   });
 
@@ -269,7 +269,7 @@ void main() {
 
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['name'], 'Remote Drill Updated');
-      expect(result['updatedAt'], tNewer);
+      expect(result['UpdatedAt'], tNewer);
     });
 
     test('Remote wins when local updatedAt is null', () {
@@ -278,7 +278,7 @@ void main() {
         updatedAt: tBase,
         name: 'Local Null Ts',
       );
-      local['updatedAt'] = null;
+      local['UpdatedAt'] = null;
       final remote = makeDrillDto(
         drillId: 'd1',
         updatedAt: tBase,
@@ -303,7 +303,7 @@ void main() {
 
       final result = MergeAlgorithm.mergeRow(local, remote);
       expect(result['displayName'], 'Much Newer Remote');
-      expect(result['updatedAt'], '2026-03-15T23:59:59.000Z');
+      expect(result['UpdatedAt'], '2026-03-15T23:59:59.000Z');
     });
   });
 
@@ -327,8 +327,8 @@ void main() {
 
       final result = MergeAlgorithm.mergeRow(local, remote);
       // Delete-always-wins: even though local is newer, result must be deleted.
-      expect(result['isDeleted'], true);
-      // The winner row uses local's fields (newer timestamp) but isDeleted forced true.
+      expect(result['IsDeleted'], true);
+      // The winner row uses local's fields (newer timestamp) but IsDeleted forced true.
       expect(result['name'], 'Active Local');
     });
 
@@ -348,10 +348,10 @@ void main() {
 
       final result = MergeAlgorithm.mergeRow(local, remote);
       // Delete-always-wins: result must be deleted regardless.
-      expect(result['isDeleted'], true);
-      // Remote is newer so its fields are used, but isDeleted forced true.
+      expect(result['IsDeleted'], true);
+      // Remote is newer so its fields are used, but IsDeleted forced true.
       expect(result['name'], 'Active Remote');
-      expect(result['updatedAt'], tNewer);
+      expect(result['UpdatedAt'], tNewer);
     });
   });
 
@@ -546,7 +546,7 @@ void main() {
 
       // Gate remains held during merge.
       expect(gate.isHeld, isTrue);
-      expect(merged['updatedAt'], tNewer);
+      expect(merged['UpdatedAt'], tNewer);
 
       gate.release();
     });
@@ -634,7 +634,7 @@ void main() {
         updatedAt: tBase,
         displayName: 'Null Timestamp User',
       );
-      remote['updatedAt'] = null;
+      remote['UpdatedAt'] = null;
 
       // No local row → remote used directly (simulating the null-local path).
       // When local is null, the merge pipeline uses remote as-is.
@@ -642,7 +642,7 @@ void main() {
 
       expect(result['userId'], 'u-null-ts');
       expect(result['displayName'], 'Null Timestamp User');
-      expect(result['updatedAt'], isNull);
+      expect(result['UpdatedAt'], isNull);
     });
   });
 
@@ -682,19 +682,17 @@ void main() {
       remoteDto['DisplayName'] = 'Remote Updated Name';
       remoteDto['UpdatedAt'] = '2027-01-01T00:00:00.000Z';
 
-      // MergeAlgorithm uses camelCase keys internally, but the DTO format
-      // uses PascalCase. Here we test with PascalCase to match toSyncDto output.
-      // The algorithm reads 'updatedAt' and 'isDeleted' keys, so we need to
-      // provide maps with those keys. Convert to merge-compatible format.
+      // MergeAlgorithm uses PascalCase keys for row-level merge fields
+      // (UpdatedAt, IsDeleted) to match toSyncDto output.
       final localMerge = {
-        'updatedAt': localDto['UpdatedAt'],
+        'UpdatedAt': localDto['UpdatedAt'],
         'displayName': localDto['DisplayName'],
-        'isDeleted': false,
+        'IsDeleted': false,
       };
       final remoteMerge = {
-        'updatedAt': remoteDto['UpdatedAt'],
+        'UpdatedAt': remoteDto['UpdatedAt'],
         'displayName': remoteDto['DisplayName'],
-        'isDeleted': false,
+        'IsDeleted': false,
       };
 
       final merged = MergeAlgorithm.mergeRow(localMerge, remoteMerge);
@@ -731,14 +729,14 @@ void main() {
 
       // Build remote with newer timestamp.
       final localMerge = {
-        'updatedAt': localDto['UpdatedAt'],
+        'UpdatedAt': localDto['UpdatedAt'],
         'name': localDto['Name'],
-        'isDeleted': localDto['IsDeleted'],
+        'IsDeleted': localDto['IsDeleted'],
       };
       final remoteMerge = {
-        'updatedAt': '2027-06-15T12:00:00.000Z',
+        'UpdatedAt': '2027-06-15T12:00:00.000Z',
         'name': 'Remotely Renamed Drill',
-        'isDeleted': false,
+        'IsDeleted': false,
       };
 
       final merged = MergeAlgorithm.mergeRow(localMerge, remoteMerge);

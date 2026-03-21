@@ -160,6 +160,93 @@ Future<String> seedSessionWithInstances(
   return sid;
 }
 
+/// Seed the phantom system drills used by C-1 scoring pipeline tests.
+/// These drills were previously assumed to exist as hardcoded system drills but
+/// are now server-authoritative. Tests must call this before scoring.
+Future<void> seedPhantomDrills(AppDatabase db) async {
+  // 1. Irons Direction — grid 1×3, approach_direction_control
+  await seedTestDrill(db,
+      drillId: 'a0000002-0000-4000-8000-000000000002',
+      skillArea: SkillArea.approach,
+      drillType: DrillType.transition,
+      metricSchemaId: 'grid_1x3_direction',
+      inputMode: InputMode.gridCell,
+      subskillMapping: ['approach_direction_control'],
+      anchors: {
+        'approach_direction_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+      });
+
+  // 2. Irons Distance — grid 3×1, approach_distance_control
+  await seedTestDrill(db,
+      drillId: 'a0000003-0000-4000-8000-000000000001',
+      skillArea: SkillArea.approach,
+      drillType: DrillType.transition,
+      metricSchemaId: 'grid_3x1_distance',
+      inputMode: InputMode.gridCell,
+      subskillMapping: ['approach_distance_control'],
+      anchors: {
+        'approach_distance_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+      });
+
+  // 3. Driving Direction — grid 1×3, driving_direction_control
+  await seedTestDrill(db,
+      drillId: 'a0000002-0000-4000-8000-000000000001',
+      skillArea: SkillArea.driving,
+      drillType: DrillType.transition,
+      metricSchemaId: 'grid_1x3_direction',
+      inputMode: InputMode.gridCell,
+      subskillMapping: ['driving_direction_control'],
+      anchors: {
+        'driving_direction_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+      });
+
+  // 4. Putting Direction — grid 1×3, putting_direction_control
+  await seedTestDrill(db,
+      drillId: 'a0000002-0000-4000-8000-000000000005',
+      skillArea: SkillArea.putting,
+      drillType: DrillType.transition,
+      metricSchemaId: 'grid_1x3_direction',
+      inputMode: InputMode.gridCell,
+      subskillMapping: ['putting_direction_control'],
+      anchors: {
+        'putting_direction_control': {'Min': 20, 'Scratch': 60, 'Pro': 80},
+      });
+
+  // 5. Irons Shape — binary hit/miss, approach_shape_control
+  await seedTestDrill(db,
+      drillId: 'a0000005-0000-4000-8000-000000000001',
+      skillArea: SkillArea.approach,
+      drillType: DrillType.transition,
+      metricSchemaId: 'binary_hit_miss',
+      inputMode: InputMode.binaryHitMiss,
+      subskillMapping: ['approach_shape_control'],
+      anchors: {
+        'approach_shape_control': {'Min': 30, 'Scratch': 70, 'Pro': 90},
+      });
+
+  // 6. Driving Carry — raw data entry, driving_distance_maximum
+  await seedTestDrill(db,
+      drillId: 'a0000004-0000-4000-8000-000000000001',
+      skillArea: SkillArea.driving,
+      drillType: DrillType.benchmark,
+      metricSchemaId: 'raw_carry_distance',
+      inputMode: InputMode.rawDataEntry,
+      subskillMapping: ['driving_distance_maximum'],
+      anchors: {
+        'driving_distance_maximum': {'Min': 180, 'Scratch': 250, 'Pro': 300},
+      });
+
+  // 7. Irons Technique — technique block, no scoring
+  await seedTestDrill(db,
+      drillId: 'a0000001-0000-4000-8000-000000000002',
+      skillArea: SkillArea.approach,
+      drillType: DrillType.techniqueBlock,
+      metricSchemaId: 'technique_duration',
+      inputMode: InputMode.rawDataEntry,
+      subskillMapping: <String>[],
+      anchors: <String, Map<String, double>>{});
+}
+
 /// Seed a user-custom drill for testing. Returns the drillId.
 Future<String> seedTestDrill(
   AppDatabase db, {

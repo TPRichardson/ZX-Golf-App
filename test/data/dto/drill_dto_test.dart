@@ -87,7 +87,7 @@ void main() {
 
     test('enum values serialise to correct strings', () {
       final json = makeDrill().toSyncDto();
-      expect(json['SkillArea'], 'Irons');
+      expect(json['SkillArea'], 'Approach');
       expect(json['DrillType'], 'Transition');
       expect(json['InputMode'], 'GridCell');
       expect(json['Origin'], 'System');

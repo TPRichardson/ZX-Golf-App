@@ -10,7 +10,7 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() => db.close());
 
-      expect(db.schemaVersion, 11);
+      expect(db.schemaVersion, 18);
     });
 
     test('onCreate creates all tables and seeds reference data', () async {
@@ -35,7 +35,7 @@ void main() {
       expect(totalAllocation, 1000);
     });
 
-    test('all 34 tables are created', () async {
+    test('all 35 tables are created', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() => db.close());
 
@@ -44,8 +44,8 @@ void main() {
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
       ).get();
 
-      // 34 Drift tables (26 from DDL + SyncMetadata + 7 Matrix tables).
-      expect(tables.length, 34);
+      // 35 Drift tables (26 from DDL + SyncMetadata + 7 Matrix + UserTrainingItems).
+      expect(tables.length, 35);
     });
 
     test('migration strategy has onUpgrade handler', () {

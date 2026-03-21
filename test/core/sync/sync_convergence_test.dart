@@ -23,8 +23,8 @@ void main() {
       'id': id,
       'name': name,
       'description': description ?? 'desc',
-      'updatedAt': updatedAt,
-      'isDeleted': isDeleted,
+      'UpdatedAt': updatedAt,
+      'IsDeleted': isDeleted,
     };
   }
 
@@ -37,9 +37,9 @@ void main() {
       'calendarDayId': id,
       'userId': 'u1',
       'date': '2026-03-01',
-      'slotCapacity': slots.length,
-      'slots': jsonEncode(slots),
-      'updatedAt': updatedAt,
+      'SlotCapacity': slots.length,
+      'Slots': jsonEncode(slots),
+      'UpdatedAt': updatedAt,
     };
   }
 
@@ -61,7 +61,7 @@ void main() {
 
   /// Parses the merged slots JSON string back to a list of maps.
   List<Map<String, dynamic>> parseSlots(Map<String, dynamic> day) {
-    final raw = day['slots'];
+    final raw = day['Slots'];
     if (raw is String) {
       return (jsonDecode(raw) as List)
           .map((e) => Map<String, dynamic>.from(e as Map))
@@ -101,7 +101,7 @@ void main() {
 
       // Full convergence: both maps are identical.
       expect(resultOnA['name'], resultOnB['name']);
-      expect(resultOnA['updatedAt'], resultOnB['updatedAt']);
+      expect(resultOnA['UpdatedAt'], resultOnB['UpdatedAt']);
     });
 
     test('Edit different fields on both devices — LWW resolves consistently',
@@ -185,11 +185,11 @@ void main() {
       final resultOnB = MergeAlgorithm.mergeRow(deviceB, deviceA);
 
       // Delete-always-wins: both sides converge to deleted.
-      expect(resultOnA['isDeleted'], true);
-      expect(resultOnB['isDeleted'], true);
+      expect(resultOnA['IsDeleted'], true);
+      expect(resultOnB['IsDeleted'], true);
 
-      // Both use the later timestamp's fields but with isDeleted forced true.
-      expect(resultOnA['isDeleted'], resultOnB['isDeleted']);
+      // Both use the later timestamp's fields but with IsDeleted forced true.
+      expect(resultOnA['IsDeleted'], resultOnB['IsDeleted']);
     });
 
     test('Edit on A, delete on B — both converge to deleted', () {
@@ -212,11 +212,11 @@ void main() {
       final resultOnB = MergeAlgorithm.mergeRow(deviceB, deviceA);
 
       // Delete-always-wins: both sides converge to deleted.
-      expect(resultOnA['isDeleted'], true);
-      expect(resultOnB['isDeleted'], true);
+      expect(resultOnA['IsDeleted'], true);
+      expect(resultOnB['IsDeleted'], true);
 
       // Convergence: both results agree on deleted state.
-      expect(resultOnA['isDeleted'], resultOnB['isDeleted']);
+      expect(resultOnA['IsDeleted'], resultOnB['IsDeleted']);
     });
   });
 
@@ -368,7 +368,7 @@ void main() {
 
       // Convergence.
       expect(resultOnA['name'], resultOnB['name']);
-      expect(resultOnA['updatedAt'], resultOnB['updatedAt']);
+      expect(resultOnA['UpdatedAt'], resultOnB['UpdatedAt']);
     });
 
     test('Delete followed by remote edit — delete wins', () {
@@ -394,11 +394,11 @@ void main() {
       final resultOnB = MergeAlgorithm.mergeRow(deviceB, deviceA);
 
       // Delete-always-wins regardless of timestamps.
-      expect(resultOnA['isDeleted'], true);
-      expect(resultOnB['isDeleted'], true);
+      expect(resultOnA['IsDeleted'], true);
+      expect(resultOnB['IsDeleted'], true);
 
       // Convergence on delete state.
-      expect(resultOnA['isDeleted'], resultOnB['isDeleted']);
+      expect(resultOnA['IsDeleted'], resultOnB['IsDeleted']);
     });
   });
 }

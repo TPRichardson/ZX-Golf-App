@@ -54,6 +54,7 @@ void main() {
   });
 
   Future<void> seedMultipleSubskillSessions(AppDatabase targetDb) async {
+    await seedPhantomDrills(targetDb);
     final pbId =
         await seedPracticeBlock(targetDb, userId, practiceBlockId: 'pb-int');
 

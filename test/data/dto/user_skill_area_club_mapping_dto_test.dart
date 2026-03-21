@@ -20,7 +20,7 @@ void main() {
     test('enum values serialise to correct strings', () {
       final json = makeUserSkillAreaClubMapping().toSyncDto();
       expect(json['ClubType'], 'i7');
-      expect(json['SkillArea'], 'Irons');
+      expect(json['SkillArea'], 'Approach');
     });
   });
 }

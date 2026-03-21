@@ -12,7 +12,7 @@ void main() {
 
       expect(companion.instanceId.value, instance.instanceId);
       expect(companion.setId.value, instance.setId);
-      expect(companion.selectedClub.value, 'i7');
+      expect(companion.selectedClub.value, isNull);
       expect(companion.timestamp.value, instance.timestamp);
       expect(companion.resolvedTargetDistance.value, 150.0);
       expect(companion.resolvedTargetWidth.value, 10.5);
@@ -38,7 +38,7 @@ void main() {
 
     test('SelectedClub is plain text, not enum', () {
       final json = makeInstance().toSyncDto();
-      expect(json['SelectedClub'], 'i7');
+      expect(json['SelectedClub'], isNull);
     });
   });
 }

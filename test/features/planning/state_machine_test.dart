@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zx_golf_app/core/error_types.dart';
@@ -6,6 +7,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/planning_repository.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
+import 'package:zx_golf_app/features/planning/models/slot.dart';
 
 // TD-04 §2.6 (Slot), §2.8 (Routine), §2.9 (Schedule) state machine tests.
 
@@ -24,11 +26,20 @@ void main() {
     await db.close();
   });
 
+  /// Helper: ensure a CalendarDay exists with 5 empty slots.
+  Future<void> ensureDayWithSlots(DateTime date) async {
+    final day = await repo.getOrCreateCalendarDay(userId, date);
+    await repo.updateSlots(
+        day.calendarDayId, List.generate(5, (_) => const Slot()));
+    await repo.updateCalendarDay(day.calendarDayId,
+        const CalendarDaysCompanion(slotCapacity: Value(5)));
+  }
+
   group('TD-04 §2.6 — Slot state transitions', () {
     test('Empty → Filled via assignDrillToSlot', () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
-      await repo.getOrCreateCalendarDay(userId, todayDate);
+      await ensureDayWithSlots(todayDate);
 
       final day = await repo.assignDrillToSlot(
           userId, todayDate, 0, 'drill-1');
@@ -40,7 +51,7 @@ void main() {
     test('Filled → Empty via clearSlot', () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
-      await repo.getOrCreateCalendarDay(userId, todayDate);
+      await ensureDayWithSlots(todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-1');
 
       final day = await repo.clearSlot(userId, todayDate, 0);
@@ -51,6 +62,7 @@ void main() {
     test('Incomplete → CompletedLinked via markSlotComplete', () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
       final day =
           await repo.getOrCreateCalendarDay(userId, todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-1');
@@ -69,6 +81,7 @@ void main() {
         () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
       final day =
           await repo.getOrCreateCalendarDay(userId, todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-1');
@@ -86,6 +99,7 @@ void main() {
         () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
       final day =
           await repo.getOrCreateCalendarDay(userId, todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-1');
@@ -108,6 +122,7 @@ void main() {
     test('Cannot mark already-completed slot as complete', () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
       final day =
           await repo.getOrCreateCalendarDay(userId, todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-1');
@@ -129,6 +144,7 @@ void main() {
     test('Cannot revert non-completed slot', () async {
       final today = DateTime.now();
       final todayDate = DateTime(today.year, today.month, today.day);
+      await ensureDayWithSlots(todayDate);
       final day =
           await repo.getOrCreateCalendarDay(userId, todayDate);
       await repo.assignDrillToSlot(userId, todayDate, 0, 'drill-1');
