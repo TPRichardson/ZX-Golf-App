@@ -14,7 +14,6 @@ void main() {
       expect(prefs.smallLengthUnit, SmallLengthUnit.inches);
       expect(prefs.defaultAnalysisResolution, 'weekly');
       expect(prefs.defaultClubSelectionModes, isEmpty);
-      expect(prefs.defaultSlotCapacityPattern, [3, 3, 3, 3, 3, 0, 0]);
       expect(prefs.reminderEnabled, false);
       expect(prefs.reminderTime, isNull);
     });
@@ -45,7 +44,6 @@ void main() {
           SkillArea.driving: ClubSelectionMode.guided,
           SkillArea.putting: ClubSelectionMode.userLed,
         },
-        defaultSlotCapacityPattern: [5, 5, 5, 5, 5, 2, 2],
         reminderEnabled: true,
         reminderTime: '09:30',
       );
@@ -60,7 +58,6 @@ void main() {
           ClubSelectionMode.guided);
       expect(restored.defaultClubSelectionModes[SkillArea.putting],
           ClubSelectionMode.userLed);
-      expect(restored.defaultSlotCapacityPattern, [5, 5, 5, 5, 5, 2, 2]);
       expect(restored.reminderEnabled, true);
       expect(restored.reminderTime, '09:30');
     });
@@ -96,23 +93,6 @@ void main() {
       expect(prefs.distanceUnit, DistanceUnit.metres);
       expect(prefs.smallLengthUnit, SmallLengthUnit.inches);
       expect(prefs.defaultAnalysisResolution, 'weekly');
-    });
-
-    test('slot capacity pattern clamped to 0-10', () {
-      final json = jsonEncode({
-        'defaultSlotCapacityPattern': [15, -3, 5, 5, 5, 5, 5],
-      });
-      final prefs = UserPreferences.fromJson(json);
-      expect(prefs.defaultSlotCapacityPattern[0], 10);
-      expect(prefs.defaultSlotCapacityPattern[1], 0);
-    });
-
-    test('invalid slot capacity pattern length returns default', () {
-      final json = jsonEncode({
-        'defaultSlotCapacityPattern': [1, 2, 3],
-      });
-      final prefs = UserPreferences.fromJson(json);
-      expect(prefs.defaultSlotCapacityPattern, [3, 3, 3, 3, 3, 0, 0]);
     });
 
     test('invalid club selection mode entries are skipped', () {

@@ -49,7 +49,6 @@ void main() {
         defaultClubSelectionModes: {
           SkillArea.driving: ClubSelectionMode.guided,
         },
-        defaultSlotCapacityPattern: [4, 4, 4, 4, 4, 1, 1],
         reminderEnabled: true,
         reminderTime: '07:00',
       );
@@ -68,7 +67,6 @@ void main() {
       expect(restored.defaultAnalysisResolution, 'monthly');
       expect(restored.defaultClubSelectionModes[SkillArea.driving],
           ClubSelectionMode.guided);
-      expect(restored.defaultSlotCapacityPattern, [4, 4, 4, 4, 4, 1, 1]);
       expect(restored.reminderEnabled, true);
       expect(restored.reminderTime, '07:00');
     });
@@ -170,22 +168,6 @@ void main() {
       expect(restored.defaultClubSelectionModes.length, 3);
       expect(restored.defaultClubSelectionModes[SkillArea.driving],
           ClubSelectionMode.guided);
-    });
-
-    test('slot capacity pattern persists', () async {
-      await createUser();
-
-      final pattern = [5, 5, 5, 5, 5, 2, 2];
-      final prefs = const UserPreferences()
-          .copyWith(defaultSlotCapacityPattern: pattern);
-      await userRepo.update(
-        userId,
-        UsersCompanion(unitPreferences: Value(prefs.toJson())),
-      );
-
-      final user = await userRepo.getById(userId);
-      final restored = UserPreferences.fromJson(user!.unitPreferences);
-      expect(restored.defaultSlotCapacityPattern, pattern);
     });
 
     test('reminder settings persist', () async {

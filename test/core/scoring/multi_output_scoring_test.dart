@@ -8,7 +8,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/event_log_repository.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
-import 'package:zx_golf_app/providers/review_providers.dart';
+import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 
 import '../../fixtures/scoring_fixtures.dart';
 
@@ -110,8 +110,8 @@ void main() {
       expect(windowB, isNotEmpty, reason: 'Window for subskill B should exist');
 
       // Parse scores from window entries.
-      final entriesA = parseWindowEntries(windowA.first.entries);
-      final entriesB = parseWindowEntries(windowB.first.entries);
+      final entriesA = decodeWindowEntries(windowA.first.entries);
+      final entriesB = decodeWindowEntries(windowB.first.entries);
 
       expect(entriesA, isNotEmpty);
       expect(entriesB, isNotEmpty);
@@ -175,12 +175,12 @@ void main() {
       final windows =
           await scoringRepo.watchWindowStatesByUser(userId).first;
 
-      final entriesA = parseWindowEntries(windows
+      final entriesA = decodeWindowEntries(windows
           .firstWhere((w) =>
               w.subskill == 'approach_direction_control' &&
               w.practiceType == DrillType.transition)
           .entries);
-      final entriesB = parseWindowEntries(windows
+      final entriesB = decodeWindowEntries(windows
           .firstWhere((w) =>
               w.subskill == 'approach_distance_control' &&
               w.practiceType == DrillType.transition)

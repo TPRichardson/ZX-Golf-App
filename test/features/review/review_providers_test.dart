@@ -6,6 +6,7 @@ import 'package:zx_golf_app/core/constants.dart';
 import 'package:zx_golf_app/core/scoring/scoring_types.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/planning/models/slot.dart';
+import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
 
 // Phase 6 — Review provider unit tests.
@@ -18,12 +19,12 @@ void main() {
 
   group('parseWindowEntries — JSON round-trip', () {
     test('parses empty JSON array', () {
-      final entries = parseWindowEntries('[]');
+      final entries = decodeWindowEntries('[]');
       expect(entries, isEmpty);
     });
 
     test('parses empty string', () {
-      final entries = parseWindowEntries('');
+      final entries = decodeWindowEntries('');
       expect(entries, isEmpty);
     });
 
@@ -38,7 +39,7 @@ void main() {
         }
       ]);
 
-      final entries = parseWindowEntries(json);
+      final entries = decodeWindowEntries(json);
       expect(entries, hasLength(1));
       expect(entries[0].sessionId, 'sess-1');
       expect(entries[0].score, 3.5);
@@ -66,7 +67,7 @@ void main() {
         },
       ]);
 
-      final entries = parseWindowEntries(json);
+      final entries = decodeWindowEntries(json);
       expect(entries, hasLength(2));
       expect(entries[0].sessionId, 'sess-1');
       expect(entries[1].sessionId, 'sess-2');
@@ -85,7 +86,7 @@ void main() {
         },
       ]);
 
-      final entries = parseWindowEntries(json);
+      final entries = decodeWindowEntries(json);
       expect(entries[0].score, 5.0);
       expect(entries[0].occupancy, 1.0);
     });
@@ -121,7 +122,7 @@ void main() {
           .toList());
 
       // Parse back.
-      final parsed = parseWindowEntries(encoded);
+      final parsed = decodeWindowEntries(encoded);
       expect(parsed, hasLength(2));
       expect(parsed[0].sessionId, 'sess-1');
       expect(parsed[0].score, 3.75);
@@ -462,8 +463,8 @@ void main() {
 
   group('Zero state handling', () {
     test('parseWindowEntries handles empty gracefully', () {
-      expect(parseWindowEntries(''), isEmpty);
-      expect(parseWindowEntries('[]'), isEmpty);
+      expect(decodeWindowEntries(''), isEmpty);
+      expect(decodeWindowEntries('[]'), isEmpty);
     });
 
     test('PlanAdherence with zero planned is 0%', () {
