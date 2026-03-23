@@ -10,6 +10,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_input_delegate.dart';
+import 'package:zx_golf_app/features/practice/widgets/shot_record_button.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 
 class RawDataEntryDelegate extends ExecutionInputDelegate {
@@ -203,22 +204,11 @@ class RawDataEntryDelegate extends ExecutionInputDelegate {
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: SpacingTokens.md + 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: isLocked
-                    ? null
-                    : () => _submit(executionContext, onLogInstance),
-                style: FilledButton.styleFrom(
-                  backgroundColor: ColorTokens.primaryDefault,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: SpacingTokens.md),
-                  textStyle: const TextStyle(
-                    fontSize: TypographyTokens.headerSize,
-                  ),
-                ),
-                child: const Text('Record'),
-              ),
+            child: ShotRecordButton(
+              label: 'Record',
+              onPressed: isLocked
+                  ? null
+                  : () => _submit(executionContext, onLogInstance),
             ),
           ),
         ],

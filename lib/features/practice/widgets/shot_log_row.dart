@@ -10,6 +10,8 @@ class ShotEntry {
   final String? clubId;
   final String rawMetrics;
   final double? score;
+  /// Optional color override for dot and label (e.g. tri-state scoring game).
+  final Color? colorOverride;
 
   const ShotEntry({
     required this.instanceId,
@@ -19,6 +21,7 @@ class ShotEntry {
     this.clubId,
     required this.rawMetrics,
     this.score,
+    this.colorOverride,
   });
 }
 
@@ -53,9 +56,8 @@ class ShotLogRow extends StatelessWidget {
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: shot.isHit
-                  ? ColorTokens.successDefault
-                  : ColorTokens.missDefault,
+              color: shot.colorOverride ??
+                  (shot.isHit ? ColorTokens.successDefault : ColorTokens.missDefault),
             ),
           ),
           const SizedBox(width: SpacingTokens.sm),
@@ -65,9 +67,8 @@ class ShotLogRow extends StatelessWidget {
               shot.label,
               style: TextStyle(
                 fontSize: TypographyTokens.bodyLgSize,
-                color: shot.isHit
-                    ? ColorTokens.successDefault
-                    : ColorTokens.textSecondary,
+                color: shot.colorOverride ??
+                    (shot.isHit ? ColorTokens.successDefault : ColorTokens.textSecondary),
               ),
               overflow: TextOverflow.ellipsis,
             ),

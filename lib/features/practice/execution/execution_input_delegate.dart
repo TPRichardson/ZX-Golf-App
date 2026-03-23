@@ -56,6 +56,17 @@ abstract class ExecutionInputDelegate {
   /// Called after the host undoes an instance. Update local counters.
   void onInstanceUndone(Instance? deleted) {}
 
+  /// Override to supply a per-instance target distance for display in the
+  /// distance box. Return null to use the default distance logic.
+  double? get currentTargetDistance => null;
+
+  /// Optional status line shown between the shot log and input area.
+  /// Return null to hide. Used by scoring game for hole/category/par info.
+  String? get statusLine => null;
+
+  /// Optional trailing widget for the status line row (e.g. score chip).
+  Widget? get statusTrailing => null;
+
   /// Cleanup (e.g. dispose TextEditingControllers).
   void dispose() {}
 }

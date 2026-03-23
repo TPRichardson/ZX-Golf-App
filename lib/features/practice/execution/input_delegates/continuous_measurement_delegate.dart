@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
+import 'package:zx_golf_app/features/practice/widgets/shot_record_button.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_input_delegate.dart';
@@ -88,19 +89,11 @@ class ContinuousMeasurementDelegate extends ExecutionInputDelegate {
                 _submit(executionContext, onLogInstance),
           ),
           const SizedBox(height: SpacingTokens.md),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: isLocked
-                  ? null
-                  : () => _submit(executionContext, onLogInstance),
-              style: FilledButton.styleFrom(
-                backgroundColor: ColorTokens.primaryDefault,
-                padding: const EdgeInsets.symmetric(
-                    vertical: SpacingTokens.md),
-              ),
-              child: const Text('Record'),
-            ),
+          ShotRecordButton(
+            label: 'Record',
+            onPressed: isLocked
+                ? null
+                : () => _submit(executionContext, onLogInstance),
           ),
         ],
       ),

@@ -35,6 +35,7 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
   bool _isAdopting = false;
   late final PageController _pageController;
   int _currentPage = 0;
+  bool _didJumpToFirstTab = false;
 
   @override
   void initState() {
@@ -123,6 +124,21 @@ class _StandardDrillsScreenState extends ConsumerState<StandardDrillsScreen> {
 
           // Build drill-by-id map for adopt action.
           final drillById = {for (final d in drills) d.drillId: d};
+
+          // Jump to first tab with available drills on initial load.
+          if (!_didJumpToFirstTab && grouped.isNotEmpty) {
+            _didJumpToFirstTab = true;
+            final firstIndex = kSkillAreaDisplayOrder.indexWhere(
+                (a) => (grouped[a]?.isNotEmpty ?? false));
+            if (firstIndex > 0) {
+              _currentPage = firstIndex;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_pageController.hasClients) {
+                  _pageController.jumpToPage(firstIndex);
+                }
+              });
+            }
+          }
 
           return Column(
             children: [

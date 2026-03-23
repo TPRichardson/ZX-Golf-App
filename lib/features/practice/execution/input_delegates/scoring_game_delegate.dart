@@ -11,6 +11,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/practice/execution/execution_input_delegate.dart';
+import 'package:zx_golf_app/features/practice/widgets/shot_record_button.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 
 /// A single hole in the scoring game round.
@@ -53,6 +54,19 @@ class ScoringGameDelegate extends ExecutionInputDelegate {
     holes = _generateHoles();
   }
 
+  @override
+  double? get currentTargetDistance => currentHole?.distanceFeet.toDouble();
+
+  @override
+  String? get statusLine {
+    final hole = currentHole;
+    if (hole == null) return null;
+    return 'Hole ${hole.holeNumber}  •  Par ${hole.par}  •';
+  }
+
+  @override
+  Widget? get statusTrailing => _PlusMinusChip(value: plusMinusPar);
+
   List<ScoringGameHole> _generateHoles() {
     final config = _parseConfig();
     final rng = Random();
@@ -91,17 +105,17 @@ class ScoringGameDelegate extends ExecutionInputDelegate {
     // Default config for scoring_game_strokes.
     if (schema == null) {
       return _RoundConfig(par: 2, categories: [
-        _CategoryConfig('Short', 4, 8, 6),
-        _CategoryConfig('Medium', 8, 20, 6),
-        _CategoryConfig('Long', 20, 40, 6),
+        _CategoryConfig('Short', 6, 10, 6),
+        _CategoryConfig('Medium', 11, 20, 6),
+        _CategoryConfig('Long', 21, 40, 6),
       ]);
     }
     // Config would be parsed from MetricSchema validationRules at runtime.
     // For now use the hardcoded config matching the seed data.
     return _RoundConfig(par: 2, categories: [
-      _CategoryConfig('Short', 4, 8, 6),
-      _CategoryConfig('Medium', 8, 20, 6),
-      _CategoryConfig('Long', 20, 40, 6),
+      _CategoryConfig('Short', 6, 10, 6),
+      _CategoryConfig('Medium', 11, 20, 6),
+      _CategoryConfig('Long', 21, 40, 6),
     ]);
   }
 
@@ -123,149 +137,78 @@ class ScoringGameDelegate extends ExecutionInputDelegate {
       padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
       child: Column(
         children: [
-          const SizedBox(height: SpacingTokens.md),
-          // Progress and running score.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Hole ${hole.holeNumber} of ${holes.length}',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.textPrimary,
-                ),
-              ),
-              if (completedCount > 0)
-                _PlusMinusChip(value: plusMinusPar),
-            ],
-          ),
-          const SizedBox(height: SpacingTokens.lg),
-
-          // Distance display.
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              vertical: SpacingTokens.xl,
-              horizontal: SpacingTokens.lg,
-            ),
-            decoration: BoxDecoration(
-              color: ColorTokens.surfaceRaised,
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  '${hole.distanceFeet} feet',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.displayXxlSize,
-                    fontWeight: TypographyTokens.displayXxlWeight,
-                    color: ColorTokens.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: SpacingTokens.xs),
-                _CategoryBadge(category: hole.category),
-                const SizedBox(height: SpacingTokens.xs),
-                Text(
-                  'Par ${hole.par}',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySmSize,
-                    color: ColorTokens.textTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: SpacingTokens.lg),
-
-          // Stroke selector.
+          // Stroke selector — vertically centred.
           Expanded(
-            child: Column(
-              children: [
-                Text(
-                  'Strokes',
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySmSize,
-                    color: ColorTokens.textSecondary,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Strokes',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySmSize,
+                      color: ColorTokens.textSecondary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: SpacingTokens.sm),
-                // Stroke buttons row.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _StrokeAdjustButton(
-                      icon: Icons.remove,
-                      onTap: isLocked
-                          ? null
-                          : () {
-                              if (_selectedStrokes > 1) {
-                                _selectedStrokes--;
+                  const SizedBox(height: SpacingTokens.sm),
+                  // Stroke buttons row.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _StrokeAdjustButton(
+                        icon: Icons.remove,
+                        onTap: isLocked
+                            ? null
+                            : () {
+                                if (_selectedStrokes > 1) {
+                                  _selectedStrokes--;
+                                  requestRebuild();
+                                }
+                              },
+                      ),
+                      const SizedBox(width: SpacingTokens.lg),
+                      Text(
+                        '$_selectedStrokes',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.displayXxlSize,
+                          fontWeight: TypographyTokens.displayXxlWeight,
+                          color: _strokeColor(_selectedStrokes, hole.par),
+                        ),
+                      ),
+                      const SizedBox(width: SpacingTokens.lg),
+                      _StrokeAdjustButton(
+                        icon: Icons.add,
+                        onTap: isLocked
+                            ? null
+                            : () {
+                                _selectedStrokes++;
                                 requestRebuild();
-                              }
-                            },
-                    ),
-                    const SizedBox(width: SpacingTokens.lg),
-                    Text(
-                      '$_selectedStrokes',
-                      style: TextStyle(
-                        fontSize: TypographyTokens.displayXxlSize,
-                        fontWeight: TypographyTokens.displayXxlWeight,
-                        color: _strokeColor(_selectedStrokes, hole.par),
+                              },
                       ),
-                    ),
-                    const SizedBox(width: SpacingTokens.lg),
-                    _StrokeAdjustButton(
-                      icon: Icons.add,
-                      onTap: isLocked
-                          ? null
-                          : () {
-                              _selectedStrokes++;
-                              requestRebuild();
-                            },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: SpacingTokens.xs),
-                Text(
-                  _strokeLabel(_selectedStrokes, hole.par),
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySmSize,
-                    color: _strokeColor(_selectedStrokes, hole.par),
+                    ],
                   ),
-                ),
-                const Spacer(),
-                // Confirm button.
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: isLocked
-                        ? null
-                        : () => _recordHole(executionContext, onLogInstance),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: ColorTokens.primaryDefault,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(ShapeTokens.radiusCard),
-                      ),
-                    ),
-                    child: Text(
-                      _currentHoleIndex < holes.length - 1
-                          ? 'Next Hole'
-                          : 'Finish Round',
-                      style: TextStyle(
-                        fontSize: TypographyTokens.bodySize,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  const SizedBox(height: SpacingTokens.xs),
+                  Text(
+                    _strokeLabel(_selectedStrokes, hole.par),
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySmSize,
+                      color: _strokeColor(_selectedStrokes, hole.par),
                     ),
                   ),
-                ),
-                const SizedBox(height: SpacingTokens.lg),
-              ],
+                ],
+              ),
             ),
           ),
+          // Confirm button.
+          ShotRecordButton(
+            label: _currentHoleIndex < holes.length - 1
+                ? 'Next Hole'
+                : 'Finish Round',
+            onPressed: isLocked
+                ? null
+                : () => _recordHole(executionContext, onLogInstance),
+          ),
+          SizedBox(height: SpacingTokens.lg + 8),
         ],
       ),
     );
@@ -365,55 +308,12 @@ class _PlusMinusChip extends StatelessWidget {
         : value == 0
             ? ColorTokens.textPrimary
             : ColorTokens.errorDestructive;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.sm,
-        vertical: SpacingTokens.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: TypographyTokens.bodySize,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryBadge extends StatelessWidget {
-  final String category;
-  const _CategoryBadge({required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (category) {
-      'Short' => ColorTokens.successDefault,
-      'Medium' => ColorTokens.ragAmber,
-      'Long' => ColorTokens.errorDestructive,
-      _ => ColorTokens.textSecondary,
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpacingTokens.sm,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(ShapeTokens.radiusBadge),
-      ),
-      child: Text(
-        category,
-        style: TextStyle(
-          fontSize: TypographyTokens.bodySmSize,
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: TypographyTokens.bodyLgSize,
+        fontWeight: FontWeight.w700,
+        color: color,
       ),
     );
   }

@@ -156,6 +156,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await _loadClubs();
     await _loadCarryDistances();
     _pickRandomDistanceIfNeeded();
+    // Seed delegate-driven distance (e.g. scoring game first hole).
+    _currentRandomDistance ??= _delegate.currentTargetDistance;
     _suggestRandomClubIfNeeded();
     // Rebuild shot log from existing instances in the current set.
     await _restoreShotLog();
@@ -326,6 +328,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     if (widget.drill.targetDistanceMode != TargetDistanceMode.randomRange) {
       return;
     }
+    // Scoring game manages its own per-hole distances via the delegate.
+    if (widget.drill.inputMode == InputMode.scoringGame) return;
     // Save current distance to history before picking a new one.
     if (_currentRandomDistance != null) {
       _randomDistanceHistory.add(_currentRandomDistance!);
@@ -415,6 +419,31 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final clubLabel = _clubIdToLabel[data.selectedClub.value] ?? '';
     final raw = data.rawMetrics.value;
     final metrics = jsonDecode(raw) as Map<String, dynamic>;
+    // Scoring game — has 'strokes' + 'par' fields.
+    if (metrics.containsKey('strokes') && metrics.containsKey('par')) {
+      final strokes = (metrics['strokes'] as num).toInt();
+      final par = (metrics['par'] as num).toInt();
+      final dist = (metrics['distance'] as num?)?.toInt();
+      final holeNum = (metrics['holeNumber'] as num?)?.toInt();
+      final diff = strokes - par;
+      final diffLabel = diff == 0 ? 'E' : diff > 0 ? '+$diff' : '$diff';
+      final distLabel = dist != null ? '${dist}ft' : '';
+      final label = 'Hole $holeNum  $distLabel  $strokes strokes ($diffLabel)';
+      final color = diff < 0
+          ? ColorTokens.successDefault
+          : diff == 0
+              ? ColorTokens.textSecondary
+              : ColorTokens.errorDestructive;
+      return ShotEntry(
+        instanceId: result.instance.instanceId,
+        label: label,
+        isHit: diff < 0,
+        club: '',
+        rawMetrics: raw,
+        score: result.realtimeScore,
+        colorOverride: color,
+      );
+    }
     // Grid or binary — has 'hit' field.
     if (metrics.containsKey('hit')) {
       final isHit = metrics['hit'] as bool;
@@ -502,6 +531,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         );
 
     _delegate.onInstanceLogged(result, data);
+    // Sync delegate distance after hole advance so the club bar updates.
+    _currentRandomDistance = _delegate.currentTargetDistance ?? _currentRandomDistance;
     setState(() {});
 
     // Auto-scroll shot list to bottom.
@@ -519,7 +550,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await _handlePostInstanceAdvance();
 
     // Show inter-shot dialog for RandomRange drills (next target + intent).
+    // Scoring game manages its own per-hole targets — no dialog needed.
     if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange &&
+        widget.drill.inputMode != InputMode.scoringGame &&
         !_ending && mounted) {
       await _showNextTargetDialog();
     }
@@ -874,6 +907,35 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                             ),
                           ),
                         ),
+                      // Sync delegate-driven target distance into the
+                      // random distance slot so the distance box picks it up.
+                      ..._syncDelegateTargetDistance(),
+                      // Delegate status line (e.g. scoring game hole info).
+                      if (_delegate.statusLine != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SpacingTokens.lg,
+                            vertical: SpacingTokens.xs,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _delegate.statusLine!,
+                                style: TextStyle(
+                                  fontSize: TypographyTokens.bodyLgSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.textSecondary,
+                                ),
+                              ),
+                              if (_delegate.statusTrailing != null) ...[
+                                const SizedBox(width: SpacingTokens.md),
+                                _delegate.statusTrailing!,
+                              ],
+                            ],
+                          ),
+                        ),
                       // Input area — varies by delegate.
                       // Target width bar sits just above the input for 1x3/3x3 grids.
                       // For 3x1 grids, a vertical target depth bar sits on the left.
@@ -959,7 +1021,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       child: _shotLog.isEmpty
                           ? Center(
                               child: Text(
-                                'No shots recorded',
+                                widget.drill.inputMode == InputMode.scoringGame
+                                    ? 'No holes recorded'
+                                    : 'No shots recorded',
                                 style: TextStyle(
                                   fontSize: TypographyTokens.bodyLgSize,
                                   color: ColorTokens.textTertiary,
@@ -1271,6 +1335,16 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       ],
     ),
     );
+  }
+
+  /// Sync delegate-driven target distance (e.g. scoring game hole distance)
+  /// into `_currentRandomDistance` so the distance box displays it.
+  List<Widget> _syncDelegateTargetDistance() {
+    final delegateDist = _delegate.currentTargetDistance;
+    if (delegateDist != null) {
+      _currentRandomDistance = delegateDist;
+    }
+    return const [];
   }
 
   /// Set grid padding override before the delegate builds, so the vertical
@@ -1630,7 +1704,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     } else if (widget.drill.targetDistanceMode ==
         TargetDistanceMode.randomRange) {
       value = _currentRandomDistance;
-      unit = DrillLengthUnit.yards;
+      unit = widget.drill.targetDistanceUnit ?? DrillLengthUnit.yards;
     } else {
       value = widget.drill.targetDistanceValue;
       unit = widget.drill.targetDistanceUnit;
