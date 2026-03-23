@@ -89,11 +89,14 @@ class DrillCard extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    Text(
-                      _gridLabel(drill),
-                      style: const TextStyle(
-                        fontSize: TypographyTokens.bodySmSize,
-                        color: ColorTokens.textTertiary,
+                    Flexible(
+                      child: Text(
+                        _gridLabel(drill),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: TypographyTokens.bodySmSize,
+                          color: ColorTokens.textTertiary,
+                        ),
                       ),
                     ),
                     const SizedBox(width: SpacingTokens.sm),

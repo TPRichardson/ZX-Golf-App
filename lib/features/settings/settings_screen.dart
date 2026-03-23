@@ -9,6 +9,7 @@ import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'execution_defaults_screen.dart';
+import 'target_percentages_screen.dart';
 
 // S10 — Settings hub screen. Accessed via gear icon in ShellScreen AppBar.
 
@@ -140,6 +141,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               context,
               MaterialPageRoute(
                 builder: (_) => const ExecutionDefaultsScreen(),
+              ),
+            ),
+          ),
+          _NavigationTile(
+            label: 'Target Percentages',
+            subtitle: 'Lateral & carry % by skill area',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const TargetPercentagesScreen(),
               ),
             ),
           ),

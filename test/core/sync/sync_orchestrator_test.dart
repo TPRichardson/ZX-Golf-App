@@ -403,6 +403,33 @@ void main() {
       });
     });
 
+    test('connectivity restored re-enables sync after auto-disable', () {
+      fakeAsync((async) {
+        fakeEngine.syncEnabled = false;
+        fakeEngine._consecutiveFailures = 5;
+        final o = makeOrchestrator();
+        o.start();
+        o.recordUserActivity();
+
+        // Clear triggers from start().
+        async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
+        fakeEngine.triggeredReasons.clear();
+
+        // Simulate offline then online.
+        connectivityController.add([ConnectivityResult.none]);
+        async.elapse(const Duration(milliseconds: 50));
+
+        connectivityController.add([ConnectivityResult.wifi]);
+        async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
+
+        // Should have reset failure counter and triggered sync.
+        expect(fakeEngine.syncEnabled, isTrue);
+        expect(fakeEngine.consecutiveFailures, 0);
+        expect(fakeEngine.triggeredReasons, contains(SyncTrigger.connectivity));
+        o.dispose();
+      });
+    });
+
     test('sync skipped when offline', () {
       fakeAsync((async) {
         final o = makeOrchestrator();

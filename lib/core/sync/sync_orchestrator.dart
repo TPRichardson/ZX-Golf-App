@@ -99,8 +99,10 @@ class SyncOrchestrator {
   Future<void> _executeTrigger(SyncTrigger reason) async {
     if (!_started) return;
 
-    // TD-03 §5.1 — Feature flag guard. Force sync bypasses.
-    if (!_engine.syncEnabled && reason != SyncTrigger.forceFullSync) {
+    // TD-03 §5.1 — Feature flag guard. Force sync and connectivity-restored bypass.
+    if (!_engine.syncEnabled &&
+        reason != SyncTrigger.forceFullSync &&
+        reason != SyncTrigger.connectivity) {
       debugPrint('[SyncOrchestrator] Skipped (sync_disabled) trigger=${reason.name}');
       _diagnostics.emit('sync_skipped', Duration.zero, {
         'reason': 'sync_disabled',
@@ -108,7 +110,8 @@ class SyncOrchestrator {
       });
       return;
     }
-    if (reason == SyncTrigger.forceFullSync) {
+    if (reason == SyncTrigger.forceFullSync ||
+        (reason == SyncTrigger.connectivity && !_engine.syncEnabled)) {
       _engine.resetFailureCounter();
     }
 

@@ -361,7 +361,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         TargetSizeMode.percentageOfTargetDistance) {
       try {
         final clubType = ClubType.fromString(_selectedClubLabel);
-        final percent = targetWidthPercentForClub(clubType);
+        final percent = targetWidthPercentForClub(clubType, skillArea: widget.drill.skillArea);
         return dist * percent / 100.0;
       } on ArgumentError {
         return null;
@@ -390,7 +390,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     // Otherwise use club-tier banded percentage.
     try {
       final clubType = ClubType.fromString(_selectedClubLabel);
-      final percent = targetDepthPercentForClub(clubType);
+      final percent = targetDepthPercentForClub(clubType, skillArea: widget.drill.skillArea);
       return baseDistance * percent / 100.0;
     } on ArgumentError {
       return null;

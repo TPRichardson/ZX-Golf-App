@@ -130,3 +130,10 @@ const kLongIronTargetWidthPercent = 13.0;
 const kShortIronTargetDepthPercent = 7.0;
 const kMidIronTargetDepthPercent = 8.0;
 const kLongIronTargetDepthPercent = 9.0;
+
+// ---------------------------------------------------------------------------
+// Pitching-specific target percentages (flat, no club-tier banding)
+// ---------------------------------------------------------------------------
+
+const kPitchingTargetWidthPercent = 12.0;
+const kPitchingTargetDepthPercent = 14.0;

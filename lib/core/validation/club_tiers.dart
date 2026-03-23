@@ -5,8 +5,10 @@ import 'package:zx_golf_app/data/enums.dart';
 // Short irons have tighter targets, long irons/hybrids have wider.
 
 /// Returns the target width as a percentage of carry distance for a given club.
-/// Only meaningful for iron and hybrid club types.
-double targetWidthPercentForClub(ClubType club) {
+/// Pitching drills use a flat 12% regardless of club. Other skill areas use
+/// club-tier banded percentages.
+double targetWidthPercentForClub(ClubType club, {SkillArea? skillArea}) {
+  if (skillArea == SkillArea.pitching) return kPitchingTargetWidthPercent;
   switch (club) {
     // Short irons (5%)
     case ClubType.pw:
@@ -71,8 +73,10 @@ double targetWidthPercentForClub(ClubType club) {
 }
 
 /// Returns the target depth as a percentage of target distance for a given club.
-/// Used for distance-based drills (3x1 grid) with variable targets.
-double targetDepthPercentForClub(ClubType club) {
+/// Pitching drills use a flat 14% regardless of club. Other skill areas use
+/// club-tier banded percentages.
+double targetDepthPercentForClub(ClubType club, {SkillArea? skillArea}) {
+  if (skillArea == SkillArea.pitching) return kPitchingTargetDepthPercent;
   switch (club) {
     case ClubType.pw:
     case ClubType.i9:
