@@ -25,6 +25,9 @@ enum ScoringAdapterType {
   /// Best-of-set drills: max value per set → average across sets → interpolate.
   bestOfSetLinearInterpolation,
 
+  /// Scoring game: total +/- par across all holes, negated, then interpolated.
+  scoringGameInterpolation,
+
   /// Technique blocks: no scoring.
   none,
 }

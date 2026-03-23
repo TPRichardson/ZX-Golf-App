@@ -52,7 +52,8 @@ enum InputMode {
   gridCell('GridCell'),
   continuousMeasurement('ContinuousMeasurement'),
   rawDataEntry('RawDataEntry'),
-  binaryHitMiss('BinaryHitMiss');
+  binaryHitMiss('BinaryHitMiss'),
+  scoringGame('ScoringGame');
 
   const InputMode(this.dbValue);
   final String dbValue;

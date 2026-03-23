@@ -18,12 +18,13 @@ final standardDrillsProvider = StreamProvider<List<Drill>>((ref) {
 /// Returns empty list on network error (offline empty state).
 final standardDrillCatalogueProvider = FutureProvider<List<Drill>>((ref) async {
   try {
-    final supabase = ref.watch(supabaseClientProvider);
-    final rows = await supabase
+    final supabase = ref.read(supabaseClientProvider);
+    final Future<List<Map<String, dynamic>>> query = supabase
         .from('Drill')
         .select()
         .eq('Origin', 'System')
         .eq('IsDeleted', false);
+    final rows = await query.timeout(const Duration(seconds: 8));
     return (rows as List)
         .map((row) {
           final json = Map<String, dynamic>.from(row as Map);

@@ -39,6 +39,21 @@ double scoreBestOfSetSession(
   return interpolate(avg, anchors);
 }
 
+/// Scoring game: sum strokes across all holes, compute +/- par, negate,
+/// then interpolate. Negation converts "lower is better" (+/- par) to
+/// "higher is better" for the standard interpolation function.
+/// Anchors are stored pre-negated: Min=-9, Scratch=4, Pro=6.
+double scoreScoringGameSession(
+    List<RawInstanceInput> instances, int par, Anchors anchors) {
+  if (instances.isEmpty) return 0.0;
+  validateAnchors(anchors);
+  final totalStrokes = instances.fold<double>(0.0, (acc, i) => acc + i.value);
+  final totalPar = instances.length * par;
+  final plusMinusPar = totalStrokes - totalPar;
+  final negated = -plusMinusPar;
+  return interpolate(negated, anchors);
+}
+
 /// Spec: S01 §1.4 — Scores a grid/binary session from aggregate hit-rate %.
 /// Computes hit-rate = (totalHits / totalAttempts) × 100, then interpolates.
 /// Returns 0.0 if totalAttempts == 0.

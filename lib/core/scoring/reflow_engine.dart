@@ -405,7 +405,14 @@ class ReflowEngine {
     final anchors = anchorsMap[targetSubskill];
     if (anchors == null) return 0.0;
 
-    if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
+    if (adapterType == ScoringAdapterType.scoringGameInterpolation) {
+      // Scoring game: sum strokes, compute +/- par, negate, interpolate.
+      final par = _parsePar(schema.validationRules);
+      final inputs = instances
+          .map((i) => RawInstanceInput(extractNumericValue(i.rawMetrics)))
+          .toList();
+      return scoreScoringGameSession(inputs, par, anchors);
+    } else if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
       // Best-of-set: group by set, max per set, average, interpolate.
       final bySet = <String, List<double>>{};
       for (final i in instances) {
@@ -835,9 +842,11 @@ class ReflowEngine {
     }
 
     final adapterTypeCache = <String, ScoringAdapterType>{};
+    final schemaValidationRulesCache = <String, String?>{};
     for (final entry in allSchemas.entries) {
       adapterTypeCache[entry.key] =
           parseScoringAdapterBinding(entry.value.scoringAdapterBinding);
+      schemaValidationRulesCache[entry.key] = entry.value.validationRules;
     }
 
     return _BulkRebuildCache(
@@ -847,6 +856,7 @@ class ReflowEngine {
       drillSchemaIdCache: drillSchemaIdCache,
       drillWindowCapCache: drillWindowCapCache,
       adapterTypeCache: adapterTypeCache,
+      schemaValidationRulesCache: schemaValidationRulesCache,
     );
   }
 
@@ -932,7 +942,15 @@ class ReflowEngine {
     final anchors = anchorsMap[targetSubskill];
     if (anchors == null) return null;
 
-    if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
+    if (adapterType == ScoringAdapterType.scoringGameInterpolation) {
+      // Scoring game: sum strokes, compute +/- par, negate, interpolate.
+      final validationRules = cache.schemaValidationRulesCache[schemaId];
+      final par = _parsePar(validationRules);
+      final inputs = metrics
+          .map((m) => RawInstanceInput(extractNumericValue(m)))
+          .toList();
+      return scoreScoringGameSession(inputs, par, anchors);
+    } else if (adapterType == ScoringAdapterType.bestOfSetLinearInterpolation) {
       final setGrouped = instanceMetricsBySet[ls.sessionId] ?? {};
       final bySet = <String, List<double>>{};
       for (final entry in setGrouped.entries) {
@@ -1352,6 +1370,17 @@ class ReflowEngine {
   }
 }
 
+/// Parse par value from MetricSchema validationRules JSON.
+/// Defaults to 2 if not specified.
+int _parsePar(String? validationRules) {
+  if (validationRules == null || validationRules.isEmpty) return 2;
+  final parsed = jsonDecode(validationRules);
+  if (parsed is Map && parsed.containsKey('par')) {
+    return (parsed['par'] as num).toInt();
+  }
+  return 2;
+}
+
 /// Private data class holding pre-parsed drill and schema metadata caches
 /// used during bulk rebuild. Avoids re-parsing on every session evaluation.
 class _BulkRebuildCache {
@@ -1373,6 +1402,9 @@ class _BulkRebuildCache {
   /// Maps schemaId -> scoring adapter type.
   final Map<String, ScoringAdapterType> adapterTypeCache;
 
+  /// Maps schemaId -> validationRules JSON string (nullable).
+  final Map<String, String?> schemaValidationRulesCache;
+
   const _BulkRebuildCache({
     required this.drillSubskillCache,
     required this.drillAnchorsCache,
@@ -1380,5 +1412,6 @@ class _BulkRebuildCache {
     required this.drillSchemaIdCache,
     required this.drillWindowCapCache,
     required this.adapterTypeCache,
+    required this.schemaValidationRulesCache,
   });
 }

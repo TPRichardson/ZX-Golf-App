@@ -26,7 +26,7 @@ void main() {
 
   group('Fresh database smoke test', () {
     test('schema version is 16', () {
-      expect(db.schemaVersion, 18);
+      expect(db.schemaVersion, 19);
     });
 
     test('35 tables are created', () async {

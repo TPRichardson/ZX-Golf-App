@@ -27,6 +27,7 @@ import 'package:zx_golf_app/features/practice/execution/input_delegates/binary_h
 import 'package:zx_golf_app/features/practice/execution/input_delegates/continuous_measurement_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/grid_cell_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/raw_data_entry_delegate.dart';
+import 'package:zx_golf_app/features/practice/execution/input_delegates/scoring_game_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_grid_picker.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -141,6 +142,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       InputMode.binaryHitMiss => BinaryHitMissDelegate(),
       InputMode.continuousMeasurement => ContinuousMeasurementDelegate(),
       InputMode.rawDataEntry => RawDataEntryDelegate(drill: widget.drill),
+      InputMode.scoringGame => ScoringGameDelegate(drill: widget.drill),
     };
   }
 

@@ -97,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +118,7 @@ class AppDatabase extends _$AppDatabase {
             "('driver_ball_speed', 'Driver Ball Speed (mph)', 'RawDataEntry', 80, 200, '{\"unit\": \"mph\"}', 'BestOfSetLinearInterpolation')",
             "('driver_total_distance', 'Driver Total Distance (yds)', 'RawDataEntry', 100, 400, '{\"unit\": \"yards\"}', 'BestOfSetLinearInterpolation')",
             "('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', 0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",
+            """('scoring_game_strokes', 'Scoring Game Strokes Per Hole', 'ScoringGame', 1, 10, '{"par": 2, "holes": 18, "distanceUnit": "feet", "categories": [{"name": "Short", "minDistance": 4, "maxDistance": 8, "holeCount": 6}, {"name": "Medium", "minDistance": 8, "maxDistance": 20, "holeCount": 6}, {"name": "Long", "minDistance": 20, "maxDistance": 40, "holeCount": 6}]}', 'ScoringGameInterpolation')""",
           ]) {
             await customStatement(
               "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
@@ -162,10 +163,21 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV16ToV17(m);
               case 17:
                 await _migrateV17ToV18(m);
+              case 18:
+                await _migrateV18ToV19(m);
             }
           }
         },
       );
+
+  Future<void> _migrateV18ToV19(Migrator m) async {
+    // Insert scoring game MetricSchema (idempotent via INSERT OR IGNORE).
+    await customStatement(
+      "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
+      "HardMinInput, HardMaxInput, ValidationRules, ScoringAdapterBinding) VALUES "
+      """('scoring_game_strokes', 'Scoring Game Strokes Per Hole', 'ScoringGame', 1, 10, '{"par": 2, "holes": 18, "distanceUnit": "feet", "categories": [{"name": "Short", "minDistance": 4, "maxDistance": 8, "holeCount": 6}, {"name": "Medium", "minDistance": 8, "maxDistance": 20, "holeCount": 6}, {"name": "Long", "minDistance": 20, "maxDistance": 40, "holeCount": 6}]}', 'ScoringGameInterpolation')""",
+    );
+  }
 
   Future<void> _migrateV17ToV18(Migrator m) async {
     await customStatement(

@@ -41,6 +41,9 @@ ScoringAdapterType parseScoringAdapterBinding(String binding) {
     case 'bestOfSetLinearInterpolation':
     case 'BestOfSetLinearInterpolation':
       return ScoringAdapterType.bestOfSetLinearInterpolation;
+    case 'scoringGameInterpolation':
+    case 'ScoringGameInterpolation':
+      return ScoringAdapterType.scoringGameInterpolation;
     case 'none':
     case 'None':
       return ScoringAdapterType.none;
@@ -111,7 +114,7 @@ double extractNumericValue(String rawMetrics) {
   final parsed = jsonDecode(rawMetrics);
   if (parsed is num) return parsed.toDouble();
   if (parsed is Map) {
-    for (final key in ['value', 'distance', 'speed', 'carry']) {
+    for (final key in ['value', 'strokes', 'distance', 'speed', 'carry']) {
       if (parsed.containsKey(key) && parsed[key] is num) {
         return (parsed[key] as num).toDouble();
       }

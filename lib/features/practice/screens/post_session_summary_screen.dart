@@ -133,6 +133,12 @@ class PostSessionSummaryScreen extends ConsumerWidget {
                           color: ColorTokens.textTertiary,
                         ),
                       ),
+                    // Scoring game scorecard.
+                    if (drill.inputMode == InputMode.scoringGame)
+                      _ScoringGameScorecard(
+                        sessionId: session.sessionId,
+                        ref: ref,
+                      ),
                     const SizedBox(height: SpacingTokens.lg),
                     // Duration.
                     if (session.sessionDuration != null)
@@ -535,6 +541,24 @@ class _HitRateAnchorBar extends StatelessWidget {
           return const SizedBox.shrink();
         }
         final instances = snapshot.data!;
+        // Scoring game: compute negated +/- par as the anchor bar value.
+        if (drill.inputMode == InputMode.scoringGame) {
+          var totalStrokes = 0;
+          var totalPar = 0;
+          for (final instance in instances) {
+            try {
+              final raw = jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
+              totalStrokes += (raw['strokes'] as num).toInt();
+              totalPar += (raw['par'] as num?)?.toInt() ?? 2;
+            } catch (_) {}
+          }
+          final negated = -(totalStrokes - totalPar).toDouble();
+          return AnchorScoreBar(
+            userValue: negated,
+            anchorsJson: drill.anchors,
+          );
+        }
+
         final isValueDrill = drill.inputMode == InputMode.rawDataEntry ||
             drill.inputMode == InputMode.continuousMeasurement;
 
@@ -612,4 +636,203 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Scorecard table for scoring game sessions.
+/// Shows hole-by-hole: number, distance, category, strokes, +/- par.
+class _ScoringGameScorecard extends StatelessWidget {
+  final String sessionId;
+  final WidgetRef ref;
+
+  const _ScoringGameScorecard({
+    required this.sessionId,
+    required this.ref,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Instance>>(
+      future: ref
+          .read(scoringRepositoryProvider)
+          .getInstancesForSession(sessionId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final instances = snapshot.data!;
+        final holes = <_HoleResult>[];
+        var totalStrokes = 0;
+        var totalPar = 0;
+
+        for (final instance in instances) {
+          try {
+            final raw =
+                jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
+            final strokes = (raw['strokes'] as num).toInt();
+            final distance = (raw['distance'] as num).toInt();
+            final category = raw['category'] as String? ?? '';
+            final par = (raw['par'] as num?)?.toInt() ?? 2;
+            final holeNum = (raw['holeNumber'] as num?)?.toInt() ?? (holes.length + 1);
+            holes.add(_HoleResult(holeNum, distance, category, strokes, par));
+            totalStrokes += strokes;
+            totalPar += par;
+          } catch (_) {}
+        }
+
+        if (holes.isEmpty) return const SizedBox.shrink();
+
+        final plusMinus = totalStrokes - totalPar;
+        final plusMinusLabel =
+            plusMinus == 0 ? 'E' : (plusMinus > 0 ? '+$plusMinus' : '$plusMinus');
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: SpacingTokens.lg),
+            // Summary line.
+            Center(
+              child: Text(
+                '$totalStrokes strokes ($plusMinusLabel)',
+                style: TextStyle(
+                  fontSize: TypographyTokens.displayLgSize,
+                  fontWeight: TypographyTokens.displayLgWeight,
+                  color: plusMinus < 0
+                      ? ColorTokens.successDefault
+                      : plusMinus == 0
+                          ? ColorTokens.textPrimary
+                          : ColorTokens.errorDestructive,
+                ),
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.lg),
+            // Scorecard table.
+            Container(
+              decoration: BoxDecoration(
+                color: ColorTokens.surfaceRaised,
+                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+              ),
+              child: Column(
+                children: [
+                  // Header row.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SpacingTokens.md,
+                      vertical: SpacingTokens.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 32,
+                          child: Text('#',
+                              style: TextStyle(
+                                  fontSize: TypographyTokens.bodySmSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.textTertiary)),
+                        ),
+                        Expanded(
+                          child: Text('Distance',
+                              style: TextStyle(
+                                  fontSize: TypographyTokens.bodySmSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.textTertiary)),
+                        ),
+                        SizedBox(
+                          width: 64,
+                          child: Text('Strokes',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: TypographyTokens.bodySmSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.textTertiary)),
+                        ),
+                        SizedBox(
+                          width: 40,
+                          child: Text('+/-',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: TypographyTokens.bodySmSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: ColorTokens.textTertiary)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: ColorTokens.surfaceBorder),
+                  // Hole rows.
+                  for (final hole in holes)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.md,
+                        vertical: SpacingTokens.xs,
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 32,
+                            child: Text('${hole.number}',
+                                style: TextStyle(
+                                    fontSize: TypographyTokens.bodySmSize,
+                                    color: ColorTokens.textSecondary)),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '${hole.distance}ft  ${hole.category}',
+                              style: TextStyle(
+                                fontSize: TypographyTokens.bodySmSize,
+                                color: ColorTokens.textPrimary,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 64,
+                            child: Text('${hole.strokes}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: TypographyTokens.bodySmSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: ColorTokens.textPrimary)),
+                          ),
+                          SizedBox(
+                            width: 40,
+                            child: Text(
+                              hole.plusMinusLabel,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: TypographyTokens.bodySmSize,
+                                fontWeight: FontWeight.w600,
+                                color: hole.plusMinus < 0
+                                    ? ColorTokens.successDefault
+                                    : hole.plusMinus == 0
+                                        ? ColorTokens.textTertiary
+                                        : ColorTokens.errorDestructive,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _HoleResult {
+  final int number;
+  final int distance;
+  final String category;
+  final int strokes;
+  final int par;
+
+  const _HoleResult(
+      this.number, this.distance, this.category, this.strokes, this.par);
+
+  int get plusMinus => strokes - par;
+  String get plusMinusLabel =>
+      plusMinus == 0 ? '-' : (plusMinus > 0 ? '+$plusMinus' : '$plusMinus');
 }
