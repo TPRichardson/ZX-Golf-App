@@ -35,6 +35,25 @@ class AuthService {
     }
   }
 
+  /// Sign in with email and password (used for dev/test bypass).
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } on AuthException catch (e) {
+      throw AuthenticationException(
+        code: AuthenticationException.refreshFailed,
+        message: 'Email sign-in failed: ${e.message}',
+        context: {'statusCode': e.statusCode},
+      );
+    }
+  }
+
   /// Sign out the current user.
   Future<void> signOut() async {
     try {

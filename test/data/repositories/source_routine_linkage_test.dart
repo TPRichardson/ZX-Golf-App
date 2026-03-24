@@ -37,6 +37,7 @@ void main() {
     // Seed a user.
     await db.into(db.users).insert(UsersCompanion.insert(
           userId: userId,
+          email: 'test@example.com',
           displayName: const Value('Test User'),
         ));
   });

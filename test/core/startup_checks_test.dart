@@ -171,5 +171,5 @@ void main() {
 }
 
 Future<void> _seedMinimalUser(AppDatabase db, String userId) async {
-  await db.into(db.users).insert(UsersCompanion.insert(userId: userId));
+  await db.into(db.users).insert(UsersCompanion.insert(userId: userId, email: '$userId@test.com'));
 }

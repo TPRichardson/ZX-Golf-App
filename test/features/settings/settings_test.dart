@@ -26,7 +26,7 @@ void main() {
   });
 
   Future<User> createUser() async {
-    return userRepo.create(UsersCompanion.insert(userId: userId));
+    return userRepo.create(UsersCompanion.insert(userId: userId, email: 'test@example.com'));
   }
 
   group('Settings Persistence', () {
@@ -74,8 +74,8 @@ void main() {
     test('updating preferences preserves other user fields', () async {
       await userRepo.create(UsersCompanion.insert(
         userId: userId,
+        email: 'test@example.com',
         displayName: const Value('Test User'),
-        email: const Value('test@example.com'),
       ));
 
       final prefs = UserPreferences(distanceUnit: DistanceUnit.metres);

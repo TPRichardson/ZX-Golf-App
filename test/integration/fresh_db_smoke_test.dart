@@ -26,7 +26,7 @@ void main() {
 
   group('Fresh database smoke test', () {
     test('schema version is 16', () {
-      expect(db.schemaVersion, 19);
+      expect(db.schemaVersion, 20);
     });
 
     test('35 tables are created', () async {
@@ -92,6 +92,7 @@ void main() {
       // Seed a dev user like the app does.
       await db.into(db.users).insert(UsersCompanion.insert(
         userId: kDevUserId,
+        email: 'dev@test.com',
         displayName: const Value('Dev User'),
       ));
       final user = await (db.select(db.users)
@@ -105,6 +106,7 @@ void main() {
       // Create dev user first.
       await db.into(db.users).insert(UsersCompanion.insert(
         userId: kDevUserId,
+        email: 'dev@test.com',
         displayName: const Value('Dev User'),
       ));
 

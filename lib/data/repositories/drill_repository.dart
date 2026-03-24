@@ -101,6 +101,36 @@ class DrillRepository {
         }).toList());
   }
 
+  // Reactive stream of retired (unadopted) system drills for the manage screen.
+  Stream<List<DrillWithAdoption>> watchRetiredDrills(
+    String userId, {
+    SkillArea? filter,
+  }) {
+    final query = _db.select(_db.drills).join([
+      innerJoin(
+        _db.userDrillAdoptions,
+        _db.userDrillAdoptions.drillId.equalsExp(_db.drills.drillId),
+      ),
+    ]);
+    query
+      ..where(_db.userDrillAdoptions.userId.equals(userId))
+      ..where(
+          _db.userDrillAdoptions.status.equalsValue(AdoptionStatus.retired))
+      ..where(_db.userDrillAdoptions.isDeleted.equals(false))
+      ..where(_db.drills.isDeleted.equals(false));
+    if (filter != null) {
+      query.where(_db.drills.skillArea.equalsValue(filter));
+    }
+    query.orderBy([OrderingTerm.asc(_db.drills.name)]);
+
+    return query.watch().map((rows) => rows.map((row) {
+          return DrillWithAdoption(
+            drill: row.readTable(_db.drills),
+            adoption: row.readTable(_db.userDrillAdoptions),
+          );
+        }).toList());
+  }
+
   // TD-03 §3.3.2 — Reactive stream of user's active drills.
   // Adopted standard drills + active custom drills.
   Stream<List<DrillWithAdoption>> watchActiveDrills(
@@ -440,23 +470,10 @@ class DrillRepository {
   }
 
   // TD-03 §3.3.2 / TD-04 §2.5.1 — Adopt a system drill. Idempotent.
+  // Validation gates (bag, equipment, carry) are checked at session start,
+  // not at adoption time, to support auto-adoption of all system drills.
   Future<UserDrillAdoption> adoptDrill(String userId, String drillId) async {
     await _gate.awaitGateRelease();
-    final drill = await _getActiveDrill(drillId);
-
-    // S09 §9.3 — Bag gate: require at least one active club for this Skill Area.
-    await bag_gate.validateClubEligibility(
-        _db, userId, drill.skillArea, drill.drillType);
-
-    // Equipment gate: require all equipment listed in RequiredEquipment.
-    await equipment_gate.validateEquipmentEligibility(
-        _db, userId, drill.requiredEquipment);
-
-    // Carry gate: drills using ClubCarry targeting need carry distances.
-    if (drill.targetDistanceMode == TargetDistanceMode.clubCarry ||
-        drill.targetDistanceMode == TargetDistanceMode.percentageOfClubCarry) {
-      await carry_gate.validateCarryDistances(_db, userId, drill.skillArea);
-    }
 
     // Check for existing adoption.
     final existing = await (_db.select(_db.userDrillAdoptions)
@@ -500,10 +517,40 @@ class DrillRepository {
           .insertReturning(UserDrillAdoptionsCompanion.insert(
         userDrillAdoptionId: _uuid.v4(),
         userId: userId,
-        drillId: drill.drillId,
+        drillId: drillId,
       )),
       errorMessage: 'Failed to create drill adoption',
     );
+  }
+
+  // Auto-adopt all system drills that the user hasn't adopted yet.
+  // Called on first login and after sync merges new system drills.
+  Future<void> autoAdoptAllSystemDrills(String userId) async {
+    // Get all system drills.
+    final systemDrills = await (_db.select(_db.drills)
+          ..where((t) => t.origin.equalsValue(DrillOrigin.standard))
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+
+    // Get existing adoption drill IDs (including retired/deleted).
+    final existingAdoptions = await (_db.select(_db.userDrillAdoptions)
+          ..where((t) => t.userId.equals(userId)))
+        .get();
+    final adoptedDrillIds =
+        existingAdoptions.map((a) => a.drillId).toSet();
+
+    // Adopt any system drills not yet in the adoption table.
+    for (final drill in systemDrills) {
+      if (!adoptedDrillIds.contains(drill.drillId)) {
+        await _db
+            .into(_db.userDrillAdoptions)
+            .insertOnConflictUpdate(UserDrillAdoptionsCompanion.insert(
+          userDrillAdoptionId: _uuid.v4(),
+          userId: userId,
+          drillId: drill.drillId,
+        ));
+      }
+    }
   }
 
   // Adopt a server-authoritative standard drill. Upserts the drill locally
@@ -675,6 +722,36 @@ class DrillRepository {
   }
 
   // Spec: S04 §4.2 — Standard drills (UserID IS NULL, origin = standard).
+  // All system drills with adoption status for the manage screen.
+  // LEFT JOIN so drills without an adoption record still appear.
+  Stream<List<DrillWithAdoption>> watchAllSystemDrillsWithAdoption(
+    String userId, {
+    SkillArea? filter,
+  }) {
+    final query = _db.select(_db.drills).join([
+      leftOuterJoin(
+        _db.userDrillAdoptions,
+        _db.userDrillAdoptions.drillId.equalsExp(_db.drills.drillId) &
+            _db.userDrillAdoptions.userId.equals(userId) &
+            _db.userDrillAdoptions.isDeleted.equals(false),
+      ),
+    ]);
+    query
+      ..where(_db.drills.userId.isNull())
+      ..where(_db.drills.isDeleted.equals(false));
+    if (filter != null) {
+      query.where(_db.drills.skillArea.equalsValue(filter));
+    }
+    query.orderBy([OrderingTerm.asc(_db.drills.name)]);
+
+    return query.watch().map((rows) => rows.map((row) {
+          return DrillWithAdoption(
+            drill: row.readTable(_db.drills),
+            adoption: row.readTableOrNull(_db.userDrillAdoptions),
+          );
+        }).toList());
+  }
+
   Stream<List<Drill>> watchStandardDrills() {
     return (_db.select(_db.drills)
           ..where((t) => t.userId.isNull())

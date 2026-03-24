@@ -20,7 +20,7 @@ extension UserSyncDto on User {
 UsersCompanion userFromSyncDto(Map<String, dynamic> json) => UsersCompanion(
       userId: Value(json['UserID'] as String),
       displayName: Value(json['DisplayName'] as String?),
-      email: Value(json['Email'] as String?),
+      email: Value(json['Email'] as String),
       timezone: Value(json['Timezone'] as String),
       weekStartDay: Value(json['WeekStartDay'] as int),
       unitPreferences: Value(

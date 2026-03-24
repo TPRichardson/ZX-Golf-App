@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
+import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
@@ -48,10 +51,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   void initState() {
     super.initState();
     // Phase 7A — Start sync orchestrator on app launch.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureUserProvisioned();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _ensureUserProvisioned();
       ref.read(syncOrchestratorProvider).start();
       _checkDeferredSummary();
+      _checkBagSetup();
     });
   }
 
@@ -66,9 +70,71 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       final profile = ref.read(authProfileProvider);
       await userRepo.create(UsersCompanion.insert(
         userId: userId,
+        email: profile.email ?? '$userId@unknown.local',
         displayName: drift.Value(profile.displayName),
       ));
     }
+    // Auto-adopt all system drills for this user (idempotent).
+    try {
+      await ref.read(drillRepositoryProvider).autoAdoptAllSystemDrills(userId);
+    } catch (e) {
+      debugPrint('[ShellScreen] Auto-adopt failed: $e');
+    }
+  }
+
+  /// Prompt user to set up their bag if no clubs exist.
+  Future<void> _checkBagSetup() async {
+    final userId = ref.read(authServiceProvider).currentUserId;
+    if (userId == null) return;
+    final clubs = await ref.read(clubRepositoryProvider).watchUserBag(
+      userId,
+      status: UserClubStatus.active,
+    ).first;
+    if (clubs.isNotEmpty || !mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: ColorTokens.surfaceModal,
+        title: const Text('Set Up Your Golf Bag',
+            style: TextStyle(color: ColorTokens.textPrimary)),
+        content: const Text(
+          'Add the clubs you carry to get started. '
+          'This lets ZX Golf tailor targets to your game.',
+          style: TextStyle(color: ColorTokens.textSecondary),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(
+            SpacingTokens.lg, 0, SpacingTokens.lg, SpacingTokens.lg),
+        actions: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ZxPillButton(
+                label: 'Set Up Bag',
+                icon: Icons.golf_course,
+                variant: ZxPillVariant.primary,
+                expanded: true,
+                centered: true,
+                onTap: () {
+                  Navigator.pop(dialogCtx);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BagScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: SpacingTokens.sm),
+              ZxPillButton(
+                label: 'Later',
+                variant: ZxPillVariant.tertiary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(dialogCtx),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   // 6D — Check for deferred post-session summary after auto-end.

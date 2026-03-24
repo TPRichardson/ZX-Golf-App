@@ -6,6 +6,7 @@ import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/models/user_preferences.dart';
 import 'package:zx_golf_app/core/sync/sync_types.dart';
+import 'package:zx_golf_app/providers/database_providers.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 import 'execution_defaults_screen.dart';
@@ -380,17 +381,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    // Check connectivity to decide which warning to show.
+    final isConnected =
+        await ref.read(connectivityMonitorProvider).isConnected;
+
+    final String message;
+    if (isConnected) {
+      message = 'Your data will be synced to the cloud before signing out. '
+          'All local data will be removed from this device.';
+    } else {
+      message = 'You are offline. Any unsynced data will be lost if you '
+          'sign out now. Connect to the internet first to avoid data loss.';
+    }
+
     final confirmed = await showSoftConfirmation(
       context,
       title: 'Sign Out',
-      message: 'Are you sure you want to sign out?',
-      confirmLabel: 'Sign Out',
+      message: message,
+      confirmLabel: isConnected ? 'Sign Out' : 'Sign Out Anyway',
     );
-    if (confirmed) {
-      await ref.read(authServiceProvider).signOut();
-      if (context.mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+    if (!confirmed || !context.mounted) return;
+
+    // Attempt sync before logout (best-effort — don't block on failure).
+    if (isConnected) {
+      try {
+        await ref.read(syncEngineProvider).triggerSync(
+              reason: SyncTrigger.manual,
+            );
+      } catch (_) {
+        // Sync failure shouldn't prevent logout.
       }
+    }
+
+    // Clear all local user data.
+    try {
+      await ref.read(databaseProvider).deleteAllUserData();
+    } catch (_) {
+      // Wipe failure shouldn't prevent logout.
+    }
+
+    // Sign out of Supabase.
+    await ref.read(authServiceProvider).signOut();
+
+    // Invalidate cached providers so the next login starts fresh.
+    ref.invalidate(currentUserProvider);
+    ref.invalidate(userPreferencesProvider);
+
+    if (context.mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 

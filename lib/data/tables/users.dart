@@ -7,7 +7,7 @@ class Users extends Table {
 
   TextColumn get userId => text().named('UserID')();
   TextColumn get displayName => text().named('DisplayName').nullable()();
-  TextColumn get email => text().named('Email').nullable()();
+  TextColumn get email => text().named('Email').unique()();
   TextColumn get timezone =>
       text().named('Timezone').withDefault(const Constant('UTC'))();
   IntColumn get weekStartDay =>

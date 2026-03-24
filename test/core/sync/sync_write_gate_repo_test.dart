@@ -48,6 +48,7 @@ void main() {
     test('UserRepository.create succeeds when gate not held', () async {
       final user = await userRepo.create(UsersCompanion.insert(
         userId: userId,
+        email: '$userId@test.com',
       ));
       expect(user.userId, userId);
       expect(gate.isHeld, isFalse);
@@ -91,7 +92,7 @@ void main() {
 
       var writeCompleted = false;
       final writeFuture = userRepo
-          .create(UsersCompanion.insert(userId: userId))
+          .create(UsersCompanion.insert(userId: userId, email: '$userId@test.com'))
           .then((user) {
         writeCompleted = true;
         return user;
@@ -171,7 +172,7 @@ void main() {
       var completedCount = 0;
 
       final f1 = userRepo
-          .create(UsersCompanion.insert(userId: 'user-q1'))
+          .create(UsersCompanion.insert(userId: 'user-q1', email: 'q1@test.com'))
           .then((_) => completedCount++);
       final f2 = eventLogRepo
           .create(EventLogsCompanion.insert(
@@ -204,7 +205,7 @@ void main() {
       final completionOrder = <String>[];
 
       final f1 = userRepo
-          .create(UsersCompanion.insert(userId: 'user-fifo'))
+          .create(UsersCompanion.insert(userId: 'user-fifo', email: 'fifo@test.com'))
           .then((_) => completionOrder.add('user'));
       final f2 = eventLogRepo
           .create(EventLogsCompanion.insert(
@@ -312,7 +313,7 @@ void main() {
       // Start one write that will be blocked.
       var firstCompleted = false;
       final firstFuture = userRepo
-          .create(UsersCompanion.insert(userId: 'user-during-release'))
+          .create(UsersCompanion.insert(userId: 'user-during-release', email: 'during@test.com'))
           .then((_) {
         firstCompleted = true;
       });
@@ -326,7 +327,7 @@ void main() {
       // Immediately start another write — gate is no longer held,
       // so this should proceed without blocking.
       final secondUser = await userRepo.create(
-        UsersCompanion.insert(userId: 'user-after-release'),
+        UsersCompanion.insert(userId: 'user-after-release', email: 'after@test.com'),
       );
 
       await firstFuture;

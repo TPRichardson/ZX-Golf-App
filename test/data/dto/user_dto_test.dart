@@ -41,10 +41,8 @@ void main() {
     test('nullable fields handle null', () {
       final json = makeUser().toSyncDto();
       json['DisplayName'] = null;
-      json['Email'] = null;
       final companion = userFromSyncDto(json);
       expect(companion.displayName.value, isNull);
-      expect(companion.email.value, isNull);
     });
   });
 }

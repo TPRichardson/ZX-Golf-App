@@ -165,36 +165,6 @@ class _UserTrainingItemCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (areas.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: SpacingTokens.xs),
-                      child: Wrap(
-                        spacing: SpacingTokens.xs,
-                        runSpacing: SpacingTokens.xs,
-                        children: [
-                          for (final area in areas)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: SpacingTokens.sm,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: ColorTokens.primaryDefault
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(
-                                    ShapeTokens.radiusSegmented),
-                              ),
-                              child: Text(
-                                area.dbValue,
-                                style: const TextStyle(
-                                  fontSize: TypographyTokens.bodySmSize,
-                                  color: ColorTokens.primaryDefault,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),

@@ -486,7 +486,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                       const SizedBox(width: SpacingTokens.sm),
                       Expanded(
                         child: ZxPillButton(
-                          label: 'Add/Create Drills',
+                          label: 'Manage/Create Drills',
                           icon: Icons.add,
                           size: ZxPillSize.md,
                           variant: ZxPillVariant.secondary,
@@ -502,7 +502,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
                   ),
                   )
                 : ZxPillButton(
-                    label: 'Add/Create Drills',
+                    label: 'Manage/Create Drills',
                     icon: Icons.add,
                     size: ZxPillSize.md,
                     variant: ZxPillVariant.primary,

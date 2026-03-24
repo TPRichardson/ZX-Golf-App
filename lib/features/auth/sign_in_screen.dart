@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
-import 'package:zx_golf_app/features/auth/auth_gate.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 
 // TD-07 §9 — Sign-in screen shown when user is not authenticated.
@@ -18,8 +18,33 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _loading = false;
   String? _error;
 
-  void _bypassLogin() {
-    ref.read(guestModeProvider.notifier).state = true;
+  Future<void> _testLogin(String emailKey, String passwordKey) async {
+    final email = dotenv.env[emailKey];
+    final password = dotenv.env[passwordKey];
+    if (email == null || password == null) {
+      if (mounted) {
+        setState(() => _error = '$emailKey/$passwordKey not set in .env');
+      }
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authServiceProvider).signInWithPassword(
+            email: email,
+            password: password,
+          );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = 'Test sign-in failed. Check .env credentials.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   Future<void> _signInWithGoogle() async {
@@ -81,12 +106,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
               const SizedBox(height: SpacingTokens.md),
               ZxPillButton(
-                label: 'Continue without account',
+                label: 'Test: ${dotenv.env['SUPABASE_TEST_EMAIL'] ?? 'a@b.com'}',
                 icon: Icons.person_outline,
                 variant: ZxPillVariant.secondary,
                 expanded: true,
                 centered: true,
-                onTap: _loading ? null : _bypassLogin,
+                onTap: _loading ? null : () => _testLogin('SUPABASE_TEST_EMAIL', 'SUPABASE_TEST_PASSWORD'),
+              ),
+              const SizedBox(height: SpacingTokens.md),
+              ZxPillButton(
+                label: 'Test: ${dotenv.env['SUPABASE_TEST_EMAIL_2'] ?? 'c@d.com'}',
+                icon: Icons.person_outline,
+                variant: ZxPillVariant.secondary,
+                expanded: true,
+                centered: true,
+                onTap: _loading ? null : () => _testLogin('SUPABASE_TEST_EMAIL_2', 'SUPABASE_TEST_PASSWORD_2'),
               ),
               if (_error != null) ...[
                 const SizedBox(height: SpacingTokens.md),

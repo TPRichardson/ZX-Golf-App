@@ -138,31 +138,6 @@ class _TrainingKitItemDetailScreenState
           ),
           const SizedBox(height: SpacingTokens.lg),
 
-          // Skill Areas — multi-select checkboxes matching golf bag pattern.
-          _FieldLabel('Skill Areas'),
-          const SizedBox(height: SpacingTokens.xs),
-          for (final area in SkillArea.values)
-            CheckboxListTile(
-              title: Text(
-                area.dbValue,
-                style: const TextStyle(color: ColorTokens.textPrimary),
-              ),
-              value: _selectedSkillAreas.contains(area),
-              onChanged: (v) {
-                setState(() {
-                  if (v == true) {
-                    _selectedSkillAreas.add(area);
-                  } else {
-                    _selectedSkillAreas.remove(area);
-                  }
-                });
-              },
-              activeColor: ColorTokens.primaryDefault,
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          const SizedBox(height: SpacingTokens.lg),
-
           // Category-specific fields.
           ..._categoryFields(),
         ],

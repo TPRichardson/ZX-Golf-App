@@ -25,6 +25,7 @@ import 'package:zx_golf_app/features/practice/widgets/practice_entry_card.dart';
 import 'package:zx_golf_app/features/practice/widgets/elapsed_time_badge.dart';
 import 'package:zx_golf_app/features/practice/widgets/practice_stats_bar.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
+import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/database_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
@@ -613,27 +614,42 @@ class _PracticeQueueScreenState extends ConsumerState<PracticeQueueScreen> {
   Future<bool?> _showNoClubsWarning(SkillArea skillArea) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: ColorTokens.surfaceModal,
         title: const Text('No Clubs Configured',
             style: TextStyle(color: ColorTokens.textPrimary)),
         content: Text(
-          'This drill requires clubs for ${skillArea.dbValue}, '
-          'but you have none in your bag. '
-          'Add clubs in Settings → Golf Bag before starting this drill.',
+          'This drill requires clubs for ${skillArea.dbValue}. '
+          'Add clubs to your bag before starting this drill.',
           style: const TextStyle(color: ColorTokens.textSecondary),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(
+            SpacingTokens.lg, 0, SpacingTokens.lg, SpacingTokens.lg),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.warningIntegrity,
-            ),
-            child: const Text('Start Anyway'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ZxPillButton(
+                label: 'Edit Bag',
+                variant: ZxPillVariant.primary,
+                expanded: true,
+                centered: true,
+                onTap: () {
+                  Navigator.pop(dialogCtx, false);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BagScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: SpacingTokens.sm),
+              ZxPillButton(
+                label: 'Cancel',
+                variant: ZxPillVariant.tertiary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(dialogCtx, false),
+              ),
+            ],
           ),
         ],
       ),

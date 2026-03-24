@@ -994,6 +994,11 @@ class SyncEngine {
         }
       }
 
+      // Auto-adopt any new system drills for each affected user.
+      for (final userId in affectedUserIds) {
+        await _autoAdoptNewSystemDrills(userId);
+      }
+
       // 3. Post-merge pipeline: full rebuild for each affected user.
       // Rebuild also covers standard drill anchor changes (reflow via full rebuild).
       final rebuildTriggered = affectedUserIds.isNotEmpty &&
@@ -1381,6 +1386,29 @@ class SyncEngine {
   void _setStatus(SyncStatus status) {
     _currentStatus = status;
     _statusController.add(status);
+  }
+
+  /// Auto-adopt system drills that the user hasn't adopted yet.
+  Future<void> _autoAdoptNewSystemDrills(String userId) async {
+    final systemDrills = await (_db.select(_db.drills)
+          ..where((t) => t.origin.equalsValue(DrillOrigin.standard))
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+    final existingAdoptions = await (_db.select(_db.userDrillAdoptions)
+          ..where((t) => t.userId.equals(userId)))
+        .get();
+    final adoptedDrillIds = existingAdoptions.map((a) => a.drillId).toSet();
+    for (final drill in systemDrills) {
+      if (!adoptedDrillIds.contains(drill.drillId)) {
+        await _db
+            .into(_db.userDrillAdoptions)
+            .insertOnConflictUpdate(UserDrillAdoptionsCompanion.insert(
+          userDrillAdoptionId: const Uuid().v4(),
+          userId: userId,
+          drillId: drill.drillId,
+        ));
+      }
+    }
   }
 
   /// Clean up resources.

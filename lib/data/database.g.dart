@@ -1186,9 +1186,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   late final GeneratedColumn<String> email = GeneratedColumn<String>(
     'Email',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.string,
-    requiredDuringInsert: false,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _timezoneMeta = const VerificationMeta(
     'timezone',
@@ -1295,6 +1296,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         _emailMeta,
         email.isAcceptableOrUnknown(data['Email']!, _emailMeta),
       );
+    } else if (isInserting) {
+      context.missing(_emailMeta);
     }
     if (data.containsKey('Timezone')) {
       context.handle(
@@ -1352,7 +1355,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       email: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}Email'],
-      ),
+      )!,
       timezone: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}Timezone'],
@@ -1385,7 +1388,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
 class User extends DataClass implements Insertable<User> {
   final String userId;
   final String? displayName;
-  final String? email;
+  final String email;
   final String timezone;
   final int weekStartDay;
   final String unitPreferences;
@@ -1394,7 +1397,7 @@ class User extends DataClass implements Insertable<User> {
   const User({
     required this.userId,
     this.displayName,
-    this.email,
+    required this.email,
     required this.timezone,
     required this.weekStartDay,
     required this.unitPreferences,
@@ -1408,9 +1411,7 @@ class User extends DataClass implements Insertable<User> {
     if (!nullToAbsent || displayName != null) {
       map['DisplayName'] = Variable<String>(displayName);
     }
-    if (!nullToAbsent || email != null) {
-      map['Email'] = Variable<String>(email);
-    }
+    map['Email'] = Variable<String>(email);
     map['Timezone'] = Variable<String>(timezone);
     map['WeekStartDay'] = Variable<int>(weekStartDay);
     map['UnitPreferences'] = Variable<String>(unitPreferences);
@@ -1425,9 +1426,7 @@ class User extends DataClass implements Insertable<User> {
       displayName: displayName == null && nullToAbsent
           ? const Value.absent()
           : Value(displayName),
-      email: email == null && nullToAbsent
-          ? const Value.absent()
-          : Value(email),
+      email: Value(email),
       timezone: Value(timezone),
       weekStartDay: Value(weekStartDay),
       unitPreferences: Value(unitPreferences),
@@ -1444,7 +1443,7 @@ class User extends DataClass implements Insertable<User> {
     return User(
       userId: serializer.fromJson<String>(json['userId']),
       displayName: serializer.fromJson<String?>(json['displayName']),
-      email: serializer.fromJson<String?>(json['email']),
+      email: serializer.fromJson<String>(json['email']),
       timezone: serializer.fromJson<String>(json['timezone']),
       weekStartDay: serializer.fromJson<int>(json['weekStartDay']),
       unitPreferences: serializer.fromJson<String>(json['unitPreferences']),
@@ -1458,7 +1457,7 @@ class User extends DataClass implements Insertable<User> {
     return <String, dynamic>{
       'userId': serializer.toJson<String>(userId),
       'displayName': serializer.toJson<String?>(displayName),
-      'email': serializer.toJson<String?>(email),
+      'email': serializer.toJson<String>(email),
       'timezone': serializer.toJson<String>(timezone),
       'weekStartDay': serializer.toJson<int>(weekStartDay),
       'unitPreferences': serializer.toJson<String>(unitPreferences),
@@ -1470,7 +1469,7 @@ class User extends DataClass implements Insertable<User> {
   User copyWith({
     String? userId,
     Value<String?> displayName = const Value.absent(),
-    Value<String?> email = const Value.absent(),
+    String? email,
     String? timezone,
     int? weekStartDay,
     String? unitPreferences,
@@ -1479,7 +1478,7 @@ class User extends DataClass implements Insertable<User> {
   }) => User(
     userId: userId ?? this.userId,
     displayName: displayName.present ? displayName.value : this.displayName,
-    email: email.present ? email.value : this.email,
+    email: email ?? this.email,
     timezone: timezone ?? this.timezone,
     weekStartDay: weekStartDay ?? this.weekStartDay,
     unitPreferences: unitPreferences ?? this.unitPreferences,
@@ -1548,7 +1547,7 @@ class User extends DataClass implements Insertable<User> {
 class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> userId;
   final Value<String?> displayName;
-  final Value<String?> email;
+  final Value<String> email;
   final Value<String> timezone;
   final Value<int> weekStartDay;
   final Value<String> unitPreferences;
@@ -1569,14 +1568,15 @@ class UsersCompanion extends UpdateCompanion<User> {
   UsersCompanion.insert({
     required String userId,
     this.displayName = const Value.absent(),
-    this.email = const Value.absent(),
+    required String email,
     this.timezone = const Value.absent(),
     this.weekStartDay = const Value.absent(),
     this.unitPreferences = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : userId = Value(userId);
+  }) : userId = Value(userId),
+       email = Value(email);
   static Insertable<User> custom({
     Expression<String>? userId,
     Expression<String>? displayName,
@@ -1604,7 +1604,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   UsersCompanion copyWith({
     Value<String>? userId,
     Value<String?>? displayName,
-    Value<String?>? email,
+    Value<String>? email,
     Value<String>? timezone,
     Value<int>? weekStartDay,
     Value<String>? unitPreferences,
@@ -20746,7 +20746,7 @@ typedef $$UsersTableCreateCompanionBuilder =
     UsersCompanion Function({
       required String userId,
       Value<String?> displayName,
-      Value<String?> email,
+      required String email,
       Value<String> timezone,
       Value<int> weekStartDay,
       Value<String> unitPreferences,
@@ -20758,7 +20758,7 @@ typedef $$UsersTableUpdateCompanionBuilder =
     UsersCompanion Function({
       Value<String> userId,
       Value<String?> displayName,
-      Value<String?> email,
+      Value<String> email,
       Value<String> timezone,
       Value<int> weekStartDay,
       Value<String> unitPreferences,
@@ -20936,7 +20936,7 @@ class $$UsersTableTableManager
               ({
                 Value<String> userId = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
-                Value<String?> email = const Value.absent(),
+                Value<String> email = const Value.absent(),
                 Value<String> timezone = const Value.absent(),
                 Value<int> weekStartDay = const Value.absent(),
                 Value<String> unitPreferences = const Value.absent(),
@@ -20958,7 +20958,7 @@ class $$UsersTableTableManager
               ({
                 required String userId,
                 Value<String?> displayName = const Value.absent(),
-                Value<String?> email = const Value.absent(),
+                required String email,
                 Value<String> timezone = const Value.absent(),
                 Value<int> weekStartDay = const Value.absent(),
                 Value<String> unitPreferences = const Value.absent(),

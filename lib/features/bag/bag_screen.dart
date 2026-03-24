@@ -6,6 +6,7 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
@@ -57,7 +58,13 @@ class _BagScreenState extends ConsumerState<BagScreen>
     final userId = ref.watch(currentUserIdProvider);
     final bagAsync = ref.watch(userBagProvider(userId));
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        await _checkCarriesBeforeLeaving();
+      },
+      child: Scaffold(
       backgroundColor: ColorTokens.surfaceBase,
       body: SafeArea(
         bottom: false,
@@ -102,7 +109,72 @@ class _BagScreenState extends ConsumerState<BagScreen>
         backgroundColor: ColorTokens.primaryDefault,
         child: const Icon(Icons.add, color: ColorTokens.textPrimary),
       ),
+    ),
     );
+  }
+
+  Future<void> _checkCarriesBeforeLeaving() async {
+    final userId = ref.read(currentUserIdProvider);
+    final clubs = ref.read(userBagProvider(userId)).valueOrNull ?? [];
+    final clubRepo = ref.read(clubRepositoryProvider);
+
+    // Check non-putter clubs for missing carry distances.
+    bool hasMissing = false;
+    for (final club in clubs) {
+      if (club.clubType == ClubType.putter) continue;
+      final profile = await clubRepo.getActiveProfile(club.clubId);
+      if (profile == null || profile.carryDistance == null) {
+        hasMissing = true;
+        break;
+      }
+    }
+
+    if (!mounted) return;
+
+    if (hasMissing && clubs.isNotEmpty) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          backgroundColor: ColorTokens.surfaceModal,
+          title: const Text('Missing Carry Distances',
+              style: TextStyle(color: ColorTokens.textPrimary)),
+          content: const Text(
+            'Some clubs are missing carry distances. '
+            'Carry distances are required for some drills.',
+            style: TextStyle(color: ColorTokens.textSecondary),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(
+              SpacingTokens.lg, 0, SpacingTokens.lg, SpacingTokens.lg),
+          actions: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ZxPillButton(
+                  label: 'Add Carry Distances',
+                  variant: ZxPillVariant.primary,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => Navigator.pop(dialogCtx, false),
+                ),
+                const SizedBox(height: SpacingTokens.sm),
+                ZxPillButton(
+                  label: 'Skip for Now',
+                  variant: ZxPillVariant.tertiary,
+                  expanded: true,
+                  centered: true,
+                  onTap: () => Navigator.pop(dialogCtx, true),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      if (proceed == true && mounted) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   void _showAddItemCategoryPicker(BuildContext context) {
@@ -310,61 +382,6 @@ class _GolfBagTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: SpacingTokens.sm),
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: SpacingTokens.sm,
-                left: SpacingTokens.md + SpacingTokens.md,
-                right: SpacingTokens.md + SpacingTokens.md,
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 56,
-                    child: Text('Club',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.headerSize,
-                          fontWeight: FontWeight.w600,
-                          color: ColorTokens.textSecondary,
-                        )),
-                  ),
-                  const SizedBox(width: SpacingTokens.sm),
-                  Flexible(
-                    child: Text('Skill Areas',
-                        style: TextStyle(
-                          fontSize: TypographyTokens.headerSize,
-                          fontWeight: FontWeight.w600,
-                          color: ColorTokens.textSecondary,
-                        )),
-                  ),
-                  const SizedBox(width: SpacingTokens.xs),
-                  SizedBox(
-                    width: 56,
-                    child: Center(
-                      child: Text('Loft',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.headerSize,
-                            fontWeight: FontWeight.w600,
-                            color: ColorTokens.textSecondary,
-                          )),
-                    ),
-                  ),
-                  const SizedBox(width: SpacingTokens.sm),
-                  SizedBox(
-                    width: 56,
-                    child: Center(
-                      child: Text('Carry',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.headerSize,
-                            fontWeight: FontWeight.w600,
-                            color: ColorTokens.textSecondary,
-                          )),
-                    ),
-                  ),
-                  const SizedBox(width: SpacingTokens.xs),
-                  const SizedBox(width: 24),
-                ],
-              ),
-            ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(

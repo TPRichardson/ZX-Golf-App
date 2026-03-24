@@ -97,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -165,10 +165,72 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV17ToV18(m);
               case 18:
                 await _migrateV18ToV19(m);
+              case 19:
+                await _migrateV19ToV20(m);
             }
           }
         },
       );
+
+  // Email NOT NULL + UNIQUE constraint on User table.
+  // SQLite doesn't support ALTER COLUMN, so we backfill NULLs and deduplicate,
+  // then add a unique index.
+  Future<void> _migrateV19ToV20(Migrator m) async {
+    // Backfill NULLs with unique placeholder based on UserID.
+    await customStatement(
+      "UPDATE \"User\" SET Email = UserID || '@placeholder.local' WHERE Email IS NULL",
+    );
+    // Deduplicate: append UserID to any emails that appear more than once.
+    await customStatement(
+      "UPDATE \"User\" SET Email = Email || '.' || UserID "
+      "WHERE rowid NOT IN ("
+      "  SELECT MIN(rowid) FROM \"User\" GROUP BY Email"
+      ")",
+    );
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_unique ON "User" (Email)',
+    );
+  }
+
+  /// Delete all user data from local database (used on sign-out).
+  /// Preserves reference tables (EventTypeRefs, MetricSchemas, SubskillRefs)
+  /// and server-authoritative drills (UserID IS NULL).
+  Future<void> deleteAllUserData() async {
+    // Order matters: delete children before parents to respect FK semantics.
+    await customStatement('DELETE FROM SyncMetadata');
+    await customStatement('DELETE FROM UserScoringLock');
+    await customStatement('DELETE FROM EventLog');
+    await customStatement('DELETE FROM UserDevice');
+    await customStatement('DELETE FROM MaterialisedOverallScore');
+    await customStatement('DELETE FROM MaterialisedSkillAreaScore');
+    await customStatement('DELETE FROM MaterialisedSubskillScore');
+    await customStatement('DELETE FROM MaterialisedWindowState');
+    await customStatement('DELETE FROM ScheduleInstance');
+    await customStatement('DELETE FROM RoutineInstance');
+    await customStatement('DELETE FROM CalendarDay');
+    await customStatement('DELETE FROM Schedule');
+    await customStatement('DELETE FROM Routine');
+    await customStatement('DELETE FROM UserSkillAreaClubMapping');
+    await customStatement('DELETE FROM ClubPerformanceProfile');
+    await customStatement('DELETE FROM UserClub');
+    await customStatement('DELETE FROM UserDrillAdoption');
+    await customStatement('DELETE FROM PracticeEntry');
+    await customStatement('DELETE FROM Instance');
+    await customStatement('DELETE FROM "Set"');
+    await customStatement('DELETE FROM Session');
+    await customStatement('DELETE FROM PracticeBlock');
+    await customStatement('DELETE FROM SnapshotClub');
+    await customStatement('DELETE FROM PerformanceSnapshot');
+    await customStatement('DELETE FROM MatrixAttempt');
+    await customStatement('DELETE FROM MatrixCell');
+    await customStatement('DELETE FROM MatrixAxisValue');
+    await customStatement('DELETE FROM MatrixAxis');
+    await customStatement('DELETE FROM MatrixRun');
+    await customStatement('DELETE FROM UserTrainingItem');
+    // Keep system drills (UserID IS NULL), delete user-created drills.
+    await customStatement("DELETE FROM Drill WHERE UserID IS NOT NULL");
+    await customStatement('DELETE FROM "User"');
+  }
 
   Future<void> _migrateV18ToV19(Migrator m) async {
     // Insert scoring game MetricSchema (idempotent via INSERT OR IGNORE).

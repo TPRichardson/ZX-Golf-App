@@ -668,7 +668,7 @@ void main() {
         weekStartDay: const Value(1),
         unitPreferences: const Value('{"distance":"yards"}'),
         displayName: const Value('DB User'),
-        email: const Value('db@example.com'),
+        email: 'db@example.com',
       ));
 
       // Read back and convert to sync DTO format.
@@ -779,6 +779,7 @@ void main() {
       // Simulate a DB write under gate protection.
       await db.into(db.users).insert(UsersCompanion.insert(
         userId: 'gate-user-1',
+        email: 'gate@test.com',
         timezone: const Value('UTC'),
         weekStartDay: const Value(1),
         unitPreferences: const Value('{}'),

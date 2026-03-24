@@ -6,13 +6,13 @@ import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/empty_state.dart';
-import 'package:zx_golf_app/core/widgets/detail_row.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/practice_router.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
+import 'package:zx_golf_app/features/bag/bag_screen.dart';
 import 'package:zx_golf_app/providers/bag_providers.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
@@ -110,9 +110,12 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     final isStandard = drill.origin == DrillOrigin.standard;
     final isScored = drill.drillType != DrillType.techniqueBlock;
 
+    final skillColor = ColorTokens.skillArea(drill.skillArea);
+    final subskills = _parseSubskills(drill.subskillMapping);
+
     return Scaffold(
       appBar: ZxAppBar(
-        title: drill.name,
+        title: '',
         actions: [
           if (widget.isCustom)
             PopupMenuButton<String>(
@@ -141,113 +144,183 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(SpacingTokens.md),
+        padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
         children: [
-          // Status badge.
-          DetailRow(label: 'Status', value: drill.status.dbValue),
-          DetailRow(label: 'Skill Area', value: drill.skillArea.dbValue),
-          DetailRow(label: 'Drill Type', value: _drillTypeLabel(drill.drillType)),
-          DetailRow(label: 'Input Mode', value: drill.inputMode.dbValue),
-          DetailRow(label: 'Origin', value: drill.origin.dbValue),
-          if (drill.requiredAttemptsPerSet != null)
-            DetailRow(
-              label: 'Attempts/Set',
-              value: '${drill.requiredAttemptsPerSet}',
+          // Hero header — drill name with skill area colour accent.
+          Container(
+            padding: const EdgeInsets.all(SpacingTokens.lg),
+            decoration: BoxDecoration(
+              color: ColorTokens.surfaceRaised,
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+              border: Border(left: BorderSide(color: skillColor, width: 4)),
             ),
-          DetailRow(
-            label: 'Set Count',
-            value: '${drill.requiredSetCount}',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drill type label above the title.
+                Text(
+                  '${_drillTypeLabel(drill.drillType)} Drill',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySmSize,
+                    fontWeight: FontWeight.w500,
+                    color: ColorTokens.textTertiary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.xs),
+                Text(
+                  drill.name,
+                  style: TextStyle(
+                    fontSize: TypographyTokens.displayMdSize,
+                    fontWeight: TypographyTokens.displayLgWeight,
+                    color: ColorTokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: SpacingTokens.sm),
+                // Skill area badge + subskill chips.
+                Wrap(
+                  spacing: SpacingTokens.sm,
+                  runSpacing: SpacingTokens.xs,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: skillColor.withValues(alpha: 0.15),
+                        borderRadius:
+                            BorderRadius.circular(ShapeTokens.radiusMicro),
+                      ),
+                      child: Text(
+                        drill.skillArea.dbValue,
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodySmSize,
+                          fontWeight: FontWeight.w600,
+                          color: skillColor,
+                        ),
+                      ),
+                    ),
+                    ...subskills.map((s) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpacingTokens.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: skillColor.withValues(alpha: 0.1),
+                        borderRadius:
+                            BorderRadius.circular(ShapeTokens.radiusMicro),
+                        border: Border.all(
+                            color: skillColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        _formatSubskillId(s),
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodySmSize,
+                          color: skillColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )),
+                  ],
+                ),
+              ],
+            ),
           ),
-          if (drill.clubSelectionMode != null)
-            DetailRow(
-              label: 'Club Selection',
-              value: drill.clubSelectionMode!.dbValue,
-            ),
+
+          // Description.
           if (drill.description != null) ...[
-            const SizedBox(height: SpacingTokens.sm),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(SpacingTokens.sm),
-              decoration: BoxDecoration(
-                color: ColorTokens.surfaceRaised,
-                borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-                border: Border.all(color: ColorTokens.surfaceBorder),
-              ),
-              child: Text(
-                drill.description!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ColorTokens.textSecondary,
-                    ),
-              ),
-            ),
-            const SizedBox(height: SpacingTokens.sm),
-          ],
-          if (drill.targetDistanceMode != null)
-            DetailRow(
-              label: 'Target Distance',
-              value: _formatTargetValue(
-                  drill.targetDistanceValue, drill.targetDistanceUnit),
-            ),
-          if (drill.targetSizeWidth != null)
-            DetailRow(
-              label: 'Target Width',
-              value: _formatTargetValue(
-                  drill.targetSizeWidth, drill.targetSizeUnit),
-            ),
-
-          // Recommended equipment section — informational only.
-          if (_recommendedEquipment(drill).isNotEmpty) ...[
-            const SizedBox(height: SpacingTokens.sm),
-            DetailRow(
-              label: 'Recommended',
-              value: _recommendedEquipment(drill),
-            ),
-          ],
-
-          // Anchors section — system drills, read-only display.
-          if (isStandard && isScored) ...[
-            const SizedBox(height: SpacingTokens.lg),
+            const SizedBox(height: SpacingTokens.md),
             Text(
-              'Scoring Anchors',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: ColorTokens.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: SpacingTokens.sm),
-            for (final entry in _anchors.entries) ...[
-              _AnchorDisplay(
-                label: _formatSubskillId(entry.key),
-                min: entry.value.min,
-                scratch: entry.value.scratch,
-                pro: entry.value.pro,
-                unit: _anchorUnit(drill),
+              drill.description!,
+              style: const TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                color: ColorTokens.textSecondary,
+                height: 1.5,
               ),
-              const SizedBox(height: SpacingTokens.sm),
+            ),
+          ],
+
+          // Mode cards row — Target + Club.
+          const SizedBox(height: SpacingTokens.md),
+          Row(
+            children: [
+              Expanded(
+                child: _ModeCard(
+                  icon: Icons.gps_fixed,
+                  title: 'Target',
+                  value: _targetLabel(drill),
+                  color: _targetColor(drill),
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.sm),
+              Expanded(
+                child: _ModeCard(
+                  icon: Icons.sports_golf,
+                  title: 'Club',
+                  value: _clubLabel(drill),
+                  color: _clubColor(drill),
+                ),
+              ),
             ],
+          ),
+
+          // Structure row — Sets + Attempts.
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: _ModeCard(
+                  icon: Icons.layers,
+                  title: 'Sets',
+                  value: '${drill.requiredSetCount}',
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.sm),
+              Expanded(
+                child: _ModeCard(
+                  icon: Icons.repeat,
+                  title: 'Attempts/Set',
+                  value: drill.requiredAttemptsPerSet != null
+                      ? '${drill.requiredAttemptsPerSet}'
+                      : 'Open',
+                ),
+              ),
+            ],
+          ),
+
+          // Required equipment.
+          if (_parseEquipmentList(drill.requiredEquipment).isNotEmpty) ...[
+            const SizedBox(height: SpacingTokens.sm),
+            _ModeCard(
+              icon: Icons.build_outlined,
+              title: 'Equipment Needed',
+              value: _parseEquipmentList(drill.requiredEquipment),
+            ),
           ],
-          // Target section — custom drills only.
-          if (!isStandard && isScored) ...[
+
+          // Recommended equipment.
+          if (_recommendedEquipment(drill).isNotEmpty) ...[
             const SizedBox(height: SpacingTokens.lg),
-            Text(
-              'Target',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: ColorTokens.textPrimary,
-                  ),
+            const Text(
+              'Recommended Equipment',
+              style: TextStyle(
+                fontSize: TypographyTokens.bodyLgSize,
+                fontWeight: FontWeight.w600,
+                color: ColorTokens.textPrimary,
+              ),
             ),
             const SizedBox(height: SpacingTokens.sm),
-            if (drill.target != null)
-              DetailRow(
-                label: 'Personal Target',
-                value: drill.target!.toStringAsFixed(1),
-              )
-            else
-              Text(
-                'No target set',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ColorTokens.textTertiary,
-                    ),
+            Text(
+              _recommendedEquipment(drill),
+              style: const TextStyle(
+                fontSize: TypographyTokens.bodySize,
+                color: ColorTokens.textSecondary,
               ),
+            ),
           ],
+
+          const SizedBox(height: SpacingTokens.xl),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -428,27 +501,42 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   Future<bool?> _showNoClubsWarning(SkillArea skillArea) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: ColorTokens.surfaceModal,
         title: const Text('No Clubs Configured',
             style: TextStyle(color: ColorTokens.textPrimary)),
         content: Text(
-          'This drill requires clubs for ${skillArea.dbValue}, '
-          'but you have none in your bag. '
-          'Add clubs in your Equipment bag before starting this drill.',
+          'This drill requires clubs for ${skillArea.dbValue}. '
+          'Add clubs to your bag before starting this drill.',
           style: const TextStyle(color: ColorTokens.textSecondary),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(
+            SpacingTokens.lg, 0, SpacingTokens.lg, SpacingTokens.lg),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColorTokens.warningIntegrity,
-            ),
-            child: const Text('Start Anyway'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ZxPillButton(
+                label: 'Edit Bag',
+                variant: ZxPillVariant.primary,
+                expanded: true,
+                centered: true,
+                onTap: () {
+                  Navigator.pop(dialogCtx, false);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BagScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: SpacingTokens.sm),
+              ZxPillButton(
+                label: 'Cancel',
+                variant: ZxPillVariant.tertiary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(dialogCtx, false),
+              ),
+            ],
           ),
         ],
       ),
@@ -498,21 +586,85 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     }
   }
 
-  String _drillTypeLabel(DrillType type) {
+  static String _drillTypeLabel(DrillType type) {
     return switch (type) {
-      DrillType.techniqueBlock => 'Technique Block',
+      DrillType.techniqueBlock => 'Technique',
       DrillType.transition => 'Transition',
       DrillType.pressure => 'Pressure',
       DrillType.benchmark => 'Benchmark',
     };
   }
 
-  String _formatTargetValue(double? value, DrillLengthUnit? unit) {
-    if (value == null) return 'N/A';
-    final formatted = value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toStringAsFixed(1);
-    return unit != null ? '$formatted ${unit.dbValue}' : formatted;
+  static String _targetLabel(Drill drill) {
+    return switch (drill.targetDistanceMode) {
+      TargetDistanceMode.randomRange => 'Random',
+      TargetDistanceMode.randomDistancePerSet => 'Fixed',
+      TargetDistanceMode.clubCarry => 'Club Carry',
+      TargetDistanceMode.fixed => 'Fixed',
+      TargetDistanceMode.percentageOfClubCarry => '% Carry',
+      null => 'None',
+    };
+  }
+
+  static Color _targetColor(Drill drill) {
+    if (drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
+      return ColorTokens.primaryDefault;
+    }
+    if (drill.targetDistanceMode == TargetDistanceMode.randomRange ||
+        drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
+      return ColorTokens.ragAmber;
+    }
+    return ColorTokens.textTertiary;
+  }
+
+  static String _clubLabel(Drill drill) {
+    return switch (drill.clubSelectionMode) {
+      ClubSelectionMode.userLed => 'User Led',
+      ClubSelectionMode.random => 'Random',
+      ClubSelectionMode.guided => 'Sequence',
+      null => 'None',
+    };
+  }
+
+  static Color _clubColor(Drill drill) {
+    if (drill.clubSelectionMode == ClubSelectionMode.userLed) {
+      return ColorTokens.primaryDefault;
+    }
+    if (drill.clubSelectionMode == ClubSelectionMode.random ||
+        drill.clubSelectionMode == ClubSelectionMode.guided) {
+      return ColorTokens.ragAmber;
+    }
+    return ColorTokens.textTertiary;
+  }
+
+  static String _gridLabel(Drill drill) {
+    return switch (drill.gridType) {
+      GridType.threeByThree => 'Full Grid (3x3)',
+      GridType.oneByThree => 'Left/Right (1x3)',
+      GridType.threeByOne => 'Long/Short (3x1)',
+      null => '',
+    };
+  }
+
+  static List<String> _parseSubskills(String json) {
+    if (json.isEmpty || json == '[]') return [];
+    try {
+      final list = jsonDecode(json) as List<dynamic>;
+      return list.cast<String>();
+    } on Exception {
+      return [];
+    }
+  }
+
+  static String _parseEquipmentList(String json) {
+    if (json.isEmpty || json == '[]') return '';
+    try {
+      final list = jsonDecode(json) as List<dynamic>;
+      if (list.isEmpty) return '';
+      return list.map((e) => _formatEquipmentName(e as String)).join(', ');
+    } on Exception {
+      return '';
+    }
   }
 
   String _recommendedEquipment(Drill drill) {
@@ -527,28 +679,18 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     }
   }
 
-  String _formatEquipmentName(String value) {
-    // Convert PascalCase to spaced words.
+  static String _formatEquipmentName(String value) {
     return value.replaceAllMapped(
       RegExp(r'([a-z])([A-Z])'),
       (m) => '${m[1]} ${m[2]}',
     );
   }
 
-  String _anchorUnit(Drill drill) {
-    return switch (drill.metricSchemaId) {
-      'driver_club_speed' || 'driver_ball_speed' ||
-      'raw_club_head_speed' || 'raw_ball_speed' => 'mph',
-      'driver_total_distance' || 'raw_total_distance' ||
-      'raw_carry_distance' => 'yds',
-      _ => '%',
-    };
-  }
-
   String _formatSubskillId(String id) {
-    return id
-        .replaceAll('_', ' ')
-        .split(' ')
+    // Remove skill area prefix (e.g. "putting_" from "putting_distance_control").
+    final parts = id.split('_');
+    final meaningful = parts.length > 1 ? parts.sublist(1) : parts;
+    return meaningful
         .map((w) => w.isNotEmpty
             ? '${w[0].toUpperCase()}${w.substring(1)}'
             : '')
@@ -556,26 +698,24 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   }
 }
 
-/// Read-only anchor display — shows Min / Scratch / Pro values.
-class _AnchorDisplay extends StatelessWidget {
-  final String label;
-  final double min;
-  final double scratch;
-  final double pro;
-  final String unit;
+class _ModeCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color? color;
 
-  const _AnchorDisplay({
-    required this.label,
-    required this.min,
-    required this.scratch,
-    required this.pro,
-    this.unit = '%',
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final c = color ?? ColorTokens.textTertiary;
     return Container(
-      padding: const EdgeInsets.all(SpacingTokens.sm),
+      padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.md, vertical: 4),
       decoration: BoxDecoration(
         color: ColorTokens.surfaceRaised,
         borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
@@ -584,55 +724,30 @@ class _AnchorDisplay extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: ColorTokens.textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-          const SizedBox(height: SpacingTokens.xs),
           Row(
             children: [
-              _AnchorValue(label: 'Min', value: min, unit: unit),
-              const SizedBox(width: SpacingTokens.lg),
-              _AnchorValue(label: 'Scratch', value: scratch, unit: unit),
-              const SizedBox(width: SpacingTokens.lg),
-              _AnchorValue(label: 'Pro', value: pro, unit: unit),
+              Icon(icon, size: 16, color: c),
+              const SizedBox(width: SpacingTokens.xs),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: TypographyTokens.bodySmSize,
+                  color: ColorTokens.textTertiary,
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: SpacingTokens.xs),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: TypographyTokens.bodyLgSize,
+              fontWeight: FontWeight.w600,
+              color: c,
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AnchorValue extends StatelessWidget {
-  final String label;
-  final double value;
-  final String unit;
-
-  const _AnchorValue({required this.label, required this.value, this.unit = '%'});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: ColorTokens.textTertiary,
-              ),
-        ),
-        Text(
-          '${value.toStringAsFixed(0)}$unit',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: ColorTokens.textSecondary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-        ),
-      ],
     );
   }
 }

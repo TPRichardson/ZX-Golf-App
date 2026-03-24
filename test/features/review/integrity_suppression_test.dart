@@ -47,7 +47,7 @@ void main() {
   }) async {
     // User.
     await db.into(db.users).insertOnConflictUpdate(
-          UsersCompanion.insert(userId: userId),
+          UsersCompanion.insert(userId: userId, email: '$userId@test.com'),
         );
 
     // Drill.

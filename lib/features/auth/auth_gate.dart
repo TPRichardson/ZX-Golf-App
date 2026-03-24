@@ -10,9 +10,6 @@ import 'package:zx_golf_app/providers/sync_providers.dart';
 
 // TD-07 §9 — Auth gate: routes to SignInScreen or ShellScreen based on auth state.
 
-/// Guest mode flag — when true, bypass auth and use local-only dev user.
-final guestModeProvider = StateProvider<bool>((ref) => false);
-
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
@@ -28,11 +25,6 @@ class AuthGate extends ConsumerWidget {
       if (isDesktop) {
         return const ShellScreen();
       }
-    }
-
-    // Guest mode: bypass auth, use local-only dev user.
-    if (ref.watch(guestModeProvider)) {
-      return const ShellScreen();
     }
 
     final authState = ref.watch(authStateProvider);

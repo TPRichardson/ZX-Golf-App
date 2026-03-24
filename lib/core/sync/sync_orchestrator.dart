@@ -60,6 +60,9 @@ class SyncOrchestrator {
 
     debugPrint('[SyncOrchestrator] Started');
 
+    // Reset failure counter on start (app restart / new login).
+    _engine.resetFailureCounter();
+
     // Trigger an immediate sync on start (e.g. after login).
     _debouncedTrigger(SyncTrigger.manual);
   }

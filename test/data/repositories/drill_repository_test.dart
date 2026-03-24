@@ -645,13 +645,11 @@ void main() {
       );
     });
 
-    test('adoptDrill throws when no clubs for Skill Area', () async {
-      // Find a system drill and try to adopt it as a user with no clubs.
+    test('adoptDrill succeeds without clubs (gates moved to session start)', () async {
+      // Validation gates removed from adoption — checked at session start.
       final systemDrills = await repo.watchStandardDrills().first;
-      expect(
-        () => repo.adoptDrill(otherUserId, systemDrills.first.drillId),
-        throwsA(isA<ValidationException>()),
-      );
+      final adoption = await repo.adoptDrill(otherUserId, systemDrills.first.drillId);
+      expect(adoption.drillId, systemDrills.first.drillId);
     });
 
     test('createCustomDrill TechniqueBlock passes without clubs', () async {

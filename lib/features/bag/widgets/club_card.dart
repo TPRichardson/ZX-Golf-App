@@ -36,114 +36,98 @@ class ClubCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const SizedBox(width: SpacingTokens.md),
-          // Left column: club name square + model.
+          const SizedBox(width: SpacingTokens.xs),
+          // Left column: club name square + brand/model.
           SizedBox(
-            width: 56,
+            width: 48,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: ColorTokens.surfaceRaised,
+                borderRadius:
+                    BorderRadius.circular(ShapeTokens.radiusCard),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                clubTypeShort(club.clubType),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ColorTokens.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ),
+          const SizedBox(width: SpacingTokens.md),
+          // Brand/model text — expanded to use available space.
+          Expanded(
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: ColorTokens.surfaceRaised,
-                  borderRadius:
-                      BorderRadius.circular(ShapeTokens.radiusCard),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  clubTypeShort(club.clubType),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: ColorTokens.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-              const SizedBox(height: SpacingTokens.xs),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _showMakeModelDialog(context, ref),
-                child: Text(
-                  _makeModelLabel(club.make, club.model),
-                  style: TextStyle(
-                    fontSize: TypographyTokens.bodySmSize,
-                    color: _hasMakeOrModel(club.make, club.model)
-                        ? ColorTokens.textSecondary
-                        : ColorTokens.textTertiary,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _showMakeModelDialog(context, ref),
+                  child: Text(
+                    _makeModelLabel(club.make, club.model),
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodySize,
+                      color: _hasMakeOrModel(club.make, club.model)
+                          ? ColorTokens.textPrimary
+                          : ColorTokens.textTertiary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          ),
-          const SizedBox(width: SpacingTokens.sm),
-          Flexible(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _showSkillAreaMappingDialog(context, ref),
-              child: skillAreas.isEmpty
-                  ? ZxPillButton(
-                      label: 'Map',
-                      size: ZxPillSize.sm,
-                      variant: ZxPillVariant.tertiary,
-                      onTap: () => _showSkillAreaMappingDialog(context, ref),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 87, // 2 × 42px pills + 3px gap
-                          child: Wrap(
-                            spacing: 3,
-                            runSpacing: 3,
-                            children: [
-                              for (final area in skillAreas.take(4))
-                                SizedBox(
-                                  width: 42,
-                                  child: ZxPillButton(
-                                    label: _skillAreaShort(area),
-                                    size: ZxPillSize.sm,
-                                    expanded: true,
-                                    centered: true,
-                                    color: ColorTokens.skillArea(area),
-                                    onTap: () =>
-                                        _showSkillAreaMappingDialog(context, ref),
+                const SizedBox(height: SpacingTokens.xs),
+                // Skill area pills.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _showSkillAreaMappingDialog(context, ref),
+                  child: skillAreas.isEmpty
+                      ? Text(
+                          'Tap to map skill areas',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.bodySmSize,
+                            color: ColorTokens.textTertiary,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final area in skillAreas.take(6)) ...[
+                              SizedBox(
+                                width: 42,
+                                child: ZxPillButton(
+                                  label: _skillAreaShort(area),
+                                  size: ZxPillSize.sm,
+                                  expanded: true,
+                                  centered: true,
+                                  color: ColorTokens.skillArea(area),
+                                  onTap: () =>
+                                      _showSkillAreaMappingDialog(context, ref),
+                                ),
+                              ),
+                              if (area != skillAreas.take(6).last)
+                                const SizedBox(width: 3),
+                            ],
+                            if (skillAreas.length > 6)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 3),
+                                child: Text(
+                                  '+${skillAreas.length - 6}',
+                                  style: TextStyle(
+                                    fontSize: TypographyTokens.bodySmSize,
+                                    color: ColorTokens.textTertiary,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                        if (skillAreas.length > 4)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 3),
-                            child: Text(
-                              '+${skillAreas.length - 4}',
-                              style: TextStyle(
-                                fontSize: TypographyTokens.bodySmSize,
-                                color: ColorTokens.textTertiary,
                               ),
-                            ),
-                          ),
-                      ],
-                    ),
+                          ],
+                        ),
+                ),
+              ],
             ),
-            ),
-          ),
-          const SizedBox(width: SpacingTokens.sm),
-          // Loft field.
-          _DataField(
-            value: club.loft != null
-                ? '${_formatLoft(club.loft!)}°'
-                : null,
-            placeholder: 'Loft',
-            onTap: () => _showLoftDialog(context, ref),
           ),
           const SizedBox(width: SpacingTokens.sm),
           // Carry field — render invisible placeholder when club has no carry range
@@ -931,7 +915,7 @@ class _ClubSkillAreaDialog extends ConsumerWidget {
           crossAxisCount: 2,
           mainAxisSpacing: SpacingTokens.xs,
           crossAxisSpacing: SpacingTokens.xs,
-          childAspectRatio: 2.8,
+          childAspectRatio: 2.2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
@@ -948,16 +932,31 @@ class _ClubSkillAreaDialog extends ConsumerWidget {
           ],
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(
+          SpacingTokens.lg, SpacingTokens.sm, SpacingTokens.lg, SpacingTokens.lg),
       actions: [
-        ZxPillButton(
-          label: 'Cancel',
-          variant: ZxPillVariant.tertiary,
-          onTap: () => Navigator.pop(context),
-        ),
-        ZxPillButton(
-          label: 'Done',
-          variant: ZxPillVariant.primary,
-          onTap: () => Navigator.pop(context),
+        Row(
+          children: [
+            Expanded(
+              child: ZxPillButton(
+                label: 'Cancel',
+                variant: ZxPillVariant.tertiary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(context),
+              ),
+            ),
+            const SizedBox(width: SpacingTokens.sm),
+            Expanded(
+              child: ZxPillButton(
+                label: 'Done',
+                variant: ZxPillVariant.primary,
+                expanded: true,
+                centered: true,
+                onTap: () => Navigator.pop(context),
+              ),
+            ),
+          ],
         ),
       ],
     );

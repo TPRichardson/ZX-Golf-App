@@ -79,6 +79,18 @@ final adoptedDrillsProvider =
   return ref.watch(drillRepositoryProvider).watchAdoptedDrills(userId);
 });
 
+/// All system drills with adoption status for the manage screen.
+final allSystemDrillsProvider =
+    StreamProvider.family<List<DrillWithAdoption>, String>((ref, userId) {
+  return ref.watch(drillRepositoryProvider).watchAllSystemDrillsWithAdoption(userId);
+});
+
+/// Retired (unadopted) standard drills for the manage screen.
+final retiredDrillsProvider =
+    StreamProvider.family<List<DrillWithAdoption>, String>((ref, userId) {
+  return ref.watch(drillRepositoryProvider).watchRetiredDrills(userId);
+});
+
 /// Active Drills: adopted standard drills + active custom drills.
 final activeDrillsProvider =
     StreamProvider.family<List<DrillWithAdoption>, String>((ref, userId) {

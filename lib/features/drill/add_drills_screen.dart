@@ -21,8 +21,8 @@ class AddDrillsScreen extends StatelessWidget {
             const SizedBox(height: SpacingTokens.lg),
             _ChoiceCard(
               icon: Icons.library_books,
-              title: 'Add Standard Drills',
-              subtitle: 'Add golf drills to your library from our catalogue, build your SkillScore',
+              title: 'Manage Standard Drills',
+              subtitle: 'View, activate or retire standard drills from your library',
               onTap: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const StandardDrillsScreen(),
               )),
