@@ -68,6 +68,8 @@ Future<void> updatePreferences(
   WidgetRef ref,
   UserPreferences prefs,
 ) async {
+  // Ensure user record exists (auto-creates if needed).
+  await ref.read(currentUserProvider.future);
   final userId = ref.read(currentUserIdProvider);
   await ref.read(userRepositoryProvider).update(
         userId,

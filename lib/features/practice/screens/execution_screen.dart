@@ -353,18 +353,24 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Compute the target width for the currently selected club.
   /// Uses club tier percentage of carry distance.
   double? get _currentTargetWidth {
-    final dist = _effectiveTargetDistance;
-    if (dist == null) return null;
-
-    // If drill specifies a fixed TargetSizeWidth, use that percentage.
-    final fixedPercent = widget.drill.targetSizeWidth;
-    if (fixedPercent != null) {
-      return dist * fixedPercent / 100.0;
+    // Fixed target size: return the raw value (e.g. 5cm gate).
+    if (widget.drill.targetSizeMode == TargetSizeMode.fixed) {
+      return widget.drill.targetSizeWidth;
     }
 
-    // Otherwise use club-tier banded percentage.
+    // Percentage of target distance mode.
     if (widget.drill.targetSizeMode ==
         TargetSizeMode.percentageOfTargetDistance) {
+      final dist = _effectiveTargetDistance;
+      if (dist == null) return null;
+
+      // If drill specifies a width percentage, use it.
+      final fixedPercent = widget.drill.targetSizeWidth;
+      if (fixedPercent != null) {
+        return dist * fixedPercent / 100.0;
+      }
+
+      // Otherwise use club-tier banded percentage.
       try {
         final clubType = ClubType.fromString(_selectedClubLabel);
         final percent = targetWidthPercentForClub(clubType, skillArea: widget.drill.skillArea);
@@ -380,6 +386,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// For PercentageOfTargetDistance mode, uses drill-specified depth percentage
   /// if available, otherwise falls back to club-tier depth percentages.
   double? get _currentTargetDepth {
+    // Fixed target size: return the raw value.
+    if (widget.drill.targetSizeMode == TargetSizeMode.fixed) {
+      return widget.drill.targetSizeDepth;
+    }
+
     if (widget.drill.targetSizeMode !=
         TargetSizeMode.percentageOfTargetDistance) {
       return null;
@@ -387,7 +398,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final baseDistance = _effectiveTargetDistance;
     if (baseDistance == null) return null;
 
-    // If drill specifies a fixed TargetSizeDepth, use that percentage.
+    // If drill specifies a depth percentage, use it.
     final fixedPercent = widget.drill.targetSizeDepth;
     if (fixedPercent != null) {
       return baseDistance * fixedPercent / 100.0;
@@ -1194,6 +1205,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       distanceStatus = (label: 'Player Choice', color: ColorTokens.successDefault);
     } else if (widget.drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
       distanceStatus = (label: 'Suggested', color: ColorTokens.primaryDefault);
+    } else if (widget.drill.targetDistanceMode == TargetDistanceMode.fixed) {
+      distanceStatus = (label: 'Fixed Static', color: ColorTokens.ragAmber);
     } else {
       distanceStatus = (label: 'Target Distance', color: ColorTokens.textTertiary);
     }
@@ -1717,26 +1730,26 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Format target depth for the vertical target bar (miss long / hit / miss short).
   String _formatTargetDepth() {
+    final unit = widget.drill.targetSizeUnit;
     // Use computed depth from club tier if available.
     final computed = _currentTargetDepth;
     if (computed != null) {
-      return '${_formatYards(computed)}y';
+      return '${_formatYards(computed)}${_shortUnit(unit)}';
     }
     final value = widget.drill.targetSizeDepth;
-    final unit = widget.drill.targetSizeUnit;
     if (value == null) return _formatTargetDistance();
     return '${_formatYards(value)}${_shortUnit(unit)}';
   }
 
   /// Format target depth as half value for split vertical bar display.
   String _formatTargetDepthHalf() {
+    final unit = widget.drill.targetSizeUnit;
     // Use computed depth from club tier if available.
     final computed = _currentTargetDepth;
     if (computed != null) {
-      return '${_formatYards(computed / 2)}y';
+      return '${_formatYards(computed / 2)}${_shortUnit(unit)}';
     }
     final value = widget.drill.targetSizeDepth;
-    final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';
     return '${_formatYards(value / 2)}${_shortUnit(unit)}';
   }
@@ -1808,26 +1821,26 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   /// Format target width value + unit for the horizontal target bar.
   /// For PercentageOfTargetDistance mode, computes from carry + club tier.
   String _formatTargetWidth() {
+    final unit = widget.drill.targetSizeUnit;
     final computed = _currentTargetWidth;
     if (computed != null) {
-      return '${_formatYards(computed)}y';
+      return '${_formatYards(computed)}${_shortUnit(unit)}';
     }
 
     final value = widget.drill.targetSizeWidth;
-    final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';
     return '${_formatYards(value)}${_shortUnit(unit)}';
   }
 
   /// Format target width as half value for the split display.
   String _formatTargetWidthHalf() {
+    final unit = widget.drill.targetSizeUnit;
     final computed = _currentTargetWidth;
     if (computed != null) {
-      return '${_formatYards(computed / 2)}y';
+      return '${_formatYards(computed / 2)}${_shortUnit(unit)}';
     }
 
     final value = widget.drill.targetSizeWidth;
-    final unit = widget.drill.targetSizeUnit;
     if (value == null) return '';
     return '${_formatYards(value / 2)}${_shortUnit(unit)}';
   }

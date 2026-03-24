@@ -33,9 +33,9 @@ class _SkillAreaHeatmapState extends ConsumerState<SkillAreaHeatmap> {
   static const _row1 = [SkillArea.approach];
   static const _row1Flex = [100];
   static const _row2 = [SkillArea.driving, SkillArea.pitching, SkillArea.woods];
-  static const _row2Flex = [50, 30, 20];
+  static const _row2Flex = [1, 1, 1];
   static const _row3 = [SkillArea.putting, SkillArea.chipping, SkillArea.bunkers];
-  static const _row3Flex = [50, 30, 20];
+  static const _row3Flex = [1, 1, 1];
 
   int? get _expandedRow => _expandedArea == null
       ? null

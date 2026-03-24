@@ -114,38 +114,51 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     final subskills = _parseSubskills(drill.subskillMapping);
 
     return Scaffold(
-      appBar: ZxAppBar(
-        title: '',
-        actions: [
-          if (widget.isCustom)
-            PopupMenuButton<String>(
-              onSelected: _handleAction,
-              itemBuilder: (_) => [
-                if (drill.status == DrillStatus.active)
-                  const PopupMenuItem(
-                    value: 'retire',
-                    child: Text('Retire Drill'),
-                  ),
-                if (drill.status == DrillStatus.retired)
-                  const PopupMenuItem(
-                    value: 'reactivate',
-                    child: Text('Reactivate Drill'),
-                  ),
-                const PopupMenuItem(
-                  value: 'duplicate',
-                  child: Text('Duplicate'),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Text('Delete'),
+      appBar: widget.isCustom
+          ? ZxAppBar(
+              title: '',
+              actions: [
+                PopupMenuButton<String>(
+                  onSelected: _handleAction,
+                  itemBuilder: (_) => [
+                    if (drill.status == DrillStatus.active)
+                      const PopupMenuItem(
+                        value: 'retire',
+                        child: Text('Retire Drill'),
+                      ),
+                    if (drill.status == DrillStatus.retired)
+                      const PopupMenuItem(
+                        value: 'reactivate',
+                        child: Text('Reactivate Drill'),
+                      ),
+                    const PopupMenuItem(
+                      value: 'duplicate',
+                      child: Text('Duplicate'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Delete'),
+                    ),
+                  ],
                 ),
               ],
-            ),
-        ],
-      ),
-      body: ListView(
+            )
+          : null,
+      body: SafeArea(
+        child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: SpacingTokens.lg),
         children: [
+          if (!widget.isCustom)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: ColorTokens.textPrimary),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          const SizedBox(height: SpacingTokens.sm),
           // Hero header — drill name with skill area colour accent.
           Container(
             padding: const EdgeInsets.all(SpacingTokens.lg),
@@ -322,6 +335,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
 
           const SizedBox(height: SpacingTokens.xl),
         ],
+      ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
@@ -597,10 +611,10 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
 
   static String _targetLabel(Drill drill) {
     return switch (drill.targetDistanceMode) {
-      TargetDistanceMode.randomRange => 'Random',
-      TargetDistanceMode.randomDistancePerSet => 'Fixed',
+      TargetDistanceMode.randomRange => 'Fixed Random',
+      TargetDistanceMode.randomDistancePerSet => 'Fixed Static',
       TargetDistanceMode.clubCarry => 'Club Carry',
-      TargetDistanceMode.fixed => 'Fixed',
+      TargetDistanceMode.fixed => 'Fixed Static',
       TargetDistanceMode.percentageOfClubCarry => '% Carry',
       null => 'None',
     };
@@ -611,7 +625,8 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       return ColorTokens.primaryDefault;
     }
     if (drill.targetDistanceMode == TargetDistanceMode.randomRange ||
-        drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
+        drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet ||
+        drill.targetDistanceMode == TargetDistanceMode.fixed) {
       return ColorTokens.ragAmber;
     }
     return ColorTokens.textTertiary;

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
@@ -30,6 +32,9 @@ class DrillCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final skillColor = ColorTokens.skillArea(drill.skillArea);
+    final subskills = _parseSubskills(drill.subskillMapping);
+
     return ZxCard(
       onTap: onTap,
       borderColor: isDestructiveSelected
@@ -49,17 +54,18 @@ class DrillCard extends StatelessWidget {
             width: 4,
             height: 48,
             decoration: BoxDecoration(
-              color: ColorTokens.skillArea(drill.skillArea),
+              color: skillColor,
               borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
             ),
           ),
           const SizedBox(width: SpacingTokens.md),
-          // Drill name, subtitle, unseen update dot.
+          // Drill name, skill/subskills, mode chips.
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Title row.
                 Row(
                   children: [
                     Flexible(
@@ -87,6 +93,15 @@ class DrillCard extends StatelessWidget {
                     ],
                   ],
                 ),
+                // Skill area + subskills row.
+                const SizedBox(height: 2),
+                _SkillSubskillRow(
+                  skillArea: drill.skillArea,
+                  subskills: subskills,
+                  color: skillColor,
+                ),
+                // Mode chips row.
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     Flexible(
@@ -122,6 +137,27 @@ class DrillCard extends StatelessWidget {
     );
   }
 
+  static List<String> _parseSubskills(String json) {
+    if (json.isEmpty || json == '[]') return [];
+    try {
+      final list = jsonDecode(json) as List<dynamic>;
+      return list.cast<String>();
+    } on Exception {
+      return [];
+    }
+  }
+
+  static String _formatSubskill(String id) {
+    final parts = id.split('_');
+    final meaningful = parts.length > 1 ? parts.sublist(1) : parts;
+    return meaningful
+        .where((w) => w.toLowerCase() != 'control')
+        .map((w) => w.isNotEmpty
+            ? '${w[0].toUpperCase()}${w.substring(1)}'
+            : '')
+        .join(' ');
+  }
+
   static String _gridLabel(Drill drill) {
     return switch (drill.gridType) {
       GridType.threeByThree => 'Full Grid',
@@ -145,7 +181,8 @@ class DrillCard extends StatelessWidget {
   /// Returns: amber = system, cyan = suggested, null = grey.
   static Color? _targetColor(Drill drill) {
     if (drill.targetDistanceMode == TargetDistanceMode.randomRange ||
-        drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet) {
+        drill.targetDistanceMode == TargetDistanceMode.randomDistancePerSet ||
+        drill.targetDistanceMode == TargetDistanceMode.fixed) {
       return ColorTokens.ragAmber;
     }
     if (drill.targetDistanceMode == TargetDistanceMode.clubCarry) {
@@ -207,6 +244,61 @@ class _ModeChip extends StatelessWidget {
             color: c,
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Skill area badge + subskill chips in a single row.
+class _SkillSubskillRow extends StatelessWidget {
+  final SkillArea skillArea;
+  final List<String> subskills;
+  final Color color;
+
+  const _SkillSubskillRow({
+    required this.skillArea,
+    required this.subskills,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
+          ),
+          child: Text(
+            skillArea.dbValue,
+            style: TextStyle(
+              fontSize: TypographyTokens.bodySmSize,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+        for (final s in subskills) ...[
+          const SizedBox(width: 3),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(ShapeTokens.radiusMicro),
+              border: Border.all(color: color.withValues(alpha: 0.25)),
+            ),
+            child: Text(
+              DrillCard._formatSubskill(s),
+              style: TextStyle(
+                fontSize: TypographyTokens.bodySmSize,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

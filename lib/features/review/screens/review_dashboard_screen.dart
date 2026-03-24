@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
+import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/features/review/screens/subskill_detail_screen.dart';
-import 'package:zx_golf_app/features/review/screens/weakness_ranking_screen.dart';
 import 'package:zx_golf_app/features/review/widgets/overall_score_display.dart';
 import 'package:zx_golf_app/features/review/widgets/plan_adherence_badge.dart';
 import 'package:zx_golf_app/features/review/widgets/skill_area_heatmap.dart';
-import 'package:zx_golf_app/features/review/widgets/trend_snapshot.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/review_providers.dart';
 
-// S12 §12.6.1 — Dashboard screen: Overall Score + Heatmap + Trend + CTA.
-// S15 §15.2 — Neutral score presentation.
+// Home screen: Overall Score + Heatmap + Begin Practice.
 
 class ReviewDashboardScreen extends ConsumerStatefulWidget {
   const ReviewDashboardScreen({super.key});
@@ -58,98 +58,125 @@ class _ReviewDashboardScreenState
     final profileComplete =
         ref.watch(profileCompletenessProvider(userId)).valueOrNull ?? 0.0;
 
-    return ListView(
-      padding: const EdgeInsets.all(SpacingTokens.md),
+    return Column(
       children: [
-        // 1. Overall Score + Skill Areas — single section.
-        Opacity(
-          opacity: isStale ? 0.5 : 1.0,
-          child: OverallScoreDisplay(
-            score: overallScore,
-            profileComplete: profileComplete,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(SpacingTokens.md),
+            children: [
+              Opacity(
+                opacity: isStale ? 0.5 : 1.0,
+                child: OverallScoreDisplay(
+                  score: overallScore,
+                  profileComplete: profileComplete,
+                ),
+              ),
+              const SizedBox(height: SpacingTokens.sm),
+              SkillAreaHeatmap(
+                userId: userId,
+                onExpandedChanged: (area) {
+                  setState(() => _expandedSkillArea = area);
+                },
+                onSubskillTap: (subskillId) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => SubskillDetailScreen(
+                      userId: userId,
+                      subskillId: subskillId,
+                    ),
+                  ));
+                },
+              ),
+              const SizedBox(height: SpacingTokens.md),
+              PlanAdherenceBadge(userId: userId),
+            ],
           ),
         ),
-        const SizedBox(height: SpacingTokens.sm),
-        SkillAreaHeatmap(
-          userId: userId,
-          onExpandedChanged: (area) {
-            setState(() => _expandedSkillArea = area);
-          },
-          onSubskillTap: (subskillId) {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => SubskillDetailScreen(
-                userId: userId,
-                subskillId: subskillId,
-              ),
-            ));
-          },
-        ),
-        const SizedBox(height: SpacingTokens.md),
-
-        // 3. Plan Adherence badge.
-        PlanAdherenceBadge(userId: userId),
-        const SizedBox(height: SpacingTokens.md),
-
-        // 4. Trend Snapshot.
-        TrendSnapshot(
-          userId: userId,
-          skillArea: _expandedSkillArea,
-        ),
-        const SizedBox(height: SpacingTokens.lg),
-
-        // 5. CTA: Weakness Ranking.
-        ZxPillButton(
-          label: 'View Weakness Ranking',
-          icon: Icons.trending_down,
-          size: ZxPillSize.md,
-          variant: ZxPillVariant.secondary,
-          expanded: true,
-          centered: true,
-          onTap: () {
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) =>
-                  WeaknessRankingScreen(userId: userId),
-            ));
-          },
-        ),
+        _buildBeginPractice(),
       ],
     );
   }
 
   Widget _buildZeroState() {
-    return Center(
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(SpacingTokens.xl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.bar_chart_rounded,
+                    size: 64,
+                    color: ColorTokens.textTertiary,
+                  ),
+                  const SizedBox(height: SpacingTokens.md),
+                  Text(
+                    'No scores yet',
+                    style: TextStyle(
+                      fontSize: TypographyTokens.displayLgSize,
+                      fontWeight: TypographyTokens.displayLgWeight,
+                      color: ColorTokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: SpacingTokens.sm),
+                  Text(
+                    'Complete practice sessions to see your SkillScore '
+                    'and skill area breakdown here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: TypographyTokens.bodyLgSize,
+                      color: ColorTokens.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _buildBeginPractice(),
+      ],
+    );
+  }
+
+  Widget _buildBeginPractice() {
+    return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(SpacingTokens.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.bar_chart_rounded,
-              size: 64,
-              color: ColorTokens.textTertiary,
-            ),
-            const SizedBox(height: SpacingTokens.md),
-            Text(
-              'No scores yet',
-              style: TextStyle(
-                fontSize: TypographyTokens.displayLgSize,
-                fontWeight: TypographyTokens.displayLgWeight,
-                color: ColorTokens.textPrimary,
-              ),
-            ),
-            const SizedBox(height: SpacingTokens.sm),
-            Text(
-              'Complete practice sessions to see your SkillScore '
-              'and skill area breakdown here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodyLgSize,
-                color: ColorTokens.textSecondary,
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.fromLTRB(
+          SpacingTokens.md, 0, SpacingTokens.md, SpacingTokens.md,
+        ),
+        child: ZxPillButton(
+          label: 'Begin Practice',
+          icon: Icons.play_circle_filled,
+          size: ZxPillSize.md,
+          variant: ZxPillVariant.progress,
+          expanded: true,
+          centered: true,
+          onTap: _startPractice,
         ),
       ),
     );
+  }
+
+  Future<void> _startPractice() async {
+    final userId = ref.read(currentUserIdProvider);
+    final envSurface = await showEnvironmentSurfacePicker(context);
+    if (envSurface == null || !mounted) return;
+
+    final actions = ref.read(practiceActionsProvider);
+    final pb = await actions.startPracticeBlock(
+      userId,
+      surfaceType: envSurface.surface,
+    );
+
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+        builder: (_) => PracticeQueueScreen(
+          practiceBlockId: pb.practiceBlockId,
+          userId: userId,
+        ),
+      ));
+    }
   }
 }

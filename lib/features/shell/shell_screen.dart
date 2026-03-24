@@ -7,7 +7,7 @@ import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/bag/bag_screen.dart';
-import 'package:zx_golf_app/features/home/home_dashboard_screen.dart';
+import 'package:zx_golf_app/features/review/screens/review_dashboard_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/post_session_summary_screen.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
@@ -286,7 +286,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               const SystemMaintenanceBanner(),
               Expanded(
                 child: showHome
-                    ? HomeDashboardScreen(onGoToTab: _goToTab)
+                    ? const ReviewDashboardScreen()
                     : IndexedStack(
                         index: _currentIndex,
                         children: [

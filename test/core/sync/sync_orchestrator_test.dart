@@ -385,9 +385,14 @@ void main() {
 
     test('sync skipped when sync disabled', () {
       fakeAsync((async) {
-        fakeEngine.syncEnabled = false;
         final o = makeOrchestrator();
         o.start();
+        // Drain the initial sync triggered by start().
+        async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
+        fakeEngine.triggeredReasons.clear();
+        diagnostics.clear();
+        // Now disable sync and request another.
+        fakeEngine.syncEnabled = false;
         o.requestSync(SyncTrigger.manual);
         async.elapse(kSyncDebounceWindow + const Duration(milliseconds: 50));
 

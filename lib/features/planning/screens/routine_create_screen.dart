@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/widgets/zx_app_bar.dart';
+import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/features/drill/active_drills_screen.dart';
 import 'package:zx_golf_app/features/planning/models/planning_types.dart';
 import 'package:zx_golf_app/providers/planning_providers.dart';
 
@@ -32,22 +34,7 @@ class _RoutineCreateScreenState extends ConsumerState<RoutineCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ZxAppBar(
-        title: 'Create Routine',
-        actions: [
-          TextButton(
-            onPressed: _canSave ? _save : null,
-            child: Text(
-              'Save',
-              style: TextStyle(
-                color: _canSave
-                    ? ColorTokens.primaryDefault
-                    : ColorTokens.textTertiary,
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: const ZxAppBar(title: 'Create Routine'),
       body: ListView(
         padding: const EdgeInsets.all(SpacingTokens.md),
         children: [
@@ -97,31 +84,47 @@ class _RoutineCreateScreenState extends ConsumerState<RoutineCreateScreen> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _addFixedEntry,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Fixed drill'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ColorTokens.primaryDefault,
-                    side: const BorderSide(color: ColorTokens.primaryDefault),
-                  ),
+                child: ZxPillButton(
+                  label: 'Fixed Drill',
+                  icon: Icons.add,
+                  variant: ZxPillVariant.secondary,
+                  expanded: true,
+                  centered: true,
+                  onTap: _addFixedEntry,
                 ),
               ),
               const SizedBox(width: SpacingTokens.sm),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _addCriterionEntry,
-                  icon: const Icon(Icons.auto_awesome, size: 18),
-                  label: const Text('Generated'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ColorTokens.primaryDefault,
-                    side: const BorderSide(color: ColorTokens.primaryDefault),
-                  ),
+                child: ZxPillButton(
+                  label: 'Generated',
+                  icon: Icons.auto_awesome,
+                  variant: ZxPillVariant.secondary,
+                  expanded: true,
+                  centered: true,
+                  onTap: _addCriterionEntry,
                 ),
               ),
             ],
           ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SpacingTokens.md,
+            SpacingTokens.sm,
+            SpacingTokens.md,
+            SpacingTokens.md,
+          ),
+          child: ZxPillButton(
+            label: 'Save Routine',
+            icon: Icons.check,
+            variant: ZxPillVariant.progress,
+            expanded: true,
+            centered: true,
+            onTap: _canSave ? _save : null,
+          ),
+        ),
       ),
     );
   }
@@ -130,27 +133,9 @@ class _RoutineCreateScreenState extends ConsumerState<RoutineCreateScreen> {
       _nameController.text.trim().isNotEmpty && _entries.isNotEmpty;
 
   Future<void> _addFixedEntry() async {
-    // Simplified: prompt for drill ID.
-    final controller = TextEditingController();
-    final drillId = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: ColorTokens.surfaceModal,
-        title: const Text('Add fixed drill'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Drill ID'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Add'),
-          ),
-        ],
+    final drillId = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => const ActiveDrillsScreen(slotPickMode: true),
       ),
     );
 
