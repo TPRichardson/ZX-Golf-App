@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
+import 'package:zx_golf_app/features/auth/auth_gate.dart';
 import 'package:zx_golf_app/providers/sync_providers.dart';
 
 // TD-07 §9 — Sign-in screen shown when user is not authenticated.
@@ -16,6 +17,10 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _loading = false;
   String? _error;
+
+  void _bypassLogin() {
+    ref.read(guestModeProvider.notifier).state = true;
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() {
@@ -73,6 +78,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 centered: true,
                 isLoading: _loading,
                 onTap: _loading ? null : _signInWithGoogle,
+              ),
+              const SizedBox(height: SpacingTokens.md),
+              ZxPillButton(
+                label: 'Continue without account',
+                icon: Icons.person_outline,
+                variant: ZxPillVariant.secondary,
+                expanded: true,
+                centered: true,
+                onTap: _loading ? null : _bypassLogin,
               ),
               if (_error != null) ...[
                 const SizedBox(height: SpacingTokens.md),

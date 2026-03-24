@@ -26,8 +26,8 @@ final currentUserProvider = FutureProvider<User?>((ref) async {
   if (userId == kDevUserId) {
     return repo.create(UsersCompanion.insert(
       userId: kDevUserId,
-      displayName: const Value('Dev User'),
-      email: const Value('dev@local'),
+      displayName: const Value('Testing'),
+      email: const Value('user@testing.com'),
       timezone: const Value('UTC'),
     ));
   }

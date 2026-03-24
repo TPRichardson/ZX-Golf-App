@@ -24,7 +24,7 @@ const kSyncWriteGateHardTimeout = Duration(seconds: 60);
 
 // Phase 1 stub — hardcoded dev user ID for local development.
 // TD-06 §4.3 — Authentication stub.
-const kDevUserId = '00000000-0000-4000-8000-000000000000';
+const kDevUserId = 'c6a8aea4-d43d-461b-ad3a-e91d5b25d238';
 
 // TD-03 §5.2 — Sync schema version. Server rejects mismatches.
 const kSyncSchemaVersion = '1';
