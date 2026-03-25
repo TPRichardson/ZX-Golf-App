@@ -28,6 +28,7 @@ import 'package:zx_golf_app/features/practice/execution/input_delegates/continuo
 import 'package:zx_golf_app/features/practice/execution/input_delegates/grid_cell_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/raw_data_entry_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/scoring_game_delegate.dart';
+import 'package:zx_golf_app/features/practice/execution/input_delegates/chipping_game_delegate.dart';
 import 'package:zx_golf_app/features/practice/execution/session_execution_controller.dart';
 import 'package:zx_golf_app/features/practice/widgets/club_grid_picker.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -103,6 +104,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   String? _shotShape;
   /// Player-declared effort percentage for the next shot.
   int? _shotEffort;
+  /// Player-declared flight rating (1=low, 2=medium, 3=high) for chipping.
+  int? _flight;
 
   /// Whether shot intent fields (shape + effort) are visible.
   bool _showShotIntent = false;
@@ -142,7 +145,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       InputMode.binaryHitMiss => BinaryHitMissDelegate(),
       InputMode.continuousMeasurement => ContinuousMeasurementDelegate(),
       InputMode.rawDataEntry => RawDataEntryDelegate(drill: widget.drill),
-      InputMode.scoringGame => ScoringGameDelegate(drill: widget.drill),
+      InputMode.scoringGame =>
+        widget.drill.metricSchemaId == 'chipping_game_strokes'
+            ? ChippingGameDelegate(drill: widget.drill)
+            : ScoringGameDelegate(drill: widget.drill),
     };
   }
 
@@ -176,6 +182,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     if (mounted) {
       _executionActiveNotifier.state = true;
       setState(() => _initialized = true);
+      // Show initial target dialog for chipping game (club + flight selection).
+      if (_delegate is ChippingGameDelegate && _currentRandomDistance != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showNextTargetDialog();
+        });
+      }
     }
   }
 
@@ -432,24 +444,50 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final metrics = jsonDecode(raw) as Map<String, dynamic>;
     // Scoring game — has 'strokes' + 'par' fields.
     if (metrics.containsKey('strokes') && metrics.containsKey('par')) {
-      final strokes = (metrics['strokes'] as num).toInt();
+      final strokes = (metrics['strokes'] as num).toDouble();
       final par = (metrics['par'] as num).toInt();
       final dist = (metrics['distance'] as num?)?.toInt();
       final holeNum = (metrics['holeNumber'] as num?)?.toInt();
       final diff = strokes - par;
-      final diffLabel = diff == 0 ? 'E' : diff > 0 ? '+$diff' : '$diff';
-      final distLabel = dist != null ? '${dist}ft' : '';
-      final label = 'Hole $holeNum  $distLabel  $strokes strokes ($diffLabel)';
-      final color = diff < 0
+      final isChipping = metrics.containsKey('proximityFeet');
+      final holed = metrics['holed'] == true;
+      final notPuttable = metrics['notPuttable'] == true;
+
+      String diffLabel;
+      String strokesLabel;
+      String distLabel;
+      if (isChipping) {
+        distLabel = dist != null ? '${dist}y' : '';
+        strokesLabel = strokes.toStringAsFixed(1);
+        if (holed) {
+          diffLabel = 'Holed!';
+        } else if (notPuttable) {
+          diffLabel = 'N/P';
+        } else {
+          diffLabel = diff.abs() < 0.05
+              ? 'E'
+              : diff > 0
+                  ? '+${diff.toStringAsFixed(1)}'
+                  : diff.toStringAsFixed(1);
+        }
+      } else {
+        distLabel = dist != null ? '${dist}ft' : '';
+        strokesLabel = '${strokes.toInt()}';
+        final intDiff = diff.toInt();
+        diffLabel = intDiff == 0 ? 'E' : intDiff > 0 ? '+$intDiff' : '$intDiff';
+      }
+      final label = 'Hole $holeNum  $distLabel  $strokesLabel ($diffLabel)';
+      final color = diff < -0.05
           ? ColorTokens.successDefault
-          : diff == 0
+          : diff.abs() < 0.05
               ? ColorTokens.textSecondary
               : ColorTokens.errorDestructive;
       return ShotEntry(
         instanceId: result.instance.instanceId,
         label: label,
-        isHit: diff < 0,
-        club: '',
+        isHit: diff < -0.05,
+        club: isChipping ? clubLabel : '',
+        clubId: isChipping ? data.selectedClub.value : null,
         rawMetrics: raw,
         score: result.realtimeScore,
         colorOverride: color,
@@ -561,11 +599,21 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     await _handlePostInstanceAdvance();
 
     // Show inter-shot dialog for RandomRange drills (next target + intent).
-    // Scoring game manages its own per-hole targets — no dialog needed.
-    if (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange &&
-        widget.drill.inputMode != InputMode.scoringGame &&
-        !_ending && mounted) {
-      await _showNextTargetDialog();
+    // Putting scoring game manages its own per-hole targets — no dialog needed.
+    // Chipping scoring game needs the dialog for club selection + flight rating.
+    final isChippingGame = _delegate is ChippingGameDelegate;
+    final showTargetDialog =
+        (widget.drill.targetDistanceMode == TargetDistanceMode.randomRange &&
+            widget.drill.inputMode != InputMode.scoringGame) ||
+        isChippingGame;
+    if (showTargetDialog && !_ending && mounted) {
+      // Update the random distance from the delegate's next hole.
+      if (isChippingGame) {
+        _currentRandomDistance = _delegate.currentTargetDistance;
+      }
+      if (_currentRandomDistance != null) {
+        await _showNextTargetDialog();
+      }
     }
 
     return result;
@@ -573,10 +621,13 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
   /// Inter-shot dialog for variable target drills.
   /// Shows next target distance, club picker, shape and effort selectors.
+  /// For chipping games, shows flight (1/2/3) instead of shape/effort.
   Future<void> _showNextTargetDialog() async {
     String? shape = _shotShape;
     int? effort = _shotEffort;
+    int? flightVal = _flight;
     String? clubId = _selectedClubId;
+    final isChipping = _delegate is ChippingGameDelegate;
 
     await showDialog<void>(
       context: context,
@@ -585,6 +636,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         targetDistance: _currentRandomDistance?.round() ?? 0,
         initialShape: shape,
         initialEffort: effort,
+        initialFlight: flightVal,
         initialClubLabel: _clubIdToLabel[clubId] ?? '',
         availableClubs: List.of(_availableClubs)
           ..sort((a, b) => a.clubType.index.compareTo(b.clubType.index)),
@@ -592,10 +644,12 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         skillArea: widget.drill.skillArea,
         userId: widget.userId,
         showShotIntent: _showShotIntent,
-        onConfirm: (newClubId, newShape, newEffort) {
+        showFlightMode: isChipping,
+        onConfirm: (newClubId, newShape, newEffort, {int? flight}) {
           clubId = newClubId;
           shape = newShape;
           effort = newEffort;
+          flightVal = flight;
         },
         onToggleShotIntent: (v) => _showShotIntent = v,
       ),
@@ -607,6 +661,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         _selectedClubId = clubId;
         _shotShape = shape;
         _shotEffort = effort;
+        _flight = flightVal;
       });
     }
   }
@@ -865,6 +920,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       currentSetId: _controller.currentSetId,
       shotShape: _shotShape,
       shotEffort: _shotEffort,
+      flight: _flight,
       resolvedTargetDistance: _effectiveTargetDistance,
       resolvedTargetWidth: _currentTargetWidth,
       resolvedTargetDepth: _currentTargetDepth,

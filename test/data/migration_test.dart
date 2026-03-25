@@ -10,7 +10,7 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(() => db.close());
 
-      expect(db.schemaVersion, 20);
+      expect(db.schemaVersion, 21);
     });
 
     test('onCreate creates all tables and seeds reference data', () async {

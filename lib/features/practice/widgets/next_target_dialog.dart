@@ -5,17 +5,21 @@ import 'package:zx_golf_app/data/enums.dart';
 
 /// Inter-shot dialog for variable target drills.
 /// Shows next target, club selector, shape and effort pickers.
+/// For chipping games, shows flight (1/2/3) instead of shape/effort.
 class NextTargetDialog extends StatefulWidget {
   final int targetDistance;
   final String? initialShape;
   final int? initialEffort;
+  final int? initialFlight;
   final String initialClubLabel;
   final List<UserClub> availableClubs;
   final Map<String, String> clubIdToLabel;
   final SkillArea skillArea;
   final String userId;
   final bool showShotIntent;
-  final void Function(String? clubId, String? shape, int? effort) onConfirm;
+  /// When true, show flight (1/2/3) instead of shape/effort.
+  final bool showFlightMode;
+  final void Function(String? clubId, String? shape, int? effort, {int? flight}) onConfirm;
   final ValueChanged<bool> onToggleShotIntent;
 
   const NextTargetDialog({
@@ -23,12 +27,14 @@ class NextTargetDialog extends StatefulWidget {
     required this.targetDistance,
     required this.initialShape,
     required this.initialEffort,
+    this.initialFlight,
     required this.initialClubLabel,
     required this.availableClubs,
     required this.clubIdToLabel,
     required this.skillArea,
     required this.userId,
     required this.showShotIntent,
+    this.showFlightMode = false,
     required this.onConfirm,
     required this.onToggleShotIntent,
   });
@@ -41,6 +47,7 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
   String? _selectedClubId;
   String? _shape;
   int? _effort;
+  int? _flight;
   late bool _showIntent;
 
   @override
@@ -49,6 +56,7 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
     _showIntent = widget.showShotIntent;
     _shape = widget.initialShape;
     _effort = widget.initialEffort;
+    _flight = widget.initialFlight;
     // Find club ID matching the initial label.
     _selectedClubId = widget.availableClubs
         .where((c) => c.clubType.dbValue == widget.initialClubLabel)
@@ -137,111 +145,154 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
           ),
           const SizedBox(height: SpacingTokens.md),
 
-          // Shot intent toggle.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Shot Intent',
-                style: TextStyle(
-                  fontSize: TypographyTokens.bodySmSize,
-                  fontWeight: FontWeight.w600,
-                  color: ColorTokens.textTertiary,
+          // Flight mode (chipping) or shot intent toggle (standard).
+          if (widget.showFlightMode) ...[
+            _sectionLabel('Flight'),
+            Row(
+              children: [
+                for (final f in [
+                  (value: 1, label: 'Low'),
+                  (value: 2, label: 'Mid'),
+                  (value: 3, label: 'High'),
+                ])
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: f.value != 3 ? SpacingTokens.xs : 0,
+                      ),
+                      child: ChoiceChip(
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text(f.label, textAlign: TextAlign.center),
+                        ),
+                        selected: _flight == f.value,
+                        onSelected: (_) => setState(() =>
+                            _flight = _flight == f.value ? null : f.value),
+                        selectedColor: ColorTokens.primaryDefault,
+                        backgroundColor: ColorTokens.surfaceRaised,
+                        labelStyle: TextStyle(
+                          fontSize: 16,
+                          color: _flight == f.value
+                              ? ColorTokens.textPrimary
+                              : ColorTokens.textSecondary,
+                        ),
+                        side: BorderSide(
+                          color: _flight == f.value
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.surfaceBorder,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ] else ...[
+            // Shot intent toggle.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Shot Intent',
+                  style: TextStyle(
+                    fontSize: TypographyTokens.bodySmSize,
+                    fontWeight: FontWeight.w600,
+                    color: ColorTokens.textTertiary,
+                  ),
                 ),
+                SizedBox(
+                  height: 28,
+                  child: Switch(
+                    value: _showIntent,
+                    activeColor: ColorTokens.primaryDefault,
+                    onChanged: (v) {
+                      setState(() => _showIntent = v);
+                      widget.onToggleShotIntent(v);
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            if (_showIntent) ...[
+              const SizedBox(height: SpacingTokens.sm),
+
+              // Shape selector.
+              _sectionLabel('Shape'),
+              Row(
+                children: [
+                  for (final s in ShotShape.values)
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: s != ShotShape.values.last
+                              ? SpacingTokens.xs
+                              : 0,
+                        ),
+                        child: ChoiceChip(
+                          label: SizedBox(
+                            width: double.infinity,
+                            child: Text(s.dbValue, textAlign: TextAlign.center),
+                          ),
+                          selected: _shape == s.dbValue,
+                          onSelected: (_) => setState(() =>
+                              _shape = _shape == s.dbValue ? null : s.dbValue),
+                          selectedColor: ColorTokens.primaryDefault,
+                          backgroundColor: ColorTokens.surfaceRaised,
+                          labelStyle: TextStyle(
+                            fontSize: 16,
+                            color: _shape == s.dbValue
+                                ? ColorTokens.textPrimary
+                                : ColorTokens.textSecondary,
+                          ),
+                          side: BorderSide(
+                            color: _shape == s.dbValue
+                                ? ColorTokens.primaryDefault
+                                : ColorTokens.surfaceBorder,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              SizedBox(
-                height: 28,
-                child: Switch(
-                  value: _showIntent,
-                  activeColor: ColorTokens.primaryDefault,
-                  onChanged: (v) {
-                    setState(() => _showIntent = v);
-                    widget.onToggleShotIntent(v);
-                  },
-                ),
+              const SizedBox(height: SpacingTokens.md),
+
+              // Effort selector.
+              _sectionLabel('Effort'),
+              Row(
+                children: [
+                  for (final e in [75, 90, 100])
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: e != 100 ? SpacingTokens.xs : 0,
+                        ),
+                        child: ChoiceChip(
+                          label: SizedBox(
+                            width: double.infinity,
+                            child: Text('$e%', textAlign: TextAlign.center),
+                          ),
+                          selected: _effort == e,
+                          onSelected: (_) => setState(() =>
+                              _effort = _effort == e ? null : e),
+                          selectedColor: ColorTokens.primaryDefault,
+                          backgroundColor: ColorTokens.surfaceRaised,
+                          labelStyle: TextStyle(
+                            fontSize: 16,
+                            color: _effort == e
+                                ? ColorTokens.textPrimary
+                                : ColorTokens.textSecondary,
+                          ),
+                          side: BorderSide(
+                            color: _effort == e
+                                ? ColorTokens.primaryDefault
+                                : ColorTokens.surfaceBorder,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
-          ),
-
-          if (_showIntent) ...[
-            const SizedBox(height: SpacingTokens.sm),
-
-            // Shape selector.
-            _sectionLabel('Shape'),
-            Row(
-              children: [
-                for (final s in ShotShape.values)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: s != ShotShape.values.last
-                            ? SpacingTokens.xs
-                            : 0,
-                      ),
-                      child: ChoiceChip(
-                        label: SizedBox(
-                          width: double.infinity,
-                          child: Text(s.dbValue, textAlign: TextAlign.center),
-                        ),
-                        selected: _shape == s.dbValue,
-                        onSelected: (_) => setState(() =>
-                            _shape = _shape == s.dbValue ? null : s.dbValue),
-                        selectedColor: ColorTokens.primaryDefault,
-                        backgroundColor: ColorTokens.surfaceRaised,
-                        labelStyle: TextStyle(
-                          fontSize: 16,
-                          color: _shape == s.dbValue
-                              ? ColorTokens.textPrimary
-                              : ColorTokens.textSecondary,
-                        ),
-                        side: BorderSide(
-                          color: _shape == s.dbValue
-                              ? ColorTokens.primaryDefault
-                              : ColorTokens.surfaceBorder,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: SpacingTokens.md),
-
-            // Effort selector.
-            _sectionLabel('Effort'),
-            Row(
-              children: [
-                for (final e in [75, 90, 100])
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: e != 100 ? SpacingTokens.xs : 0,
-                      ),
-                      child: ChoiceChip(
-                        label: SizedBox(
-                          width: double.infinity,
-                          child: Text('$e%', textAlign: TextAlign.center),
-                        ),
-                        selected: _effort == e,
-                        onSelected: (_) => setState(() =>
-                            _effort = _effort == e ? null : e),
-                        selectedColor: ColorTokens.primaryDefault,
-                        backgroundColor: ColorTokens.surfaceRaised,
-                        labelStyle: TextStyle(
-                          fontSize: 16,
-                          color: _effort == e
-                              ? ColorTokens.textPrimary
-                              : ColorTokens.textSecondary,
-                        ),
-                        side: BorderSide(
-                          color: _effort == e
-                              ? ColorTokens.primaryDefault
-                              : ColorTokens.surfaceBorder,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
           ],
         ],
       ),
@@ -251,7 +302,7 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
           width: double.infinity,
           child: FilledButton(
             onPressed: () {
-              widget.onConfirm(_selectedClubId, _shape, _effort);
+              widget.onConfirm(_selectedClubId, _shape, _effort, flight: _flight);
               Navigator.pop(context);
             },
             style: FilledButton.styleFrom(

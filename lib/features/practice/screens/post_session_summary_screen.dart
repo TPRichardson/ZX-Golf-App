@@ -662,19 +662,25 @@ class _ScoringGameScorecard extends StatelessWidget {
 
         final instances = snapshot.data!;
         final holes = <_HoleResult>[];
-        var totalStrokes = 0;
+        var totalStrokes = 0.0;
         var totalPar = 0;
 
         for (final instance in instances) {
           try {
             final raw =
                 jsonDecode(instance.rawMetrics) as Map<String, dynamic>;
-            final strokes = (raw['strokes'] as num).toInt();
+            final strokes = (raw['strokes'] as num).toDouble();
             final distance = (raw['distance'] as num).toInt();
             final category = raw['category'] as String? ?? '';
             final par = (raw['par'] as num?)?.toInt() ?? 2;
             final holeNum = (raw['holeNumber'] as num?)?.toInt() ?? (holes.length + 1);
-            holes.add(_HoleResult(holeNum, distance, category, strokes, par));
+            final isChipping = raw.containsKey('proximityFeet');
+            final holed = raw['holed'] == true;
+            final notPuttable = raw['notPuttable'] == true;
+            holes.add(_HoleResult(holeNum, distance, category, strokes, par,
+                distanceUnit: isChipping ? 'y' : 'ft',
+                holed: holed,
+                notPuttable: notPuttable));
             totalStrokes += strokes;
             totalPar += par;
           } catch (_) {}
@@ -683,8 +689,15 @@ class _ScoringGameScorecard extends StatelessWidget {
         if (holes.isEmpty) return const SizedBox.shrink();
 
         final plusMinus = totalStrokes - totalPar;
-        final plusMinusLabel =
-            plusMinus == 0 ? 'E' : (plusMinus > 0 ? '+$plusMinus' : '$plusMinus');
+        final isIntegerStrokes = totalStrokes == totalStrokes.roundToDouble();
+        final strokesDisplay = isIntegerStrokes
+            ? '${totalStrokes.toInt()}'
+            : totalStrokes.toStringAsFixed(1);
+        final plusMinusLabel = plusMinus.abs() < 0.05
+            ? 'E'
+            : (plusMinus > 0
+                ? '+${plusMinus.toStringAsFixed(isIntegerStrokes ? 0 : 1)}'
+                : plusMinus.toStringAsFixed(isIntegerStrokes ? 0 : 1));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -693,7 +706,7 @@ class _ScoringGameScorecard extends StatelessWidget {
             // Summary line.
             Center(
               child: Text(
-                '$totalStrokes strokes ($plusMinusLabel)',
+                '$strokesDisplay strokes ($plusMinusLabel)',
                 style: TextStyle(
                   fontSize: TypographyTokens.displayLgSize,
                   fontWeight: TypographyTokens.displayLgWeight,
@@ -777,7 +790,7 @@ class _ScoringGameScorecard extends StatelessWidget {
                           ),
                           Expanded(
                             child: Text(
-                              '${hole.distance}ft  ${hole.category}',
+                              '${hole.distance}${hole.distanceUnit}  ${hole.category}',
                               style: TextStyle(
                                 fontSize: TypographyTokens.bodySmSize,
                                 color: ColorTokens.textPrimary,
@@ -786,7 +799,7 @@ class _ScoringGameScorecard extends StatelessWidget {
                           ),
                           SizedBox(
                             width: 64,
-                            child: Text('${hole.strokes}',
+                            child: Text(hole.strokesLabel,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                     fontSize: TypographyTokens.bodySmSize,
@@ -826,13 +839,31 @@ class _HoleResult {
   final int number;
   final int distance;
   final String category;
-  final int strokes;
+  final double strokes;
   final int par;
+  /// Unit suffix for the distance column (e.g. 'ft' or 'y').
+  final String distanceUnit;
+  /// Whether this hole was holed-out (chipping game).
+  final bool holed;
+  /// Whether this hole was marked not-puttable (chipping game).
+  final bool notPuttable;
 
   const _HoleResult(
-      this.number, this.distance, this.category, this.strokes, this.par);
+      this.number, this.distance, this.category, this.strokes, this.par,
+      {this.distanceUnit = 'ft', this.holed = false, this.notPuttable = false});
 
-  int get plusMinus => strokes - par;
-  String get plusMinusLabel =>
-      plusMinus == 0 ? '-' : (plusMinus > 0 ? '+$plusMinus' : '$plusMinus');
+  double get plusMinus => strokes - par;
+  String get strokesLabel {
+    // Integer display for whole-number strokes (putting game).
+    if (strokes == strokes.roundToDouble() && strokes == strokes.toInt()) {
+      return '${strokes.toInt()}';
+    }
+    return strokes.toStringAsFixed(1);
+  }
+  String get plusMinusLabel {
+    if (holed) return '🕳️';
+    if (plusMinus.abs() < 0.05) return '-';
+    if (plusMinus > 0) return '+${plusMinus.toStringAsFixed(1)}';
+    return plusMinus.toStringAsFixed(1);
+  }
 }

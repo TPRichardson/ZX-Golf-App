@@ -117,6 +117,7 @@ Future<void> _seedMetricSchemas(AppDatabase db) async {
     _metricSchema('raw_club_head_speed', 'Club Head Speed (mph)', InputMode.rawDataEntry, 0, 200, '{"unit": "mph"}', 'LinearInterpolation'),
     _metricSchema('technique_duration', 'Technique Block Duration', InputMode.rawDataEntry, 0, 43200, '{"unit": "seconds"}', 'None'),
     _metricSchema('scoring_game_strokes', 'Scoring Game Strokes Per Hole', InputMode.scoringGame, 1, 10, '{"par": 2, "holes": 18, "distanceUnit": "feet", "categories": [{"name": "Short", "minDistance": 4, "maxDistance": 8, "holeCount": 6}, {"name": "Medium", "minDistance": 8, "maxDistance": 20, "holeCount": 6}, {"name": "Long", "minDistance": 20, "maxDistance": 40, "holeCount": 6}]}', 'ScoringGameInterpolation'),
+    _metricSchema('chipping_game_strokes', 'Chipping Game Strokes Per Hole', InputMode.scoringGame, 1, 10, '{"par": 2, "holes": 18, "distanceUnit": "yards", "resultUnit": "feet", "categories": [{"name": "Short", "minDistance": 5, "maxDistance": 8, "holeCount": 6}, {"name": "Medium", "minDistance": 9, "maxDistance": 14, "holeCount": 6}, {"name": "Long", "minDistance": 15, "maxDistance": 20, "holeCount": 6}], "gameVariant": "chipping", "notPuttablePenalty": 2.5}', 'ScoringGameInterpolation'),
   ];
   await db.batch((batch) {
     batch.insertAll(db.metricSchemas, rows);
@@ -181,6 +182,6 @@ Future<void> _validateSeedInvariants(AppDatabase db) async {
 
   // Invariant 5: 8 metric schemas
   final metricSchemaCount = await db.metricSchemas.count().getSingle();
-  assert(metricSchemaCount == 13,
-      'MetricSchema count invariant: $metricSchemaCount rows, expected 13');
+  assert(metricSchemaCount == 14,
+      'MetricSchema count invariant: $metricSchemaCount rows, expected 14');
 }

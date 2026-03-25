@@ -5578,6 +5578,15 @@ class $InstancesTable extends Instances
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _flightMeta = const VerificationMeta('flight');
+  @override
+  late final GeneratedColumn<int> flight = GeneratedColumn<int>(
+    'Flight',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -5629,6 +5638,7 @@ class $InstancesTable extends Instances
     resolvedTargetDepth,
     shotShape,
     shotEffort,
+    flight,
     isDeleted,
     createdAt,
     updatedAt,
@@ -5723,6 +5733,12 @@ class $InstancesTable extends Instances
         shotEffort.isAcceptableOrUnknown(data['ShotEffort']!, _shotEffortMeta),
       );
     }
+    if (data.containsKey('Flight')) {
+      context.handle(
+        _flightMeta,
+        flight.isAcceptableOrUnknown(data['Flight']!, _flightMeta),
+      );
+    }
     if (data.containsKey('IsDeleted')) {
       context.handle(
         _isDeletedMeta,
@@ -5790,6 +5806,10 @@ class $InstancesTable extends Instances
         DriftSqlType.int,
         data['${effectivePrefix}ShotEffort'],
       ),
+      flight: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}Flight'],
+      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}IsDeleted'],
@@ -5822,6 +5842,7 @@ class Instance extends DataClass implements Insertable<Instance> {
   final double? resolvedTargetDepth;
   final String? shotShape;
   final int? shotEffort;
+  final int? flight;
   final bool isDeleted;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -5836,6 +5857,7 @@ class Instance extends DataClass implements Insertable<Instance> {
     this.resolvedTargetDepth,
     this.shotShape,
     this.shotEffort,
+    this.flight,
     required this.isDeleted,
     required this.createdAt,
     required this.updatedAt,
@@ -5864,6 +5886,9 @@ class Instance extends DataClass implements Insertable<Instance> {
     }
     if (!nullToAbsent || shotEffort != null) {
       map['ShotEffort'] = Variable<int>(shotEffort);
+    }
+    if (!nullToAbsent || flight != null) {
+      map['Flight'] = Variable<int>(flight);
     }
     map['IsDeleted'] = Variable<bool>(isDeleted);
     map['CreatedAt'] = Variable<DateTime>(createdAt);
@@ -5895,6 +5920,9 @@ class Instance extends DataClass implements Insertable<Instance> {
       shotEffort: shotEffort == null && nullToAbsent
           ? const Value.absent()
           : Value(shotEffort),
+      flight: flight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(flight),
       isDeleted: Value(isDeleted),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -5923,6 +5951,7 @@ class Instance extends DataClass implements Insertable<Instance> {
       ),
       shotShape: serializer.fromJson<String?>(json['shotShape']),
       shotEffort: serializer.fromJson<int?>(json['shotEffort']),
+      flight: serializer.fromJson<int?>(json['flight']),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -5944,6 +5973,7 @@ class Instance extends DataClass implements Insertable<Instance> {
       'resolvedTargetDepth': serializer.toJson<double?>(resolvedTargetDepth),
       'shotShape': serializer.toJson<String?>(shotShape),
       'shotEffort': serializer.toJson<int?>(shotEffort),
+      'flight': serializer.toJson<int?>(flight),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -5961,6 +5991,7 @@ class Instance extends DataClass implements Insertable<Instance> {
     Value<double?> resolvedTargetDepth = const Value.absent(),
     Value<String?> shotShape = const Value.absent(),
     Value<int?> shotEffort = const Value.absent(),
+    Value<int?> flight = const Value.absent(),
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -5981,6 +6012,7 @@ class Instance extends DataClass implements Insertable<Instance> {
         : this.resolvedTargetDepth,
     shotShape: shotShape.present ? shotShape.value : this.shotShape,
     shotEffort: shotEffort.present ? shotEffort.value : this.shotEffort,
+    flight: flight.present ? flight.value : this.flight,
     isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -6011,6 +6043,7 @@ class Instance extends DataClass implements Insertable<Instance> {
       shotEffort: data.shotEffort.present
           ? data.shotEffort.value
           : this.shotEffort,
+      flight: data.flight.present ? data.flight.value : this.flight,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -6030,6 +6063,7 @@ class Instance extends DataClass implements Insertable<Instance> {
           ..write('resolvedTargetDepth: $resolvedTargetDepth, ')
           ..write('shotShape: $shotShape, ')
           ..write('shotEffort: $shotEffort, ')
+          ..write('flight: $flight, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -6049,6 +6083,7 @@ class Instance extends DataClass implements Insertable<Instance> {
     resolvedTargetDepth,
     shotShape,
     shotEffort,
+    flight,
     isDeleted,
     createdAt,
     updatedAt,
@@ -6067,6 +6102,7 @@ class Instance extends DataClass implements Insertable<Instance> {
           other.resolvedTargetDepth == this.resolvedTargetDepth &&
           other.shotShape == this.shotShape &&
           other.shotEffort == this.shotEffort &&
+          other.flight == this.flight &&
           other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -6083,6 +6119,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
   final Value<double?> resolvedTargetDepth;
   final Value<String?> shotShape;
   final Value<int?> shotEffort;
+  final Value<int?> flight;
   final Value<bool> isDeleted;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -6098,6 +6135,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     this.resolvedTargetDepth = const Value.absent(),
     this.shotShape = const Value.absent(),
     this.shotEffort = const Value.absent(),
+    this.flight = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -6114,6 +6152,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     this.resolvedTargetDepth = const Value.absent(),
     this.shotShape = const Value.absent(),
     this.shotEffort = const Value.absent(),
+    this.flight = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -6132,6 +6171,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     Expression<double>? resolvedTargetDepth,
     Expression<String>? shotShape,
     Expression<int>? shotEffort,
+    Expression<int>? flight,
     Expression<bool>? isDeleted,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -6151,6 +6191,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
         'ResolvedTargetDepth': resolvedTargetDepth,
       if (shotShape != null) 'ShotShape': shotShape,
       if (shotEffort != null) 'ShotEffort': shotEffort,
+      if (flight != null) 'Flight': flight,
       if (isDeleted != null) 'IsDeleted': isDeleted,
       if (createdAt != null) 'CreatedAt': createdAt,
       if (updatedAt != null) 'UpdatedAt': updatedAt,
@@ -6169,6 +6210,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     Value<double?>? resolvedTargetDepth,
     Value<String?>? shotShape,
     Value<int?>? shotEffort,
+    Value<int?>? flight,
     Value<bool>? isDeleted,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -6186,6 +6228,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
       resolvedTargetDepth: resolvedTargetDepth ?? this.resolvedTargetDepth,
       shotShape: shotShape ?? this.shotShape,
       shotEffort: shotEffort ?? this.shotEffort,
+      flight: flight ?? this.flight,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -6228,6 +6271,9 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
     if (shotEffort.present) {
       map['ShotEffort'] = Variable<int>(shotEffort.value);
     }
+    if (flight.present) {
+      map['Flight'] = Variable<int>(flight.value);
+    }
     if (isDeleted.present) {
       map['IsDeleted'] = Variable<bool>(isDeleted.value);
     }
@@ -6256,6 +6302,7 @@ class InstancesCompanion extends UpdateCompanion<Instance> {
           ..write('resolvedTargetDepth: $resolvedTargetDepth, ')
           ..write('shotShape: $shotShape, ')
           ..write('shotEffort: $shotEffort, ')
+          ..write('flight: $flight, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -22712,6 +22759,7 @@ typedef $$InstancesTableCreateCompanionBuilder =
       Value<double?> resolvedTargetDepth,
       Value<String?> shotShape,
       Value<int?> shotEffort,
+      Value<int?> flight,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -22729,6 +22777,7 @@ typedef $$InstancesTableUpdateCompanionBuilder =
       Value<double?> resolvedTargetDepth,
       Value<String?> shotShape,
       Value<int?> shotEffort,
+      Value<int?> flight,
       Value<bool> isDeleted,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -22791,6 +22840,11 @@ class $$InstancesTableFilterComposer
 
   ColumnFilters<int> get shotEffort => $composableBuilder(
     column: $table.shotEffort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get flight => $composableBuilder(
+    column: $table.flight,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22869,6 +22923,11 @@ class $$InstancesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get flight => $composableBuilder(
+    column: $table.flight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
@@ -22938,6 +22997,9 @@ class $$InstancesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get flight =>
+      $composableBuilder(column: $table.flight, builder: (column) => column);
+
   GeneratedColumn<bool> get isDeleted =>
       $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 
@@ -22986,6 +23048,7 @@ class $$InstancesTableTableManager
                 Value<double?> resolvedTargetDepth = const Value.absent(),
                 Value<String?> shotShape = const Value.absent(),
                 Value<int?> shotEffort = const Value.absent(),
+                Value<int?> flight = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -23001,6 +23064,7 @@ class $$InstancesTableTableManager
                 resolvedTargetDepth: resolvedTargetDepth,
                 shotShape: shotShape,
                 shotEffort: shotEffort,
+                flight: flight,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -23018,6 +23082,7 @@ class $$InstancesTableTableManager
                 Value<double?> resolvedTargetDepth = const Value.absent(),
                 Value<String?> shotShape = const Value.absent(),
                 Value<int?> shotEffort = const Value.absent(),
+                Value<int?> flight = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -23033,6 +23098,7 @@ class $$InstancesTableTableManager
                 resolvedTargetDepth: resolvedTargetDepth,
                 shotShape: shotShape,
                 shotEffort: shotEffort,
+                flight: flight,
                 isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

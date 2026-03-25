@@ -97,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +119,7 @@ class AppDatabase extends _$AppDatabase {
             "('driver_total_distance', 'Driver Total Distance (yds)', 'RawDataEntry', 100, 400, '{\"unit\": \"yards\"}', 'BestOfSetLinearInterpolation')",
             "('raw_total_distance', 'Total Distance (yards)', 'RawDataEntry', 0, 500, '{\"unit\": \"yards\"}', 'LinearInterpolation')",
             """('scoring_game_strokes', 'Scoring Game Strokes Per Hole', 'ScoringGame', 1, 10, '{"par": 2, "holes": 18, "distanceUnit": "feet", "categories": [{"name": "Short", "minDistance": 4, "maxDistance": 8, "holeCount": 6}, {"name": "Medium", "minDistance": 8, "maxDistance": 20, "holeCount": 6}, {"name": "Long", "minDistance": 20, "maxDistance": 40, "holeCount": 6}]}', 'ScoringGameInterpolation')""",
+            """('chipping_game_strokes', 'Chipping Game Strokes Per Hole', 'ScoringGame', 1, 10, '{"par": 2, "holes": 18, "distanceUnit": "yards", "resultUnit": "feet", "categories": [{"name": "Short", "minDistance": 5, "maxDistance": 8, "holeCount": 6}, {"name": "Medium", "minDistance": 9, "maxDistance": 14, "holeCount": 6}, {"name": "Long", "minDistance": 15, "maxDistance": 20, "holeCount": 6}], "gameVariant": "chipping", "notPuttablePenalty": 2.5}', 'ScoringGameInterpolation')""",
           ]) {
             await customStatement(
               "INSERT OR IGNORE INTO MetricSchema (MetricSchemaID, Name, InputMode, "
@@ -167,6 +168,8 @@ class AppDatabase extends _$AppDatabase {
                 await _migrateV18ToV19(m);
               case 19:
                 await _migrateV19ToV20(m);
+              case 20:
+                await _migrateV20ToV21(m);
             }
           }
         },
@@ -189,6 +192,13 @@ class AppDatabase extends _$AppDatabase {
     );
     await customStatement(
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email_unique ON "User" (Email)',
+    );
+  }
+
+  // Instance.Flight: nullable integer for chipping flight rating (1/2/3).
+  Future<void> _migrateV20ToV21(Migrator m) async {
+    await customStatement(
+      'ALTER TABLE Instance ADD COLUMN Flight INTEGER',
     );
   }
 

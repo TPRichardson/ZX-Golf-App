@@ -17,6 +17,8 @@ class ExecutionContext {
   final String? shotShape;
   /// Player-declared effort percentage (100/90/75). Nullable.
   final int? shotEffort;
+  /// Player-declared flight rating (1=low/bump, 2=medium, 3=high/lob). Nullable.
+  final int? flight;
   /// Resolved target values for storage on Instance.
   final double? resolvedTargetDistance;
   final double? resolvedTargetWidth;
@@ -29,6 +31,7 @@ class ExecutionContext {
     required this.currentSetId,
     this.shotShape,
     this.shotEffort,
+    this.flight,
     this.resolvedTargetDistance,
     this.resolvedTargetWidth,
     this.resolvedTargetDepth,
