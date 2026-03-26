@@ -629,6 +629,34 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     String? clubId = _selectedClubId;
     final isChipping = _delegate is ChippingGameDelegate;
 
+    // Build last hole result string and colour for chipping game.
+    String? lastHoleResult;
+    Color? lastHoleResultColor;
+    if (isChipping) {
+      final chipping = _delegate as ChippingGameDelegate;
+      final lastIdx = chipping.completedCount - 1;
+      if (lastIdx >= 0) {
+        final lastHole = chipping.holes[lastIdx];
+        final strokes = lastHole.strokes ?? 0.0;
+        final proximity = lastHole.proximityFeet ?? 0;
+        final putts = strokes - 1.0;
+        final delta = strokes - lastHole.par;
+        if (lastHole.isHoled) {
+          lastHoleResult = 'Hole ${lastHole.holeNumber}: Holed! (1.0)';
+        } else if (lastHole.isNotPuttable) {
+          lastHoleResult = 'Hole ${lastHole.holeNumber}: 1 + ${putts.toStringAsFixed(1)} penalty = ${strokes.toStringAsFixed(2)}';
+        } else {
+          lastHoleResult = 'Hole ${lastHole.holeNumber}: 1 + ${putts.toStringAsFixed(2)} (${proximity}ft) = ${strokes.toStringAsFixed(2)}';
+        }
+        // Green = under par, red = over par, neutral = even.
+        if (delta < -0.05) {
+          lastHoleResultColor = ColorTokens.successDefault;
+        } else if (delta > 0.05) {
+          lastHoleResultColor = ColorTokens.errorDestructive;
+        }
+      }
+    }
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -645,6 +673,8 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         userId: widget.userId,
         showShotIntent: _showShotIntent,
         showFlightMode: isChipping,
+        lastHoleResult: lastHoleResult,
+        lastHoleResultColor: lastHoleResultColor,
         onConfirm: (newClubId, newShape, newEffort, {int? flight}) {
           clubId = newClubId;
           shape = newShape;

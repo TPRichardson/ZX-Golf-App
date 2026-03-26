@@ -19,6 +19,10 @@ class NextTargetDialog extends StatefulWidget {
   final bool showShotIntent;
   /// When true, show flight (1/2/3) instead of shape/effort.
   final bool showFlightMode;
+  /// Last hole result string for chipping game (e.g. "1 + 1.39 = 2.39").
+  final String? lastHoleResult;
+  /// Colour for the last hole result (green = under par, red = over).
+  final Color? lastHoleResultColor;
   final void Function(String? clubId, String? shape, int? effort, {int? flight}) onConfirm;
   final ValueChanged<bool> onToggleShotIntent;
 
@@ -35,6 +39,8 @@ class NextTargetDialog extends StatefulWidget {
     required this.userId,
     required this.showShotIntent,
     this.showFlightMode = false,
+    this.lastHoleResult,
+    this.lastHoleResultColor,
     required this.onConfirm,
     required this.onToggleShotIntent,
   });
@@ -71,9 +77,25 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ShapeTokens.radiusModal),
       ),
-      title: const Text(
-        'Next Shot',
-        style: TextStyle(color: ColorTokens.textPrimary),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.lastHoleResult != null) ...[
+            Text(
+              widget.lastHoleResult!,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodyLgSize,
+                fontWeight: FontWeight.w600,
+                color: widget.lastHoleResultColor ?? ColorTokens.textSecondary,
+              ),
+            ),
+            const SizedBox(height: SpacingTokens.xs),
+          ],
+          const Text(
+            'Next Shot',
+            style: TextStyle(color: ColorTokens.textPrimary),
+          ),
+        ],
       ),
       contentPadding: const EdgeInsets.all(SpacingTokens.md),
       content: SingleChildScrollView(

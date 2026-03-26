@@ -19,12 +19,35 @@ import 'package:zx_golf_app/features/practice/execution/session_execution_contro
 /// Penalty strokes for a chip that leaves the ball in an unputtable position.
 const double kNotPuttablePenalty = 2.5;
 
+/// Expected proximity to hole (feet) by chip distance (yards) for each level.
+/// Estimates based on PGA Tour / amateur performance data.
+double proProximityFeet(int chipDistanceYards) {
+  // Pro: ~3ft at 5y, scaling to ~8ft at 20y.
+  return 2.5 + chipDistanceYards * 0.3;
+}
+
+double scratchProximityFeet(int chipDistanceYards) {
+  // Scratch: ~6ft at 5y, scaling to ~16ft at 20y.
+  return 4.0 + chipDistanceYards * 0.6;
+}
+
+double hc25ProximityFeet(int chipDistanceYards) {
+  // 25-hc: ~12ft at 5y, scaling to ~30ft at 20y.
+  return 8.0 + chipDistanceYards * 1.1;
+}
+
+/// Compute dynamic par for a hole: 1 chip + expected putts from pro proximity.
+double dynamicPar(int chipDistanceYards) {
+  final proFeet = proProximityFeet(chipDistanceYards).round();
+  return 1.0 + expectedPuttsFromDistance(proFeet);
+}
+
 /// A single hole in the chipping scoring game.
 class ChippingGameHole {
   final int holeNumber;
   final String category;
   final int distanceYards;
-  final int par;
+  final double par;
   /// Computed total strokes: 1 (chip) + expected putts from proximity.
   double? strokes;
   /// Distance remaining to hole after chip (feet). Null if not yet recorded.
@@ -38,7 +61,7 @@ class ChippingGameHole {
     required this.par,
   });
 
-  double get plusMinus => (strokes ?? par.toDouble()) - par;
+  double get plusMinus => (strokes ?? par) - par;
   bool get isComplete => strokes != null;
   bool get isHoled => proximityFeet == 0;
   bool get isNotPuttable => proximityFeet == -1;
@@ -55,8 +78,8 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
   /// Running totals.
   double get totalStrokes =>
       holes.where((h) => h.isComplete).fold(0.0, (sum, h) => sum + h.strokes!);
-  int get totalPar =>
-      holes.where((h) => h.isComplete).fold(0, (sum, h) => sum + h.par);
+  double get totalPar =>
+      holes.where((h) => h.isComplete).fold(0.0, (sum, h) => sum + h.par);
   double get plusMinusPar => totalStrokes - totalPar;
   int get completedCount => holes.where((h) => h.isComplete).length;
   bool get isRoundComplete => completedCount >= holes.length;
@@ -75,7 +98,7 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
   String? get statusLine {
     final hole = currentHole;
     if (hole == null) return null;
-    return 'Hole ${hole.holeNumber}  •  Par ${hole.par}  •  ${hole.distanceYards}y';
+    return 'Hole ${hole.holeNumber}  •  Par ${hole.par.toStringAsFixed(2)}  •  ${hole.distanceYards}y';
   }
 
   @override
@@ -95,7 +118,7 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
           holeNumber: holeNum++,
           category: cat.name,
           distanceYards: dist,
-          par: config.par,
+          par: dynamicPar(dist),
         ));
       }
     }
@@ -115,8 +138,7 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
   }
 
   _RoundConfig _parseConfig() {
-    // Default config for chipping_game_strokes.
-    return _RoundConfig(par: 2, categories: [
+    return _RoundConfig(categories: [
       _CategoryConfig('Short', 5, 8, 6),
       _CategoryConfig('Medium', 9, 14, 6),
       _CategoryConfig('Long', 15, 20, 6),
@@ -295,12 +317,15 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
       _showHoledPop = false;
     }
 
+    final plusMinusPar = totalStrokesForHole - hole.par;
+
     final data = InstancesCompanion.insert(
       instanceId: const Uuid().v4(),
       setId: ctx.currentSetId!,
       selectedClub: Value(ctx.selectedClub),
       rawMetrics: jsonEncode({
-        'strokes': totalStrokesForHole,
+        'strokes': plusMinusPar, // Plus/minus dynamic par (positive = over par).
+        'rawStrokes': totalStrokesForHole,
         'proximityFeet': proximityFeet,
         'distance': hole.distanceYards,
         'category': hole.category,
@@ -345,9 +370,8 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
 }
 
 class _RoundConfig {
-  final int par;
   final List<_CategoryConfig> categories;
-  const _RoundConfig({required this.par, required this.categories});
+  const _RoundConfig({required this.categories});
 }
 
 class _CategoryConfig {

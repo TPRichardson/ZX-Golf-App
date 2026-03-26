@@ -5,8 +5,8 @@ import 'package:zx_golf_app/core/scoring/session_scorer.dart';
 import 'package:zx_golf_app/features/practice/execution/input_delegates/chipping_game_delegate.dart';
 
 // Tests for chipping scoring game.
-// Anchors: Min=-5 (+5 over), Scratch=3 (-3 under), Pro=7 (-7 under).
-const _chippingAnchors = Anchors(min: -5, scratch: 3, pro: 7);
+// Anchors: Min=-12 (+12 over), Scratch=-2 (+2 over), Pro=0 (even).
+const _chippingAnchors = Anchors(min: -12, scratch: -2, pro: 0);
 
 void main() {
   group('strokes-gained putting lookup', () {
@@ -66,75 +66,54 @@ void main() {
   });
 
   group('chipping game scoring via scoreScoringGameSession', () {
-    test('all holed (-18 under) clamps to pro (5.0)', () {
-      // 18 × 1.0 = 18. +/- par = 18 - 36 = -18. Negated = 18. > Pro(7). → 5.0
-      final instances = List.generate(18, (_) => const RawInstanceInput(1.0));
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
+    // With dynamic par, strokes field = plusMinusPar (positive = over par).
+    // scoreScoringGameSession with par=0: negated = -(sum).
+    // Anchors: Min=-12, Scratch=-2, Pro=0.
+    // Even par → sum=0, negated=0 → interpolate(0, {-12,-2,0}) = Pro = 5.0 ✓
+    // +2 over → sum=+2, negated=-2 → interpolate(-2, {-12,-2,0}) = Scratch = 3.5 ✓
+    // +12 over → sum=+12, negated=-12 → interpolate(-12, {-12,-2,0}) = Min = 0.0 ✓
+
+    test('even par maps to pro (5.0)', () {
+      final instances = List.generate(18, (_) => const RawInstanceInput(0.0));
+      final result = scoreScoringGameSession(instances, 0, _chippingAnchors);
       expect(result, closeTo(5.0, 1e-9));
     });
 
-    test('all par (average ~2.0 per hole) maps between min and scratch', () {
-      // 18 × 2.0 = 36. +/- par = 0. Negated = 0.
-      // Between min(-5) and scratch(3): 3.5 * (0 - (-5)) / (3 - (-5)) = 3.5 * 5/8 = 2.1875
-      final instances = List.generate(18, (_) => const RawInstanceInput(2.0));
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
-      expect(result, closeTo(3.5 * 5 / 8, 1e-9));
-    });
-
-    test('-3 under par maps to scratch (3.5)', () {
-      // Total = 33. +/- par = -3. Negated = 3. = Scratch.
-      // 15 holes at 2.0, 3 holes at 1.0 → total = 30 + 3 = 33.
-      final instances = [
-        ...List.generate(15, (_) => const RawInstanceInput(2.0)),
-        ...List.generate(3, (_) => const RawInstanceInput(1.0)),
-      ];
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
+    test('+2 over par maps to scratch (3.5)', () {
+      final perHole = 2.0 / 18;
+      final instances = List.generate(18, (_) => RawInstanceInput(perHole));
+      final result = scoreScoringGameSession(instances, 0, _chippingAnchors);
       expect(result, closeTo(3.5, 1e-9));
     });
 
-    test('-7 under par maps to pro (5.0)', () {
-      // Total = 29. +/- par = -7. Negated = 7. = Pro.
-      // 11 holes at 2.0, 7 holes at 1.0 → total = 22 + 7 = 29.
-      final instances = [
-        ...List.generate(11, (_) => const RawInstanceInput(2.0)),
-        ...List.generate(7, (_) => const RawInstanceInput(1.0)),
-      ];
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
+    test('+12 over par maps to min (0.0)', () {
+      final perHole = 12.0 / 18;
+      final instances = List.generate(18, (_) => RawInstanceInput(perHole));
+      final result = scoreScoringGameSession(instances, 0, _chippingAnchors);
+      expect(result, closeTo(0.0, 1e-9));
+    });
+
+    test('under par clamps to 5.0', () {
+      // -2 under par → sum=-2, negated=2 → above Pro(0) → 5.0
+      final instances = List.generate(18, (_) => const RawInstanceInput(-0.111));
+      final result = scoreScoringGameSession(instances, 0, _chippingAnchors);
       expect(result, closeTo(5.0, 1e-9));
     });
 
-    test('+5 over par maps to min (0.0)', () {
-      // Total = 41. +/- par = +5. Negated = -5. = Min.
-      final totalTarget = 41.0;
-      // 18 holes averaging 41/18 ≈ 2.278 each.
-      final perHole = totalTarget / 18;
+    test('worse than +12 clamps to 0.0', () {
+      final perHole = 20.0 / 18;
       final instances = List.generate(18, (_) => RawInstanceInput(perHole));
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
+      final result = scoreScoringGameSession(instances, 0, _chippingAnchors);
       expect(result, closeTo(0.0, 1e-9));
     });
 
-    test('worse than +5 clamps to 0.0', () {
-      // 18 × 3.5 = 63. +/- par = +27. Negated = -27. < Min(-5). → 0.0
-      final instances = List.generate(18, (_) => const RawInstanceInput(3.5));
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
-      expect(result, closeTo(0.0, 1e-9));
-    });
-
-    test('fractional strokes interpolate correctly', () {
-      // 18 holes at 1.83 each = 32.94 total. +/- par = -3.06. Negated = 3.06.
-      // Between scratch(3) and pro(7): 3.5 + 1.5 * (3.06-3)/(7-3) = 3.5 + 1.5 * 0.015 = 3.5225
-      final instances = List.generate(18, (_) => const RawInstanceInput(1.83));
-      final result = scoreScoringGameSession(instances, 2, _chippingAnchors);
-      final totalStrokes = 18 * 1.83;
-      final plusMinus = totalStrokes - 36;
-      final negated = -plusMinus;
-      final expected = 3.5 + 1.5 * (negated - 3) / (7 - 3);
-      expect(result, closeTo(expected, 1e-6));
-    });
-
-    test('empty instances returns 0.0', () {
-      final result = scoreScoringGameSession([], 2, _chippingAnchors);
-      expect(result, 0.0);
+    test('fractional plus/minus interpolates correctly', () {
+      // +7 over → sum=+7, negated=-7.
+      // Between Min(-12) and Scratch(-2): 3.5 * (-7 - (-12)) / (-2 - (-12)) = 3.5 * 5/10 = 1.75
+      final perHole = 7.0 / 18;
+      final instances = List.generate(18, (_) => RawInstanceInput(perHole));
+      final result = scoreScoringGameSession(instances, 0, _chippingAnchors);
+      expect(result, closeTo(1.75, 1e-6));
     });
   });
 
@@ -154,10 +133,14 @@ void main() {
       expect(long, 6);
     });
 
-    test('all holes are par 2', () {
+    test('all holes have dynamic par based on distance', () {
       final delegate = ChippingGameDelegate();
       for (final hole in delegate.holes) {
-        expect(hole.par, 2);
+        // Dynamic par = 1 + expectedPutts(proProximity(distance)).
+        // Should be > 1.0 and < 3.0 for any reasonable distance.
+        expect(hole.par, greaterThan(1.0));
+        expect(hole.par, lessThan(3.0));
+        expect(hole.par, dynamicPar(hole.distanceYards));
       }
     });
 
