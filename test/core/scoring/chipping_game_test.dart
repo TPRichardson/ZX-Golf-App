@@ -142,14 +142,12 @@ void main() {
       expect(long, 6);
     });
 
-    test('all holes have dynamic par based on distance (rounded to 0.5)', () {
+    test('all holes have dynamic par based on distance', () {
       final delegate = ChippingGameDelegate();
       for (final hole in delegate.holes) {
         expect(hole.par, greaterThan(1.0));
         expect(hole.par, lessThan(3.0));
-        expect(hole.par, dynamicPar(hole.distanceYards));
-        // Par should be a multiple of 0.5.
-        expect((hole.par * 2) % 1, closeTo(0, 1e-9));
+        expect(hole.par, closeTo(dynamicPar(hole.distanceYards), 1e-9));
       }
     });
 

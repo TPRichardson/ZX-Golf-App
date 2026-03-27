@@ -36,13 +36,16 @@ double hc25ProximityFeet(int chipDistanceYards) {
   return 8.0 + chipDistanceYards * 1.1;
 }
 
-/// Compute dynamic par for a hole: (1 chip + expected putts from pro proximity) × 1.05.
-/// The 5% buffer means a pro is expected to finish ~2 under par over 18 holes.
-/// Rounded to nearest 0.5 for clean display.
+/// Beat proximity: the distance the player needs to beat to go under par.
+/// Pro proximity + 5% buffer, rounded to nearest foot.
+int beatProximity(int chipDistanceYards) {
+  return (proProximityFeet(chipDistanceYards) * 1.05).round();
+}
+
+/// Compute dynamic par for a hole: 1 chip + expected putts from beat proximity.
+/// If the player matches the beat target exactly, they score exactly par.
 double dynamicPar(int chipDistanceYards) {
-  final proFeet = proProximityFeet(chipDistanceYards).round();
-  final raw = (1.0 + expectedPuttsFromDistance(proFeet)) * 1.05;
-  return (raw * 2).round() / 2; // Round to nearest 0.5.
+  return 1.0 + expectedPuttsFromDistance(beatProximity(chipDistanceYards));
 }
 
 /// A single hole in the chipping scoring game.
@@ -186,9 +189,19 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
                     Expanded(
                       flex: 75,
                       child: Center(
-                        child: Column(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: SpacingTokens.lg),
+                          child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (currentHole != null)
+                              Text(
+                                'Target ${beatProximity(currentHole!.distanceYards)}ft',
+                                style: const TextStyle(
+                                  fontSize: TypographyTokens.bodySmSize,
+                                  color: ColorTokens.textTertiary,
+                                ),
+                              ),
                             Text(
                               '${_selectedDistance}ft',
                               style: TextStyle(
@@ -197,16 +210,9 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
                                 color: ColorTokens.primaryDefault,
                               ),
                             ),
-                            const SizedBox(height: SpacingTokens.xs),
-                            const Text(
-                              'Distance Remaining',
-                              style: TextStyle(
-                                fontSize: TypographyTokens.bodySmSize,
-                                color: ColorTokens.textTertiary,
-                              ),
-                            ),
                           ],
                         ),
+                      ),
                       ),
                     ),
                     // Right: scroll wheel (25%).
@@ -405,8 +411,8 @@ class _PlusMinusChip extends StatelessWidget {
     final rounded = value.abs() < 0.05
         ? 'E'
         : (value > 0
-            ? '+${value.toStringAsFixed(1)}'
-            : value.toStringAsFixed(1));
+            ? '+${value.toStringAsFixed(2)}'
+            : value.toStringAsFixed(2));
     final color = value < -0.05
         ? ColorTokens.successDefault
         : value.abs() < 0.05

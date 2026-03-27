@@ -471,17 +471,11 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       if (isChipping) {
         distLabel = dist != null ? '${dist}y' : '';
         strokesLabel = totalStrokes.toStringAsFixed(2);
-        if (holed) {
-          diffLabel = 'Holed!';
-        } else if (notPuttable) {
-          diffLabel = 'N/P';
-        } else {
-          diffLabel = diff.abs() < 0.05
-              ? 'E'
-              : diff > 0
-                  ? '+${diff.toStringAsFixed(1)}'
-                  : diff.toStringAsFixed(1);
-        }
+        diffLabel = diff.abs() < 0.005
+            ? 'E'
+            : diff > 0
+                ? '+${diff.toStringAsFixed(2)}'
+                : diff.toStringAsFixed(2);
       } else {
         distLabel = dist != null ? '${dist}ft' : '';
         strokesLabel = '${totalStrokes.toInt()}';
@@ -658,9 +652,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         lastHoleSummary = (
           hole: lastHole.holeNumber,
           par: lastHole.par.toStringAsFixed(2),
-          score: lastHole.isHoled
-              ? 'Holed!'
-              : strokes.toStringAsFixed(2),
+          score: strokes.toStringAsFixed(2),
           scoreColor: scoreColor,
         );
       }
@@ -685,7 +677,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         showFlightMode: isChipping,
         lastHoleSummary: lastHoleSummary,
         holePar: isChipping && (_delegate as ChippingGameDelegate).currentHole != null
-            ? '${(proProximityFeet((_delegate as ChippingGameDelegate).currentHole!.distanceYards) * 1.05).round()}ft'
+            ? '${beatProximity((_delegate as ChippingGameDelegate).currentHole!.distanceYards)}ft'
             : null,
         onConfirm: (newClubId, newShape, newEffort, {int? flight}) {
           clubId = newClubId;
@@ -1356,7 +1348,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       clubStatus = (label: 'Fixed Random', color: ColorTokens.ragAmber);
     } else if (isGuided) {
       clubStatus = (label: 'Fixed Sequence', color: ColorTokens.ragAmber);
-    } else if (_clubIsPlayerChoice) {
+    } else if (_clubIsPlayerChoice || _delegate is ChippingGameDelegate) {
       clubStatus = (label: 'Player Choice', color: ColorTokens.successDefault);
     } else if (widget.drill.clubSelectionMode == ClubSelectionMode.userLed) {
       clubStatus = (label: 'Suggested', color: ColorTokens.primaryDefault);

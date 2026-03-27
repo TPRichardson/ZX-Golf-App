@@ -85,7 +85,7 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
               'Last Hole',
               style: TextStyle(color: ColorTokens.textPrimary),
             ),
-            const SizedBox(height: SpacingTokens.xs),
+            const SizedBox(height: SpacingTokens.sm),
             Row(
               children: [
                 _summaryBox('Hole', '${widget.lastHoleSummary!.hole}'),
