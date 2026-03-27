@@ -345,9 +345,9 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
     if (_currentHoleIndex < holes.length) {
       final metrics =
           jsonDecode(data.rawMetrics.value) as Map<String, dynamic>;
-      final strokes = (metrics['strokes'] as num).toDouble();
+      final rawStrokes = (metrics['rawStrokes'] as num).toDouble();
       final proximity = (metrics['proximityFeet'] as num).toInt();
-      holes[_currentHoleIndex].strokes = strokes;
+      holes[_currentHoleIndex].strokes = rawStrokes;
       holes[_currentHoleIndex].proximityFeet = proximity;
       _currentHoleIndex++;
       _selectedDistance = 10; // Reset scroll for next hole.

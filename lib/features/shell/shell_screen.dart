@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zx_golf_app/core/sync/sync_types.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/core/widgets/confirmation_dialog.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -55,6 +58,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       await _ensureUserProvisioned();
       ref.read(syncOrchestratorProvider).start();
       _checkDeferredSummary();
+      // Wait for first sync to complete before checking bag setup,
+      // so clubs/scores downloaded from the server are available.
+      await _awaitFirstSync();
       _checkBagSetup();
     });
   }
@@ -79,6 +85,29 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       await ref.read(drillRepositoryProvider).autoAdoptAllSystemDrills(userId);
     } catch (e) {
       debugPrint('[ShellScreen] Auto-adopt failed: $e');
+    }
+  }
+
+  /// Wait for the first sync cycle to complete (or timeout after 10s).
+  /// Ensures server-side clubs and scores are available before UI checks.
+  Future<void> _awaitFirstSync() async {
+    try {
+      final engine = ref.read(syncEngineProvider);
+      // Wait for status to transition through inProgress → idle/failed/offline.
+      await engine
+          .getSyncStatus()
+          .where((s) => s != SyncStatus.idle)
+          .first
+          .timeout(const Duration(seconds: 3));
+      // Now wait for it to finish.
+      await engine
+          .getSyncStatus()
+          .where((s) => s != SyncStatus.inProgress)
+          .first
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // Timeout or stream error — proceed with local data only.
+      debugPrint('[ShellScreen] First sync wait timed out — using local data');
     }
   }
 

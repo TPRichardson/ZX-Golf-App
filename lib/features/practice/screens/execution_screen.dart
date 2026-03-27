@@ -444,21 +444,32 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final metrics = jsonDecode(raw) as Map<String, dynamic>;
     // Scoring game — has 'strokes' + 'par' fields.
     if (metrics.containsKey('strokes') && metrics.containsKey('par')) {
-      final strokes = (metrics['strokes'] as num).toDouble();
-      final par = (metrics['par'] as num).toInt();
       final dist = (metrics['distance'] as num?)?.toInt();
       final holeNum = (metrics['holeNumber'] as num?)?.toInt();
-      final diff = strokes - par;
       final isChipping = metrics.containsKey('proximityFeet');
       final holed = metrics['holed'] == true;
       final notPuttable = metrics['notPuttable'] == true;
+
+      // Chipping stores +/- par in 'strokes' and total in 'rawStrokes'.
+      // Putting stores actual strokes in 'strokes' with integer par.
+      final double totalStrokes;
+      final double diff;
+      if (isChipping) {
+        totalStrokes = (metrics['rawStrokes'] as num).toDouble();
+        final par = (metrics['par'] as num).toDouble();
+        diff = totalStrokes - par;
+      } else {
+        totalStrokes = (metrics['strokes'] as num).toDouble();
+        final par = (metrics['par'] as num).toInt();
+        diff = totalStrokes - par;
+      }
 
       String diffLabel;
       String strokesLabel;
       String distLabel;
       if (isChipping) {
         distLabel = dist != null ? '${dist}y' : '';
-        strokesLabel = strokes.toStringAsFixed(1);
+        strokesLabel = totalStrokes.toStringAsFixed(2);
         if (holed) {
           diffLabel = 'Holed!';
         } else if (notPuttable) {
@@ -472,7 +483,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         }
       } else {
         distLabel = dist != null ? '${dist}ft' : '';
-        strokesLabel = '${strokes.toInt()}';
+        strokesLabel = '${totalStrokes.toInt()}';
         final intDiff = diff.toInt();
         diffLabel = intDiff == 0 ? 'E' : intDiff > 0 ? '+$intDiff' : '$intDiff';
       }
@@ -629,31 +640,28 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     String? clubId = _selectedClubId;
     final isChipping = _delegate is ChippingGameDelegate;
 
-    // Build last hole result string and colour for chipping game.
-    String? lastHoleResult;
-    Color? lastHoleResultColor;
+    // Build last hole summary for chipping game (3-box display).
+    ({int hole, String par, String score, Color scoreColor})? lastHoleSummary;
     if (isChipping) {
       final chipping = _delegate as ChippingGameDelegate;
       final lastIdx = chipping.completedCount - 1;
       if (lastIdx >= 0) {
         final lastHole = chipping.holes[lastIdx];
         final strokes = lastHole.strokes ?? 0.0;
-        final proximity = lastHole.proximityFeet ?? 0;
-        final putts = strokes - 1.0;
         final delta = strokes - lastHole.par;
-        if (lastHole.isHoled) {
-          lastHoleResult = 'Hole ${lastHole.holeNumber}: Holed! (1.0)';
-        } else if (lastHole.isNotPuttable) {
-          lastHoleResult = 'Hole ${lastHole.holeNumber}: 1 + ${putts.toStringAsFixed(1)} penalty = ${strokes.toStringAsFixed(2)}';
-        } else {
-          lastHoleResult = 'Hole ${lastHole.holeNumber}: 1 + ${putts.toStringAsFixed(2)} (${proximity}ft) = ${strokes.toStringAsFixed(2)}';
-        }
-        // Green = under par, red = over par, neutral = even.
-        if (delta < -0.05) {
-          lastHoleResultColor = ColorTokens.successDefault;
-        } else if (delta > 0.05) {
-          lastHoleResultColor = ColorTokens.errorDestructive;
-        }
+        final scoreColor = delta < -0.05
+            ? ColorTokens.successDefault
+            : delta > 0.05
+                ? ColorTokens.errorDestructive
+                : ColorTokens.textPrimary;
+        lastHoleSummary = (
+          hole: lastHole.holeNumber,
+          par: lastHole.par.toStringAsFixed(2),
+          score: lastHole.isHoled
+              ? 'Holed!'
+              : strokes.toStringAsFixed(2),
+          scoreColor: scoreColor,
+        );
       }
     }
 
@@ -673,8 +681,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         userId: widget.userId,
         showShotIntent: _showShotIntent,
         showFlightMode: isChipping,
-        lastHoleResult: lastHoleResult,
-        lastHoleResultColor: lastHoleResultColor,
+        lastHoleSummary: lastHoleSummary,
         onConfirm: (newClubId, newShape, newEffort, {int? flight}) {
           clubId = newClubId;
           shape = newShape;

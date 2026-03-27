@@ -19,10 +19,8 @@ class NextTargetDialog extends StatefulWidget {
   final bool showShotIntent;
   /// When true, show flight (1/2/3) instead of shape/effort.
   final bool showFlightMode;
-  /// Last hole result string for chipping game (e.g. "1 + 1.39 = 2.39").
-  final String? lastHoleResult;
-  /// Colour for the last hole result (green = under par, red = over).
-  final Color? lastHoleResultColor;
+  /// Structured last-hole summary for chipping game (3-box display).
+  final ({int hole, String par, String score, Color scoreColor})? lastHoleSummary;
   final void Function(String? clubId, String? shape, int? effort, {int? flight}) onConfirm;
   final ValueChanged<bool> onToggleShotIntent;
 
@@ -39,8 +37,7 @@ class NextTargetDialog extends StatefulWidget {
     required this.userId,
     required this.showShotIntent,
     this.showFlightMode = false,
-    this.lastHoleResult,
-    this.lastHoleResultColor,
+    this.lastHoleSummary,
     required this.onConfirm,
     required this.onToggleShotIntent,
   });
@@ -80,16 +77,18 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.lastHoleResult != null) ...[
-            Text(
-              widget.lastHoleResult!,
-              style: TextStyle(
-                fontSize: TypographyTokens.bodyLgSize,
-                fontWeight: FontWeight.w600,
-                color: widget.lastHoleResultColor ?? ColorTokens.textSecondary,
-              ),
+          if (widget.lastHoleSummary != null) ...[
+            Row(
+              children: [
+                _summaryBox('Hole', '${widget.lastHoleSummary!.hole}'),
+                const SizedBox(width: SpacingTokens.sm),
+                _summaryBox('Par', widget.lastHoleSummary!.par),
+                const SizedBox(width: SpacingTokens.sm),
+                _summaryBox('Score', widget.lastHoleSummary!.score,
+                    valueColor: widget.lastHoleSummary!.scoreColor),
+              ],
             ),
-            const SizedBox(height: SpacingTokens.xs),
+            const SizedBox(height: SpacingTokens.sm),
           ],
           const Text(
             'Next Shot',
@@ -343,6 +342,42 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  static Widget _summaryBox(String label, String value, {Color? valueColor}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          vertical: SpacingTokens.sm,
+          horizontal: SpacingTokens.xs,
+        ),
+        decoration: BoxDecoration(
+          color: ColorTokens.surfaceRaised,
+          borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+          border: Border.all(color: ColorTokens.surfaceBorder),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: TypographyTokens.bodySmSize,
+                color: ColorTokens.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: TypographyTokens.bodyLgSize,
+                fontWeight: FontWeight.w700,
+                color: valueColor ?? ColorTokens.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
