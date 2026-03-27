@@ -45,11 +45,13 @@ class ClubPickerResult {
   final String clubId;
   final String? shotShape;
   final int? shotEffort;
+  final int? flight;
 
   const ClubPickerResult({
     required this.clubId,
     this.shotShape,
     this.shotEffort,
+    this.flight,
   });
 }
 
@@ -61,8 +63,10 @@ Future<ClubPickerResult?> showClubGridPicker(
   SkillArea? skillArea,
   String? userId,
   bool showShotIntent = false,
+  bool showFlightMode = false,
   String? initialShape,
   int? initialEffort,
+  int? initialFlight,
   ValueChanged<bool>? onToggleShotIntent,
 }) {
   return showDialog<ClubPickerResult>(
@@ -72,8 +76,10 @@ Future<ClubPickerResult?> showClubGridPicker(
       skillArea: skillArea,
       userId: userId,
       showShotIntent: showShotIntent,
+      showFlightMode: showFlightMode,
       initialShape: initialShape,
       initialEffort: initialEffort,
+      initialFlight: initialFlight,
       onToggleShotIntent: onToggleShotIntent,
     ),
   );
@@ -86,8 +92,10 @@ class _ReactiveClubPicker extends ConsumerStatefulWidget {
   final SkillArea? skillArea;
   final String? userId;
   final bool showShotIntent;
+  final bool showFlightMode;
   final String? initialShape;
   final int? initialEffort;
+  final int? initialFlight;
   final ValueChanged<bool>? onToggleShotIntent;
 
   const _ReactiveClubPicker({
@@ -95,8 +103,10 @@ class _ReactiveClubPicker extends ConsumerStatefulWidget {
     required this.skillArea,
     required this.userId,
     this.showShotIntent = false,
+    this.showFlightMode = false,
     this.initialShape,
     this.initialEffort,
+    this.initialFlight,
     this.onToggleShotIntent,
   });
 
@@ -109,6 +119,7 @@ class _ReactiveClubPickerState extends ConsumerState<_ReactiveClubPicker> {
   late bool _showIntent;
   String? _shape;
   int? _effort;
+  int? _flight;
 
   @override
   void initState() {
@@ -116,13 +127,15 @@ class _ReactiveClubPickerState extends ConsumerState<_ReactiveClubPicker> {
     _showIntent = widget.showShotIntent;
     _shape = widget.initialShape;
     _effort = widget.initialEffort;
+    _flight = widget.initialFlight;
   }
 
   void _selectClub(String clubId) {
     Navigator.pop(context, ClubPickerResult(
       clubId: clubId,
-      shotShape: _showIntent ? _shape : null,
-      shotEffort: _showIntent ? _effort : null,
+      shotShape: _showIntent && !widget.showFlightMode ? _shape : null,
+      shotEffort: _showIntent && !widget.showFlightMode ? _effort : null,
+      flight: widget.showFlightMode ? _flight : null,
     ));
   }
 
@@ -307,79 +320,121 @@ class _ReactiveClubPickerState extends ConsumerState<_ReactiveClubPicker> {
         ),
         if (_showIntent) ...[
           const SizedBox(height: SpacingTokens.sm),
-          _intentLabel('Shape'),
-          Row(
-            children: [
-              for (final s in ShotShape.values)
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: s != ShotShape.values.last
-                          ? SpacingTokens.xs
-                          : 0,
-                    ),
-                    child: ChoiceChip(
-                      label: SizedBox(
-                        width: double.infinity,
-                        child: Text(s.dbValue, textAlign: TextAlign.center),
+          if (widget.showFlightMode) ...[
+            _intentLabel('Flight'),
+            Row(
+              children: [
+                for (final f in [
+                  (value: 1, label: 'Low'),
+                  (value: 2, label: 'Mid'),
+                  (value: 3, label: 'High'),
+                ])
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: f.value != 3 ? SpacingTokens.xs : 0,
                       ),
-                      selected: _shape == s.dbValue,
-                      onSelected: (_) => setState(() =>
-                          _shape = _shape == s.dbValue ? null : s.dbValue),
-                      selectedColor: ColorTokens.primaryDefault,
-                      backgroundColor: ColorTokens.surfaceRaised,
-                      labelStyle: TextStyle(
-                        fontSize: 16,
-                        color: _shape == s.dbValue
-                            ? ColorTokens.textPrimary
-                            : ColorTokens.textSecondary,
-                      ),
-                      side: BorderSide(
-                        color: _shape == s.dbValue
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.surfaceBorder,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: SpacingTokens.md),
-          _intentLabel('Effort'),
-          Row(
-            children: [
-              for (final e in [75, 90, 100])
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: e != 100 ? SpacingTokens.xs : 0,
-                    ),
-                    child: ChoiceChip(
-                      label: SizedBox(
-                        width: double.infinity,
-                        child: Text('$e%', textAlign: TextAlign.center),
-                      ),
-                      selected: _effort == e,
-                      onSelected: (_) => setState(() =>
-                          _effort = _effort == e ? null : e),
-                      selectedColor: ColorTokens.primaryDefault,
-                      backgroundColor: ColorTokens.surfaceRaised,
-                      labelStyle: TextStyle(
-                        fontSize: 16,
-                        color: _effort == e
-                            ? ColorTokens.textPrimary
-                            : ColorTokens.textSecondary,
-                      ),
-                      side: BorderSide(
-                        color: _effort == e
-                            ? ColorTokens.primaryDefault
-                            : ColorTokens.surfaceBorder,
+                      child: ChoiceChip(
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text(f.label, textAlign: TextAlign.center),
+                        ),
+                        selected: _flight == f.value,
+                        onSelected: (_) => setState(() =>
+                            _flight = _flight == f.value ? null : f.value),
+                        selectedColor: ColorTokens.primaryDefault,
+                        backgroundColor: ColorTokens.surfaceRaised,
+                        labelStyle: TextStyle(
+                          fontSize: 16,
+                          color: _flight == f.value
+                              ? ColorTokens.textPrimary
+                              : ColorTokens.textSecondary,
+                        ),
+                        side: BorderSide(
+                          color: _flight == f.value
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.surfaceBorder,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
+              ],
+            ),
+          ] else ...[
+            _intentLabel('Shape'),
+            Row(
+              children: [
+                for (final s in ShotShape.values)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: s != ShotShape.values.last
+                            ? SpacingTokens.xs
+                            : 0,
+                      ),
+                      child: ChoiceChip(
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text(s.dbValue, textAlign: TextAlign.center),
+                        ),
+                        selected: _shape == s.dbValue,
+                        onSelected: (_) => setState(() =>
+                            _shape = _shape == s.dbValue ? null : s.dbValue),
+                        selectedColor: ColorTokens.primaryDefault,
+                        backgroundColor: ColorTokens.surfaceRaised,
+                        labelStyle: TextStyle(
+                          fontSize: 16,
+                          color: _shape == s.dbValue
+                              ? ColorTokens.textPrimary
+                              : ColorTokens.textSecondary,
+                        ),
+                        side: BorderSide(
+                          color: _shape == s.dbValue
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.surfaceBorder,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: SpacingTokens.md),
+            _intentLabel('Effort'),
+            Row(
+              children: [
+                for (final e in [75, 90, 100])
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: e != 100 ? SpacingTokens.xs : 0,
+                      ),
+                      child: ChoiceChip(
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text('$e%', textAlign: TextAlign.center),
+                        ),
+                        selected: _effort == e,
+                        onSelected: (_) => setState(() =>
+                            _effort = _effort == e ? null : e),
+                        selectedColor: ColorTokens.primaryDefault,
+                        backgroundColor: ColorTokens.surfaceRaised,
+                        labelStyle: TextStyle(
+                          fontSize: 16,
+                          color: _effort == e
+                              ? ColorTokens.textPrimary
+                              : ColorTokens.textSecondary,
+                        ),
+                        side: BorderSide(
+                          color: _effort == e
+                              ? ColorTokens.primaryDefault
+                              : ColorTokens.surfaceBorder,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
       ],
     ),

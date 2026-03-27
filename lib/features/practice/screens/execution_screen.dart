@@ -72,6 +72,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   late ExecutionInputDelegate _delegate;
   bool _initialized = false;
   bool _ending = false;
+  bool _dialogOpen = false;
   late SurfaceType? _surfaceType = widget.session.surfaceType;
   EnvironmentType? _environmentType;
   /// Currently selected club ID (UUID). Null for technique blocks.
@@ -665,6 +666,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       }
     }
 
+    setState(() => _dialogOpen = true);
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -682,6 +684,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         showShotIntent: _showShotIntent,
         showFlightMode: isChipping,
         lastHoleSummary: lastHoleSummary,
+        holePar: isChipping && (_delegate as ChippingGameDelegate).currentHole != null
+            ? '${(proProximityFeet((_delegate as ChippingGameDelegate).currentHole!.distanceYards) * 1.05).round()}ft'
+            : null,
         onConfirm: (newClubId, newShape, newEffort, {int? flight}) {
           clubId = newClubId;
           shape = newShape;
@@ -694,6 +699,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
 
     if (mounted) {
       setState(() {
+        _dialogOpen = false;
         if (clubId != _selectedClubId) _clubIsPlayerChoice = true;
         _selectedClubId = clubId;
         _shotShape = shape;
@@ -874,6 +880,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final sorted = List.of(_availableClubs)
       ..sort((a, b) => a.clubType.index.compareTo(b.clubType.index));
     final clubNames = sorted.map((c) => c.clubType.dbValue).toList();
+    final isChipping = _delegate is ChippingGameDelegate;
     final result = await showClubGridPicker(
       context,
       clubs: clubNames,
@@ -881,8 +888,10 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       skillArea: widget.drill.skillArea,
       userId: widget.userId,
       showShotIntent: _showShotIntent,
+      showFlightMode: isChipping,
       initialShape: _shotShape,
       initialEffort: _shotEffort,
+      initialFlight: _flight,
       onToggleShotIntent: (v) => _showShotIntent = v,
     );
     if (result != null && mounted) {
@@ -894,6 +903,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
         _clubIsPlayerChoice = true;
         _shotShape = result.shotShape;
         _shotEffort = result.shotEffort;
+        if (result.flight != null) _flight = result.flight;
       });
     }
   }
@@ -953,6 +963,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
     final executionContext = ExecutionContext(
       isLocked: isLocked,
       isEnding: _ending,
+      dialogOpen: _dialogOpen,
       selectedClub: _selectedClubId,
       currentSetId: _controller.currentSetId,
       shotShape: _shotShape,
@@ -1014,8 +1025,72 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       // Sync delegate-driven target distance into the
                       // random distance slot so the distance box picks it up.
                       ..._syncDelegateTargetDistance(),
-                      // Delegate status line (e.g. scoring game hole info).
-                      if (_delegate.statusLine != null)
+                      // Delegate status line — chipping uses 25/50/25 layout.
+                      if (_delegate is ChippingGameDelegate && _delegate.statusLine != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SpacingTokens.lg,
+                            vertical: SpacingTokens.xs,
+                          ),
+                          child: Column(
+                            children: [
+                              // Labels row: 75 Current Hole | 25 Round Score.
+                              Row(
+                                children: [
+                                  const Expanded(
+                                    flex: 75,
+                                    child: Text(
+                                      'Current Hole',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: TypographyTokens.bodySmSize,
+                                        fontWeight: FontWeight.w600,
+                                        color: ColorTokens.textTertiary,
+                                      ),
+                                    ),
+                                  ),
+                                  const Expanded(
+                                    flex: 25,
+                                    child: Text(
+                                      'Round Score',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: TypographyTokens.bodySmSize,
+                                        color: ColorTokens.textTertiary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: SpacingTokens.xs),
+                              // Values row: 75 Hole X • Par Y | 25 +/-.
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 75,
+                                    child: Text(
+                                      _delegate.statusLine!,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: TypographyTokens.bodyLgSize,
+                                        fontWeight: FontWeight.w600,
+                                        color: ColorTokens.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 25,
+                                    child: Center(
+                                      child: _delegate.statusTrailing ?? const SizedBox(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        )
+                      // Non-chipping status line (centered, trailing inline).
+                      else if (_delegate.statusLine != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: SpacingTokens.lg,
@@ -1099,8 +1174,9 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   Widget _buildShotLogSection({bool compact = false}) {
     final hasClubSelection = widget.drill.clubSelectionMode != null &&
         _availableClubs.isNotEmpty;
+    final isChipping = _delegate is ChippingGameDelegate;
     return Expanded(
-      flex: 50,
+      flex: isChipping ? 40 : 50, // Chipping: 40:60 with input area
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           SpacingTokens.lg, SpacingTokens.xs, SpacingTokens.lg, 0,
@@ -1183,7 +1259,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                                   style: TextStyle(
                                     fontSize: TypographyTokens.bodyLgSize,
                                     fontWeight: FontWeight.w500,
-                                    color: ColorTokens.primaryDefault,
+                                    color: _muteCyan(ColorTokens.primaryDefault),
                                     fontFeatures: const [FontFeature.tabularFigures()],
                                   ),
                                 ),
@@ -1340,7 +1416,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     style: TextStyle(
                       fontSize: TypographyTokens.bodySize,
                       fontStyle: FontStyle.italic,
-                      color: distanceStatus.color,
+                      color: _muteCyan(distanceStatus.color),
                     ),
                   ),
                 const SizedBox(height: SpacingTokens.xs),
@@ -1354,7 +1430,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     color: (_effectiveTargetDistance != null &&
                             distanceStatus.color != ColorTokens.textTertiary &&
                             distanceStatus.color != ColorTokens.ragAmber)
-                        ? ColorTokens.primaryDefault
+                        ? _muteCyan(ColorTokens.primaryDefault)
                         : const Color(0xFF3A4048),
                     borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
                   ),
@@ -1407,7 +1483,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                       style: TextStyle(
                         fontSize: TypographyTokens.bodySize,
                         fontStyle: FontStyle.italic,
-                        color: clubStatus.color,
+                        color: _muteCyan(clubStatus.color),
                       ),
                     ),
                   const SizedBox(height: SpacingTokens.xs),
@@ -1420,7 +1496,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
                     decoration: BoxDecoration(
                       color: (isRandom || isGuided)
                           ? const Color(0xFF3A4048)
-                          : ColorTokens.primaryDefault,
+                          : _muteCyan(ColorTokens.primaryDefault),
                       borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
                     ),
                     child: Text(
@@ -1939,6 +2015,20 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
   }
 
   /// Format a yard value: under 10y rounds to nearest 0.5, 10+ rounds to int.
+  /// Replace cyan with grey when a dialog is open over the execution screen.
+  Color _muteCyan(Color color) {
+    if (!_dialogOpen) return color;
+    if (color == ColorTokens.primaryDefault) return ColorTokens.textTertiary;
+    return color;
+  }
+
+  /// Format par value: show as x.0 or x.5.
+  static String _formatPar(double? par) {
+    if (par == null) return '';
+    if (par == par.roundToDouble()) return par.toStringAsFixed(1);
+    return par.toStringAsFixed(1);
+  }
+
   static String _formatYards(double value) {
     if (value < 10) {
       final rounded = (value * 2).round() / 2;
@@ -1983,7 +2073,7 @@ class _ExecutionScreenState extends ConsumerState<ExecutionScreen> {
       child: FilledButton(
         onPressed: _endSession,
         style: FilledButton.styleFrom(
-          backgroundColor: ColorTokens.primaryDefault,
+          backgroundColor: _muteCyan(ColorTokens.primaryDefault),
         ),
         child: const Text('End Drill'),
       ),

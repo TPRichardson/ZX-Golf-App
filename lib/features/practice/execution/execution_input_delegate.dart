@@ -23,6 +23,8 @@ class ExecutionContext {
   final double? resolvedTargetDistance;
   final double? resolvedTargetWidth;
   final double? resolvedTargetDepth;
+  /// True when a dialog is showing over the execution screen.
+  final bool dialogOpen;
 
   const ExecutionContext({
     required this.isLocked,
@@ -35,6 +37,7 @@ class ExecutionContext {
     this.resolvedTargetDistance,
     this.resolvedTargetWidth,
     this.resolvedTargetDepth,
+    this.dialogOpen = false,
   });
 }
 

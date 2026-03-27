@@ -206,6 +206,7 @@ class RawDataEntryDelegate extends ExecutionInputDelegate {
             padding: const EdgeInsets.only(bottom: SpacingTokens.md + 16),
             child: ShotRecordButton(
               label: 'Record',
+              muted: executionContext.dialogOpen,
               onPressed: isLocked
                   ? null
                   : () => _submit(executionContext, onLogInstance),

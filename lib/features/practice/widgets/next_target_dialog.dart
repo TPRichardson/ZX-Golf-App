@@ -21,6 +21,8 @@ class NextTargetDialog extends StatefulWidget {
   final bool showFlightMode;
   /// Structured last-hole summary for chipping game (3-box display).
   final ({int hole, String par, String score, Color scoreColor})? lastHoleSummary;
+  /// Current hole par (for chipping game display).
+  final String? holePar;
   final void Function(String? clubId, String? shape, int? effort, {int? flight}) onConfirm;
   final ValueChanged<bool> onToggleShotIntent;
 
@@ -38,6 +40,7 @@ class NextTargetDialog extends StatefulWidget {
     required this.showShotIntent,
     this.showFlightMode = false,
     this.lastHoleSummary,
+    this.holePar,
     required this.onConfirm,
     required this.onToggleShotIntent,
   });
@@ -78,6 +81,11 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.lastHoleSummary != null) ...[
+            const Text(
+              'Last Hole',
+              style: TextStyle(color: ColorTokens.textPrimary),
+            ),
+            const SizedBox(height: SpacingTokens.xs),
             Row(
               children: [
                 _summaryBox('Hole', '${widget.lastHoleSummary!.hole}'),
@@ -101,25 +109,76 @@ class _NextTargetDialogState extends State<NextTargetDialog> {
         child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Target distance.
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              vertical: SpacingTokens.md,
-            ),
-            decoration: BoxDecoration(
-              color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
-            ),
-            child: Text(
-              '${widget.targetDistance}y',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.w700,
-                color: ColorTokens.primaryDefault,
+          // Target distance + par row.
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: SpacingTokens.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ColorTokens.primaryDefault.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Distance',
+                        style: TextStyle(
+                          fontSize: TypographyTokens.bodySmSize,
+                          color: ColorTokens.textTertiary,
+                        ),
+                      ),
+                      Text(
+                        '${widget.targetDistance}y',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w700,
+                          color: ColorTokens.primaryDefault,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              if (widget.holePar != null) ...[
+                const SizedBox(width: SpacingTokens.sm),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: SpacingTokens.md,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ColorTokens.surfaceRaised,
+                      borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
+                      border: Border.all(color: ColorTokens.surfaceBorder),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Beat',
+                          style: TextStyle(
+                            fontSize: TypographyTokens.bodySmSize,
+                            color: ColorTokens.textTertiary,
+                          ),
+                        ),
+                        Text(
+                          widget.holePar!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w700,
+                            color: ColorTokens.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: SpacingTokens.md),
 

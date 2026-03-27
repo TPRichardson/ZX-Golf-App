@@ -204,6 +204,7 @@ class ScoringGameDelegate extends ExecutionInputDelegate {
             label: _currentHoleIndex < holes.length - 1
                 ? 'Next Hole'
                 : 'Finish Round',
+            muted: executionContext.dialogOpen,
             onPressed: isLocked
                 ? null
                 : () => _recordHole(executionContext, onLogInstance),

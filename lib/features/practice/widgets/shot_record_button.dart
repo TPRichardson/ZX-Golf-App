@@ -6,11 +6,14 @@ import 'package:zx_golf_app/core/theme/tokens.dart';
 class ShotRecordButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
+  /// When true, renders in grey instead of cyan (e.g. behind a dialog).
+  final bool muted;
 
   const ShotRecordButton({
     super.key,
     required this.label,
     required this.onPressed,
+    this.muted = false,
   });
 
   @override
@@ -21,8 +24,12 @@ class ShotRecordButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: ColorTokens.primaryDefault,
-          foregroundColor: Colors.white,
+          backgroundColor: muted
+              ? ColorTokens.surfaceRaised
+              : ColorTokens.primaryDefault,
+          foregroundColor: muted
+              ? ColorTokens.textTertiary
+              : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ShapeTokens.radiusCard),
           ),

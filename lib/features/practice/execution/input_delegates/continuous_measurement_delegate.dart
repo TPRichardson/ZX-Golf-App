@@ -91,6 +91,7 @@ class ContinuousMeasurementDelegate extends ExecutionInputDelegate {
           const SizedBox(height: SpacingTokens.md),
           ShotRecordButton(
             label: 'Record',
+            muted: executionContext.dialogOpen,
             onPressed: isLocked
                 ? null
                 : () => _submit(executionContext, onLogInstance),

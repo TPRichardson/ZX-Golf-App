@@ -36,10 +36,13 @@ double hc25ProximityFeet(int chipDistanceYards) {
   return 8.0 + chipDistanceYards * 1.1;
 }
 
-/// Compute dynamic par for a hole: 1 chip + expected putts from pro proximity.
+/// Compute dynamic par for a hole: (1 chip + expected putts from pro proximity) × 1.05.
+/// The 5% buffer means a pro is expected to finish ~2 under par over 18 holes.
+/// Rounded to nearest 0.5 for clean display.
 double dynamicPar(int chipDistanceYards) {
   final proFeet = proProximityFeet(chipDistanceYards).round();
-  return 1.0 + expectedPuttsFromDistance(proFeet);
+  final raw = (1.0 + expectedPuttsFromDistance(proFeet)) * 1.05;
+  return (raw * 2).round() / 2; // Round to nearest 0.5.
 }
 
 /// A single hole in the chipping scoring game.
@@ -73,7 +76,8 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
   int _currentHoleIndex = 0;
   int _selectedDistance = 10; // Default scroll position (feet).
   late FixedExtentScrollController _scrollCtrl;
-  bool _showHoledPop = false;
+  /// Quick-action selection: null = use scroller, 0 = holed, -1 = can't putt.
+  int? _quickSelection;
 
   /// Running totals.
   double get totalStrokes =>
@@ -98,7 +102,7 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
   String? get statusLine {
     final hole = currentHole;
     if (hole == null) return null;
-    return 'Hole ${hole.holeNumber}  •  Par ${hole.par.toStringAsFixed(2)}  •  ${hole.distanceYards}y';
+    return 'Hole ${hole.holeNumber}  •  Par ${hole.par.toStringAsFixed(1)}';
   }
 
   @override
@@ -171,38 +175,6 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
       child: Column(
         children: [
           const SizedBox(height: SpacingTokens.sm),
-          // Quick-action buttons: Holed + Can't Putt.
-          Row(
-            children: [
-              Expanded(
-                child: _QuickActionButton(
-                  label: _showHoledPop ? 'Holed!' : 'Holed',
-                  icon: Icons.golf_course,
-                  color: _showHoledPop
-                      ? ColorTokens.successDefault
-                      : ColorTokens.successDefault.withValues(alpha: 0.8),
-                  isHighlighted: _showHoledPop,
-                  onTap: isLocked
-                      ? null
-                      : () => _recordProximity(
-                            0, executionContext, onLogInstance, requestRebuild),
-                ),
-              ),
-              const SizedBox(width: SpacingTokens.sm),
-              Expanded(
-                child: _QuickActionButton(
-                  label: "Can't Putt",
-                  icon: Icons.block,
-                  color: ColorTokens.errorDestructive.withValues(alpha: 0.8),
-                  onTap: isLocked
-                      ? null
-                      : () => _recordProximity(
-                            -1, executionContext, onLogInstance, requestRebuild),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: SpacingTokens.md),
           // Scroll wheel for distance remaining (feet).
           Expanded(
             child: Center(
@@ -210,22 +182,36 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
                 height: 180,
                 child: Row(
                   children: [
-                    // Left: live display value.
+                    // Left: live display value + label (75%).
                     Expanded(
+                      flex: 75,
                       child: Center(
-                        child: Text(
-                          '${_selectedDistance}ft',
-                          style: TextStyle(
-                            fontSize: TypographyTokens.displayXlSize,
-                            fontWeight: FontWeight.w600,
-                            color: ColorTokens.primaryDefault,
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${_selectedDistance}ft',
+                              style: TextStyle(
+                                fontSize: TypographyTokens.displayXlSize,
+                                fontWeight: FontWeight.w600,
+                                color: ColorTokens.primaryDefault,
+                              ),
+                            ),
+                            const SizedBox(height: SpacingTokens.xs),
+                            const Text(
+                              'Distance Remaining',
+                              style: TextStyle(
+                                fontSize: TypographyTokens.bodySmSize,
+                                color: ColorTokens.textTertiary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    // Right: scroll wheel (1–50ft).
-                    SizedBox(
-                      width: 80,
+                    // Right: scroll wheel (25%).
+                    Expanded(
+                      flex: 25,
                       child: ListWheelScrollView.useDelegate(
                         controller: _scrollCtrl,
                         itemExtent: 36,
@@ -266,15 +252,49 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
               ),
             ),
           ),
+          const SizedBox(height: SpacingTokens.sm),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  label: 'Holed',
+                  icon: Icons.golf_course,
+                  color: ColorTokens.successDefault.withValues(alpha: 0.8),
+                  isHighlighted: _quickSelection == 0,
+                  onTap: isLocked
+                      ? null
+                      : () {
+                          _quickSelection = _quickSelection == 0 ? null : 0;
+                          requestRebuild();
+                        },
+                ),
+              ),
+              const SizedBox(width: SpacingTokens.sm),
+              Expanded(
+                child: _QuickActionButton(
+                  label: "Can't Putt",
+                  icon: Icons.block,
+                  color: ColorTokens.errorDestructive.withValues(alpha: 0.8),
+                  isHighlighted: _quickSelection == -1,
+                  onTap: isLocked
+                      ? null
+                      : () {
+                          _quickSelection = _quickSelection == -1 ? null : -1;
+                          requestRebuild();
+                        },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SpacingTokens.sm),
           // Confirm button.
           ShotRecordButton(
-            label: _currentHoleIndex < holes.length - 1
-                ? 'Next Hole'
-                : 'Finish Round',
+            label: 'Record Shot',
+            muted: executionContext.dialogOpen,
             onPressed: isLocked
                 ? null
                 : () => _recordProximity(
-                      _selectedDistance,
+                      _quickSelection ?? _selectedDistance,
                       executionContext,
                       onLogInstance,
                       requestRebuild,
@@ -308,14 +328,7 @@ class ChippingGameDelegate extends ExecutionInputDelegate {
     final hole = currentHole!;
 
     final totalStrokesForHole = computeHoleStrokes(proximityFeet);
-
-    // Brief "Holed!" pop for holed chips.
-    if (proximityFeet == 0) {
-      _showHoledPop = true;
-      requestRebuild();
-      await Future.delayed(const Duration(milliseconds: 400));
-      _showHoledPop = false;
-    }
+    _quickSelection = null;
 
     final plusMinusPar = totalStrokesForHole - hole.par;
 
@@ -399,12 +412,23 @@ class _PlusMinusChip extends StatelessWidget {
         : value.abs() < 0.05
             ? ColorTokens.textPrimary
             : ColorTokens.errorDestructive;
-    return Text(
-      rounded,
-      style: TextStyle(
-        fontSize: TypographyTokens.bodyLgSize,
-        fontWeight: FontWeight.w700,
-        color: color,
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpacingTokens.sm,
+        vertical: SpacingTokens.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(ShapeTokens.radiusGrid),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        rounded,
+        style: TextStyle(
+          fontSize: TypographyTokens.bodyLgSize,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }
