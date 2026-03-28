@@ -12,6 +12,7 @@ import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/features/drill/drill_detail_screen.dart';
 import 'package:zx_golf_app/core/scoring/scoring_helpers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
+import 'package:zx_golf_app/providers/review_providers.dart';
 
 // S12 §12.6.2 — Session detail: single session instance breakdown.
 // Read-only view of a closed session.
@@ -452,6 +453,7 @@ class SessionDetailScreen extends ConsumerWidget {
           await ref
               .read(practiceRepositoryProvider)
               .deleteClosedSession(sessionId, userId);
+          ref.invalidate(closedSessionsProvider(userId));
           if (context.mounted) Navigator.pop(context);
         },
       ),
