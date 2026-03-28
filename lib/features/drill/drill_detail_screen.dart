@@ -38,7 +38,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
   Drill? _drill;
   bool _isLoading = true;
   bool _isAdopted = false;
-  Map<String, ({double min, double scratch, double pro})> _anchors = {};
+
 
   @override
   void initState() {
@@ -53,9 +53,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
       setState(() {
         _drill = drill;
         _isLoading = false;
-        if (drill != null) {
-          _anchors = _parseAnchors(drill.anchors);
-        }
       });
       // Check adoption status and clear unseen update badge.
       if (drill != null && drill.origin == DrillOrigin.standard) {
@@ -74,21 +71,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     }
   }
 
-  static Map<String, ({double min, double scratch, double pro})> _parseAnchors(
-      String anchorsJson) {
-    if (anchorsJson == '{}' || anchorsJson.isEmpty) return {};
-    final map = jsonDecode(anchorsJson) as Map<String, dynamic>;
-    final result = <String, ({double min, double scratch, double pro})>{};
-    for (final entry in map.entries) {
-      final a = entry.value as Map<String, dynamic>;
-      result[entry.key] = (
-        min: (a['Min'] as num).toDouble(),
-        scratch: (a['Scratch'] as num).toDouble(),
-        pro: (a['Pro'] as num).toDouble(),
-      );
-    }
-    return result;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +90,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
 
     final drill = _drill!;
     final isStandard = drill.origin == DrillOrigin.standard;
-    final isScored = drill.drillType != DrillType.techniqueBlock;
 
     final skillColor = ColorTokens.skillArea(drill.skillArea);
     final subskills = _parseSubskills(drill.subskillMapping);
@@ -412,6 +393,7 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: [drill.drillId],
+      environmentType: envSurface.environment,
       surfaceType: envSurface.surface,
     );
 
@@ -652,14 +634,6 @@ class _DrillDetailScreenState extends ConsumerState<DrillDetailScreen> {
     return ColorTokens.textTertiary;
   }
 
-  static String _gridLabel(Drill drill) {
-    return switch (drill.gridType) {
-      GridType.threeByThree => 'Full Grid (3x3)',
-      GridType.oneByThree => 'Left/Right (1x3)',
-      GridType.threeByOne => 'Long/Short (3x1)',
-      null => '',
-    };
-  }
 
   static List<String> _parseSubskills(String json) {
     if (json.isEmpty || json == '[]') return [];

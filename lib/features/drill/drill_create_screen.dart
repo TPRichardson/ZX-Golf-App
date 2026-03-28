@@ -10,6 +10,7 @@ import 'package:zx_golf_app/core/widgets/zx_input_field.dart';
 import 'package:zx_golf_app/data/database.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
+import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/providers/practice_providers.dart';
 import 'package:zx_golf_app/providers/repository_providers.dart';
 
@@ -559,10 +560,15 @@ class _DrillCreateScreenState extends ConsumerState<DrillCreateScreen> {
 
       if (!mounted) return;
 
+      final envSurface = await showEnvironmentSurfacePicker(context);
+      if (envSurface == null || !mounted) return;
+
       // Create PracticeBlock with the new drill.
       final actions = ref.read(practiceActionsProvider);
       final pb = await actions.startPracticeBlock(userId,
-          initialDrillIds: [drill.drillId]);
+          initialDrillIds: [drill.drillId],
+          environmentType: envSurface.environment,
+          surfaceType: envSurface.surface);
 
       if (!mounted) return;
       // Pop drill create from nested tab navigator, then push practice

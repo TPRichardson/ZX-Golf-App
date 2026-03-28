@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zx_golf_app/providers/settings_providers.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
-import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/features/practice/screens/practice_queue_screen.dart';
 import 'package:zx_golf_app/features/practice/widgets/surface_picker.dart';
 import 'package:zx_golf_app/features/review/screens/subskill_detail_screen.dart';
@@ -28,7 +27,6 @@ class _ReviewDashboardScreenState
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  SkillArea? _expandedSkillArea;
 
   @override
   Widget build(BuildContext context) {
@@ -74,9 +72,7 @@ class _ReviewDashboardScreenState
               const SizedBox(height: SpacingTokens.sm),
               SkillAreaHeatmap(
                 userId: userId,
-                onExpandedChanged: (area) {
-                  setState(() => _expandedSkillArea = area);
-                },
+                onExpandedChanged: (_) {},
                 onSubskillTap: (subskillId) {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => SubskillDetailScreen(
@@ -167,6 +163,7 @@ class _ReviewDashboardScreenState
     final actions = ref.read(practiceActionsProvider);
     final pb = await actions.startPracticeBlock(
       userId,
+      environmentType: envSurface.environment,
       surfaceType: envSurface.surface,
     );
 

@@ -106,7 +106,7 @@ class PerformanceChart extends StatelessWidget {
               color: ColorTokens.primaryDefault.withValues(alpha: 0.4),
               dotData: FlDotData(
                 show: true,
-                getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                getDotPainter: (spot, percent, lineData, index) => FlDotCirclePainter(
                   radius: 3,
                   color: ColorTokens.primaryDefault.withValues(alpha: 0.6),
                   strokeWidth: 0,

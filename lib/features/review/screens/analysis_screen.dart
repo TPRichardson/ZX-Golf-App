@@ -5,6 +5,7 @@ import 'package:zx_golf_app/core/formatters.dart';
 import 'package:zx_golf_app/core/theme/tokens.dart';
 import 'package:zx_golf_app/data/enums.dart';
 import 'package:zx_golf_app/data/repositories/scoring_repository.dart';
+import 'package:zx_golf_app/features/review/screens/session_detail_screen.dart';
 import 'package:zx_golf_app/features/review/widgets/analysis_filters.dart';
 import 'package:zx_golf_app/features/review/widgets/performance_chart.dart';
 import 'package:zx_golf_app/core/widgets/zx_pill_button.dart';
@@ -172,6 +173,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                           date: s.session.completionTimestamp,
                           stars: stars,
                           drillType: s.drill.drillType,
+                          sessionId: s.session.sessionId,
+                          userId: userId,
                         );
                       },
                     ),
@@ -453,17 +456,30 @@ class _SessionTile extends StatelessWidget {
   final DateTime? date;
   final double stars;
   final DrillType drillType;
+  final String sessionId;
+  final String userId;
 
   const _SessionTile({
     required this.drillName,
     required this.date,
     required this.stars,
     required this.drillType,
+    required this.sessionId,
+    required this.userId,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => SessionDetailScreen(
+            userId: userId,
+            sessionId: sessionId,
+          ),
+        ));
+      },
+      child: Container(
       margin: const EdgeInsets.only(bottom: SpacingTokens.xs),
       padding: const EdgeInsets.symmetric(
         horizontal: SpacingTokens.md,
@@ -518,6 +534,7 @@ class _SessionTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

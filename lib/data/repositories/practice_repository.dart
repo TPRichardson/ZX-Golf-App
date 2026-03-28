@@ -288,6 +288,40 @@ class PracticeRepository {
     }
   }
 
+  /// Soft-delete a closed session and all its sets/instances, then reflow.
+  /// For use from the review screen where entryId is not available.
+  Future<void> deleteClosedSession(String sessionId, String userId) async {
+    await _gate.awaitGateRelease();
+
+    // Soft-delete all instances in this session.
+    final sets = await (_db.select(_db.sets)
+          ..where((t) => t.sessionId.equals(sessionId))
+          ..where((t) => t.isDeleted.equals(false)))
+        .get();
+    await _db.transaction(() async {
+      for (final s in sets) {
+        await (_db.update(_db.instances)
+              ..where((t) => t.setId.equals(s.setId))
+              ..where((t) => t.isDeleted.equals(false)))
+            .write(const InstancesCompanion(isDeleted: Value(true)));
+        await (_db.update(_db.sets)
+              ..where((t) => t.setId.equals(s.setId)))
+            .write(const SetsCompanion(isDeleted: Value(true)));
+      }
+      await (_db.update(_db.sessions)
+            ..where((t) => t.sessionId.equals(sessionId)))
+          .write(const SessionsCompanion(isDeleted: Value(true)));
+    });
+
+    // Trigger reflow so scores are recalculated without this session.
+    await _reflowEngine.executeReflow(ReflowTrigger(
+      type: ReflowTriggerType.sessionDeletion,
+      userId: userId,
+      affectedSubskillIds: await _getSubskillsForSession(sessionId),
+      sessionId: sessionId,
+    ));
+  }
+
   // ---------------------------------------------------------------------------
   // Set CRUD (retained from Phase 1)
   // DEVIATION: @DataClassName('PracticeSet'). See CLAUDE.md Known Deviations.

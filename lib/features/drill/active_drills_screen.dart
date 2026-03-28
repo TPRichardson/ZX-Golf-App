@@ -349,6 +349,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
+      environmentType: envSurface.environment,
       surfaceType: envSurface.surface,
     );
 
@@ -368,7 +369,7 @@ class _ActiveDrillsScreenState extends ConsumerState<ActiveDrillsScreen>
     if (envSurface == null || !mounted) return;
 
     final actions = ref.read(practiceActionsProvider);
-    final pb = await actions.startPracticeBlock(userId, surfaceType: envSurface.surface);
+    final pb = await actions.startPracticeBlock(userId, environmentType: envSurface.environment, surfaceType: envSurface.surface);
 
     if (mounted) {
       Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(

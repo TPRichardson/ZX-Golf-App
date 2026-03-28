@@ -699,6 +699,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
     final pb = await actions.startPracticeBlock(
       userId,
       initialDrillIds: drillIds,
+      environmentType: envSurface.environment,
       surfaceType: envSurface.surface,
     );
 
